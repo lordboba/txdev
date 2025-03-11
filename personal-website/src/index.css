@@ -1,0 +1,9 @@
+/* Default styles that should apply regardless of Tailwind */
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  font-family: system-ui, sans-serif;
+  background-color: #f3f4f6; /* Light gray background */
+  color: #111827; /* Dark gray text */
+}
