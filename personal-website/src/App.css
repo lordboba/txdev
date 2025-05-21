@@ -2,54 +2,55 @@
 
 :root {
   /* Light Mode (default) */
-  --bg-primary: #f3f4f6;
+  --bg-primary: #f5f5f7;
   --bg-secondary: #ffffff;
-  --bg-accent: #e5e7eb;
-  --text-primary: #111827;
-  --text-secondary: #374151;
-  --text-muted: #6b7280;
-  --border-color: #e5e7eb;
-  --accent-color: #2563eb;
-  --accent-hover: #1d4ed8;
+  --bg-accent: #e9e9eb;
+  --text-primary: #1d1d1f;
+  --text-secondary: #333333;
+  --text-muted: #6e6e73;
+  --border-color: #d2d2d7;
+  --accent-color: #007aff;
+  --accent-hover: #0071e3;
   --card-bg: #ffffff;
-  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --card-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
 }
 
 /* Dark Mode */
 [data-theme="dark"] {
-  --bg-primary: #1f2937;
-  --bg-secondary: #111827;
-  --bg-accent: #374151;
-  --text-primary: #f9fafb;
-  --text-secondary: #e5e7eb;
-  --text-muted: #9ca3af;
-  --border-color: #4b5563;
-  --accent-color: #3b82f6;
-  --accent-hover: #60a5fa;
-  --card-bg: #1f2937;
-  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+  --bg-primary: #1d1d1f;
+  --bg-secondary: #2c2c2e;
+  --bg-accent: #3a3a3c;
+  --text-primary: #f5f5f7;
+  --text-secondary: #e8e8ed;
+  --text-muted: #86868b;
+  --border-color: #424245;
+  --accent-color: #0a84ff;
+  --accent-hover: #007aff;
+  --card-bg: #2c2c2e;
+  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 /* Apply dark mode to system preference - this will be overridden if the user has a preference */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    --bg-primary: #1f2937;
-    --bg-secondary: #111827;
-    --bg-accent: #374151;
-    --text-primary: #f9fafb;
-    --text-secondary: #e5e7eb;
-    --text-muted: #9ca3af;
-    --border-color: #4b5563;
-    --accent-color: #3b82f6;
-    --accent-hover: #60a5fa;
-    --card-bg: #1f2937;
-    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+    --bg-primary: #1d1d1f;
+    --bg-secondary: #2c2c2e;
+    --bg-accent: #3a3a3c;
+    --text-primary: #f5f5f7;
+    --text-secondary: #e8e8ed;
+    --text-muted: #86868b;
+    --border-color: #424245;
+    --accent-color: #0a84ff;
+    --accent-hover: #007aff;
+    --card-bg: #2c2c2e;
+    --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
   }
 }
 
 /* Smooth transitions for theme switching */
 body {
   transition: background-color 0.3s ease, color 0.3s ease;
+  line-height: 1.6; /* Added for better text readability */
 }
 
 * {
@@ -63,141 +64,266 @@ body {
 
 .container {
   width: 100%;
-  max-width: 1280px;
+  max-width: 1100px; /* Slightly narrower for a more focused Apple feel */
   margin-left: auto;
   margin-right: auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  padding-left: 1.5rem; /* Increased padding for more whitespace */
+  padding-right: 1.5rem;
 }
 
-/* Dark Mode Toggle */
+/* Theme Utility Classes */
+.bg-theme-primary {
+  background-color: var(--bg-primary);
+}
+.bg-theme-secondary {
+  background-color: var(--bg-secondary);
+}
+.bg-theme-accent {
+  background-color: var(--bg-accent);
+}
+.bg-theme-accent-subtle {
+  background-color: var(--accent-color);
+  opacity: 0.08;
+}
+[data-theme="dark"] .bg-theme-accent-subtle {
+  background-color: var(--accent-color);
+  opacity: 0.12;
+}
+
+.text-theme-primary {
+  color: var(--text-primary);
+}
+.text-theme-secondary {
+  color: var(--text-secondary);
+}
+.text-theme-muted {
+  color: var(--text-muted);
+}
+.text-theme-accent {
+  color: var(--accent-color);
+}
+.text-theme-accent-strong {
+  color: var(--accent-color);
+}
+[data-theme="dark"] .text-theme-accent-strong {
+  color: var(--accent-hover);
+}
+
+.border-theme {
+  border-color: var(--border-color);
+}
+
+.shadow-card {
+  box-shadow: var(--card-shadow);
+}
+
+/* App Structure */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-navbar {
+  border-bottom: 1px solid var(--border-color);
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.nav-link {
+  font-weight: 500;
+  font-size: 0.9rem; /* Apple nav links are often slightly smaller */
+  transition: color 0.2s ease-in-out;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+}
+.nav-link:hover {
+    background-color: rgba(0,0,0,0.04);
+}
+[data-theme="dark"] .nav-link:hover {
+    background-color: rgba(255,255,255,0.06);
+}
+
+main.container {
+  flex-grow: 1;
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+}
+
+.section-title {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 1.75rem; /* Slightly smaller section titles */
+  margin-bottom: 1.5rem; /* Added spacing below section titles */
+}
+
+/* Hero Section */
+.hero-section h1 {
+  color: var(--text-primary);
+  font-weight: 600; 
+  font-size: 2.5rem; /* Adjusted hero title size */
+}
+@media (min-width: 768px) {
+  .hero-section h1 {
+    font-size: 3rem;
+  }
+  .section-title {
+    font-size: 2rem;
+  }
+}
+
+.hero-section p {
+  line-height: 1.7;
+  margin-bottom: 2.5rem; /* Increased spacing for hero paragraph */
+}
+
+.hero-section .profile-image-placeholder {
+  border: 3px solid var(--bg-secondary);
+  box-shadow: 0 0 0 3px var(--accent-color), var(--card-shadow);
+}
+
+/* Buttons */
+.app-button {
+  display: inline-block;
+  font-weight: 500;
+  text-align: center;
+  vertical-align: middle;
+  cursor: pointer;
+  border: 1px solid transparent;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  border-radius: 8px;
+  transition: all 0.15s ease-in-out;
+  text-decoration: none;
+}
+
+.app-button-primary {
+  color: #fff;
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+}
+
+.app-button-primary:hover {
+  background-color: var(--accent-hover);
+  border-color: var(--accent-hover);
+  filter: brightness(1.1);
+}
+
+.app-button-secondary {
+  color: var(--accent-color);
+  background-color: transparent;
+  border: 1.5px solid var(--accent-color);
+}
+
+.app-button-secondary:hover {
+  color: var(--text-primary);
+  background-color: rgba(0, 122, 255, 0.08);
+  border-color: var(--accent-color);
+}
+[data-theme="dark"] .app-button-secondary:hover {
+  color: var(--text-primary);
+  background-color: rgba(10, 132, 255, 0.12);
+}
+
+
+/* Skills Tags */
+.skill-tag {
+  font-weight: 500;
+  padding: 0.6rem 1rem; /* Increased padding */
+  border-radius: 16px;
+  /* Uses .bg-theme-accent-subtle and .text-theme-accent-strong from App.tsx */
+}
+
+[data-theme="dark"] .skill-tag {
+  color: var(--text-primary); /* Ensures high contrast for skill tag text in dark mode */
+}
+
+/* Project Cards */
+.project-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.75rem; /* Added overall padding */
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+.project-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+}
+[data-theme="dark"] .project-card:hover {
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+
+.project-card .project-image-placeholder {
+  border: 1px dashed var(--border-color);
+  border-radius: 11px 11px 0 0; /* Match card's border-radius if image is flush */
+}
+
+.project-card h3 {
+   color: var(--text-primary);
+   font-weight: 600;
+   margin-bottom: 1rem; /* Increased bottom margin */
+}
+
+.project-card p {
+  color: var(--text-secondary);
+  min-height: 3.2em; /* Adjust to fit ~2 lines of current font-size */
+  font-size: 0.9rem;
+  margin-bottom: 1.25rem; /* Increased bottom margin */
+}
+
+/* Footer */
+.app-footer {
+  border-top: 1px solid var(--border-color);
+  padding-top: 2.5rem;
+  padding-bottom: 2.5rem;
+}
+
+.footer-link {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  transition: color 0.2s ease-in-out;
+}
+
+.footer-link:hover {
+  color: var(--accent-color);
+  text-decoration: underline;
+}
+
+/* Dark Mode Toggle (copied from above, ensuring it uses theme vars) */
 .theme-toggle {
   display: flex;
   align-items: center;
   cursor: pointer;
-  margin-right: 1rem;
-  background: none;
+  /* margin-right: 1rem; /* Provided by Tailwind class in App.tsx */
+  background: transparent;
   border: none;
-  color: var(--text-secondary);
-  font-size: 1.25rem;
+  color: var(--text-secondary); 
+  font-size: 1.5rem;
+  padding: 0.5rem;
+  border-radius: 6px;
 }
 
 .theme-toggle:hover {
   color: var(--accent-color);
+  background-color: rgba(0,0,0,0.05);
+}
+[data-theme="dark"] .theme-toggle:hover {
+  background-color: rgba(255,255,255,0.08);
 }
 
-/* Background & Text Colors */
-.bg-gray-100 {
-  background-color: var(--bg-primary);
-}
 
-.text-gray-900 {
-  color: var(--text-primary);
-}
+/* Remove or comment out old Tailwind-like utilities if they are fully replaced */
+/* The original .btn, .btn-primary, .btn-secondary styles (lines ~350-376 in original file) 
+   are superseded by .app-button, .app-button-primary, .app-button-secondary. 
+   Consider removing them if no longer used directly. 
+   Many other utility classes defined from line 88 onwards might also be candidates for removal 
+   if all styling is now handled through semantic classes or direct variable usage in App.tsx. 
+*/
 
-.bg-white {
-  background-color: var(--bg-secondary);
-}
-
-.text-white {
-  color: #ffffff;
-}
-
-.text-gray-500 {
-  color: var(--text-muted);
-}
-
-.text-gray-600 {
-  color: var(--text-secondary);
-}
-
-.text-gray-700 {
-  color: var(--text-secondary);
-}
-
-.text-gray-800 {
-  color: var(--text-primary);
-}
-
-.text-blue-800 {
-  color: #3b82f6; /* Lighter in dark mode */
-}
-
-[data-theme="dark"] .text-blue-800 {
-  color: #60a5fa;
-}
-
-.bg-blue-100 {
-  background-color: rgba(59, 130, 246, 0.2);
-}
-
-.bg-blue-600 {
-  background-color: var(--accent-color);
-}
-
-.bg-blue-700 {
-  background-color: var(--accent-hover);
-}
-
-/* Flex & Grid Layouts */
-.flex {
-  display: flex;
-}
-
-.flex-col {
-  flex-direction: column;
-}
-
-.grid {
-  display: grid;
-}
-
-.grid-cols-1 {
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-}
-
-.grid-cols-2 {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.grid-cols-3 {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-@media (min-width: 768px) {
-  .md\:grid-cols-2 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  
-  .md\:grid-cols-3 {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-/* Spacing & Positioning */
-.mb-2 {
-  margin-bottom: 0.5rem;
-}
-
-.mb-4 {
-  margin-bottom: 1rem;
-}
-
-.mb-6 {
-  margin-bottom: 1.5rem;
-}
-
-.mb-8 {
-  margin-bottom: 2rem;
-}
-
-.mt-2 {
-  margin-top: 0.5rem;
-}
-
-.mt-4 {
-  margin-top: 1rem;
-}
+/* End of Cascade's App.css additions */
 
 .mt-10 {
   margin-top: 2.5rem;
