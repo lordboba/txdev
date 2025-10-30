@@ -1,6 +1,6 @@
 # Tyler Xiao
 
-San Diego native and UCLA Computer Science & Engineering student.
+San Diego native and UCLA CSE student.
 
 - 🎓 B.S. Computer Science & Engineering @ UCLA (Class of 2027)
 - 📍 From San Diego, now in Los Angeles
@@ -27,8 +27,12 @@ San Diego native and UCLA Computer Science & Engineering student.
 - Platforms: Discord, Vercel, Firebase, AWS, Google Cloud Platform
 - Interests: Agentic AI, trust & safety, backend systems, startups
 
-## Education
-- **UCLA** (2024 – 2027) — Computer Science & Engineering; ACM ICPC, Upsilon Pi Epsilon, Creative Labs, GLITCH @ UCLA, Symphony Orchestra, Jogging Club.
+## Misc Clubs + Involvements
+- **ACM ICPC** Competitive Team
+- Upsilon Pi Epsilon Induction & Membership Chair
+- GLITCH @ UCLA Projects Director
+- Cellist in  Symphony Orchestra
+- Jogging Club Runners
 
 ## Socials
 - GitHub: [@lordboba](https://github.com/lordboba)
