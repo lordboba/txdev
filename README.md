@@ -1,6 +1,6 @@
 # Tyler Xiao
 
-San Diego native and UCLA Computer Science & Engineering student building human-centered tools across trust & safety, agentic AI, and mobile experiences.
+San Diego native and UCLA Computer Science & Engineering student.
 
 - 🎓 B.S. Computer Science & Engineering @ UCLA (Class of 2027)
 - 📍 From San Diego, now in Los Angeles
