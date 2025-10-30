@@ -28,7 +28,6 @@ San Diego native and UCLA Computer Science & Engineering student.
 
 ## Education & Community
 - **UCLA Henry Samueli School of Engineering** (2024 – 2027) — Computer Science & Engineering; ACM ICPC, Upsilon Pi Epsilon, Creative Labs, GLITCH @ UCLA, Symphony Orchestra, Jogging Club.
-- **Del Norte High School** (2020 – 2024) — Graduated with 4.588 GPA; led Algorithmic Coding Club, Math Club, varsity athletics, and the Featheralist publication.
 
 ## Socials
 - GitHub: [@lordboba](https://github.com/lordboba)
