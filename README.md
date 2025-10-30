@@ -19,15 +19,16 @@ San Diego native and UCLA Computer Science & Engineering student.
 | [Wildfire Detection](https://github.com/lordboba/wildfire-detection) | ML pipeline that flags wildfire risk signals from air-quality telemetry. | TypeScript, TensorFlow, Node.js |
 | [DocuPilot](https://github.com/lordboba/docupilot) | AI Google Drive agent that executes file workflows from natural language chat. | FastAPI, LangChain, Gemini API, React |
 | [LectureGen](https://github.com/safinsingh/LectureGen) | Automated lecture builder delivering multi-modal lessons via instructor+TA agents. | Next.js, Fastify, LiveKit, Anthropic Claude API |
+| [Grow & Give](https://github.com/lordboba/PAR) | iOS application to improve personal productivity. | Swift, SwiftUI |
 
 ## Toolbox
-- Languages: TypeScript, Python, Swift, C++, MATLAB
-- Frameworks: Next.js, React, SwiftUI, Node.js
-- Platforms: Discord, Vercel, Firebase, AWS
-- Interests: Agentic AI, trust & safety, data-driven design, music + creative tooling
+- Languages: TypeScript, Python, Swift, C, C++, Java, JavaScript, MATLAB
+- Frameworks: Next.js, React, SwiftUI, Node.js, Vite
+- Platforms: Discord, Vercel, Firebase, AWS, Google Cloud Platform
+- Interests: Agentic AI, trust & safety, backend systems, startups
 
-## Education & Community
-- **UCLA Henry Samueli School of Engineering** (2024 – 2027) — Computer Science & Engineering; ACM ICPC, Upsilon Pi Epsilon, Creative Labs, GLITCH @ UCLA, Symphony Orchestra, Jogging Club.
+## Education
+- **UCLA** (2024 – 2027) — Computer Science & Engineering; ACM ICPC, Upsilon Pi Epsilon, Creative Labs, GLITCH @ UCLA, Symphony Orchestra, Jogging Club.
 
 ## Socials
 - GitHub: [@lordboba](https://github.com/lordboba)
