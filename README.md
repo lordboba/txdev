@@ -1,6 +1,6 @@
 # Tyler Xiao
 
-San Diego native and UCLA CSE student.
+San Diego native and UCLA CSE student. Ate a head of lettuce in 1 minute and 51 seconds.
 
 - 🎓 B.S. Computer Science & Engineering @ UCLA (Class of 2027)
 - 📍 From San Diego, now in Los Angeles
@@ -27,12 +27,19 @@ San Diego native and UCLA CSE student.
 - Platforms: Discord, Vercel, Firebase, AWS, Google Cloud Platform
 - Interests: Agentic AI, trust & safety, backend systems, startups
 
-## Misc Clubs + Involvements
-- **ACM ICPC** Competitive Team
-- Upsilon Pi Epsilon Induction & Membership Chair
-- GLITCH @ UCLA Projects Director
-- Cellist in  Symphony Orchestra
+## Misc Clubs + Involvement
+- **ACM ICPC** Competitive Team - UCLA ICPC Regional Team Competitor
+- Upsilon Pi Epsilon Induction & Membership Chair - Help induct members into honors society
+- GLITCH @ UCLA Projects Director - Leads projects and organization in GLITCH @ UCLA
+- Cellist in Symphony Orchestra
 - Jogging Club Runners
+
+## Awards
+- USACO Gold
+- Lettuce Eating Competition Winner
+- 4x AIME Qualifier
+- Virtual Global Hackathon Winner (2nd out of 2500+ Participants)
+- 3rd in the DTCC Code-A-Thon out of 2000+ Participants
 
 ## Socials
 - GitHub: [@lordboba](https://github.com/lordboba)
