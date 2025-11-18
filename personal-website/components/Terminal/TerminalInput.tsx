@@ -92,4 +92,3 @@ export const TerminalInput = ({ onCommand, disabled }: TerminalInputProps) => {
     </div>
   );
 };
-

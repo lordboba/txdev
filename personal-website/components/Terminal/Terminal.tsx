@@ -35,7 +35,10 @@ export const Terminal = ({ isFullScreen, onToggleFullScreen }: { isFullScreen?: 
   return (
     <div 
       className={`${containerClass} ${textClass} text-[#f0f0f0] font-mono flex flex-col overflow-hidden transition-all duration-300`} 
-      onClick={() => document.querySelector("input")?.focus()}
+      onClick={(e) => {
+        const input = e.currentTarget.querySelector("input");
+        if (input) (input as HTMLElement).focus();
+      }}
     >
       {/* Terminal Header / Controls */}
       <div className="flex items-center justify-between bg-[#1a1a1a] px-4 py-2 border-b border-[#333] shrink-0">
