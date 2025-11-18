@@ -17,6 +17,8 @@ const AVAILABLE_COMMANDS: CommandType[] = [
   "cat",
   "pwd",
   "whoami",
+  "echo",
+  "ascii",
 ];
 
 const FILES = Object.keys(INITIAL_FILES);

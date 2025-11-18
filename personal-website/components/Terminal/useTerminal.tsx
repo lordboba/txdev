@@ -75,6 +75,10 @@ export const useTerminal = () => {
               <span>List files</span>
               <span className="text-yellow-400">cat &lt;file&gt;</span>
               <span>Read a file</span>
+              <span className="text-yellow-400">echo &lt;text&gt;</span>
+              <span>Print text</span>
+              <span className="text-yellow-400">ascii</span>
+              <span>Show splash art</span>
               <span className="text-yellow-400">clear</span>
               <span>Clear terminal</span>
             </div>
@@ -182,6 +186,18 @@ export const useTerminal = () => {
           );
           break;
 
+        case "echo":
+          output = <span>{args.join(" ")}</span>;
+          break;
+
+        case "ascii":
+          output = (
+            <div className="whitespace-pre font-bold text-green-500">
+              {ASCII_ART}
+            </div>
+          );
+          break;
+
         case "cat":
           const fileName = args[0];
           if (!fileName) {
@@ -232,4 +248,3 @@ export const useTerminal = () => {
     isBooting,
   };
 };
-
