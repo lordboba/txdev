@@ -10,9 +10,6 @@ import {
 
 const navLinks = [
   { label: "About", href: "#about" },
-  { label: "Experience", href: "#experience" },
-  { label: "Projects", href: "#projects" },
-  { label: "Writing", href: "#writing" },
   { label: "Past Experience", href: "/past-experience" },
   { label: "Schedule a Call", href: "/schedule-a-call" },
 ];

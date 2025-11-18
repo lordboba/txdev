@@ -9,6 +9,7 @@ export const metadata: Metadata = {
 };
 
 const CALENDLY_URL = "https://calendly.com/yxiao1717/glitch-dev-team-officer-interview";
+const CALENDLY_EMBED_URL = `${CALENDLY_URL}?embed_domain=tylerxiao.com&embed_type=Inline`;
 
 export default function ScheduleCallPage() {
   return (
@@ -31,12 +32,10 @@ export default function ScheduleCallPage() {
         </p>
         <div className="mt-6 flex flex-wrap gap-4">
           <Link
-            href={CALENDLY_URL}
-            target="_blank"
-            rel="noreferrer"
+            href="#calendly"
             className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition hover:bg-primary/90"
           >
-            Open Calendly
+            Book now
           </Link>
           <Link
             href="mailto:tylerxiao@ucla.edu"
@@ -46,7 +45,14 @@ export default function ScheduleCallPage() {
           </Link>
         </div>
       </header>
-
+      <section id="calendly" className="pane overflow-hidden p-0">
+        <iframe
+          src={CALENDLY_EMBED_URL}
+          title="Schedule a call with Tyler Xiao"
+          className="h-[900px] w-full"
+          frameBorder="0"
+        />
+      </section>
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
         <div className="pane p-6">
           <h2 className="text-2xl font-semibold">What to expect</h2>
@@ -78,6 +84,8 @@ export default function ScheduleCallPage() {
           </p>
         </div>
       </section>
+
+      
 
       <footer className="pane p-5 text-sm text-muted">
         Leave a short brief or NDA request in the Calendly notes—I’ll respond before the call.
