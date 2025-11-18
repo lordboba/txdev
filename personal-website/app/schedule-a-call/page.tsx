@@ -26,8 +26,8 @@ export default function ScheduleCallPage() {
           15-minute chat to align on goals.
         </h1>
         <p className="mt-3 text-base text-muted">
-          We&apos;ll cover what you&apos;re building, how I can help, and immediate next steps.
-          Keep it lightweight—think of it as a quick code review for your roadmap.
+          We’ll cover what you’re building, how I can help, and immediate next steps. Keep it
+          lightweight—think of it as a quick code review for your roadmap.
         </p>
         <div className="mt-6 flex flex-wrap gap-4">
           <Link
@@ -80,7 +80,7 @@ export default function ScheduleCallPage() {
       </section>
 
       <footer className="pane p-5 text-sm text-muted">
-        Leave a short brief or NDA request in the Calendly notes—I&apos;ll respond before the call.
+        Leave a short brief or NDA request in the Calendly notes—I’ll respond before the call.
       </footer>
     </div>
   );

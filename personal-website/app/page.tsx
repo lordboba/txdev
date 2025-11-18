@@ -77,9 +77,7 @@ export default function Home() {
       <main className="mx-auto flex w-full max-w-5xl flex-col gap-20 px-5 py-16 sm:px-6">
         <section className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
           <div className="space-y-7">
-            <p className="font-mono text-sm text-muted">
-              {"// hi, i&apos;m tyler"}
-            </p>
+            <p className="font-mono text-sm text-muted">{"// hi, i’m tyler"}</p>
             <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
               Coding-first portfolio for a UCLA engineer building agentic AI and backend systems.
             </h1>
@@ -230,7 +228,7 @@ export default function Home() {
           <SectionHeading
             eyebrow="Contact"
             title="Ping me like a CLI command."
-            description="Email for details, or schedule a call to jam on internships, agentic AI, and backend infra."
+            description="Email for details, or schedule a call to jam on agentic AI, sports, and more."
           />
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
             <div className="pane p-6 font-mono text-sm">

@@ -98,7 +98,7 @@ export default function PastExperiencePage() {
       </section>
 
       <footer className="flex flex-wrap items-center justify-between gap-4 border-t border-divider pt-6 text-sm text-muted">
-        <span>Ready for collaborations and internships.</span>
+        <span>Talk with me. :D</span>
         <Link
           href="/schedule-a-call"
           className="font-semibold text-primary transition hover:text-primary/80"
