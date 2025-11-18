@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   contactLinks,
   experiences,
@@ -28,7 +29,7 @@ function SectionHeading({
   return (
     <div className="max-w-3xl">
       <p className="eyebrow">{eyebrow}</p>
-      <h2 className="mt-3 font-[family:var(--font-display),_Inter] text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+      <h2 className="mt-3 font-[family:var(--font-sans),_Inter] text-4xl font-medium tracking-tight text-foreground sm:text-5xl">
         {title}
       </h2>
       {description ? (
@@ -48,7 +49,7 @@ export default function Home() {
       <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col px-5 pb-20 pt-10 sm:px-8 lg:px-12">
         <header className="sticky top-4 z-20">
           <nav className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-surface/70 px-5 py-4 text-sm text-muted shadow-[var(--shadow-card)] backdrop-blur">
-            <div className="mr-4 font-[family:var(--font-display),_Inter] text-xs tracking-[0.5em] text-foreground">
+            <div className="mr-4 font-[family:var(--font-sans),_Inter] text-xs tracking-[0.5em] text-foreground">
               TYLER XIAO
             </div>
             <div className="flex flex-1 flex-wrap items-center gap-3 text-xs sm:text-[0.82rem]">
@@ -79,7 +80,7 @@ export default function Home() {
           <section className="grid gap-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
             <div>
               <p className="eyebrow">Product + Systems Engineer</p>
-              <h1 className="mt-6 font-[family:var(--font-display),_Inter] text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
+              <h1 className="mt-6 font-[family:var(--font-sans),_Inter] text-4xl font-medium leading-tight tracking-tight sm:text-6xl">
                 Crafting calm, resilient tools for ambitious teams.
               </h1>
               <p className="mt-6 max-w-2xl text-lg text-muted">
@@ -102,9 +103,15 @@ export default function Home() {
                   View Past Experience
                 </Link>
               </div>
+              
             </div>
+            <div className="mt-8">
+                <div className="h-[300px] w-[300px] overflow-hidden rounded-full">
+                  <Image src="/pfp.jpeg" alt="Tyler Xiao" width={300} height={300} className="h-full w-full object-cover" />
+                </div>
+              </div>
           </section>
-
+          
           <section id="about" className="grid gap-10 lg:grid-cols-2">
             <SectionHeading
               eyebrow="About Snapshot"
