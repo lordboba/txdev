@@ -152,10 +152,12 @@ export const contactLinks = [
 
 export const callHighlights = [
   "15-minute intro focused on your product goals.",
-  "Walk through prior experience relevant to your roadmap.",
-  "Identify a concrete next step (advisory, sprint, referral).",
+  "Walk through relevant experience and what you're building.",
+  "Identify a concrete next step (referral, collaboration, follow-up).",
 ];
 
 export const callSocialProof = [
-  "",
+  "SafetyKit — Agentic AI workflow intern",
+  "Scale AI — Technical Advisor Intern",
+  "UPE @ UCLA — Induction & Membership Chair",
 ];

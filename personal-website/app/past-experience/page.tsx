@@ -5,118 +5,89 @@ import { experiences, projects } from "@/lib/siteData";
 export const metadata: Metadata = {
   title: "Past Experience — Tyler Xiao",
   description:
-    "Detailed view of Tyler Xiao's work history, including timelines and selected project spotlights.",
+    "Detailed look at Tyler Xiao's experience, responsibilities, and related project write-ups.",
 };
 
-const focusAreas = Array.from(
-  new Set(experiences.flatMap((exp) => exp.focus)),
-).sort();
+const focusAreas = Array.from(new Set(experiences.flatMap((exp) => exp.focus))).sort();
 
 export default function PastExperiencePage() {
   return (
-    <div className="mx-auto max-w-5xl px-5 py-16 sm:px-8 lg:px-0">
+    <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-10 px-5 py-16 sm:px-6">
       <Link
         href="/"
-        className="inline-flex items-center gap-2 text-sm text-muted transition hover:text-foreground"
+        className="text-sm font-semibold text-muted transition hover:text-foreground"
       >
         ← Back to home
       </Link>
 
-      <header className="mt-8 space-y-5">
+      <header className="space-y-4">
         <p className="eyebrow">Past Experience</p>
-        <h1 className="font-[family:var(--font-display),_Inter] text-4xl font-semibold tracking-tight sm:text-5xl">
-          A closer look at the roles, projects, and systems I’ve shaped.
+        <h1 className="text-4xl font-semibold tracking-tight">
+          Commit history of roles and leadership.
         </h1>
         <p className="text-base text-muted">
-          From platform teams to zero-to-one spinouts, I gravitate toward
-          ambiguous problems that require tight feedback loops between product,
-          design, and engineering. Below is the expanded journey.
+          Deeper snippets from internships and campus orgs. Filters below mimic a command palette—toggle
+          through interests quickly.
         </p>
       </header>
 
-      <section className="mt-10 rounded-3xl border border-white/10 bg-surface/70 p-6 shadow-[var(--shadow-card)]">
-        <p className="text-sm uppercase tracking-[0.3em] text-muted">
-          Focus Areas
-        </p>
+      <section className="pane p-6">
+        <p className="text-xs uppercase tracking-[0.2em] text-muted">Focus Areas</p>
         <div className="mt-4 flex flex-wrap gap-2 text-sm">
           {focusAreas.map((area) => (
-            <span
-              key={area}
-              className="rounded-full border border-white/10 bg-background/40 px-4 py-2 text-muted"
-            >
+            <span key={area} className="rounded-full border border-divider px-4 py-2 text-muted">
               {area}
             </span>
           ))}
         </div>
       </section>
 
-      <section className="mt-12 space-y-8">
+      <section className="space-y-6">
         {experiences.map((exp) => (
-          <article
-            key={`${exp.company}-${exp.role}`}
-            className="rounded-3xl border border-white/10 bg-surface/70 p-8 shadow-[var(--shadow-card)]"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted">
+          <article key={`${exp.company}-${exp.role}`} className="pane p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-mono text-muted">
               <span>
                 {exp.start} — {exp.end}
               </span>
-              <span className="text-primary">{exp.company}</span>
+              <span>{exp.company}</span>
             </div>
             <h2 className="mt-4 text-2xl font-semibold">{exp.role}</h2>
-            <p className="mt-3 text-base text-muted">{exp.summary}</p>
-            <div className="mt-6 flex flex-wrap gap-2 text-xs">
+            <p className="mt-3 text-sm text-muted">{exp.summary}</p>
+            <div className="mt-4 flex flex-wrap gap-2 text-xs">
               {exp.focus.map((label) => (
-                <span
-                  key={label}
-                  className="rounded-full bg-primary/10 px-3 py-1 text-primary"
-                >
+                <span key={label} className="rounded-full border border-divider px-3 py-1 text-muted">
                   {label}
                 </span>
               ))}
-            </div>
-            <div className="mt-6 grid gap-4 text-sm text-muted sm:grid-cols-2">
-              <p>
-                Teams partnered with: platform engineering, research, design
-                systems, revenue analytics.
-              </p>
-              <p>
-                Outcomes: improved build times, shipped new collaboration
-                primitives, and built foundations for AI-assisted workflows.
-              </p>
             </div>
           </article>
         ))}
       </section>
 
-      <section className="mt-16 space-y-6">
+      <section className="space-y-4">
         <div>
           <p className="eyebrow">Projects</p>
-          <h2 className="mt-3 text-3xl font-semibold">Expanded write-ups</h2>
-          <p className="mt-3 text-sm text-muted">
-            Each project below ties directly to the roles above—hover for links
-            to demos and source.
+          <h2 className="mt-2 text-3xl font-semibold">Write-ups connected to the roles.</h2>
+          <p className="mt-2 text-sm text-muted">
+            Each tab mirrors an editor pane—open any link to jump into source, demos, or docs.
           </p>
         </div>
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-5 md:grid-cols-2">
           {projects.map((project) => (
             <Link
               key={project.title}
               href={project.link}
-              className="rounded-3xl border border-white/10 bg-surface/70 p-6 shadow-[var(--shadow-card)] transition hover:border-white/30"
+              className="pane block p-5 transition hover:-translate-y-0.5"
             >
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold">{project.title}</h3>
-                <span className="text-xs uppercase tracking-[0.3em] text-muted">
-                  {project.role}
-                </span>
+              <div className="flex items-center justify-between text-xs font-mono text-muted">
+                <span>{project.role}</span>
+                <span>{project.focus.join(" / ")}</span>
               </div>
-              <p className="mt-3 text-sm text-muted">{project.description}</p>
-              <div className="mt-4 flex flex-wrap gap-2 text-xs text-muted">
+              <h3 className="mt-3 text-xl font-semibold">{project.title}</h3>
+              <p className="mt-2 text-sm text-muted">{project.description}</p>
+              <div className="mt-3 flex flex-wrap gap-2 text-xs">
                 {project.tech.map((tech) => (
-                  <span
-                    key={tech}
-                    className="rounded-full bg-primary/10 px-3 py-1 text-primary"
-                  >
+                  <span key={tech} className="rounded-full border border-divider px-3 py-1 text-muted">
                     {tech}
                   </span>
                 ))}
@@ -126,11 +97,11 @@ export default function PastExperiencePage() {
         </div>
       </section>
 
-      <footer className="mt-20 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-6 text-sm text-muted">
-        <span>Let’s build something enduring.</span>
+      <footer className="flex flex-wrap items-center justify-between gap-4 border-t border-divider pt-6 text-sm text-muted">
+        <span>Ready for collaborations and internships.</span>
         <Link
           href="/schedule-a-call"
-          className="rounded-full border border-white/20 px-4 py-2 text-foreground transition hover:border-white/40"
+          className="font-semibold text-primary transition hover:text-primary/80"
         >
           Schedule a call →
         </Link>

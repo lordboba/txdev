@@ -5,75 +5,64 @@ import { callHighlights, callSocialProof } from "@/lib/siteData";
 export const metadata: Metadata = {
   title: "Schedule a Call — Tyler Xiao",
   description:
-    "Book a short introduction call with Tyler Xiao to discuss collaborations, advisory, and product engineering engagements.",
+    "Book a quick intro with Tyler Xiao to talk internships, AI agent work, or backend collaborations.",
 };
 
-// Update the URL below with the actual Calendly link once ready.
-const CALENDLY_URL = "https://calendly.com/yxiao1717/glitch-dev-team-officer-interview";
+const CALENDLY_URL = "https://calendly.com/tylerxiao/intro";
 
 export default function ScheduleCallPage() {
   return (
-    <div className="mx-auto flex min-h-screen max-w-5xl flex-col px-5 py-16 sm:px-8 lg:px-0">
+    <div className="mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-10 px-5 py-16 sm:px-6">
       <Link
         href="/"
-        className="inline-flex items-center gap-2 text-sm text-muted transition hover:text-foreground"
+        className="text-sm font-semibold text-muted transition hover:text-foreground"
       >
         ← Back to home
       </Link>
 
-      <header className="mt-8 rounded-3xl border border-white/10 bg-surface/70 p-8 shadow-[var(--shadow-card)]">
+      <header className="pane p-6">
         <p className="eyebrow">Schedule a call</p>
-        <h1 className="mt-4 font-[family:var(--font-display),_Inter] text-4xl font-semibold tracking-tight">
-          Let’s align on what you’re building.
+        <h1 className="mt-4 text-4xl font-semibold tracking-tight">
+          15-minute chat to align on goals.
         </h1>
-        <p className="mt-4 text-base text-muted">
-          A lightweight, 15-minute conversation to understand your goals, share
-          relevant past work, and map out a next step. Whether you need advisory
-          support or a build partner, you’ll leave with clarity.
+        <p className="mt-3 text-base text-muted">
+          We&apos;ll cover what you&apos;re building, how I can help, and immediate next steps.
+          Keep it lightweight—think of it as a quick code review for your roadmap.
         </p>
-        <div className="mt-8 flex flex-wrap gap-4">
+        <div className="mt-6 flex flex-wrap gap-4">
           <Link
             href={CALENDLY_URL}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-primary to-secondary px-6 py-3 font-medium text-background shadow-[0_20px_60px_rgba(124,92,252,0.35)] transition hover:opacity-90"
+            className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition hover:bg-primary/90"
           >
             Open Calendly
           </Link>
           <Link
-            href="mailto:hello@tylerxiao.com"
-            className="inline-flex items-center justify-center rounded-full border border-white/20 px-6 py-3 font-medium text-foreground transition hover:border-white/40"
+            href="mailto:tylerxiao@ucla.edu"
+            className="inline-flex items-center justify-center rounded-full border border-divider px-6 py-3 text-sm font-semibold text-foreground transition hover:border-foreground"
           >
             Email instead
           </Link>
         </div>
       </header>
 
-      <section className="mt-10 grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-3xl border border-white/10 bg-surface/70 p-8 shadow-[var(--shadow-card)]">
+      <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
+        <div className="pane p-6">
           <h2 className="text-2xl font-semibold">What to expect</h2>
-          <ul className="mt-4 space-y-4 text-sm text-muted">
+          <ul className="mt-4 space-y-3 text-sm text-muted">
             {callHighlights.map((highlight) => (
-              <li
-                key={highlight}
-                className="flex gap-3 rounded-2xl border border-white/5 bg-background/40 p-4"
-              >
-                <span className="text-secondary">●</span>
-                <span>{highlight}</span>
+              <li key={highlight} className="rounded-2xl border border-divider bg-background/60 px-4 py-3">
+                {highlight}
               </li>
             ))}
           </ul>
         </div>
-        <div className="rounded-3xl border border-white/10 bg-surface/50 p-8 shadow-[var(--shadow-card)]">
-          <h3 className="text-sm uppercase tracking-[0.3em] text-muted">
-            Social proof
-          </h3>
-          <div className="mt-4 space-y-4">
+        <div className="pane p-6">
+          <h3 className="text-xs uppercase tracking-[0.2em] text-muted">Social proof</h3>
+          <div className="mt-4 space-y-3 text-sm text-muted">
             {callSocialProof.map((item) => (
-              <div
-                key={item}
-                className="rounded-2xl border border-white/5 bg-background/40 p-4 text-sm text-muted"
-              >
+              <div key={item} className="rounded-2xl border border-divider bg-background/80 px-4 py-3">
                 {item}
               </div>
             ))}
@@ -81,8 +70,8 @@ export default function ScheduleCallPage() {
           <p className="mt-6 text-xs text-muted">
             Questions before booking?{" "}
             <Link
-              href="mailto:hello@tylerxiao.com"
-              className="text-foreground underline-offset-4 hover:underline"
+              href="mailto:tylerxiao@ucla.edu"
+              className="font-semibold text-primary hover:text-primary/80"
             >
               Send a note.
             </Link>
@@ -90,9 +79,8 @@ export default function ScheduleCallPage() {
         </div>
       </section>
 
-      <footer className="mt-16 rounded-3xl border border-white/10 bg-surface/60 p-6 text-sm text-muted shadow-[var(--shadow-card)]">
-        Need a particular NDA or briefing doc? Mention it in the Calendly note,
-        and I’ll follow up before our chat.
+      <footer className="pane p-5 text-sm text-muted">
+        Leave a short brief or NDA request in the Calendly notes—I&apos;ll respond before the call.
       </footer>
     </div>
   );

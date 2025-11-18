@@ -1,18 +1,18 @@
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter+Tight:wght@600;700&family=Inter:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;500&display=swap");
 @import "tailwindcss";
 
 :root {
-  color-scheme: dark;
-  --background: #05060a;
-  --surface: #0f1119;
-  --foreground: #f5f6ff;
-  --muted: #8b93a7;
-  --primary: #7c5cfc;
-  --secondary: #56d364;
-  --divider: rgba(255, 255, 255, 0.08);
-  --font-display: "Inter Tight", "Inter", "Helvetica Neue", system-ui, sans-serif;
-  --font-sans: "Inter", "Helvetica Neue", system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", "SFMono-Regular", Menlo, monospace;
+  color-scheme: light;
+  --background: #f7f5ef;
+  --surface: #ffffff;
+  --foreground: #1f2933;
+  --muted: #596270;
+  --primary: #0b57d0;
+  --secondary: #12b76a;
+  --divider: rgba(15, 23, 42, 0.14);
+  --code: #f1f3f9;
+  --font-sans: "Google Sans Code", "Space Grotesk", "Inter", "Helvetica Neue", system-ui, sans-serif;
+  --font-mono: "Google Sans Code", "Space Mono", "IBM Plex Mono", Menlo, monospace;
 }
 
 @theme inline {
@@ -23,10 +23,10 @@
   --color-primary: var(--primary);
   --color-secondary: var(--secondary);
   --color-divider: var(--divider);
-  --font-display: var(--font-display);
+  --color-code: var(--code);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
-  --shadow-card: 0 20px 60px rgba(0, 0, 0, 0.45);
+  --shadow-card: 0 12px 35px rgba(15, 23, 42, 0.08);
 }
 
 * {
@@ -34,12 +34,11 @@
 }
 
 body {
-  background: radial-gradient(circle at top left, rgba(124, 92, 252, 0.12), transparent 40%),
-    radial-gradient(circle at bottom right, rgba(86, 211, 100, 0.1), transparent 35%),
-    var(--background);
+  background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
 a {
@@ -47,10 +46,22 @@ a {
   text-decoration: none;
 }
 
+::selection {
+  background: rgba(11, 87, 208, 0.12);
+  color: var(--foreground);
+}
+
 .eyebrow {
   font-family: var(--font-mono), monospace;
   font-size: 0.75rem;
-  letter-spacing: 0.25em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--muted);
+}
+
+.pane {
+  border: 1px solid var(--divider);
+  border-radius: 1.5rem;
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
 }
