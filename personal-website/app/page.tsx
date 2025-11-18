@@ -80,17 +80,16 @@ export default function Home() {
           <div className="space-y-7">
             <p className="font-mono text-sm text-muted">{"// hi, i’m tyler"}</p>
             <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-              Coding-first portfolio for a UCLA engineer building agentic AI and backend systems.
+              UCLA CSE student building agentic AI and backend systems.
             </h1>
             <p className="text-base text-muted">
-              From trust & safety automations to multiplayer web tools, I like problems that feel
-              like debugging production systems—tight feedback loops, crisp interfaces, and
-              measurable outcomes.
+              From trust & safety automations to multiplayer card games, I like solving challenging problems, building
+              efficient backend systems, and automating repetitive tasks.
             </p>
             <div className="flex flex-wrap gap-4">
               <Link
                 href="#contact"
-                className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition hover:bg-primary/90"
+                className="inline-flex items-center justify-center rounded-full bg-secondary px-6 py-3 text-sm font-semibold text-white transition hover:bg-secondary/90"
               >
                 Contact
               </Link>
