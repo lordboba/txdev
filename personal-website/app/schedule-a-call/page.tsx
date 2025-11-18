@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     "Book a quick intro with Tyler Xiao to talk internships, AI agent work, or backend collaborations.",
 };
 
-const CALENDLY_URL = "https://calendly.com/tylerxiao/intro";
+const CALENDLY_URL = "https://calendly.com/yxiao1717/glitch-dev-team-officer-interview";
 
 export default function ScheduleCallPage() {
   return (
