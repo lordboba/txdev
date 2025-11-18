@@ -11,7 +11,8 @@ export type CommandType =
   | "cat"
   | "pwd"
   | "whoami"
-  | "echo";
+  | "echo"
+  | "ascii";
 
 export interface HistoryItem {
   id: string;

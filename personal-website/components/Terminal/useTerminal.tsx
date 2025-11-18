@@ -119,7 +119,7 @@ export const useTerminal = () => {
                     </a>
                     <span className="text-xs text-gray-500">({project.role})</span>
                   </div>
-                  <p className="text-sm">{project.description}</p>
+                  <p>{project.description}</p>
                   <div className="flex gap-2 mt-1">
                     {project.tech.map((t, j) => (
                       <span key={j} className="text-xs text-yellow-600 bg-yellow-900/20 px-1 rounded">
@@ -143,8 +143,8 @@ export const useTerminal = () => {
                     <span className="font-bold text-green-400">{exp.company}</span>
                     <span className="text-xs text-gray-500">{exp.start} - {exp.end}</span>
                   </div>
-                  <p className="text-sm text-gray-300">{exp.role}</p>
-                  <p className="text-sm italic mt-1">{exp.summary}</p>
+                  <p className="text-gray-300">{exp.role}</p>
+                  <p className="italic mt-1">{exp.summary}</p>
                 </div>
               ))}
             </div>

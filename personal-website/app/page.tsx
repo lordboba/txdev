@@ -7,6 +7,7 @@ import {
   quickFacts,
   writings,
 } from "@/lib/siteData";
+import { HomeTerminal } from "@/components/Terminal/HomeTerminal";
 
 const navLinks = [
   { label: "About", href: "#about" },
@@ -99,18 +100,7 @@ export default function Home() {
             </div>
           </div>
           <div className="space-y-4">
-            <div className="pane p-6 font-mono text-sm">
-              <div className="mb-4 flex items-center gap-2 text-muted">
-                <span className="h-2 w-2 rounded-full bg-secondary" />
-                <span className="text-xs uppercase tracking-[0.2em]">terminal</span>
-              </div>
-              <div className="rounded-2xl bg-color-code px-4 py-5 text-xs leading-relaxed text-foreground">
-                <p className="text-muted">$ whoami</p>
-                <p>Tyler Xiao — builder of agentic AI + backend systems</p>
-                <p className="mt-4 text-muted">$ cat profile.ts</p>
-                <pre className="mt-2 whitespace-pre-wrap text-[0.8rem]">{heroSnippet}</pre>
-              </div>
-            </div>
+            <HomeTerminal />
             <div className="pane flex items-center gap-4 p-4">
               <Image
                 src="/pfp.jpeg"

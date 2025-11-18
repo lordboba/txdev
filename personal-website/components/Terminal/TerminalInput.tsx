@@ -74,7 +74,7 @@ export const TerminalInput = ({ onCommand, disabled }: TerminalInputProps) => {
   };
 
   return (
-    <div className="flex items-center gap-2 text-lg font-mono">
+    <div className="flex items-center gap-2 font-mono">
       <span className="text-green-500">➜</span>
       <span className="text-blue-400">~</span>
       <input
