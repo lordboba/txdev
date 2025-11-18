@@ -134,6 +134,7 @@ export const contactLinks = [
   { label: "GitHub", href: "https://github.com/lordboba" },
   { label: "LinkedIn", href: "https://www.linkedin.com/in/tyler-xiao" },
   { label: "Past Experience", href: "/past-experience" },
+  { label: "Twitter", href: "https://x.com/txiaotech"}
 ];
 
 export const callHighlights = [
