@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   contactLinks,
@@ -101,16 +102,35 @@ export default function Home() {
               </Link>
             </div>
           </div>
-          <div className="pane p-6 font-mono text-sm">
-            <div className="mb-4 flex items-center gap-2 text-muted">
-              <span className="h-2 w-2 rounded-full bg-secondary" />
-              <span className="text-xs uppercase tracking-[0.2em]">terminal</span>
+          <div className="space-y-4">
+            <div className="pane p-6 font-mono text-sm">
+              <div className="mb-4 flex items-center gap-2 text-muted">
+                <span className="h-2 w-2 rounded-full bg-secondary" />
+                <span className="text-xs uppercase tracking-[0.2em]">terminal</span>
+              </div>
+              <div className="rounded-2xl bg-color-code px-4 py-5 text-xs leading-relaxed text-foreground">
+                <p className="text-muted">$ whoami</p>
+                <p>Tyler Xiao — builder of agentic AI + backend systems</p>
+                <p className="mt-4 text-muted">$ cat profile.ts</p>
+                <pre className="mt-2 whitespace-pre-wrap text-[0.8rem]">{heroSnippet}</pre>
+              </div>
             </div>
-            <div className="rounded-2xl bg-color-code px-4 py-5 text-xs leading-relaxed text-foreground">
-              <p className="text-muted">$ whoami</p>
-              <p>Tyler Xiao — builder of agentic AI + backend systems</p>
-              <p className="mt-4 text-muted">$ cat profile.ts</p>
-              <pre className="mt-2 whitespace-pre-wrap text-[0.8rem]">{heroSnippet}</pre>
+            <div className="pane flex items-center gap-4 p-4">
+              <Image
+                src="/pfp.jpeg"
+                alt="Portrait of Tyler Xiao"
+                width={120}
+                height={120}
+                className="h-24 w-24 rounded-2xl object-cover"
+                priority
+              />
+              <div>
+                <p className="text-sm font-semibold">Tyler Xiao</p>
+                <p className="text-sm text-muted">
+                  UCLA CSE ’27 student building AI agents, backend systems, and tools for
+                  communities.
+                </p>
+              </div>
             </div>
           </div>
         </section>

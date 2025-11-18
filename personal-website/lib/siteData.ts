@@ -112,25 +112,11 @@ export const projects: Project[] = [
 
 export const writings: Writing[] = [
   {
-    title: "Balancing Craft and Velocity in High-Stakes Roadmaps",
+    title: "Coming Soon!",
     summary:
-      "Practical framework for pairing engineering rigor with product discovery when timelines are tight.",
-    date: "Dec 2024",
-    link: "https://tylerxiao.com/writing/craft-and-velocity",
-  },
-  {
-    title: "Patterns for Human + AI Collaboration in Ops Tools",
-    summary:
-      "Field notes on when to trust automation, when to defer to humans, and how to keep both informed.",
-    date: "Sep 2024",
-    link: "https://tylerxiao.com/writing/human-ai-patterns",
-  },
-  {
-    title: "How We Built an Accessible Design Token Pipeline",
-    summary:
-      "Deep dive on the tooling that keeps 14 product teams aligned on brand and accessibility requirements.",
-    date: "Jun 2024",
-    link: "https://tylerxiao.com/writing/design-token-pipeline",
+      "Will add technical writing soon.",
+    date: "November 2025",
+    link: "",
   },
 ];
 
