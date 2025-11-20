@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, KeyboardEvent } from "react";
-import { CommandType, INITIAL_FILES } from "./types";
+import { useEffect, useRef, useState, KeyboardEvent } from 'react';
+import { CommandType, INITIAL_FILES } from './types';
 
 interface TerminalInputProps {
   onCommand: (command: string) => void;
@@ -7,31 +7,31 @@ interface TerminalInputProps {
 }
 
 const AVAILABLE_COMMANDS: CommandType[] = [
-  "help",
-  "about",
-  "projects",
-  "experience",
-  "contact",
-  "clear",
-  "ls",
-  "cat",
-  "pwd",
-  "whoami",
-  "echo",
-  "ascii",
+  'help',
+  'about',
+  'projects',
+  'experience',
+  'contact',
+  'clear',
+  'ls',
+  'cat',
+  'pwd',
+  'whoami',
+  'echo',
+  'ascii',
 ];
 
 const FILES = Object.keys(INITIAL_FILES);
 
 export const TerminalInput = ({ onCommand, disabled }: TerminalInputProps) => {
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Keep focus on input
   useEffect(() => {
     const handleClick = () => inputRef.current?.focus();
-    document.addEventListener("click", handleClick);
-    return () => document.removeEventListener("click", handleClick);
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
   }, []);
 
   useEffect(() => {
@@ -41,30 +41,30 @@ export const TerminalInput = ({ onCommand, disabled }: TerminalInputProps) => {
   }, [disabled]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       onCommand(input);
-      setInput("");
-    } else if (e.key === "Tab") {
+      setInput('');
+    } else if (e.key === 'Tab') {
       e.preventDefault();
       handleTabCompletion();
     }
   };
 
   const handleTabCompletion = () => {
-    const parts = input.split(" ");
-    
+    const parts = input.split(' ');
+
     // Complete command
     if (parts.length === 1) {
       const current = parts[0].toLowerCase();
       const matches = AVAILABLE_COMMANDS.filter((cmd) =>
-        cmd.startsWith(current)
+        cmd.startsWith(current),
       );
       if (matches.length === 1) {
-        setInput(matches[0] + " ");
+        setInput(matches[0] + ' ');
       }
     }
     // Complete filename (for cat)
-    else if (parts.length === 2 && parts[0] === "cat") {
+    else if (parts.length === 2 && parts[0] === 'cat') {
       const current = parts[1];
       const matches = FILES.filter((file) => file.startsWith(current));
       if (matches.length === 1) {

@@ -1,15 +1,15 @@
-import Image from "next/image";
-import Link from "next/link";
+import Image from 'next/image';
+import Link from 'next/link';
 import {
   contactLinks,
   experiences,
   projects,
   quickFacts,
   writings,
-} from "@/lib/siteData";
-import { HomeTerminal } from "@/components/Terminal/HomeTerminal";
-import { UserCountTracker } from "@/components/UserCountTracker";
-import { NavBar } from "@/components/NavBar";
+} from '@/lib/siteData';
+import { HomeTerminal } from '@/components/Terminal/HomeTerminal';
+import { UserCountTracker } from '@/components/UserCountTracker';
+import { NavBar } from '@/components/NavBar';
 
 function SectionHeading({
   eyebrow,
@@ -41,13 +41,14 @@ export default function Home() {
       <main className="mx-auto flex w-full max-w-5xl flex-col gap-20 px-5 py-16 sm:px-6">
         <section className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
           <div className="space-y-7">
-            <p className="font-mono text-sm text-muted">{"// hi, i’m tyler"}</p>
+            <p className="font-mono text-sm text-muted">{'// hi, i’m tyler'}</p>
             <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
               UCLA CSE student building agentic AI and backend systems.
             </h1>
             <p className="text-base text-muted">
-              From trust & safety automations to multiplayer card games, I like solving challenging problems, building
-              efficient backend systems, and automating repetitive tasks.
+              From trust & safety automations to multiplayer card games, I like
+              solving challenging problems, building efficient backend systems,
+              and automating repetitive tasks.
             </p>
             <div className="flex flex-wrap gap-4">
               <Link
@@ -78,15 +79,18 @@ export default function Home() {
               <div>
                 <p className="text-sm font-semibold">Tyler Xiao</p>
                 <p className="text-sm text-muted">
-                  UCLA CSE ’27 student building AI agents, backend systems, and tools for
-                  communities.
+                  UCLA CSE ’27 student building AI agents, backend systems, and
+                  tools for communities.
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        <section id="about" className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <section
+          id="about"
+          className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]"
+        >
           <SectionHeading
             eyebrow="About"
             title="About Me"
@@ -96,7 +100,9 @@ export default function Home() {
             <dl className="grid gap-6">
               {quickFacts.map((fact) => (
                 <div key={fact.label}>
-                  <dt className="text-xs uppercase tracking-[0.2em] text-muted">{fact.label}</dt>
+                  <dt className="text-xs uppercase tracking-[0.2em] text-muted">
+                    {fact.label}
+                  </dt>
                   <dd className="mt-2 text-base font-semibold">{fact.value}</dd>
                 </div>
               ))}
@@ -119,7 +125,7 @@ export default function Home() {
                     {exp.start} — {exp.end}
                   </span>
                   <span>/</span>
-                  <span>{exp.focus.join(", ")}</span>
+                  <span>{exp.focus.join(', ')}</span>
                 </div>
                 <div className="pane p-5">
                   <h3 className="text-xl font-semibold">
@@ -146,16 +152,24 @@ export default function Home() {
           />
           <div className="grid gap-6 md:grid-cols-2">
             {projects.map((project) => (
-              <article key={project.title} className="pane flex h-full flex-col p-5">
+              <article
+                key={project.title}
+                className="pane flex h-full flex-col p-5"
+              >
                 <div className="flex items-center justify-between text-xs font-mono text-muted">
                   <span>{project.role}</span>
-                  <span>{project.focus.join(" / ")}</span>
+                  <span>{project.focus.join(' / ')}</span>
                 </div>
                 <h3 className="mt-3 text-xl font-semibold">{project.title}</h3>
-                <p className="mt-2 flex-1 text-sm text-muted">{project.description}</p>
+                <p className="mt-2 flex-1 text-sm text-muted">
+                  {project.description}
+                </p>
                 <div className="mt-4 flex flex-wrap gap-2 text-xs">
                   {project.tech.map((tech) => (
-                    <span key={tech} className="rounded-full border border-divider px-3 py-1 text-muted">
+                    <span
+                      key={tech}
+                      className="rounded-full border border-divider px-3 py-1 text-muted"
+                    >
                       {tech}
                     </span>
                   ))}
@@ -219,7 +233,9 @@ export default function Home() {
               </Link>
             </div>
             <div className="pane p-6">
-              <h3 className="text-xs uppercase tracking-[0.2em] text-muted">Elsewhere</h3>
+              <h3 className="text-xs uppercase tracking-[0.2em] text-muted">
+                Elsewhere
+              </h3>
               <div className="mt-4 space-y-3 text-sm">
                 {contactLinks.map((link) => (
                   <Link

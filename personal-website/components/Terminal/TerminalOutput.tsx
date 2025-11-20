@@ -1,4 +1,4 @@
-import { HistoryItem } from "./types";
+import { HistoryItem } from './types';
 
 interface TerminalOutputProps {
   history: HistoryItem[];
@@ -24,4 +24,3 @@ export const TerminalOutput = ({ history }: TerminalOutputProps) => {
     </div>
   );
 };
-

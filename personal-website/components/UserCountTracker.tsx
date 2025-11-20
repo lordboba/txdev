@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
 type CountResponse = {
   count: number | null;
@@ -17,7 +17,7 @@ export function UserCountTracker() {
 
     const incrementAndFetch = async () => {
       try {
-        const response = await fetch("/api/user-count", { method: "POST" });
+        const response = await fetch('/api/user-count', { method: 'POST' });
         const data = (await response.json()) as CountResponse;
 
         if (cancelled) return;
@@ -25,7 +25,7 @@ export function UserCountTracker() {
         if (!response.ok || data.error) {
           setError(
             data.error ??
-              "Visit counter is temporarily unavailable. Please try again soon.",
+              'Visit counter is temporarily unavailable. Please try again soon.',
           );
           setCount(null);
           return;
@@ -35,7 +35,9 @@ export function UserCountTracker() {
       } catch (err) {
         if (!cancelled) {
           setError(
-            err instanceof Error ? err.message : "Unable to update visitor count.",
+            err instanceof Error
+              ? err.message
+              : 'Unable to update visitor count.',
           );
         }
       } finally {
@@ -53,7 +55,7 @@ export function UserCountTracker() {
   }, []);
 
   const displayValue =
-    loading && count === null ? "…" : count?.toLocaleString() ?? "—";
+    loading && count === null ? '…' : (count?.toLocaleString() ?? '—');
 
   return (
     <div className="pane flex flex-col gap-2 p-5">
@@ -64,7 +66,7 @@ export function UserCountTracker() {
       <p className="text-sm text-muted">
         {error
           ? error
-          : "Live counter increments once per visit and persists in Redis."}
+          : 'Live counter increments once per visit and persists in Redis.'}
       </p>
     </div>
   );

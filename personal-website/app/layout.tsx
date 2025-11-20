@@ -1,5 +1,5 @@
-import type { Metadata } from "next";
-import "./globals.css";
+import type { Metadata } from 'next';
+import './globals.css';
 
 export const metadata: Metadata = {
   title: "Tyler Xiao's Portfolio",
@@ -9,25 +9,25 @@ export const metadata: Metadata = {
     title: "Tyler Xiao's Portfolio",
     description:
       "Explore Tyler Xiao's experience, projects, and ways to collaborate on AI agents and backend systems.",
-    siteName: "Tyler Xiao",
+    siteName: 'Tyler Xiao',
     images: [
       {
-        url: "/lordboba.png",
+        url: '/lordboba.png',
         width: 1200,
         height: 1200,
-        alt: "Tyler Xiao avatar",
+        alt: 'Tyler Xiao avatar',
       },
     ],
   },
   twitter: {
-    card: "summary_large_image",
+    card: 'summary_large_image',
     title: "Tyler Xiao's Portfolio",
     description:
       "Explore Tyler Xiao's experience, projects, and ways to collaborate on AI agents and backend systems.",
-    images: ["/lordboba.png"],
+    images: ['/lordboba.png'],
   },
   icons: {
-    icon: "/lordboba.png",
+    icon: '/lordboba.png',
   },
 };
 

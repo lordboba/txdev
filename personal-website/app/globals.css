@@ -1,5 +1,5 @@
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;500&display=swap");
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;500&display=swap');
+@import 'tailwindcss';
 
 :root {
   color-scheme: light;
@@ -11,8 +11,11 @@
   --secondary: #12b76a;
   --divider: rgba(15, 23, 42, 0.14);
   --code: #f1f3f9;
-  --font-sans: "Google Sans Code", "Space Grotesk", "Inter", "Helvetica Neue", system-ui, sans-serif;
-  --font-mono: "Google Sans Code", "Space Mono", "IBM Plex Mono", Menlo, monospace;
+  --font-sans:
+    'Google Sans Code', 'Space Grotesk', 'Inter', 'Helvetica Neue', system-ui,
+    sans-serif;
+  --font-mono:
+    'Google Sans Code', 'Space Mono', 'IBM Plex Mono', Menlo, monospace;
 }
 
 @theme inline {

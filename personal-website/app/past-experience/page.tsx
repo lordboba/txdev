@@ -1,14 +1,16 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { experiences, projects } from "@/lib/siteData";
-import { NavBar } from "@/components/NavBar";
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { experiences, projects } from '@/lib/siteData';
+import { NavBar } from '@/components/NavBar';
 export const metadata: Metadata = {
-  title: "Past Experience — Tyler Xiao",
+  title: 'Past Experience — Tyler Xiao',
   description:
     "Detailed look at Tyler Xiao's experience, responsibilities, and related project write-ups.",
 };
 
-const focusAreas = Array.from(new Set(experiences.flatMap((exp) => exp.focus))).sort();
+const focusAreas = Array.from(
+  new Set(experiences.flatMap((exp) => exp.focus)),
+).sort();
 
 export default function PastExperiencePage() {
   return (
@@ -20,7 +22,7 @@ export default function PastExperiencePage() {
       >
         ← Back to home
       </Link>
-      
+
       <header className="space-y-4">
         <p className="eyebrow">Past Experience</p>
         <h1 className="text-4xl font-semibold tracking-tight">
@@ -32,10 +34,15 @@ export default function PastExperiencePage() {
       </header>
 
       <section className="pane p-6">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted">Focus Areas</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-muted">
+          Focus Areas
+        </p>
         <div className="mt-4 flex flex-wrap gap-2 text-sm">
           {focusAreas.map((area) => (
-            <span key={area} className="rounded-full border border-divider px-4 py-2 text-muted">
+            <span
+              key={area}
+              className="rounded-full border border-divider px-4 py-2 text-muted"
+            >
               {area}
             </span>
           ))}
@@ -55,7 +62,10 @@ export default function PastExperiencePage() {
             <p className="mt-3 text-sm text-muted">{exp.summary}</p>
             <div className="mt-4 flex flex-wrap gap-2 text-xs">
               {exp.focus.map((label) => (
-                <span key={label} className="rounded-full border border-divider px-3 py-1 text-muted">
+                <span
+                  key={label}
+                  className="rounded-full border border-divider px-3 py-1 text-muted"
+                >
                   {label}
                 </span>
               ))}
@@ -81,13 +91,16 @@ export default function PastExperiencePage() {
             >
               <div className="flex items-center justify-between text-xs font-mono text-muted">
                 <span>{project.role}</span>
-                <span>{project.focus.join(" / ")}</span>
+                <span>{project.focus.join(' / ')}</span>
               </div>
               <h3 className="mt-3 text-xl font-semibold">{project.title}</h3>
               <p className="mt-2 text-sm text-muted">{project.description}</p>
               <div className="mt-3 flex flex-wrap gap-2 text-xs">
                 {project.tech.map((tech) => (
-                  <span key={tech} className="rounded-full border border-divider px-3 py-1 text-muted">
+                  <span
+                    key={tech}
+                    className="rounded-full border border-divider px-3 py-1 text-muted"
+                  >
                     {tech}
                   </span>
                 ))}

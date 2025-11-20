@@ -1,18 +1,18 @@
-import { ReactNode } from "react";
+import { ReactNode } from 'react';
 
 export type CommandType =
-  | "help"
-  | "about"
-  | "projects"
-  | "experience"
-  | "contact"
-  | "clear"
-  | "ls"
-  | "cat"
-  | "pwd"
-  | "whoami"
-  | "echo"
-  | "ascii";
+  | 'help'
+  | 'about'
+  | 'projects'
+  | 'experience'
+  | 'contact'
+  | 'clear'
+  | 'ls'
+  | 'cat'
+  | 'pwd'
+  | 'whoami'
+  | 'echo'
+  | 'ascii';
 
 export interface HistoryItem {
   id: string;
@@ -22,23 +22,23 @@ export interface HistoryItem {
 
 export interface FileSystem {
   [key: string]: {
-    type: "file" | "directory";
+    type: 'file' | 'directory';
     content?: string;
   };
 }
 
 export const INITIAL_FILES: FileSystem = {
-  "resume.pdf": {
-    type: "file",
-    content: "Redirecting to resume...",
+  'resume.pdf': {
+    type: 'file',
+    content: 'Redirecting to resume...',
   },
-  "README.md": {
-    type: "file",
-    content: "# Tyler Xiao\nWelcome to my terminal portfolio!\nFeel free to explore.",
+  'README.md': {
+    type: 'file',
+    content:
+      '# Tyler Xiao\nWelcome to my terminal portfolio!\nFeel free to explore.',
   },
-  "secret.txt": {
-    type: "file",
+  'secret.txt': {
+    type: 'file',
     content: "You found the secret file! Here's a cookie: 🍪",
   },
 };
-
