@@ -27,7 +27,11 @@ export const metadata: Metadata = {
     images: ['/lordboba.png'],
   },
   icons: {
-    icon: '/lordboba.png',
+    icon: [
+      { rel: 'icon', url: '/icon.png' },
+      { rel: 'apple-touch-icon', url: '/icon.png' },
+      { rel: 'shortcut icon', url: '/icon.png' },
+    ],
   },
 };
 
