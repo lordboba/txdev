@@ -78,9 +78,7 @@ export default function PastExperiencePage() {
         <div>
           <p className="eyebrow">Projects</p>
           <h2 className="mt-2 text-3xl font-semibold">Projects</h2>
-          <p className="mt-2 text-sm text-muted">
-            Click any project!
-          </p>
+          <p className="mt-2 text-sm text-muted">Click any project!</p>
         </div>
         <div className="grid gap-5 md:grid-cols-2">
           {projects.map((project) => (

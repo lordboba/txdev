@@ -121,7 +121,10 @@ export const writings: Writing[] = [
 
 export const quickFacts = [
   { label: 'Location', value: 'San Diego native · based in Los Angeles' },
-  { label: 'Education', value: "UCLA CS '27 student, Technical Breadth in ECE" },
+  {
+    label: 'Education',
+    value: "UCLA CS '27 student, Technical Breadth in ECE",
+  },
   {
     label: 'Focus',
     value: 'AI agents, backend systems, trust & safety automation',
