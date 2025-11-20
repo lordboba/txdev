@@ -94,7 +94,7 @@ export const useTerminal = () => {
         case 'whoami':
           output = (
             <div className="space-y-2">
-              <p>Hello! I'm Tyler Xiao.</p>
+              <p>Hello! I&apos;m Tyler Xiao.</p>
               <ul className="list-disc pl-4">
                 {quickFacts.map((fact, i) => (
                   <li key={i}>
@@ -112,7 +112,9 @@ export const useTerminal = () => {
         case 'projects':
           output = (
             <div className="space-y-4">
-              <p className="text-gray-400">Here are some things I've built:</p>
+              <p className="text-gray-400">
+                Here are some things I&apos;ve built:
+              </p>
               {projects.map((project, i) => (
                 <div key={i} className="pl-2 border-l-2 border-blue-500">
                   <div className="flex items-baseline gap-2">
@@ -170,7 +172,7 @@ export const useTerminal = () => {
         case 'contact':
           output = (
             <div className="space-y-2">
-              <p>Let's connect!</p>
+              <p>Let&apos;s connect!</p>
               <div className="grid grid-cols-[100px_1fr] gap-1">
                 {contactLinks.map((link, i) => (
                   <div key={i} className="contents">
