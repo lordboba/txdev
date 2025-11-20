@@ -8,18 +8,13 @@ import {
   writings,
 } from "@/lib/siteData";
 import { HomeTerminal } from "@/components/Terminal/HomeTerminal";
+import { UserCountTracker } from "@/components/UserCountTracker";
 
 const navLinks = [
   { label: "About", href: "#about" },
   { label: "Past Experience", href: "/past-experience" },
   { label: "Schedule a Call", href: "/schedule-a-call" },
 ];
-
-const heroSnippet = `const tyler = {
-  school: "UCLA CSE '27",
-  focus: ["agentic ai", "backend systems", "trust & safety"],
-  now: "UCLA Student",
-};`;
 
 function SectionHeading({
   eyebrow,
@@ -271,6 +266,20 @@ export default function Home() {
           </div>
         </section>
       </main>
+      <footer className="border-t border-divider bg-background">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-5 py-12 sm:px-6">
+          <div className="space-y-2">
+            <p className="eyebrow">Live user counter</p>
+            <p className="max-w-2xl text-sm text-muted">
+              Tracks total visitors across the site using a Redis-backed counter that increments
+              once per page view.
+            </p>
+          </div>
+          <div className="max-w-md">
+            <UserCountTracker />
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
