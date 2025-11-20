@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { callHighlights, callSocialProof } from "@/lib/siteData";
-
+import { NavBar } from "@/components/NavBar";
 export const metadata: Metadata = {
   title: "Schedule a Call — Tyler Xiao",
   description:
@@ -14,13 +14,14 @@ const CALENDLY_EMBED_URL = `${CALENDLY_URL}?embed_domain=tylerxiao.com&embed_typ
 export default function ScheduleCallPage() {
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-10 px-5 py-16 sm:px-6">
+      <NavBar />
       <Link
         href="/"
         className="text-sm font-semibold text-muted transition hover:text-foreground"
       >
         ← Back to home
       </Link>
-
+      
       <header className="pane p-6">
         <p className="eyebrow">Schedule a call</p>
         <h1 className="mt-4 text-4xl font-semibold tracking-tight">

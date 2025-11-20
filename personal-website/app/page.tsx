@@ -9,12 +9,7 @@ import {
 } from "@/lib/siteData";
 import { HomeTerminal } from "@/components/Terminal/HomeTerminal";
 import { UserCountTracker } from "@/components/UserCountTracker";
-
-const navLinks = [
-  { label: "About", href: "#about" },
-  { label: "Past Experience", href: "/past-experience" },
-  { label: "Schedule a Call", href: "/schedule-a-call" },
-];
+import { NavBar } from "@/components/NavBar";
 
 function SectionHeading({
   eyebrow,
@@ -41,32 +36,7 @@ function SectionHeading({
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <header className="sticky top-0 z-20 border-b border-divider bg-background/95 backdrop-blur">
-        <nav className="mx-auto flex max-w-5xl flex-wrap items-center gap-4 px-5 py-4 text-sm sm:justify-between">
-          <span className="font-semibold tracking-[0.25em]">TYLER XIAO</span>
-          <div className="flex flex-wrap gap-3 text-xs sm:text-sm">
-            {navLinks.map((link) =>
-              link.href.startsWith("#") ? (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  className="rounded-full border border-transparent px-3 py-1 text-muted transition hover:border-divider hover:text-foreground"
-                >
-                  {link.label}
-                </a>
-              ) : (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  className="rounded-full border border-transparent px-3 py-1 text-muted transition hover:border-divider hover:text-foreground"
-                >
-                  {link.label}
-                </Link>
-              ),
-            )}
-          </div>
-        </nav>
-      </header>
+      <NavBar />
 
       <main className="mx-auto flex w-full max-w-5xl flex-col gap-20 px-5 py-16 sm:px-6">
         <section className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
@@ -268,13 +238,6 @@ export default function Home() {
       </main>
       <footer className="border-t border-divider bg-background">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-5 py-12 sm:px-6">
-          <div className="space-y-2">
-            <p className="eyebrow">Live user counter</p>
-            <p className="max-w-2xl text-sm text-muted">
-              Tracks total visitors across the site using a Redis-backed counter that increments
-              once per page view.
-            </p>
-          </div>
           <div className="max-w-md">
             <UserCountTracker />
           </div>

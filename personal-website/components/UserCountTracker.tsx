@@ -64,7 +64,7 @@ export function UserCountTracker() {
       <p className="text-sm text-muted">
         {error
           ? error
-          : "Live counter increments once per visit and persists in Vercel KV."}
+          : "Live counter increments once per visit and persists in Redis."}
       </p>
     </div>
   );

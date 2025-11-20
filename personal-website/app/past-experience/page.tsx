@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { experiences, projects } from "@/lib/siteData";
-
+import { NavBar } from "@/components/NavBar";
 export const metadata: Metadata = {
   title: "Past Experience — Tyler Xiao",
   description:
@@ -13,13 +13,14 @@ const focusAreas = Array.from(new Set(experiences.flatMap((exp) => exp.focus))).
 export default function PastExperiencePage() {
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-10 px-5 py-16 sm:px-6">
+      <NavBar />
       <Link
         href="/"
         className="text-sm font-semibold text-muted transition hover:text-foreground"
       >
         ← Back to home
       </Link>
-
+      
       <header className="space-y-4">
         <p className="eyebrow">Past Experience</p>
         <h1 className="text-4xl font-semibold tracking-tight">
