@@ -26,8 +26,7 @@ export default function PastExperiencePage() {
           Commit history of roles and leadership.
         </h1>
         <p className="text-base text-muted">
-          Deeper snippets from internships and campus orgs. Filters below mimic a command palette—toggle
-          through interests quickly.
+          Deeper snippets from internships and campus orgs.
         </p>
       </header>
 
@@ -67,9 +66,9 @@ export default function PastExperiencePage() {
       <section className="space-y-4">
         <div>
           <p className="eyebrow">Projects</p>
-          <h2 className="mt-2 text-3xl font-semibold">Write-ups connected to the roles.</h2>
+          <h2 className="mt-2 text-3xl font-semibold">Projects</h2>
           <p className="mt-2 text-sm text-muted">
-            Each tab mirrors an editor pane—open any link to jump into source, demos, or docs.
+            Open any link to view my projects.
           </p>
         </div>
         <div className="grid gap-5 md:grid-cols-2">

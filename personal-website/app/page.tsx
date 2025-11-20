@@ -18,7 +18,7 @@ const navLinks = [
 const heroSnippet = `const tyler = {
   school: "UCLA CSE '27",
   focus: ["agentic ai", "backend systems", "trust & safety"],
-  now: "SafetyKit → building AI workflows",
+  now: "UCLA Student",
 };`;
 
 function SectionHeading({
@@ -124,8 +124,8 @@ export default function Home() {
         <section id="about" className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
           <SectionHeading
             eyebrow="About"
-            title="Systems thinking meets student hustle."
-            description="Currently at UCLA blending coursework, leadership, and internships centered on AI agents and efficient backend systems."
+            title="About Me"
+            description="Currently at UCLA combining coursework, leadership, and internships centered on AI agents and efficient backend systems."
           />
           <div className="pane p-6">
             <dl className="grid gap-6">
@@ -142,7 +142,7 @@ export default function Home() {
         <section id="experience" className="space-y-10">
           <SectionHeading
             eyebrow="Experience"
-            title="Timeline like a git log."
+            title="git log --timeline"
             description="Recent roles across AI workflows, evaluations, and student leadership."
           />
           <div className="space-y-6 border-l border-divider pl-6">
@@ -177,7 +177,7 @@ export default function Home() {
           <SectionHeading
             eyebrow="Projects"
             title="Selected builds"
-            description="Code-editor inspired cards for the work I'm excited about."
+            description="List of projectsI'm excited about."
           />
           <div className="grid gap-6 md:grid-cols-2">
             {projects.map((project) => (
@@ -210,7 +210,7 @@ export default function Home() {
           <SectionHeading
             eyebrow="Writing"
             title="Changelog entries"
-            description="Notes on pairing AI with people, systems design, and student leadership."
+            description="Personal/technical blog posts. Coming soon!"
           />
           <div className="space-y-4">
             {writings.map((article) => (
@@ -233,7 +233,7 @@ export default function Home() {
         <section id="contact" className="space-y-8">
           <SectionHeading
             eyebrow="Contact"
-            title="Ping me like a CLI command."
+            title="connect --via=email"
             description="Email for details, or schedule a call to jam on agentic AI, sports, and more."
           />
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">

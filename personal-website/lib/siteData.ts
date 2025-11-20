@@ -79,7 +79,7 @@ export const projects: Project[] = [
       "Telemetry pipeline that ingests air-quality data and flags wildfire risk via TensorFlow models and alerting hooks.",
     tech: ["TypeScript", "TensorFlow", "Node.js"],
     link: "https://github.com/lordboba/wildfire-detection",
-    focus: ["ML", "Climate"],
+    focus: ["ML", "Climate", "Twilio API"],
   },
   {
     title: "DocuPilot",
@@ -95,7 +95,7 @@ export const projects: Project[] = [
     role: "Full Stack Engineer",
     description:
       "Automated lecture builder that uses instructor and TA agents to deliver multi-modal lessons with live collaboration tools.",
-    tech: ["Next.js", "Fastify", "LiveKit", "Anthropic Claude"],
+    tech: ["Next.js", "Fastify", "LiveKit", "Anthropic Claude API"],
     link: "https://github.com/safinsingh/LectureGen",
     focus: ["AI", "Education"],
   },
@@ -133,12 +133,11 @@ export const contactLinks = [
   { label: "Email", href: "mailto:tylerxiao@ucla.edu" },
   { label: "GitHub", href: "https://github.com/lordboba" },
   { label: "LinkedIn", href: "https://www.linkedin.com/in/tyler-xiao" },
-  { label: "Past Experience", href: "/past-experience" },
   { label: "Twitter", href: "https://x.com/txiaotech"}
 ];
 
 export const callHighlights = [
-  "15-minute intro focused on your product goals.",
+  "15-minute intro for any type of chat.",
   "Walk through relevant experience and what you're building.",
   "Identify a concrete next step (referral, collaboration, follow-up).",
 ];
