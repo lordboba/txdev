@@ -34,15 +34,6 @@ export const experiences: Experience[] = [
     focus: ['AI Agents', 'Trust & Safety'],
   },
   {
-    role: 'Technical Advisor Intern',
-    company: 'Scale AI',
-    start: 'Nov 2024',
-    end: 'May 2025',
-    summary:
-      'Trained generative AI systems on complex coding and reasoning tasks, designing eval loops that kept quality high while throughput scaled.',
-    focus: ['AI Systems', 'Evaluation'],
-  },
-  {
     role: 'Induction & Membership Chair',
     company: 'Upsilon Pi Epsilon @ UCLA',
     start: 'May 2025',
@@ -50,6 +41,15 @@ export const experiences: Experience[] = [
     summary:
       'Scaled onboarding for the honor society and built Discord automation to keep events organized for a fast-growing membership base.',
     focus: ['Leadership', 'Automation'],
+  },
+  {
+    role: 'Technical Advisor Intern',
+    company: 'Scale AI',
+    start: 'Nov 2024',
+    end: 'May 2025',
+    summary:
+      'Trained generative AI systems on complex coding and reasoning tasks, designing eval loops that kept quality high while throughput scaled.',
+    focus: ['AI Systems', 'Evaluation'],
   },
 ];
 
@@ -121,7 +121,7 @@ export const writings: Writing[] = [
 
 export const quickFacts = [
   { label: 'Location', value: 'San Diego native · based in Los Angeles' },
-  { label: 'Currently', value: "UCLA CSE '27 · Building agentic AI systems" },
+  { label: 'Education', value: "UCLA CS '27 student, Technical Breadth in ECE" },
   {
     label: 'Focus',
     value: 'AI agents, backend systems, trust & safety automation',

@@ -4,7 +4,7 @@ import './globals.css';
 export const metadata: Metadata = {
   title: "Tyler Xiao's Portfolio",
   description:
-    "Personal portfolio for Tyler Xiao — UCLA CSE '27 focused on agentic AI, backend systems, and trust & safety automation.",
+    "Personal portfolio for Tyler Xiao — UCLA CS '27 focused on agentic AI, backend systems, and trust & safety automation.",
   openGraph: {
     title: "Tyler Xiao's Portfolio",
     description:

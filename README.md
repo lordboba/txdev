@@ -1,8 +1,8 @@
 # Tyler Xiao
 
-San Diego native and UCLA CSE student. Ate a head of lettuce in 1 minute and 51 seconds.
+San Diego native and UCLA CS student. Ate a head of lettuce in 1 minute and 51 seconds.
 
-- 🎓 B.S. Computer Science & Engineering @ UCLA (Class of 2027)
+- 🎓 B.S. Computer Science @ UCLA (Class of 2027)
 - 📍 From San Diego, now in Los Angeles
 - 🛠️ Specializes in building AI Agents + Backend Systems
 

@@ -79,7 +79,7 @@ export default function PastExperiencePage() {
           <p className="eyebrow">Projects</p>
           <h2 className="mt-2 text-3xl font-semibold">Projects</h2>
           <p className="mt-2 text-sm text-muted">
-            Open any link to view my projects.
+            Click any project!
           </p>
         </div>
         <div className="grid gap-5 md:grid-cols-2">
@@ -111,7 +111,7 @@ export default function PastExperiencePage() {
       </section>
 
       <footer className="flex flex-wrap items-center justify-between gap-4 border-t border-divider pt-6 text-sm text-muted">
-        <span>Talk with me. :D</span>
+        <span>Talk with me :D</span>
         <Link
           href="/schedule-a-call"
           className="font-semibold text-primary transition hover:text-primary/80"

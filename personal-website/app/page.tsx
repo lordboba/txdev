@@ -43,7 +43,7 @@ export default function Home() {
           <div className="space-y-7">
             <p className="font-mono text-sm text-muted">{'// hi, i’m tyler'}</p>
             <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-              UCLA CSE student building agentic AI and backend systems.
+              UCLA CS student building agentic AI and backend systems.
             </h1>
             <p className="text-base text-muted">
               From trust & safety automations to multiplayer card games, I like
@@ -76,13 +76,13 @@ export default function Home() {
                 className="h-24 w-24 rounded-2xl object-cover"
                 priority
               />
-              <div>
+              <Link href="https://www.linkedin.com/in/tyler-xiao">
                 <p className="text-sm font-semibold">Tyler Xiao</p>
                 <p className="text-sm text-muted">
-                  UCLA CSE ’27 student building AI agents, backend systems, and
+                  UCLA CS ’27 student building AI agents, backend systems, and
                   tools for communities.
                 </p>
-              </div>
+              </Link>
             </div>
           </div>
         </section>
@@ -94,7 +94,7 @@ export default function Home() {
           <SectionHeading
             eyebrow="About"
             title="About Me"
-            description="Currently at UCLA combining coursework, leadership, and internships centered on AI agents and efficient backend systems."
+            description="UCLA student studying Computer Science + building random stuff :)"
           />
           <div className="pane p-6">
             <dl className="grid gap-6">
@@ -148,7 +148,7 @@ export default function Home() {
           <SectionHeading
             eyebrow="Projects"
             title="Selected builds"
-            description="List of projectsI'm excited about."
+            description="List of projects I'm excited about."
           />
           <div className="grid gap-6 md:grid-cols-2">
             {projects.map((project) => (
