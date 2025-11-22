@@ -13,11 +13,17 @@ export const Terminal = ({
   onToggleFullScreen?: () => void;
 }) => {
   const { history, handleCommand, isBooting } = useTerminal();
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom
+  // Keep the scroll position at the bottom of the terminal without moving the page
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior: 'smooth',
+    });
   }, [history, isBooting]);
 
   // Handle Escape key to exit full screen
@@ -114,6 +120,7 @@ export const Terminal = ({
 
       <div
         className={`flex-1 overflow-y-auto ${paddingClass} scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent`}
+        ref={scrollContainerRef}
       >
         <div className="mx-auto max-w-4xl">
           <TerminalOutput history={history} />
@@ -125,8 +132,6 @@ export const Terminal = ({
               System initializing...
             </div>
           )}
-
-          <div ref={bottomRef} />
         </div>
       </div>
     </div>
