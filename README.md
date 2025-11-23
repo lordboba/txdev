@@ -1,4 +1,4 @@
-# Tyler Xiao
+# About - Tyler Xiao
 
 San Diego native and UCLA CS student. Ate a head of lettuce in 1 minute and 51 seconds.
 
