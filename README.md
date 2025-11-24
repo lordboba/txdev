@@ -1,15 +1,17 @@
-# About - Tyler Xiao
+# Tyler Xiao's Personal Website!
+
+Website Link: https://www.tylerx.dev/
 
 San Diego native and UCLA CS student. Ate a head of lettuce in 1 minute and 51 seconds.
 
-- 🎓 B.S. Computer Science @ UCLA (Class of 2027)
-- 📍 From San Diego, now in Los Angeles
-- 🛠️ Specializes in building AI Agents + Backend Systems
+- B.S. Computer Science @ UCLA (Class of 2027)
+- From San Diego, now in Los Angeles
+- Specializes in building AI Agents + Backend Systems
 
 ## Experience
-- 🛟 **SafetyKit — Member of Technical Staff (May 2025 – Sep 2025):** First intern helping ship agentic AI workflows for trust & safety review processes.
-- 🤖 **Scale AI — Technical Advisor Intern (Nov 2024 – May 2025):** Trained generative AI systems on complex coding and reasoning tasks.
-- 🧠 **Upsilon Pi Epsilon @ UCLA — Induction & Membership Chair (May 2025 – Present):** Scaled onboarding and built Discord automation for the honor society.
+- **SafetyKit — Member of Technical Staff (May 2025 – Sep 2025):** First intern helping ship agentic AI workflows for trust & safety review processes.
+- **Scale AI — Technical Advisor Intern (Nov 2024 – May 2025):** Trained generative AI systems on complex coding and reasoning tasks.
+- **Upsilon Pi Epsilon @ UCLA — Induction & Membership Chair (May 2025 – Present):** Scaled onboarding and built Discord automation for the honor society.
 
 ## Featured Projects
 | Project | What it is | Tech |
