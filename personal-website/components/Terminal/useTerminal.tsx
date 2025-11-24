@@ -216,11 +216,32 @@ export const useTerminal = () => {
           );
           break;
 
-        case 'cat':
+        case 'cat': {
           const fileName = args[0];
           if (!fileName) {
             output = (
               <span className="text-red-400">Usage: cat &lt;filename&gt;</span>
+            );
+          } else if (fileName === 'resume.pdf') {
+            const resumePath = '/Xiao_Tyler_resume.pdf';
+            // Open the actual PDF in a new tab while still printing something in-terminal.
+            if (typeof window !== 'undefined') {
+              window.open(resumePath, '_blank', 'noopener,noreferrer');
+            }
+            output = (
+              <div className="space-y-1">
+                <div className="text-yellow-400">
+                  Opening resume in a new tab...
+                </div>
+                <a
+                  href={resumePath}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:underline"
+                >
+                  Download resume.pdf
+                </a>
+              </div>
             );
           } else if (INITIAL_FILES[fileName]) {
             output = (
@@ -228,16 +249,6 @@ export const useTerminal = () => {
                 {INITIAL_FILES[fileName].content}
               </div>
             );
-            // Easter egg for resume
-            if (fileName === 'resume.pdf') {
-              // In a real app, this might link to the actual PDF
-              // window.open("/path/to/resume.pdf", "_blank");
-              output = (
-                <div className="text-yellow-400">
-                  Opening resume... (simulated)
-                </div>
-              );
-            }
           } else {
             output = (
               <span className="text-red-400">
@@ -246,6 +257,7 @@ export const useTerminal = () => {
             );
           }
           break;
+        }
 
         case 'clear':
           setHistory([]);
