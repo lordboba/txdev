@@ -38,45 +38,47 @@ export default function Home() {
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <NavBar />
 
-      <main className="mx-auto flex w-full max-w-5xl flex-col gap-20 px-5 py-16 sm:px-6">
-        <section className="flex flex-col items-start gap-12 sm:gap-16">
-          <div className="flex flex-col items-start space-y-8 max-w-3xl">
+      <main className="mx-auto flex w-full max-w-5xl flex-col gap-16 px-5 py-12 sm:gap-24 sm:px-6 sm:py-20">
+        <section className="flex flex-col items-start gap-10 sm:gap-16">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-8 sm:gap-16 max-w-3xl">
+            <div className="flex flex-col gap-6">
+              <div className="space-y-4">
+                <h1 className="text-5xl font-bold tracking-tight sm:text-7xl">
+                  Hi, I&rsquo;m Tyler.
+                </h1>
+                <h2 className="text-2xl font-medium text-muted sm:text-3xl leading-snug">
+                  I build Agents and backend systems.
+                </h2>
+              </div>
+              <p className="max-w-2xl text-lg text-muted leading-relaxed">
+                I&rsquo;m a CS student at UCLA. From trust &amp; safety
+                automations to multiplayer card games, I like solving
+                challenging problems, building efficient backend systems, and
+                automating repetitive tasks.
+              </p>
+              <div className="flex flex-wrap gap-4">
+                <Link
+                  href="#contact"
+                  className="inline-flex items-center justify-center rounded-full bg-secondary px-7 py-3 text-sm font-semibold text-white transition hover:bg-secondary/90"
+                >
+                  Contact
+                </Link>
+                <Link
+                  href="/past-experience"
+                  className="inline-flex items-center justify-center rounded-full border border-divider px-7 py-3 text-sm font-semibold text-foreground transition hover:border-foreground"
+                >
+                  View Past Experience
+                </Link>
+              </div>
+            </div>
             <Image
-              src="/pfp.jpeg"
+              src="/pfp.JPG"
               alt="Tyler Xiao"
-              width={100}
-              height={100}
-              className="h-24 w-24 rounded-full object-cover border-2 border-divider shadow-sm"
+              width={400}
+              height={400}
+              className="h-64 w-64 sm:h-80 sm:w-80 rounded-full object-cover border-2 border-divider shadow-sm flex-shrink-0"
               priority
             />
-            <div className="space-y-4">
-              <h1 className="text-5xl font-bold tracking-tight sm:text-7xl">
-                Hi, I&rsquo;m Tyler.
-              </h1>
-              <h2 className="text-2xl font-medium text-muted sm:text-3xl leading-snug">
-                I build Agents and backend systems.
-              </h2>
-            </div>
-            <p className="max-w-2xl text-lg text-muted leading-relaxed">
-              I&rsquo;m a CS student at UCLA. From trust &amp; safety
-              automations to multiplayer card games, I like solving challenging
-              problems, building efficient backend systems, and automating
-              repetitive tasks.
-            </p>
-            <div className="flex flex-wrap gap-4">
-              <Link
-                href="#contact"
-                className="inline-flex items-center justify-center rounded-full bg-secondary px-7 py-3 text-sm font-semibold text-white transition hover:bg-secondary/90"
-              >
-                Contact
-              </Link>
-              <Link
-                href="/past-experience"
-                className="inline-flex items-center justify-center rounded-full border border-divider px-7 py-3 text-sm font-semibold text-foreground transition hover:border-foreground"
-              >
-                View Past Experience
-              </Link>
-            </div>
           </div>
           <div className="w-full">
             <HomeTerminal />
