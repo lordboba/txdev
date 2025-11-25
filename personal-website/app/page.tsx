@@ -39,51 +39,47 @@ export default function Home() {
       <NavBar />
 
       <main className="mx-auto flex w-full max-w-5xl flex-col gap-20 px-5 py-16 sm:px-6">
-        <section className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-          <div className="space-y-7">
-            <p className="font-mono text-sm text-muted">{'// hi, i’m tyler'}</p>
-            <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-              UCLA CS student building agentic AI and backend systems.
-            </h1>
-            <p className="text-base text-muted">
-              From trust & safety automations to multiplayer card games, I like
-              solving challenging problems, building efficient backend systems,
-              and automating repetitive tasks.
+        <section className="flex flex-col items-start gap-12 sm:gap-16">
+          <div className="flex flex-col items-start space-y-8 max-w-3xl">
+            <Image
+              src="/pfp.jpeg"
+              alt="Tyler Xiao"
+              width={100}
+              height={100}
+              className="h-24 w-24 rounded-full object-cover border-2 border-divider shadow-sm"
+              priority
+            />
+            <div className="space-y-4">
+              <h1 className="text-5xl font-bold tracking-tight sm:text-7xl">
+                Hi, I&rsquo;m Tyler.
+              </h1>
+              <h2 className="text-2xl font-medium text-muted sm:text-3xl leading-snug">
+                I build Agents and backend systems.
+              </h2>
+            </div>
+            <p className="max-w-2xl text-lg text-muted leading-relaxed">
+              I&rsquo;m a CS student at UCLA. From trust &amp; safety
+              automations to multiplayer card games, I like solving challenging
+              problems, building efficient backend systems, and automating
+              repetitive tasks.
             </p>
             <div className="flex flex-wrap gap-4">
               <Link
                 href="#contact"
-                className="inline-flex items-center justify-center rounded-full bg-secondary px-6 py-3 text-sm font-semibold text-white transition hover:bg-secondary/90"
+                className="inline-flex items-center justify-center rounded-full bg-secondary px-7 py-3 text-sm font-semibold text-white transition hover:bg-secondary/90"
               >
                 Contact
               </Link>
               <Link
                 href="/past-experience"
-                className="inline-flex items-center justify-center rounded-full border border-divider px-6 py-3 text-sm font-semibold text-foreground transition hover:border-foreground"
+                className="inline-flex items-center justify-center rounded-full border border-divider px-7 py-3 text-sm font-semibold text-foreground transition hover:border-foreground"
               >
                 View Past Experience
               </Link>
             </div>
           </div>
-          <div className="space-y-4">
+          <div className="w-full">
             <HomeTerminal />
-            <div className="pane flex items-center gap-4 p-4">
-              <Image
-                src="/pfp.jpeg"
-                alt="Portrait of Tyler Xiao"
-                width={120}
-                height={120}
-                className="h-24 w-24 rounded-2xl object-cover"
-                priority
-              />
-              <Link href="https://www.linkedin.com/in/tyler-xiao">
-                <p className="text-sm font-semibold">Tyler Xiao</p>
-                <p className="text-sm text-muted">
-                  UCLA CS ’27 student building AI agents, backend systems, and
-                  tools for communities.
-                </p>
-              </Link>
-            </div>
           </div>
         </section>
 
