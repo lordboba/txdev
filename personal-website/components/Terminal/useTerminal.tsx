@@ -19,11 +19,13 @@ export const useTerminal = () => {
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       const initialOutput = (
-        <div className="whitespace-pre font-bold text-green-500">
+        <div className="whitespace-pre font-bold text-green-500 text-[10px] sm:text-xs leading-[1.1] overflow-x-auto no-scrollbar">
           {ASCII_ART}
           <br />
           {WELCOME_MESSAGE.map((line, i) => (
-            <div key={i}>{line}</div>
+            <div key={i} className="text-sm sm:text-base">
+              {line}
+            </div>
           ))}
           <br />
         </div>
@@ -67,7 +69,7 @@ export const useTerminal = () => {
       switch (command) {
         case 'help':
           output = (
-            <div className="grid grid-cols-[120px_1fr] gap-2">
+            <div className="grid grid-cols-[auto_1fr] sm:grid-cols-[120px_1fr] gap-x-2 sm:gap-x-4 gap-y-2">
               <span className="text-yellow-400">about</span>
               <span>Who is Tyler?</span>
               <span className="text-yellow-400">projects</span>
@@ -117,7 +119,7 @@ export const useTerminal = () => {
               </p>
               {projects.map((project, i) => (
                 <div key={i} className="pl-2 border-l-2 border-blue-500">
-                  <div className="flex items-baseline gap-2">
+                  <div className="flex flex-wrap items-baseline gap-2">
                     <a
                       href={project.link}
                       target="_blank"
@@ -131,7 +133,7 @@ export const useTerminal = () => {
                     </span>
                   </div>
                   <p>{project.description}</p>
-                  <div className="flex gap-2 mt-1">
+                  <div className="flex flex-wrap gap-2 mt-1">
                     {project.tech.map((t, j) => (
                       <span
                         key={j}
@@ -210,7 +212,7 @@ export const useTerminal = () => {
 
         case 'ascii':
           output = (
-            <div className="whitespace-pre font-bold text-green-500">
+            <div className="whitespace-pre font-bold text-green-500 text-[10px] sm:text-xs leading-[1.1] overflow-x-auto no-scrollbar">
               {ASCII_ART}
             </div>
           );
