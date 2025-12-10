@@ -18,7 +18,7 @@ export default function PastExperiencePage() {
       <NavBar />
       <Link
         href="/"
-        className="text-sm font-semibold text-muted transition hover:text-foreground"
+        className="text-sm font-semibold text-muted transition hover:text-foreground hover:underline"
       >
         ← Back to home
       </Link>
@@ -112,7 +112,7 @@ export default function PastExperiencePage() {
         <span>Talk with me :D</span>
         <Link
           href="/schedule-a-call"
-          className="font-semibold text-primary transition hover:text-primary/80"
+          className="font-semibold text-primary transition hover:text-primary/80 hover:underline"
         >
           Schedule a call →
         </Link>

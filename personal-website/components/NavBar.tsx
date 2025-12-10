@@ -23,7 +23,7 @@ export const NavBar = () => {
               <a
                 key={link.label}
                 href={link.href}
-                className="rounded-full border border-transparent px-3 py-1 text-muted transition hover:border-divider hover:text-foreground"
+                className="rounded-full border border-transparent px-3 py-1 text-muted transition hover:border-divider hover:text-foreground hover:underline"
               >
                 {link.label}
               </a>
@@ -31,7 +31,7 @@ export const NavBar = () => {
               <Link
                 key={link.label}
                 href={link.href}
-                className="rounded-full border border-transparent px-3 py-1 text-muted transition hover:border-divider hover:text-foreground"
+                className="rounded-full border border-transparent px-3 py-1 text-muted transition hover:border-divider hover:text-foreground hover:underline"
               >
                 {link.label}
               </Link>

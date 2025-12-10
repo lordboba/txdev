@@ -59,13 +59,13 @@ export default function Home() {
               <div className="flex flex-wrap gap-4">
                 <Link
                   href="#contact"
-                  className="inline-flex items-center justify-center rounded-full bg-secondary px-7 py-3 text-sm font-semibold text-white transition hover:bg-secondary/90"
+                  className="inline-flex items-center justify-center rounded-full bg-secondary px-7 py-3 text-sm font-semibold text-white transition hover:bg-secondary/90 hover:underline"
                 >
                   Contact
                 </Link>
                 <Link
                   href="/past-experience"
-                  className="inline-flex items-center justify-center rounded-full border border-divider px-7 py-3 text-sm font-semibold text-foreground transition hover:border-foreground"
+                  className="inline-flex items-center justify-center rounded-full border border-divider px-7 py-3 text-sm font-semibold text-foreground transition hover:border-foreground hover:underline"
                 >
                   View Past Experience
                 </Link>
@@ -136,7 +136,7 @@ export default function Home() {
           </div>
           <Link
             href="/past-experience"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-muted transition hover:text-foreground"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-muted transition hover:text-foreground hover:underline"
           >
             View the full timeline →
           </Link>
@@ -174,7 +174,7 @@ export default function Home() {
                 </div>
                 <Link
                   href={project.link}
-                  className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary"
+                  className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
                 >
                   View project ↗
                 </Link>
@@ -218,14 +218,14 @@ export default function Home() {
               <p className="text-muted">$ connect --via=email</p>
               <Link
                 href="mailto:tylerxiao@ucla.edu"
-                className="mt-1 inline-flex text-lg font-semibold text-primary transition hover:text-primary/80"
+                className="mt-1 inline-flex text-lg font-semibold text-primary transition hover:text-primary/80 hover:underline"
               >
                 tylerxiao@ucla.edu
               </Link>
               <p className="mt-5 text-muted">$ connect --via=call</p>
               <Link
                 href="/schedule-a-call"
-                className="mt-1 inline-flex items-center gap-2 text-base font-semibold text-primary"
+                className="mt-1 inline-flex items-center gap-2 text-base font-semibold text-primary hover:underline"
               >
                 Schedule a call ↗
               </Link>
@@ -239,7 +239,7 @@ export default function Home() {
                   <Link
                     key={link.label}
                     href={link.href}
-                    className="flex items-center justify-between rounded-xl border border-transparent px-3 py-2 text-muted transition hover:border-divider hover:text-foreground"
+                    className="flex items-center justify-between rounded-xl border border-transparent px-3 py-2 text-muted transition hover:border-divider hover:text-foreground hover:underline"
                   >
                     <span>{link.label}</span>
                     <span>↗</span>

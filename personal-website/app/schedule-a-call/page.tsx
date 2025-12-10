@@ -18,7 +18,7 @@ export default function ScheduleCallPage() {
       <NavBar />
       <Link
         href="/"
-        className="text-sm font-semibold text-muted transition hover:text-foreground"
+        className="text-sm font-semibold text-muted transition hover:text-foreground hover:underline"
       >
         ← Back to home
       </Link>
@@ -36,13 +36,13 @@ export default function ScheduleCallPage() {
         <div className="mt-6 flex flex-wrap gap-4">
           <Link
             href="#calendly"
-            className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition hover:bg-primary/90"
+            className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition hover:bg-primary/90 hover:brightness-125 hover:underline"
           >
             Book now
           </Link>
           <Link
             href="mailto:tylerxiao@ucla.edu"
-            className="inline-flex items-center justify-center rounded-full border border-divider px-6 py-3 text-sm font-semibold text-foreground transition hover:border-foreground"
+            className="inline-flex items-center justify-center rounded-full border border-divider px-6 py-3 text-sm font-semibold text-foreground transition hover:border-foreground hover:underline"
           >
             Email instead
           </Link>
@@ -88,7 +88,7 @@ export default function ScheduleCallPage() {
             Questions before booking?{' '}
             <Link
               href="mailto:tylerxiao@ucla.edu"
-              className="font-semibold text-primary hover:text-primary/80"
+              className="font-semibold text-primary hover:text-primary/80 hover:underline"
             >
               Send a note.
             </Link>
