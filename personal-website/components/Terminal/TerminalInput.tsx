@@ -27,13 +27,6 @@ export const TerminalInput = ({ onCommand, disabled }: TerminalInputProps) => {
   const [input, setInput] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Keep focus on input
-  useEffect(() => {
-    const handleClick = () => inputRef.current?.focus();
-    document.addEventListener('click', handleClick);
-    return () => document.removeEventListener('click', handleClick);
-  }, []);
-
   useEffect(() => {
     if (!disabled) {
       inputRef.current?.focus();
