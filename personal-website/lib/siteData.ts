@@ -25,9 +25,17 @@ export type Writing = {
 
 export const experiences: Experience[] = [
   {
+    role: 'Software Engineering Intern',
+    company: 'TBD',
+    start: 'June 2026',
+    end: 'Sep 2026',
+    summary: 'TBD',
+    focus: ['AI Agents', 'Backend Systems'],
+  },
+  {
     role: 'Member of Technical Staff',
     company: 'SafetyKit',
-    start: 'May 2025',
+    start: 'June 2025',
     end: 'Sep 2025',
     summary:
       'First intern owning agentic AI workflows for trust & safety review pipelines, helping the team ship automation that humans actually trusted.',
