@@ -78,9 +78,7 @@ export default function PastExperiencePage() {
       <section className="space-y-4">
         <div>
           <p className="eyebrow">// projects</p>
-          <h2 className="mt-2 font-display text-3xl font-semibold">
-            Projects
-          </h2>
+          <h2 className="mt-2 font-display text-3xl font-semibold">Projects</h2>
           <p className="mt-2 text-sm text-muted">Click any project.</p>
           <div className="mt-3 h-px bg-divider" />
         </div>

@@ -30,8 +30,8 @@ export default function ScheduleCallPage() {
         </h1>
         <p className="mt-3 text-base text-muted leading-relaxed">
           We&rsquo;ll cover what you&rsquo;re building, how I can help, and
-          immediate next steps. Keep it lightweight — think of it as a quick code
-          review for your roadmap.
+          immediate next steps. Keep it lightweight — think of it as a quick
+          code review for your roadmap.
         </p>
         <div className="mt-6 flex flex-wrap gap-4">
           <Link

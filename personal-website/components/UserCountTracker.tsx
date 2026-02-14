@@ -55,7 +55,9 @@ export function UserCountTracker() {
   }, []);
 
   const displayValue =
-    loading && count === null ? '\u2026' : (count?.toLocaleString() ?? '\u2014');
+    loading && count === null
+      ? '\u2026'
+      : (count?.toLocaleString() ?? '\u2014');
 
   return (
     <div className="pane flex flex-col gap-2 p-5">

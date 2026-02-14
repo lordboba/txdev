@@ -5,11 +5,11 @@ import {
   experiences,
   projects,
   quickFacts,
-  writings,
 } from '@/lib/siteData';
 import { HomeTerminal } from '@/components/Terminal/HomeTerminal';
 import { UserCountTracker } from '@/components/UserCountTracker';
 import { NavBar } from '@/components/NavBar';
+import { getRecentPostMeta } from '@/lib/blog';
 
 function SectionHeading({
   eyebrow,
@@ -34,7 +34,9 @@ function SectionHeading({
   );
 }
 
-export default function Home() {
+export default async function Home() {
+  const latestPosts = await getRecentPostMeta(3);
+
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <NavBar />
@@ -241,24 +243,33 @@ export default function Home() {
           <SectionHeading
             eyebrow="// writing"
             title="Changelog entries"
-            description="Personal and technical blog posts. Coming soon."
+            description="Personal technical notes on product engineering, design systems, and AI workflow shipping."
           />
           <div className="space-y-4">
-            {writings.map((article) => (
-              <div
-                key={article.title}
-                className="flex items-baseline gap-4 border-b border-divider py-4"
+            {latestPosts.map((article) => (
+              <Link
+                key={article.slug}
+                href={`/blog/${article.slug}`}
+                className="group flex items-baseline gap-4 border-b border-divider py-4 transition hover:border-accent/35"
               >
                 <span className="font-mono text-sm text-muted whitespace-nowrap">
-                  {article.date}
+                  {article.formattedDate}
                 </span>
                 <span className="font-mono text-sm text-secondary whitespace-nowrap">
                   feat:
                 </span>
-                <span className="text-foreground">{article.title}</span>
-              </div>
+                <span className="text-foreground group-hover:text-accent transition">
+                  {article.title}
+                </span>
+              </Link>
             ))}
           </div>
+          <Link
+            href="/blog"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-accent transition hover:opacity-75"
+          >
+            View all posts &rarr;
+          </Link>
         </section>
 
         {/* ═══ Contact ═══ */}
