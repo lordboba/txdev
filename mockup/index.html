@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tyler Xiao — Midnight Forge Mockup</title>
+
+<!-- Fonts -->
+<link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
+<style>
+  /* Monaspace Neon from GitHub */
+  @font-face {
+    font-family: 'Monaspace Neon';
+    src: url('https://cdn.jsdelivr.net/gh/githubnext/monaspace@v1.101/fonts/webfonts/MonaspaceNeon-Regular.woff') format('woff');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Monaspace Neon';
+    src: url('https://cdn.jsdelivr.net/gh/githubnext/monaspace@v1.101/fonts/webfonts/MonaspaceNeon-Medium.woff') format('woff');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Monaspace Neon';
+    src: url('https://cdn.jsdelivr.net/gh/githubnext/monaspace@v1.101/fonts/webfonts/MonaspaceNeon-Bold.woff') format('woff');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+  }
+</style>
+
+<style>
+/* ─── Tokens ─── */
+:root {
+  --bg: #07080C;
+  --surface: #10131A;
+  --surface-raised: #181C27;
+  --accent: #E8C468;
+  --accent-muted: rgba(232, 196, 104, 0.12);
+  --secondary: #4ECDC4;
+  --secondary-muted: rgba(78, 205, 196, 0.10);
+  --text: #E8ECF1;
+  --text-muted: #6C7689;
+  --divider: rgba(232, 196, 104, 0.06);
+
+  --font-display: 'Clash Display', 'Satoshi', system-ui, sans-serif;
+  --font-body: 'Satoshi', 'General Sans', system-ui, sans-serif;
+  --font-mono: 'Monaspace Neon', 'Fira Code', Menlo, monospace;
+}
+
+/* ─── Reset ─── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  font-weight: 400;
+  line-height: 1.65;
+  color: var(--text);
+  background: var(--bg);
+}
+
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+
+/* ─── Utilities ─── */
+.container {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.section-heading {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 4vw, 36px);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.section-rule {
+  height: 1px;
+  background: var(--divider);
+  margin-top: 16px;
+  margin-bottom: 48px;
+}
+
+.chip {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--accent-muted);
+  color: var(--accent);
+  border: 1px solid rgba(232, 196, 104, 0.15);
+}
+
+.chip--secondary {
+  background: var(--secondary-muted);
+  color: var(--secondary);
+  border-color: rgba(78, 205, 196, 0.12);
+}
+
+/* ─── Nav ─── */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: rgba(16, 19, 26, 0.85);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border-bottom: 1px solid var(--divider);
+  height: 64px;
+  display: flex;
+  align-items: center;
+}
+
+.nav .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.nav-logo {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.nav-links {
+  display: flex;
+  gap: 32px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: color 0.2s ease;
+  position: relative;
+}
+
+.nav-links a:hover {
+  color: var(--text);
+}
+
+.nav-links a.active {
+  color: var(--accent);
+}
+
+.nav-links a.active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+  box-shadow: 0 2px 8px rgba(232, 196, 104, 0.25);
+}
+
+/* ─── Hero ─── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding-top: 64px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 20%;
+  left: 30%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(232, 196, 104, 0.04) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  align-items: center;
+}
+
+.hero-comment {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.hero-heading {
+  font-family: var(--font-display);
+  font-size: clamp(40px, 6vw, 64px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-bottom: 16px;
+}
+
+.hero-heading .highlight {
+  color: var(--accent);
+}
+
+.hero-sub {
+  font-size: 17px;
+  color: var(--text-muted);
+  max-width: 440px;
+  margin-bottom: 32px;
+  line-height: 1.7;
+}
+
+.hero-ctas {
+  display: flex;
+  gap: 16px;
+}
+
+/* ─── Buttons ─── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  padding: 12px 28px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(232, 196, 104, 0.2);
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--accent), var(--secondary));
+  box-shadow: 0 4px 20px rgba(232, 196, 104, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  padding: 12px 28px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px dashed rgba(232, 196, 104, 0.15);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+/* ─── Terminal Card ─── */
+.terminal {
+  background: var(--surface);
+  border: 1px solid var(--divider);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.35), 0 1px 2px rgba(0,0,0,0.25);
+}
+
+.terminal-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--divider);
+}
+
+.terminal-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--surface-raised);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.terminal-title {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-left: 8px;
+}
+
+.terminal-body {
+  padding: 20px 22px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.terminal-body .prompt {
+  color: var(--secondary);
+}
+
+.terminal-body .key {
+  color: var(--accent);
+}
+
+.terminal-body .value {
+  color: var(--secondary);
+}
+
+.terminal-body .string {
+  color: var(--text);
+}
+
+.terminal-body .muted {
+  color: var(--text-muted);
+}
+
+/* ─── Sections ─── */
+section {
+  padding: 96px 0;
+}
+
+/* ─── About ─── */
+.about-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: start;
+}
+
+.about-text {
+  font-size: 16px;
+  color: var(--text-muted);
+  line-height: 1.75;
+}
+
+.about-text strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.status-card {
+  background: var(--surface);
+  border: 1px solid var(--divider);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.status-card-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--divider);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--divider);
+}
+
+.status-row:last-child { border-bottom: none; }
+
+.status-key {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.status-value {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--secondary);
+}
+
+/* ─── Experience ─── */
+.timeline {
+  position: relative;
+  padding-left: 36px;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 8px;
+  bottom: 8px;
+  width: 1px;
+  background: var(--accent);
+  opacity: 0.3;
+  box-shadow: 0 0 8px rgba(232, 196, 104, 0.15);
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: 48px;
+}
+
+.timeline-item:last-child { padding-bottom: 0; }
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -32px;
+  top: 8px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--bg), 0 0 12px rgba(232, 196, 104, 0.2);
+}
+
+.timeline-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.timeline-date {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.timeline-hash {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.timeline-role {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+.timeline-company {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.timeline-tags {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+/* ─── Projects ─── */
+.projects-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.project-card {
+  background: var(--surface);
+  border: 1px solid var(--divider);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.35), 0 1px 2px rgba(0,0,0,0.25);
+}
+
+.project-card:hover {
+  transform: scale(1.01);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.project-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--divider);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--accent);
+}
+
+.project-tab-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.4;
+}
+
+.project-body {
+  padding: 24px 20px;
+}
+
+.project-eyebrow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.project-title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+
+.project-desc {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+
+.project-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.project-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--accent);
+  margin-top: 16px;
+  transition: opacity 0.2s ease;
+}
+
+.project-link:hover { opacity: 0.75; }
+
+/* ─── Writing ─── */
+.changelog-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.changelog-item {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--divider);
+}
+
+.changelog-date {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.changelog-type {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--secondary);
+  white-space: nowrap;
+}
+
+.changelog-title {
+  font-size: 15px;
+  color: var(--text);
+}
+
+/* ─── Contact ─── */
+.contact-terminal {
+  max-width: 560px;
+}
+
+.contact-line {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 2.2;
+}
+
+.contact-line .cmd {
+  color: var(--text-muted);
+}
+
+.contact-line a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.contact-line a:hover {
+  border-color: var(--accent);
+}
+
+.contact-elsewhere {
+  display: flex;
+  gap: 24px;
+  margin-top: 32px;
+}
+
+.contact-elsewhere a {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-muted);
+  transition: color 0.2s ease;
+}
+
+.contact-elsewhere a:hover {
+  color: var(--accent);
+}
+
+/* ─── Footer ─── */
+footer {
+  padding: 32px 0;
+  border-top: 1px solid var(--divider);
+  text-align: center;
+}
+
+footer p {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+/* ─── Animations ─── */
+@media (prefers-reduced-motion: no-preference) {
+  .fade-up {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeUp 0.6s ease forwards;
+  }
+
+  @keyframes fadeUp {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .delay-1 { animation-delay: 0.08s; }
+  .delay-2 { animation-delay: 0.16s; }
+  .delay-3 { animation-delay: 0.24s; }
+  .delay-4 { animation-delay: 0.32s; }
+  .delay-5 { animation-delay: 0.40s; }
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 768px) {
+  .hero-grid,
+  .about-grid,
+  .projects-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-grid { gap: 40px; }
+
+  .nav-links { gap: 20px; }
+
+  .hero-heading {
+    font-size: 36px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<!-- ═══ NAV ═══ -->
+<nav class="nav">
+  <div class="container">
+    <div class="nav-logo">TYLER XIAO</div>
+    <ul class="nav-links">
+      <li><a href="#about" class="active">About</a></li>
+      <li><a href="#experience">Past Experience</a></li>
+      <li><a href="#contact">Schedule a Call</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-grid">
+      <div>
+        <p class="hero-comment fade-up">// hi, i'm tyler</p>
+        <h1 class="hero-heading fade-up delay-1">
+          I build <span class="highlight">Agents</span> and backend systems.
+        </h1>
+        <p class="hero-sub fade-up delay-2">
+          CS student at UCLA. From trust & safety automations to multiplayer card games, I like solving challenging problems and building efficient backend systems.
+        </p>
+        <div class="hero-ctas fade-up delay-3">
+          <button class="btn-primary">&#9654; Contact</button>
+          <button class="btn-secondary">View Past Experience</button>
+        </div>
+      </div>
+
+      <div class="fade-up delay-4">
+        <div class="terminal">
+          <div class="terminal-bar">
+            <div class="terminal-dot"></div>
+            <div class="terminal-dot"></div>
+            <div class="terminal-dot"></div>
+            <span class="terminal-title">guest@tyler-portfolio: ~</span>
+          </div>
+          <div class="terminal-body">
+            <div><span class="prompt">$</span> <span class="muted">cat status.json</span></div>
+            <br>
+            <div><span class="muted">{</span></div>
+            <div>&nbsp;&nbsp;<span class="key">"name"</span><span class="muted">:</span> <span class="string">"Tyler Xiao"</span><span class="muted">,</span></div>
+            <div>&nbsp;&nbsp;<span class="key">"role"</span><span class="muted">:</span> <span class="string">"CS @ UCLA '27"</span><span class="muted">,</span></div>
+            <div>&nbsp;&nbsp;<span class="key">"focus"</span><span class="muted">:</span> <span class="string">"AI Agents, Backend"</span><span class="muted">,</span></div>
+            <div>&nbsp;&nbsp;<span class="key">"status"</span><span class="muted">:</span> <span class="value">"building"</span><span class="muted">,</span></div>
+            <div>&nbsp;&nbsp;<span class="key">"location"</span><span class="muted">:</span> <span class="string">"Los Angeles, CA"</span></div>
+            <div><span class="muted">}</span></div>
+            <br>
+            <div><span class="prompt">$</span> <span class="muted" style="opacity:0.4">_</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ ABOUT ═══ -->
+<section id="about">
+  <div class="container">
+    <div class="eyebrow">// about</div>
+    <h2 class="section-heading">About Me</h2>
+    <div class="section-rule"></div>
+
+    <div class="about-grid">
+      <div class="about-text">
+        UCLA student studying <strong>Computer Science</strong> with a technical breadth in ECE.
+        I'm drawn to problems at the intersection of <strong>AI systems</strong> and
+        <strong>developer tooling</strong> — building agents that automate real workflows
+        and backend systems that scale cleanly.
+      </div>
+
+      <div class="status-card">
+        <div class="status-card-header">status monitor</div>
+        <div class="status-row">
+          <span class="status-key">location</span>
+          <span class="status-value">San Diego &rarr; Los Angeles</span>
+        </div>
+        <div class="status-row">
+          <span class="status-key">education</span>
+          <span class="status-value">UCLA CS '27</span>
+        </div>
+        <div class="status-row">
+          <span class="status-key">focus</span>
+          <span class="status-value">AI agents, backend, T&S</span>
+        </div>
+        <div class="status-row">
+          <span class="status-key">breadth</span>
+          <span class="status-value">ECE</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ EXPERIENCE ═══ -->
+<section id="experience">
+  <div class="container">
+    <div class="eyebrow">// experience</div>
+    <h2 class="section-heading">git log --timeline</h2>
+    <div class="section-rule"></div>
+
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-meta">
+          <span class="timeline-date">Jun 2026 — Sep 2026</span>
+          <span class="timeline-hash">a3f8c1d</span>
+        </div>
+        <div class="timeline-role">Software Engineering Intern</div>
+        <div class="timeline-company">TBD</div>
+        <div class="timeline-tags">
+          <span class="chip">AI Agents</span>
+          <span class="chip">Backend Systems</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-meta">
+          <span class="timeline-date">Jun 2025 — Sep 2025</span>
+          <span class="timeline-hash">e7b2d4f</span>
+        </div>
+        <div class="timeline-role">Member of Technical Staff</div>
+        <div class="timeline-company">SafetyKit</div>
+        <div class="timeline-tags">
+          <span class="chip">AI Agents</span>
+          <span class="chip--secondary chip">Trust & Safety</span>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-meta">
+          <span class="timeline-date">Nov 2024 — May 2025</span>
+          <span class="timeline-hash">c1a9f3b</span>
+        </div>
+        <div class="timeline-role">Technical Advisor Intern</div>
+        <div class="timeline-company">Scale AI</div>
+        <div class="timeline-tags">
+          <span class="chip">AI Systems</span>
+          <span class="chip--secondary chip">Evaluation</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PROJECTS ═══ -->
+<section id="projects">
+  <div class="container">
+    <div class="eyebrow">// projects</div>
+    <h2 class="section-heading">Selected builds</h2>
+    <div class="section-rule"></div>
+
+    <div class="projects-grid">
+      <div class="project-card">
+        <div class="project-tab">
+          <span class="project-tab-dot"></span>
+          multiplayer-card-games.ts
+        </div>
+        <div class="project-body">
+          <div class="project-eyebrow">
+            <span class="chip" style="font-size:11px;">Product Engineer</span>
+            <span class="chip--secondary chip" style="font-size:11px;">Realtime</span>
+          </div>
+          <div class="project-title">Multiplayer Card Games</div>
+          <div class="project-desc">
+            Full-stack platform for playing Fish and Viet Cong online with synchronized state, matchmaking, and polished animations.
+          </div>
+          <div class="project-tags">
+            <span class="chip">TypeScript</span>
+            <span class="chip">Next.js</span>
+            <span class="chip">Vercel</span>
+          </div>
+          <a href="#" class="project-link">View project &nearr;</a>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <div class="project-tab">
+          <span class="project-tab-dot"></span>
+          docupilot.py
+        </div>
+        <div class="project-body">
+          <div class="project-eyebrow">
+            <span class="chip" style="font-size:11px;">AI Engineer</span>
+            <span class="chip--secondary chip" style="font-size:11px;">Agents</span>
+          </div>
+          <div class="project-title">DocuPilot</div>
+          <div class="project-desc">
+            Google Drive agent that executes document workflows from natural language chat, handling routing, summarization, and task updates.
+          </div>
+          <div class="project-tags">
+            <span class="chip">FastAPI</span>
+            <span class="chip">LangChain</span>
+            <span class="chip">Gemini API</span>
+          </div>
+          <a href="#" class="project-link">View project &nearr;</a>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <div class="project-tab">
+          <span class="project-tab-dot"></span>
+          stonks-game.py
+        </div>
+        <div class="project-body">
+          <div class="project-eyebrow">
+            <span class="chip" style="font-size:11px;">Creator</span>
+            <span class="chip--secondary chip" style="font-size:11px;">Finance</span>
+          </div>
+          <div class="project-title">StonksGame</div>
+          <div class="project-desc">
+            Discord bot that runs live stock-trading simulations complete with leaderboards, analytics, and real-time market data.
+          </div>
+          <div class="project-tags">
+            <span class="chip">Python</span>
+            <span class="chip">Discord.py</span>
+            <span class="chip">Alpha Vantage</span>
+          </div>
+          <a href="#" class="project-link">View project &nearr;</a>
+        </div>
+      </div>
+
+      <div class="project-card">
+        <div class="project-tab">
+          <span class="project-tab-dot"></span>
+          kinetic.tsx
+        </div>
+        <div class="project-body">
+          <div class="project-eyebrow">
+            <span class="chip" style="font-size:11px;">Full Stack</span>
+            <span class="chip--secondary chip" style="font-size:11px;">AI / Education</span>
+          </div>
+          <div class="project-title">Kinetic</div>
+          <div class="project-desc">
+            Automated lecture builder using instructor and TA agents to deliver multi-modal lessons with live collaboration tools.
+          </div>
+          <div class="project-tags">
+            <span class="chip">Next.js</span>
+            <span class="chip">Fastify</span>
+            <span class="chip">Claude API</span>
+          </div>
+          <a href="#" class="project-link">View project &nearr;</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ WRITING ═══ -->
+<section id="writing">
+  <div class="container">
+    <div class="eyebrow">// writing</div>
+    <h2 class="section-heading">Changelog entries</h2>
+    <div class="section-rule"></div>
+
+    <ul class="changelog-list">
+      <li class="changelog-item">
+        <span class="changelog-date">2025-11-04</span>
+        <span class="changelog-type">feat:</span>
+        <span class="changelog-title">Coming Soon — will add technical writing soon.</span>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══ CONTACT ═══ -->
+<section id="contact">
+  <div class="container">
+    <div class="eyebrow">// contact</div>
+    <h2 class="section-heading">connect --via=email</h2>
+    <div class="section-rule"></div>
+
+    <div class="contact-terminal">
+      <div class="contact-line">
+        <span class="cmd">$ connect --via=email</span>
+      </div>
+      <div class="contact-line">
+        &nbsp;&nbsp;<a href="mailto:tylerxiao@ucla.edu">tylerxiao@ucla.edu</a>
+      </div>
+      <br>
+      <div class="contact-line">
+        <span class="cmd">$ connect --via=call</span>
+      </div>
+      <div class="contact-line">
+        &nbsp;&nbsp;<a href="#">Schedule a call &nearr;</a>
+      </div>
+    </div>
+
+    <div class="contact-elsewhere">
+      <a href="#">Email &nearr;</a>
+      <a href="#">GitHub &nearr;</a>
+      <a href="#">LinkedIn &nearr;</a>
+      <a href="#">Twitter &nearr;</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer>
+  <div class="container">
+    <p>&copy; 2026 Tyler Xiao</p>
+  </div>
+</footer>
+
+</body>
+</html>
