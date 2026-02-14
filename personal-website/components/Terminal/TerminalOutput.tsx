@@ -10,13 +10,13 @@ export const TerminalOutput = ({ history }: TerminalOutputProps) => {
       {history.map((item) => (
         <div key={item.id} className="space-y-1">
           {item.command && (
-            <div className="flex items-center gap-2 text-gray-400">
-              <span className="text-green-500">➜</span>
-              <span className="text-blue-400">~</span>
+            <div className="flex items-center gap-2 text-[#6C7689]">
+              <span className="text-[#4ECDC4]">&#10148;</span>
+              <span className="text-[#E8C468]">~</span>
               <span>{item.command}</span>
             </div>
           )}
-          <div className="text-gray-200 leading-relaxed break-words">
+          <div className="text-[#E8ECF1] leading-relaxed break-words">
             {item.output}
           </div>
         </div>

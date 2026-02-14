@@ -55,14 +55,16 @@ export function UserCountTracker() {
   }, []);
 
   const displayValue =
-    loading && count === null ? '…' : (count?.toLocaleString() ?? '—');
+    loading && count === null ? '\u2026' : (count?.toLocaleString() ?? '\u2014');
 
   return (
     <div className="pane flex flex-col gap-2 p-5">
-      <p className="text-xs uppercase tracking-[0.2em] text-muted">
+      <p className="font-mono text-xs uppercase tracking-widest text-muted">
         Total visitors tracked
       </p>
-      <p className="text-3xl font-semibold">{displayValue}</p>
+      <p className="font-display text-3xl font-semibold text-foreground">
+        {displayValue}
+      </p>
       <p className="text-sm text-muted">
         {error
           ? error

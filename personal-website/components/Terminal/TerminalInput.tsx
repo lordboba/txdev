@@ -68,8 +68,8 @@ export const TerminalInput = ({ onCommand, disabled }: TerminalInputProps) => {
 
   return (
     <div className="flex items-center gap-2 font-mono">
-      <span className="text-green-500">➜</span>
-      <span className="text-blue-400">~</span>
+      <span className="text-[#4ECDC4]">&#10148;</span>
+      <span className="text-[#E8C468]">~</span>
       <input
         ref={inputRef}
         type="text"
@@ -77,7 +77,7 @@ export const TerminalInput = ({ onCommand, disabled }: TerminalInputProps) => {
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
         disabled={disabled}
-        className="flex-1 bg-transparent outline-none border-none text-gray-100 placeholder-gray-600"
+        className="flex-1 bg-transparent outline-none border-none text-[#E8ECF1] placeholder-[#6C7689]"
         autoComplete="off"
         spellCheck="false"
         autoFocus

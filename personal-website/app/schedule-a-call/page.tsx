@@ -18,36 +18,37 @@ export default function ScheduleCallPage() {
       <NavBar />
       <Link
         href="/"
-        className="text-sm font-semibold text-muted transition hover:text-foreground hover:underline"
+        className="text-sm font-semibold text-muted transition hover:text-accent"
       >
-        ← Back to home
+        &larr; Back to home
       </Link>
 
       <header className="pane p-6">
-        <p className="eyebrow">Schedule a call</p>
-        <h1 className="mt-4 text-4xl font-semibold tracking-tight">
+        <p className="eyebrow">// schedule a call</p>
+        <h1 className="mt-4 font-display text-4xl font-semibold tracking-tight">
           15-minute chat to align on goals.
         </h1>
-        <p className="mt-3 text-base text-muted">
-          We’ll cover what you’re building, how I can help, and immediate next
-          steps. Keep it lightweight—think of it as a quick code review for your
-          roadmap.
+        <p className="mt-3 text-base text-muted leading-relaxed">
+          We&rsquo;ll cover what you&rsquo;re building, how I can help, and
+          immediate next steps. Keep it lightweight — think of it as a quick code
+          review for your roadmap.
         </p>
         <div className="mt-6 flex flex-wrap gap-4">
           <Link
             href="#calendly"
-            className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition hover:bg-primary/90 hover:brightness-125 hover:underline"
+            className="inline-flex items-center justify-center rounded-lg bg-accent px-6 py-3 font-mono text-sm font-semibold text-background shadow-[0_2px_12px_rgba(232,196,104,0.2)] transition hover:shadow-[0_4px_20px_rgba(232,196,104,0.3)] hover:-translate-y-0.5"
           >
             Book now
           </Link>
           <Link
             href="mailto:tylerxiao@ucla.edu"
-            className="inline-flex items-center justify-center rounded-full border border-divider px-6 py-3 text-sm font-semibold text-foreground transition hover:border-foreground hover:underline"
+            className="inline-flex items-center justify-center rounded-lg border border-dashed border-divider px-6 py-3 font-mono text-sm font-semibold text-muted transition hover:border-accent hover:text-foreground"
           >
             Email instead
           </Link>
         </div>
       </header>
+
       <section id="calendly" className="pane overflow-hidden p-0">
         <iframe
           src={CALENDLY_EMBED_URL}
@@ -56,14 +57,17 @@ export default function ScheduleCallPage() {
           frameBorder="0"
         />
       </section>
+
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
         <div className="pane p-6">
-          <h2 className="text-2xl font-semibold">What to expect</h2>
+          <h2 className="font-display text-2xl font-semibold">
+            What to expect
+          </h2>
           <ul className="mt-4 space-y-3 text-sm text-muted">
             {callHighlights.map((highlight) => (
               <li
                 key={highlight}
-                className="rounded-2xl border border-divider bg-background/60 px-4 py-3"
+                className="rounded-lg border border-divider bg-surface-raised/60 px-4 py-3"
               >
                 {highlight}
               </li>
@@ -71,16 +75,17 @@ export default function ScheduleCallPage() {
           </ul>
         </div>
         <div className="pane p-6">
-          <h3 className="text-xs uppercase tracking-[0.2em] text-muted">
+          <h3 className="font-mono text-xs uppercase tracking-widest text-muted">
             Social proof
           </h3>
-          <div className="mt-4 space-y-3 text-sm text-muted">
+          <div className="mt-4 space-y-3 text-sm">
             {callSocialProof.map((item) => (
               <div
                 key={item}
-                className="rounded-2xl border border-divider bg-background/80 px-4 py-3"
+                className="flex items-center gap-2 rounded-lg border border-divider bg-surface-raised/60 px-4 py-3 text-muted"
               >
-                {item}
+                <span className="font-mono text-secondary">[ok]</span>
+                <span>{item}</span>
               </div>
             ))}
           </div>
@@ -88,7 +93,7 @@ export default function ScheduleCallPage() {
             Questions before booking?{' '}
             <Link
               href="mailto:tylerxiao@ucla.edu"
-              className="font-semibold text-primary hover:text-primary/80 hover:underline"
+              className="font-semibold text-accent transition hover:opacity-75"
             >
               Send a note.
             </Link>
@@ -97,8 +102,8 @@ export default function ScheduleCallPage() {
       </section>
 
       <footer className="pane p-5 text-sm text-muted">
-        Leave a short brief or NDA request in the Calendly notes—I’ll respond
-        before the call.
+        Leave a short brief or NDA request in the Calendly notes — I&rsquo;ll
+        respond before the call.
       </footer>
     </div>
   );

@@ -38,8 +38,8 @@ export const Terminal = ({
   }, [isFullScreen, onToggleFullScreen]);
 
   const containerClass = isFullScreen
-    ? 'fixed inset-0 z-50 h-screen w-screen bg-[#0f0f0f]'
-    : 'relative h-full w-full rounded-2xl bg-[#0f0f0f] border border-divider';
+    ? 'fixed inset-0 z-50 h-screen w-screen bg-terminal-bg'
+    : 'relative h-full w-full rounded-xl bg-terminal-bg border border-terminal-border';
 
   const textClass = isFullScreen
     ? 'text-sm sm:text-base'
@@ -48,21 +48,21 @@ export const Terminal = ({
 
   return (
     <div
-      className={`${containerClass} ${textClass} text-[#f0f0f0] font-mono flex flex-col overflow-hidden transition-all duration-300`}
+      className={`${containerClass} ${textClass} text-[#E8ECF1] font-mono flex flex-col overflow-hidden transition-all duration-300`}
       onClick={(e) => {
         const input = e.currentTarget.querySelector('input');
         if (input) (input as HTMLElement).focus();
       }}
     >
       {/* Terminal Header / Controls */}
-      <div className="flex items-center justify-between bg-[#1a1a1a] px-4 py-2 border-b border-[#333] shrink-0">
+      <div className="flex items-center justify-between bg-terminal-bar px-4 py-2.5 border-b border-terminal-border shrink-0">
         <div className="flex gap-2">
-          <div className="h-3 w-3 rounded-full bg-red-500/80" />
-          <div className="h-3 w-3 rounded-full bg-yellow-500/80" />
-          <div className="h-3 w-3 rounded-full bg-green-500/80" />
+          <div className="h-2.5 w-2.5 rounded-full bg-[#E8C468]/30 border border-[#E8C468]/20" />
+          <div className="h-2.5 w-2.5 rounded-full bg-[#E8C468]/20 border border-[#E8C468]/15" />
+          <div className="h-2.5 w-2.5 rounded-full bg-[#E8C468]/10 border border-[#E8C468]/10" />
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted hidden sm:inline-block">
+          <span className="text-xs text-[#6C7689] hidden sm:inline-block">
             guest@tyler-portfolio: ~
           </span>
         </div>
@@ -73,7 +73,7 @@ export const Terminal = ({
                 e.stopPropagation();
                 onToggleFullScreen();
               }}
-              className="text-muted transition hover:text-foreground"
+              className="text-[#6C7689] transition hover:text-[#E8C468]"
               title={
                 isFullScreen ? 'Exit Full Screen (Esc)' : 'Enter Full Screen'
               }
@@ -128,7 +128,7 @@ export const Terminal = ({
           {!isBooting && <TerminalInput onCommand={handleCommand} />}
 
           {isBooting && (
-            <div className="mt-2 animate-pulse text-green-500">
+            <div className="mt-2 animate-pulse text-[#4ECDC4]">
               System initializing...
             </div>
           )}
