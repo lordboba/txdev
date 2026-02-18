@@ -5,6 +5,7 @@ interface TerminalInputProps {
   onCommand: (command: string) => boolean;
   onCommandStart?: () => void;
   disabled?: boolean;
+  autoFocus?: boolean;
 }
 
 const AVAILABLE_COMMANDS: CommandType[] = [
@@ -28,6 +29,7 @@ export const TerminalInput = ({
   onCommand,
   onCommandStart,
   disabled,
+  autoFocus = true,
 }: TerminalInputProps) => {
   const [input, setInput] = useState('');
   const [isInvalid, setIsInvalid] = useState(false);
@@ -35,10 +37,10 @@ export const TerminalInput = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!disabled) {
+    if (!disabled && autoFocus) {
       inputRef.current?.focus();
     }
-  }, [disabled]);
+  }, [disabled, autoFocus]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -113,7 +115,6 @@ export const TerminalInput = ({
         className="flex-1 bg-transparent outline-none border-none text-[#E8ECF1] placeholder-[#6C7689]"
         autoComplete="off"
         spellCheck="false"
-        autoFocus
       />
     </div>
   );

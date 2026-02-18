@@ -8,9 +8,11 @@ import { TerminalOutput } from './TerminalOutput';
 export const Terminal = ({
   isFullScreen,
   onToggleFullScreen,
+  autoFocusInput = true,
 }: {
   isFullScreen?: boolean;
   onToggleFullScreen?: () => void;
+  autoFocusInput?: boolean;
 }) => {
   const { history, handleCommand, isBooting } = useTerminal();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -178,6 +180,7 @@ export const Terminal = ({
             <TerminalInput
               onCommand={handleCommand}
               onCommandStart={dismissTip}
+              autoFocus={autoFocusInput}
             />
           )}
 

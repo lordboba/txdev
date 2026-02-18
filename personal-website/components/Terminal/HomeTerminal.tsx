@@ -14,6 +14,7 @@ export const HomeTerminal = () => {
       <Terminal
         isFullScreen={isFullScreen}
         onToggleFullScreen={() => setIsFullScreen(!isFullScreen)}
+        autoFocusInput={isFullScreen}
       />
     </div>
   );
