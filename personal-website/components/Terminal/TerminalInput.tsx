@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, KeyboardEvent } from 'react';
 import { CommandType, INITIAL_FILES } from './types';
 
 interface TerminalInputProps {
-  onCommand: (command: string) => void;
+  onCommand: (command: string) => boolean;
+  onCommandStart?: () => void;
   disabled?: boolean;
 }
 
@@ -23,8 +24,14 @@ const AVAILABLE_COMMANDS: CommandType[] = [
 
 const FILES = Object.keys(INITIAL_FILES);
 
-export const TerminalInput = ({ onCommand, disabled }: TerminalInputProps) => {
+export const TerminalInput = ({
+  onCommand,
+  onCommandStart,
+  disabled,
+}: TerminalInputProps) => {
   const [input, setInput] = useState('');
+  const [isInvalid, setIsInvalid] = useState(false);
+  const [isPromptFlashing, setIsPromptFlashing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -35,7 +42,23 @@ export const TerminalInput = ({ onCommand, disabled }: TerminalInputProps) => {
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      onCommand(input);
+      const trimmed = input.trim();
+      if (trimmed) {
+        onCommandStart?.();
+      }
+      const isValid = onCommand(input);
+      if (trimmed && !isValid) {
+        setIsInvalid(false);
+        setIsPromptFlashing(false);
+        requestAnimationFrame(() => {
+          setIsInvalid(true);
+          setIsPromptFlashing(true);
+        });
+        window.setTimeout(() => {
+          setIsInvalid(false);
+          setIsPromptFlashing(false);
+        }, 220);
+      }
       setInput('');
     } else if (e.key === 'Tab') {
       e.preventDefault();
@@ -67,8 +90,18 @@ export const TerminalInput = ({ onCommand, disabled }: TerminalInputProps) => {
   };
 
   return (
-    <div className="flex items-center gap-2 font-mono">
-      <span className="text-[#4ECDC4]">&#10148;</span>
+    <div
+      className={`terminal-input-row flex items-center gap-2 font-mono ${
+        isInvalid ? 'is-invalid' : ''
+      }`}
+    >
+      <span
+        className={`terminal-prompt-arrow text-[#4ECDC4] ${
+          isPromptFlashing ? 'is-flashing' : ''
+        }`}
+      >
+        &#10148;
+      </span>
       <span className="text-[#E8C468]">~</span>
       <input
         ref={inputRef}

@@ -10,6 +10,7 @@ import { HomeTerminal } from '@/components/Terminal/HomeTerminal';
 import { UserCountTracker } from '@/components/UserCountTracker';
 import { NavBar } from '@/components/NavBar';
 import { getRecentPostMeta } from '@/lib/blog';
+import { HomeMotionEffects } from '@/components/HomeMotionEffects';
 
 function SectionHeading({
   eyebrow,
@@ -21,7 +22,7 @@ function SectionHeading({
   description?: string;
 }) {
   return (
-    <div className="max-w-3xl space-y-3">
+    <div className="reveal-on-scroll max-w-3xl space-y-3">
       <p className="eyebrow">{eyebrow}</p>
       <h2 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
         {title}
@@ -38,30 +39,32 @@ export default async function Home() {
   const latestPosts = await getRecentPostMeta(3);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
+    <div className="home-shell flex min-h-screen flex-col bg-background text-foreground">
       <NavBar />
 
       <main className="mx-auto flex w-full max-w-5xl flex-col gap-16 px-5 py-12 sm:gap-24 sm:px-6 sm:py-20">
+        <HomeMotionEffects />
+
         {/* ═══ Hero ═══ */}
         <section className="flex flex-col items-start gap-10 sm:gap-16">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-8 sm:gap-16 max-w-3xl">
             <div className="flex flex-col gap-6">
               <div className="space-y-4">
-                <p className="font-mono text-sm text-muted">
+                <p className="hero-stage hero-stage-1 font-mono text-sm text-muted">
                   {"// hi, i'm tyler"}
                 </p>
-                <h1 className="font-display text-5xl font-bold tracking-tight sm:text-7xl">
+                <h1 className="hero-stage hero-stage-2 font-display text-5xl font-bold tracking-tight sm:text-7xl">
                   I build <span className="text-accent">Agents</span> and
                   backend systems.
                 </h1>
               </div>
-              <p className="max-w-2xl text-lg text-muted leading-relaxed">
+              <p className="hero-stage hero-stage-3 max-w-2xl text-lg text-muted leading-relaxed">
                 CS student at UCLA. From trust &amp; safety automations to
                 multiplayer card games, I like solving challenging problems,
                 building efficient backend systems, and automating repetitive
                 tasks.
               </p>
-              <div className="flex flex-wrap gap-4">
+              <div className="hero-stage hero-stage-4 flex flex-wrap gap-4">
                 <Link
                   href="#contact"
                   className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-7 py-3 font-mono text-sm font-semibold text-background shadow-[0_2px_12px_rgba(232,196,104,0.2)] transition hover:shadow-[0_4px_20px_rgba(232,196,104,0.3)] hover:-translate-y-0.5"
@@ -76,16 +79,21 @@ export default async function Home() {
                 </Link>
               </div>
             </div>
-            <Image
-              src="/pfp.JPG"
-              alt="Tyler Xiao"
-              width={400}
-              height={400}
-              className="h-64 w-64 sm:h-80 sm:w-80 rounded-full object-cover border-2 border-divider shadow-sm flex-shrink-0"
-              priority
-            />
+            <div
+              data-pointer-profile
+              className="hero-stage hero-stage-4 profile-halo-shell h-64 w-64 sm:h-80 sm:w-80 flex-shrink-0 rounded-full border-2 border-divider"
+            >
+              <Image
+                src="/pfp.JPG"
+                alt="Tyler Xiao"
+                width={400}
+                height={400}
+                className="h-full w-full rounded-full object-cover"
+                priority
+              />
+            </div>
           </div>
-          <div className="w-full">
+          <div className="hero-stage hero-stage-4 w-full">
             <HomeTerminal />
           </div>
         </section>
@@ -95,14 +103,14 @@ export default async function Home() {
           id="about"
           className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]"
         >
-          <div>
+          <div className="reveal-on-scroll reveal-slide-left">
             <SectionHeading
               eyebrow="// about"
               title="About Me"
               description="UCLA student studying Computer Science — focused on building systems that work."
             />
           </div>
-          <div className="pane overflow-hidden">
+          <div className="pane reveal-on-scroll reveal-slide-right overflow-hidden">
             <div className="border-b border-divider px-5 py-3">
               <span className="font-mono text-xs tracking-widest uppercase text-muted">
                 status monitor
@@ -131,17 +139,24 @@ export default async function Home() {
             title="git log --timeline"
             description="Recent roles across AI workflows, evaluations, and student leadership."
           />
-          <div className="relative space-y-10 pl-8">
+          <div
+            data-timeline-root
+            className="timeline-motion relative space-y-5 pl-8"
+          >
             {/* Timeline line */}
             <div className="absolute left-[7px] top-2 bottom-2 w-px bg-accent/30 shadow-[0_0_8px_rgba(232,196,104,0.15)]" />
 
             {experiences.map((exp, i) => (
               <article
                 key={`${exp.company}-${exp.role}`}
-                className="relative space-y-3"
+                data-timeline-item
+                tabIndex={0}
+                className={`timeline-entry reveal-on-scroll relative space-y-3 ${
+                  i % 2 === 0 ? 'reveal-slide-right' : 'reveal-slide-left'
+                }`}
               >
                 {/* Timeline node */}
-                <div className="absolute -left-8 top-1.5 h-[9px] w-[9px] rounded-full bg-accent shadow-[0_0_0_4px_var(--background),0_0_12px_rgba(232,196,104,0.2)]" />
+                <div className="timeline-node absolute -left-8 top-1.5 h-[9px] w-[9px] rounded-full bg-accent shadow-[0_0_0_4px_var(--background),0_0_12px_rgba(232,196,104,0.2)]" />
 
                 <div className="flex items-center gap-3 font-mono text-xs text-muted">
                   <span>
@@ -192,7 +207,8 @@ export default async function Home() {
             {projects.map((project) => (
               <article
                 key={project.title}
-                className="pane flex h-full flex-col overflow-hidden transition hover:scale-[1.01]"
+                data-pointer-card
+                className="pane project-motion-card reveal-on-scroll flex h-full flex-col overflow-hidden transition hover:scale-[1.01]"
               >
                 {/* Tab bar */}
                 <div className="flex items-center gap-2 border-b border-divider px-5 py-3 font-mono text-sm text-accent">
@@ -221,7 +237,7 @@ export default async function Home() {
                   </p>
                   <div className="mt-4 flex flex-wrap gap-2 text-xs">
                     {project.tech.map((tech) => (
-                      <span key={tech} className="chip">
+                      <span key={tech} className="chip project-tech-chip">
                         {tech}
                       </span>
                     ))}
@@ -250,7 +266,7 @@ export default async function Home() {
               <Link
                 key={article.slug}
                 href={`/blog/${article.slug}`}
-                className="group flex items-baseline gap-4 border-b border-divider py-4 transition hover:border-accent/35"
+                className="group reveal-on-scroll flex items-baseline gap-4 border-b border-divider py-4 transition hover:border-accent/35"
               >
                 <span className="font-mono text-sm text-muted whitespace-nowrap">
                   {article.formattedDate}
@@ -258,7 +274,7 @@ export default async function Home() {
                 <span className="font-mono text-sm text-secondary whitespace-nowrap">
                   feat:
                 </span>
-                <span className="text-foreground group-hover:text-accent transition">
+                <span className="writing-link-sweep text-foreground group-hover:text-accent transition">
                   {article.title}
                 </span>
               </Link>
@@ -280,13 +296,14 @@ export default async function Home() {
             description="Email for details, or schedule a call to jam on agentic AI, sports, and more."
           />
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-            <div className="space-y-5 font-mono text-sm">
+            <div className="reveal-on-scroll space-y-5 font-mono text-sm">
               <div>
                 <p className="text-muted">$ connect --via=email</p>
                 <Link
                   href="mailto:tylerxiao@ucla.edu"
-                  className="mt-1 inline-flex text-lg font-semibold text-accent transition hover:opacity-75"
+                  className="contact-status-link mt-1 inline-flex items-center gap-2 text-lg font-semibold text-accent transition hover:opacity-75"
                 >
+                  <span className="contact-ping-dot" />
                   tylerxiao@ucla.edu
                 </Link>
               </div>
@@ -294,13 +311,14 @@ export default async function Home() {
                 <p className="text-muted">$ connect --via=call</p>
                 <Link
                   href="/schedule-a-call"
-                  className="mt-1 inline-flex items-center gap-2 text-base font-semibold text-accent transition hover:opacity-75"
+                  className="contact-status-link mt-1 inline-flex items-center gap-2 text-base font-semibold text-accent transition hover:opacity-75"
                 >
+                  <span className="contact-ping-dot" />
                   Schedule a call &#8599;
                 </Link>
               </div>
             </div>
-            <div className="pane p-6">
+            <div className="pane reveal-on-scroll p-6">
               <h3 className="font-mono text-xs uppercase tracking-widest text-muted">
                 Elsewhere
               </h3>

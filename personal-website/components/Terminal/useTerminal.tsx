@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, ReactNode } from 'react';
 import { HistoryItem, INITIAL_FILES } from './types';
 import { ASCII_ART, WELCOME_MESSAGE } from './ascii';
+import { AnimatedLines } from './AnimatedLines';
 import {
   experiences,
   projects,
@@ -9,7 +10,6 @@ import {
 } from '../../lib/siteData';
 
 export const useTerminal = () => {
-  const [input, setInput] = useState('');
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isBooting, setIsBooting] = useState(true);
 
@@ -58,13 +58,14 @@ export const useTerminal = () => {
   const handleCommand = useCallback(
     (cmdString: string) => {
       const trimmedCmd = cmdString.trim();
-      if (!trimmedCmd) return;
+      if (!trimmedCmd) return true;
 
       const parts = trimmedCmd.split(' ');
       const command = parts[0].toLowerCase();
       const args = parts.slice(1);
 
       let output: ReactNode;
+      let isValid = true;
 
       switch (command) {
         case 'help':
@@ -95,79 +96,49 @@ export const useTerminal = () => {
         case 'about':
         case 'whoami':
           output = (
-            <div className="space-y-2">
-              <p>Hello! I&apos;m Tyler Xiao.</p>
-              <ul className="list-disc pl-4">
-                {quickFacts.map((fact, i) => (
-                  <li key={i}>
-                    <span className="text-blue-400 font-bold">
-                      {fact.label}:
-                    </span>{' '}
-                    {fact.value}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <AnimatedLines
+              lines={[
+                { text: "Hello! I'm Tyler Xiao." },
+                ...quickFacts.map((fact) => ({
+                  text: `${fact.label}: ${fact.value}`,
+                  className: 'text-blue-300',
+                })),
+              ]}
+            />
           );
           break;
 
         case 'projects':
           output = (
-            <div className="space-y-4">
-              <p className="text-gray-400">
-                Here are some things I&apos;ve built:
-              </p>
-              {projects.map((project, i) => (
-                <div key={i} className="pl-2 border-l-2 border-blue-500">
-                  <div className="flex flex-wrap items-baseline gap-2">
-                    <a
-                      href={project.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-400 font-bold hover:underline"
-                    >
-                      {project.title}
-                    </a>
-                    <span className="text-xs text-gray-500">
-                      ({project.role})
-                    </span>
-                  </div>
-                  <p>{project.description}</p>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {project.tech.map((t, j) => (
-                      <span
-                        key={j}
-                        className="text-xs text-yellow-600 bg-yellow-900/20 px-1 rounded"
-                      >
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <AnimatedLines
+              lines={[
+                {
+                  text: "Here are some things I've built:",
+                  className: 'text-gray-300',
+                },
+                ...projects.map((project) => ({
+                  text: `- ${project.title} (${project.role})`,
+                  className: 'text-blue-300',
+                })),
+              ]}
+            />
           );
           break;
 
         case 'experience':
           output = (
-            <div className="space-y-4">
-              <p className="text-gray-400">My professional journey:</p>
-              {experiences.map((exp, i) => (
-                <div key={i} className="pl-2 border-l-2 border-green-500">
-                  <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between">
-                    <span className="font-bold text-green-400">
-                      {exp.company}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {exp.start} - {exp.end}
-                    </span>
-                  </div>
-                  <p className="text-gray-300">{exp.role}</p>
-                  <p className="italic mt-1">{exp.summary}</p>
-                </div>
-              ))}
-            </div>
+            <AnimatedLines
+              lines={[
+                {
+                  text: 'My professional journey:',
+                  className: 'text-gray-300',
+                },
+                ...experiences.map((exp) => ({
+                  text: `- ${exp.start} - ${exp.end}: ${exp.role} @ ${exp.company}`,
+                  className: 'text-green-300',
+                })),
+              ]}
+            />
           );
           break;
 
@@ -263,13 +234,14 @@ export const useTerminal = () => {
 
         case 'clear':
           setHistory([]);
-          return; // Return early to avoid adding 'clear' to history
+          return true; // Return early to avoid adding 'clear' to history
 
         case 'pwd':
           output = <span>/home/guest</span>;
           break;
 
         default:
+          isValid = false;
           output = (
             <span className="text-red-400">
               Command not found: {command}. Type{' '}
@@ -279,13 +251,12 @@ export const useTerminal = () => {
       }
 
       addToHistory(trimmedCmd, output);
+      return isValid;
     },
     [addToHistory],
   );
 
   return {
-    input,
-    setInput,
     history,
     handleCommand,
     isBooting,

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTerminal } from './useTerminal';
 import { TerminalInput } from './TerminalInput';
 import { TerminalOutput } from './TerminalOutput';
@@ -14,6 +14,10 @@ export const Terminal = ({
 }) => {
   const { history, handleCommand, isBooting } = useTerminal();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const tipTimerRef = useRef<number | null>(null);
+  const [showTip, setShowTip] = useState(false);
+
+  const quickCommands = ['about', 'projects', 'experience', 'help'] as const;
 
   // Keep the scroll position at the bottom of the terminal without moving the page
   useEffect(() => {
@@ -37,6 +41,30 @@ export const Terminal = ({
     return () => window.removeEventListener('keydown', handleEsc);
   }, [isFullScreen, onToggleFullScreen]);
 
+  useEffect(() => {
+    const tipSeen = localStorage.getItem('terminal-tip-seen');
+    if (tipSeen) return;
+
+    tipTimerRef.current = window.setTimeout(() => {
+      setShowTip(true);
+    }, 520);
+
+    return () => {
+      if (tipTimerRef.current) {
+        window.clearTimeout(tipTimerRef.current);
+      }
+    };
+  }, []);
+
+  const dismissTip = () => {
+    if (tipTimerRef.current) {
+      window.clearTimeout(tipTimerRef.current);
+      tipTimerRef.current = null;
+    }
+    setShowTip(false);
+    localStorage.setItem('terminal-tip-seen', '1');
+  };
+
   const containerClass = isFullScreen
     ? 'fixed inset-0 z-50 h-screen w-screen bg-terminal-bg'
     : 'relative h-full w-full rounded-xl bg-terminal-bg border border-terminal-border';
@@ -48,7 +76,7 @@ export const Terminal = ({
 
   return (
     <div
-      className={`${containerClass} ${textClass} text-[#E8ECF1] font-mono flex flex-col overflow-hidden transition-all duration-300`}
+      className={`${containerClass} ${textClass} terminal-root text-[#E8ECF1] font-mono flex flex-col overflow-hidden transition-all duration-400`}
       onClick={(e) => {
         const input = e.currentTarget.querySelector('input');
         if (input) (input as HTMLElement).focus();
@@ -123,9 +151,35 @@ export const Terminal = ({
         ref={scrollContainerRef}
       >
         <div className="mx-auto max-w-4xl">
+          <div className={`terminal-tip ${showTip ? 'is-visible' : ''}`}>
+            Tip: try <code>help</code> or <code>cat resume.pdf</code>
+          </div>
+
+          <div className="mb-3 flex flex-wrap gap-2">
+            {quickCommands.map((command) => (
+              <button
+                key={command}
+                type="button"
+                className="terminal-command-chip"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  dismissTip();
+                  handleCommand(command);
+                }}
+              >
+                {command}
+              </button>
+            ))}
+          </div>
+
           <TerminalOutput history={history} />
 
-          {!isBooting && <TerminalInput onCommand={handleCommand} />}
+          {!isBooting && (
+            <TerminalInput
+              onCommand={handleCommand}
+              onCommandStart={dismissTip}
+            />
+          )}
 
           {isBooting && (
             <div className="mt-2 animate-pulse text-[#4ECDC4]">
