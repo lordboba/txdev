@@ -196,7 +196,7 @@ export const useTerminal = () => {
               <span className="text-red-400">Usage: cat &lt;filename&gt;</span>
             );
           } else if (fileName === 'resume.pdf') {
-            const resumePath = '/Xiao_Tyler_resume.pdf';
+            const resumePath = '/resume/resume.pdf';
             // Open the actual PDF in a new tab while still printing something in-terminal.
             if (typeof window !== 'undefined') {
               window.open(resumePath, '_blank', 'noopener,noreferrer');
