@@ -2,3 +2,11 @@
 
 # Ignore draft blog posts
 personal-website/content/blog/drafts/*
+
+# Resume aux/log/out
+/resume/**/*.aux
+/resume/**/*.log
+/resume/**/*.out
+/resume/**/*.fdb_latexmk
+/resume/**/*.fls
+/resume/**/*.synctex.gz

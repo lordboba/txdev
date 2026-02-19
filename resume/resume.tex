@@ -1,0 +1,229 @@
+%-------------------------
+% Resume in Latex
+% Author: Tyler Xiao
+% Based off of: https://github.com/sb2nov/resume
+% License: MIT
+%------------------------
+
+\documentclass[letterpaper,11pt]{article}
+
+\usepackage{latexsym}
+\usepackage[empty]{fullpage}
+\usepackage{titlesec}
+\usepackage{marvosym}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{verbatim}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage[english]{babel}
+\usepackage{tabularx}
+\input{glyphtounicode}
+
+
+%----------FONT OPTIONS----------
+% sans-serif
+% \usepackage[sfdefault]{FiraSans}
+% \usepackage[sfdefault]{roboto}
+% \usepackage[sfdefault]{noto-sans}
+% \usepackage[default]{sourcesanspro}
+
+% serif
+% \usepackage{CormorantGaramond}
+% \usepackage{charter}
+
+
+\pagestyle{fancy}
+\fancyhf{} % clear all header and footer fields
+\fancyfoot{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% Adjust margins
+\addtolength{\oddsidemargin}{-0.5in}
+\addtolength{\evensidemargin}{-0.5in}
+\addtolength{\textwidth}{1in}
+\addtolength{\topmargin}{-.5in}
+\addtolength{\textheight}{1.0in}
+
+\urlstyle{same}
+
+\raggedbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+
+% Sections formatting
+\titleformat{\section}{
+  \vspace{-4pt}\scshape\raggedright\large
+}{}{0em}{}[\color{black}\titlerule \vspace{-5pt}]
+
+% Ensure that the generated pdf is machine readable/ATS parsable
+\pdfgentounicode=1
+
+%-------------------------
+% Custom commands
+
+\newcommand{\resumeItem}[1]{\item \small{#1}}
+\newcommand{\resumeSubheading}[4]{
+  \vspace{-2pt}\item
+    \begin{tabular*}{0.97\textwidth}[t]{l@{\extracolsep{\fill}}r}
+      \textbf{#1} & #2 \\
+      \textit{\small#3} & \textit{\small #4} \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubSubheading}[2]{
+  \item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \textit{\small#1} & \textit{\small #2} \\
+    \end{tabular*}\vspace{-7pt}
+}
+\newcommand{\resumeProjectHeading}[2]{
+  \item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \small#1 & #2 \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubItem}[1]{\resumeItem{#1}\vspace{-4pt}}
+
+\renewcommand\labelitemii{$\vcenter{\hbox{\tiny$\bullet$}}$}
+
+\newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=0.15in, label={}]}
+\newcommand{\resumeSubHeadingListEnd}{\end{itemize}}
+\newcommand{\resumeItemListStart}{\begin{itemize}}
+\newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-5pt}}
+
+\begin{document}
+%----------HEADER----------
+\begin{center}
+    \textbf{\Huge \scshape Tyler Xiao} \\ \vspace{1pt}
+    \small 858-914-6270 $|$ \href{mailto:tylerxiao@g.ucla.edu}{\underline{tylerxiao@g.ucla.edu}} $|$
+    \href{https://www.linkedin.com/in/tyler-xiao/}{\underline{/in/tyler-xiao}} $|$
+    \href{https://github.com/lordboba}{\underline{github/lordboba}}
+\end{center}
+%----------EDUCATION----------
+\section{Education}
+\resumeSubHeadingListStart
+  \resumeSubheading
+    {University of California, Los Angeles}{September 2024 - June 2027}
+    {B.S. in Computer Science and Engineering}{}
+    \resumeItemListStart
+      \resumeItem{\textbf{GPA: 3.93/4.0} \;—\; 2x Dean's Honors List}
+      \resumeItem{\textbf{Coursework:} Algorithms, Software Construction, Computer Organization, Deep Learning, Operating Systems}
+      \resumeItem{\textbf{Clubs:} ACM ICPC Competitive Team, Upsilon Pi Epsilon@UCLA, VEST@UCLA, Symphony Orchestra}
+      \resumeItem{\textbf{Awards:} Lettuce-Eating Competition Winner, USACO Gold, Hackathon Winner}
+    \resumeItemListEnd
+\resumeSubHeadingListEnd
+
+%----------EXPERIENCE----------
+
+\section{Experience}
+\resumeSubHeadingListStart
+\resumeProjectHeading{\underline{\textbf{Snowflake — Incoming Software Engineering Intern}} \;|\; \textbf{\emph{Machine Learning}}}{Sept 2026 — December 2026}
+
+    \resumeProjectHeading{\underline{\textbf{Ramp — Incoming Software Engineering Intern}} \;|\; \textbf{\emph{Python}}}{June 2026 — Sept 2026}
+  \resumeProjectHeading{\underline{\textbf{SafetyKit — Member of Technical Staff}} \;|\; \textbf{\emph{TypeScript, Python, AWS, Next.js}}}{June 2025 — Sept 2025}
+  \resumeItemListStart
+    \resumeItem{First engineering intern at a \textbf{Series A} \textbf{Y Combinator (W'23)} startup; worked directly with founders}
+    \resumeItem{Raised recall of a global product-recall analyzer from \textbf{7.1\%} $\rightarrow$ \textbf{60\%+} by improving \textbf{embedding-spowered semantic/keyword search}}
+    \resumeItem{Cut \textbf{\$500k+/yr} in OpenAI API spend by replacing GPT-4o calls with \textbf{database/semantic search}}
+    \resumeItem{Built an end-to-end daily ingestion pipeline (\textbf{cron} + \textbf{Scrapy}) to collect product data and a \textbf{Datadog} dashboard for monitoring}
+    \resumeItem{Implemented a \textbf{Model Context Protocol (MCP)} server in \textbf{Next.js} to connect internal tools w/OpenAI models}
+    \resumeItem{Improved site-wide product collection reliability from \textbf{65\% $\rightarrow$ 99.9\%}, helping secure a \textbf{\$300k+} pilot contract}
+  \resumeItemListEnd
+
+  \resumeProjectHeading{\underline{\textbf{Scale AI — Technical Advisor Intern}} \;|\; \textbf{\emph{Python, C++}}}{Nov 2024 — June 2025}
+  \resumeItemListStart
+    \resumeItem{Delivered \textbf{25+} high‑complexity tasks to train \textbf{Generative AI} on tree reasoning + chain‑of‑thought using Olympiad‑level problems}
+    \resumeItem{Consistently ranked \textbf{top‑5} among interns by delivering \textbf{5–10} high‑quality coding tasks per week}
+    \resumeItem{Conducted \textbf{red‑teaming} to evaluate model safety; designed \textbf{prompt‑engineering} workarounds for \textbf{10+} unsafe requests}
+  \resumeItemListEnd
+
+  \resumeProjectHeading{\underline{\textbf{ZNest.ai — Full‑Stack Software Developer}} \;|\; \textbf{\emph{Python, Scrapy, React}}}{Jan 2025 — Mar 2025}
+  \resumeItemListStart
+    \resumeItem{Deployed a full‑stack \textbf{web scraper} in \textbf{React} + \textbf{Scrapy} to capture real‑time senior housing news.}
+    \resumeItem{Reduced application latency by \textbf{95\%} using \textbf{multithreading}, \textbf{concurrency}, and \textbf{timeout} tuning.}
+    \resumeItem{Built an article relevancy \textbf{ranking system} with \textbf{cosine similarity} to match keywords and recency.}
+  \resumeItemListEnd
+
+\resumeSubHeadingListEnd
+
+
+%-----------PROJECTS-----------
+\section{Projects}
+\resumeSubHeadingListStart
+    \resumeProjectHeading{\href{https://github.com/lordboba/lahacks}{\textbf{DocuPilot}} \;|\; \textbf{\emph{React, Python, FastAPI, LangChain, Gemini, Google Drive API, Git}}}{Apr 2025}
+  \resumeItemListStart
+    \resumeItem{Led 3 developers and code reviews to build an \textbf{agentic AI} Google Drive automation tool that interprets natural‑language requests to manage files.}
+    \resumeItem{Implemented a multi‑step \textbf{LangChain} workflow integrated with the \textbf{Google Drive API} to automate file operations and improve UX.}
+  \resumeItemListEnd
+  \resumeProjectHeading{\href{https://github.com/lordboba/PAR}{\textbf{Grow and Give}} \;|\; \textbf{\emph{Swift, SwiftUI, Xcode, MongoDB, Git}}}{Nov 2022 — Apr 2023}
+  \resumeItemListStart
+    \resumeItem{Designed end‑to‑end app features: \textbf{SwiftUI} frontend, backend integration, and user data consolidation via \textbf{MongoDB} API.}
+    \resumeItem{Increased user engagement/productivity by \textbf{36.5\%} vs. control through iterative UI/UX improvements.}
+  \resumeItemListEnd
+
+\resumeSubHeadingListEnd
+%
+%-----------PROGRAMMING SKILLS-----------
+%----------SKILLS----------
+\section{Skills}
+\begin{itemize}[leftmargin=0.15in, label={}]
+  \small{
+    \item{
+      \textbf{Languages:} Python, Java, C, C++, TypeScript, JavaScript, Swift, SQL, Bash, HTML/CSS, Lisp, OCaml \\
+      \textbf{AI/ML:} LLMs (OpenAI, Gemini), \textbf{embeddings}, \textbf{semantic/vector search}, LangChain, TensorFlow, Keras, NumPy \\
+      \textbf{Web/Backend:} FastAPI, Flask, React, Node.js, Next.js, REST \\
+      \textbf{Cloud \& Infra:} AWS, Docker, Datadog, Linux, Git, CI/CD (GitHub) \\
+      \textbf{Data \& Tools:} Scrapy, Selenium, Jupyter, Matplotlib, MongoDB, PostgreSQL, Postico
+    }
+  }
+\end{itemize}
+
+%-----------Awards-----------
+%\section{Competition Awards}
+%\resumeSubHeadingListStart
+%\resumeProjectHeading
+%            {\textbf{Lettuce-Eating Competition Winner(15+ Participants)}}{April 2025}
+%       \resumeProjectHeading
+%            {\textbf{USA Computing Olympiad(USACO) Gold}}{January 2021 - Present}
+%        \resumeProjectHeading
+%            {\textbf{Virtual Global Hackathon 2nd Place(2500+ Participants)}}{August 2023}        
+%\resumeSubHeadingListEnd
+%  \begin{itemize}[leftmargin=0.15in, label={}]
+%     \item{
+%      \textbf{USA Computing Olympiad(USACO) Gold}{: Top 500(4\%) of 12,000 participants in most prestigious informatics competition in the USA
+% } }\item{
+%      \textbf{Virtual Global Hackathon 2nd Place(2500+ Participants)}{: Won qualifying round + North America regional, advancing to the global round by designing RideHop(See Projects), an app that improves existing rideshare services(Uber, Lyft)} }\item{
+%      \textbf{AIME 4x Qualifer}{: Top 2.5-5\% of the AMC 10/12 testers, math competition w/159,000+ global participants
+% }
+%     }
+%      \item{
+%      \textbf{DTCC Code-A-Thon 3rd Place}{ \textbf{3rd} out of 2487 Participants testing algorithms and problem-solving, ranked by fastest problem-solving time and number of problems solved
+% }
+%     }
+%  \end{itemize}
+%-----------EDUCATION-----------
+
+
+%\section{Misc Leadership}
+ % \resumeSubHeadingListStart
+  %  \resumeProjectHeading
+   %         {\textbf{Algorithmic Coding Club: Founder/President} }{May 2021 -- June 2024}
+   % \resumeProjectHeading
+    %        {\textbf{Math Club President} }{June 2023 -- June 2024}
+%    \resumeSubheading
+ %     {San Diego Math Circle Turing Lead Instructor}{August 2021 -- May 2024}
+  %    {Online}{San Diego, CA}
+%      \resumeItemListStart
+ %       \resumeItem{Weekly instruction of 50+ San Diego Math Circle students on data structures, algorithms, and problem-solving strategies for the USA Computing Olympiad}
+ %   \resumeItemListEnd
+   % \resumeProjectHeading
+    %        {\textbf{Varsity Cross Country and Varsity Badminton Team Captain} }{August 2023 -- June 2024}
+
+
+  %\resumeSubHeadingListEnd
+
+%-------------------------------------------
+\end{document}
