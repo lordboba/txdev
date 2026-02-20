@@ -424,7 +424,7 @@ button {
   --tilt-x: 0deg;
   --tilt-y: 0deg;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.24), 0 0 0 1px color-mix(in srgb, var(--accent) 5%, transparent);
   transform: perspective(920px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
   transform-style: preserve-3d;
@@ -433,12 +433,22 @@ button {
     box-shadow var(--motion-base) var(--ease-standard);
 }
 
+/* Clip the image but not the badge */
+.profile-halo-shell > img,
+.profile-halo-shell > picture,
+.profile-halo-shell > [data-profile-img] {
+  border-radius: inherit;
+  overflow: hidden;
+}
+
 .profile-halo-shell::before {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 2;
+  border-radius: inherit;
+  overflow: hidden;
   background: radial-gradient(
     200px circle at var(--profile-pointer-x) var(--profile-pointer-y),
     color-mix(in srgb, var(--secondary) 28%, transparent),
@@ -454,6 +464,7 @@ button {
   pointer-events: none;
   z-index: 3;
   border-radius: inherit;
+  overflow: hidden;
   background: linear-gradient(
     135deg,
     rgba(255, 255, 255, 0.06) 0%,

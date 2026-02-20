@@ -191,7 +191,7 @@ Items are grouped by file. Check off as completed.
 
 - [ ] **Hero cursor glow element.** Add `<div className="hero-cursor-glow" id="heroCursorGlow" aria-hidden="true" />` inside the hero `<section>`.
 - [ ] **Hero grid background.** Add perspective grid markup (`<div className="hero-grid-bg"><div className="hero-grid-plane" /></div>`) as first child of hero section.
-- [ ] **Profile floating badge.** Add `<span className="profile-badge">open to work</span>` inside the profile shell div (needs `transform-style: preserve-3d` on parent, badge at `translateZ(40px)` with `@keyframes badge-float`).
+- [ ] **Profile floating badge.** Add `<span className="profile-badge">sidequesting</span>` inside the profile shell div (needs `transform-style: preserve-3d` on parent, badge at `translateZ(40px)` with `@keyframes badge-float`).
 - [ ] **Profile shell reflection.** The `profile-halo-shell` class needs a `::after` glare layer in CSS — no markup change, just the CSS addition.
 - [ ] **Swap reveal classes on project cards.** Replace `reveal-on-scroll` with `reveal-3d` on project card articles.
 - [ ] **Swap reveal classes on status card.** Replace `reveal-on-scroll reveal-slide-right` with `reveal-3d` on the status monitor pane.

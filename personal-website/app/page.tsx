@@ -42,7 +42,7 @@ export default async function Home() {
     <div className="home-shell flex min-h-screen flex-col bg-background text-foreground">
       <NavBar />
 
-      <main className="mx-auto flex w-full max-w-5xl flex-col gap-16 px-5 py-12 sm:gap-24 sm:px-6 sm:py-20">
+      <main className="mx-auto flex w-full max-w-5xl flex-col gap-16 px-7 py-12 sm:gap-24 sm:px-6 sm:py-20">
         <HomeMotionEffects />
 
         {/* ═══ Hero ═══ */}
@@ -85,17 +85,19 @@ export default async function Home() {
             </div>
             <div
               data-pointer-profile
-              className="hero-stage hero-stage-4 profile-halo-shell h-64 w-64 sm:h-80 sm:w-80 flex-shrink-0 rounded-full border-2 border-divider"
+              className="hero-stage hero-stage-4 profile-halo-shell relative h-64 w-64 sm:h-80 sm:w-80 flex-shrink-0 rounded-full border-2 border-divider"
             >
-              <Image
-                src="/pfp.JPG"
-                alt="Tyler Xiao"
-                width={400}
-                height={400}
-                className="h-full w-full rounded-full object-cover"
-                priority
-              />
-              <span className="profile-badge">open to work</span>
+              <div className="h-full w-full overflow-hidden rounded-full">
+                <Image
+                  src="/pfp.JPG"
+                  alt="Tyler Xiao"
+                  width={400}
+                  height={400}
+                  className="h-full w-full object-cover"
+                  priority
+                />
+              </div>
+              <span className="profile-badge">sidequesting</span>
             </div>
           </div>
           <div className="hero-stage hero-stage-4 w-full">
@@ -347,7 +349,7 @@ export default async function Home() {
 
       {/* ═══ Footer ═══ */}
       <footer className="border-t border-divider bg-background">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-5 py-12 sm:px-6">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-7 py-12 sm:px-6">
           <div className="max-w-md">
             <UserCountTracker />
           </div>
