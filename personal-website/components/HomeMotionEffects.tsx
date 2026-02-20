@@ -6,7 +6,10 @@ import { useRevealOnScroll } from './motion/useRevealOnScroll';
 
 export function HomeMotionEffects() {
   // Standard reveal + 3D reveal variants
-  useRevealOnScroll('.reveal-on-scroll, .reveal-3d, .reveal-flip', 'is-visible');
+  useRevealOnScroll(
+    '.reveal-on-scroll, .reveal-3d, .reveal-flip',
+    'is-visible',
+  );
 
   usePointerGlow({
     selector: '[data-pointer-profile]',

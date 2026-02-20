@@ -105,7 +105,7 @@
 }
 
 [data-theme='light'] {
-  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.10), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 /* ═══ Reset & Base ═══ */
@@ -425,7 +425,9 @@ button {
   --tilt-y: 0deg;
   position: relative;
   overflow: visible;
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.24), 0 0 0 1px color-mix(in srgb, var(--accent) 5%, transparent);
+  box-shadow:
+    0 16px 32px rgba(0, 0, 0, 0.24),
+    0 0 0 1px color-mix(in srgb, var(--accent) 5%, transparent);
   transform: perspective(920px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
   transform-style: preserve-3d;
   transition:
@@ -503,8 +505,12 @@ button {
 }
 
 @keyframes badgeFloat {
-  0% { transform: translateZ(40px) translateY(0); }
-  100% { transform: translateZ(40px) translateY(-6px); }
+  0% {
+    transform: translateZ(40px) translateY(0);
+  }
+  100% {
+    transform: translateZ(40px) translateY(-6px);
+  }
 }
 
 [data-terminal-shell].terminal-awake {
@@ -534,7 +540,9 @@ button {
 
 [data-terminal-shell]:hover {
   transform: perspective(800px) rotateX(-1deg) translateY(-2px);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.38), 0 2px 4px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.38),
+    0 2px 4px rgba(0, 0, 0, 0.3);
   border-color: color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
@@ -634,17 +642,32 @@ button {
   width: 5px;
   height: 40px;
   border-radius: 4px;
-  background: linear-gradient(to bottom, transparent, var(--accent), transparent);
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--accent),
+    transparent
+  );
   filter: blur(2px);
   opacity: 0.5;
   animation: timelineGlow 4s linear infinite;
 }
 
 @keyframes timelineGlow {
-  0% { top: 0; opacity: 0; }
-  10% { opacity: 0.5; }
-  90% { opacity: 0.5; }
-  100% { top: 100%; opacity: 0; }
+  0% {
+    top: 0;
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.5;
+  }
+  90% {
+    opacity: 0.5;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
 }
 
 .timeline-entry {
@@ -756,7 +779,9 @@ button {
 
 /* Tab dot glow on hover */
 .project-motion-card [data-tab-dot] {
-  transition: opacity var(--motion-fast) var(--ease-standard), box-shadow var(--motion-fast) var(--ease-standard);
+  transition:
+    opacity var(--motion-fast) var(--ease-standard),
+    box-shadow var(--motion-fast) var(--ease-standard);
 }
 
 .project-motion-card:hover [data-tab-dot],
@@ -918,7 +943,11 @@ button {
 .depth-orb--1 {
   width: 320px;
   height: 320px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 18%, transparent), transparent 70%);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--accent) 18%, transparent),
+    transparent 70%
+  );
   top: 15%;
   left: -5%;
   animation-duration: 22s;
@@ -927,7 +956,11 @@ button {
 .depth-orb--2 {
   width: 260px;
   height: 260px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--secondary) 15%, transparent), transparent 70%);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--secondary) 15%, transparent),
+    transparent 70%
+  );
   top: 55%;
   right: -8%;
   animation-duration: 28s;
@@ -937,7 +970,11 @@ button {
 .depth-orb--3 {
   width: 180px;
   height: 180px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 12%, transparent), transparent 70%);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--accent) 12%, transparent),
+    transparent 70%
+  );
   bottom: 10%;
   left: 30%;
   animation-duration: 18s;
@@ -945,11 +982,24 @@ button {
 }
 
 @keyframes orbDrift {
-  0% { transform: translate3d(0, 0, 0) scale(1); opacity: 0; }
-  10% { opacity: 0.6; }
-  50% { transform: translate3d(40px, -60px, 0) scale(1.12); opacity: 0.8; }
-  90% { opacity: 0.6; }
-  100% { transform: translate3d(-20px, 30px, 0) scale(0.95); opacity: 0; }
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.6;
+  }
+  50% {
+    transform: translate3d(40px, -60px, 0) scale(1.12);
+    opacity: 0.8;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate3d(-20px, 30px, 0) scale(0.95);
+    opacity: 0;
+  }
 }
 
 /* Hero perspective grid */
@@ -969,26 +1019,56 @@ button {
   right: -20%;
   height: 70%;
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--accent) 6%, transparent) 1px, transparent 1px),
-    linear-gradient(0deg, color-mix(in srgb, var(--accent) 6%, transparent) 1px, transparent 1px);
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--accent) 6%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--accent) 6%, transparent) 1px,
+      transparent 1px
+    );
   background-size: 60px 60px;
   transform: rotateX(65deg);
   transform-origin: bottom center;
-  mask-image: linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.08) 50%, transparent 75%);
-  -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.08) 50%, transparent 75%);
+  mask-image: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.5) 0%,
+    rgba(0, 0, 0, 0.08) 50%,
+    transparent 75%
+  );
+  -webkit-mask-image: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.5) 0%,
+    rgba(0, 0, 0, 0.08) 50%,
+    transparent 75%
+  );
   animation: gridScroll 20s linear infinite;
 }
 
 [data-theme='light'] .hero-grid-plane {
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--accent) 10%, transparent) 1px, transparent 1px),
-    linear-gradient(0deg, color-mix(in srgb, var(--accent) 10%, transparent) 1px, transparent 1px);
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--accent) 10%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--accent) 10%, transparent) 1px,
+      transparent 1px
+    );
   background-size: 60px 60px;
 }
 
 @keyframes gridScroll {
-  0% { background-position: 0 0; }
-  100% { background-position: 0 60px; }
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 0 60px;
+  }
 }
 
 /* Hero cursor glow */
@@ -997,7 +1077,11 @@ button {
   width: 400px;
   height: 400px;
   border-radius: 50%;
-  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 6%, transparent), transparent 70%);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--accent) 6%, transparent),
+    transparent 70%
+  );
   pointer-events: none;
   z-index: 0;
   transform: translate(-50%, -50%);
@@ -1005,7 +1089,9 @@ button {
   opacity: 0;
 }
 
-.hero-section:hover .hero-cursor-glow { opacity: 1; }
+.hero-section:hover .hero-cursor-glow {
+  opacity: 1;
+}
 
 /* 3D reveal variants */
 .reveal-3d {
@@ -1043,7 +1129,9 @@ button {
     0 1px 0 color-mix(in srgb, var(--accent) 40%, transparent),
     0 2px 0 color-mix(in srgb, var(--accent) 25%, transparent),
     0 3px 6px rgba(0, 0, 0, 0.3);
-  transition: text-shadow var(--motion-base) var(--ease-standard), transform var(--motion-base) var(--ease-spring);
+  transition:
+    text-shadow var(--motion-base) var(--ease-standard),
+    transform var(--motion-base) var(--ease-spring);
 }
 
 .hero-text-highlight:hover {
@@ -1065,14 +1153,17 @@ button {
 .status-card-3d {
   --card-tilt-x: 0deg;
   --card-tilt-y: 0deg;
-  transform: perspective(700px) rotateX(var(--card-tilt-x)) rotateY(var(--card-tilt-y));
+  transform: perspective(700px) rotateX(var(--card-tilt-x))
+    rotateY(var(--card-tilt-y));
   transition:
     transform var(--motion-base) var(--ease-spring),
     box-shadow var(--motion-base) var(--ease-standard);
 }
 
 .status-card-3d:hover {
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3), 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.3),
+    0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 /* Status card live indicator */
@@ -1089,8 +1180,14 @@ button {
 }
 
 @keyframes statusPulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; box-shadow: 0 0 6px color-mix(in srgb, var(--secondary) 50%, transparent); }
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 6px color-mix(in srgb, var(--secondary) 50%, transparent);
+  }
 }
 
 /* Status row hover */
@@ -1115,7 +1212,12 @@ button {
   left: -100%;
   width: 60%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.18),
+    transparent
+  );
   transition: left 500ms var(--ease-standard);
 }
 
@@ -1149,7 +1251,9 @@ button {
 
 /* Contact link lift */
 .contact-link-lift {
-  transition: color var(--motion-fast) var(--ease-standard), transform var(--motion-fast) var(--ease-spring);
+  transition:
+    color var(--motion-fast) var(--ease-standard),
+    transform var(--motion-fast) var(--ease-spring);
   display: inline-block;
 }
 
@@ -1159,7 +1263,9 @@ button {
 }
 
 @media (max-width: 900px) {
-  .hero-grid-bg { display: none; }
+  .hero-grid-bg {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

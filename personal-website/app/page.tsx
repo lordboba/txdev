@@ -50,7 +50,11 @@ export default async function Home() {
           <div className="hero-grid-bg" aria-hidden="true">
             <div className="hero-grid-plane" />
           </div>
-          <div className="hero-cursor-glow" id="heroCursorGlow" aria-hidden="true" />
+          <div
+            className="hero-cursor-glow"
+            id="heroCursorGlow"
+            aria-hidden="true"
+          />
           <div className="relative z-[1] flex flex-col sm:flex-row items-start sm:items-center gap-8 sm:gap-16 max-w-3xl">
             <div className="flex flex-col gap-6">
               <div className="space-y-4">
@@ -58,8 +62,11 @@ export default async function Home() {
                   {"// hi, i'm tyler"}
                 </p>
                 <h1 className="hero-stage hero-stage-2 font-display text-5xl font-bold tracking-tight sm:text-7xl">
-                  I build <span className="text-accent hero-text-highlight">Agents</span> and
-                  backend systems.
+                  I build{' '}
+                  <span className="text-accent hero-text-highlight">
+                    Agents
+                  </span>{' '}
+                  and backend systems.
                 </h1>
               </div>
               <p className="hero-stage hero-stage-3 max-w-2xl text-lg text-muted leading-relaxed">
@@ -132,7 +139,9 @@ export default async function Home() {
                   key={fact.label}
                   className="status-row-hover flex items-center justify-between px-5 py-3.5"
                 >
-                  <dt className="font-mono text-sm text-muted shrink-0">{fact.label}</dt>
+                  <dt className="font-mono text-sm text-muted shrink-0">
+                    {fact.label}
+                  </dt>
                   <dd className="font-mono text-sm text-secondary text-right">
                     {fact.value}
                   </dd>
@@ -220,7 +229,10 @@ export default async function Home() {
               >
                 {/* Tab bar */}
                 <div className="flex items-center gap-2 border-b border-divider px-5 py-3 font-mono text-sm text-accent">
-                  <span data-tab-dot className="h-2 w-2 rounded-full bg-accent/40" />
+                  <span
+                    data-tab-dot
+                    className="h-2 w-2 rounded-full bg-accent/40"
+                  />
                   {project.title
                     .toLowerCase()
                     .replace(/\s+/g, '-')
