@@ -15,6 +15,7 @@
     "react-dom": "^19.2.1"
   },
   "devDependencies": {
+    "@react-grab/mcp": "^0.1.16",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -24,6 +25,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "prettier": "^3.6.2",
+    "react-grab": "^0.1.16",
     "redis": "^5.10.0",
     "tailwindcss": "^4",
     "typescript": "^5"
