@@ -106,7 +106,7 @@ export default async function Home() {
         {/* ═══ About ═══ */}
         <section
           id="about"
-          className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]"
+          className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]"
         >
           <div className="reveal-on-scroll reveal-slide-left">
             <SectionHeading
@@ -130,8 +130,8 @@ export default async function Home() {
                   key={fact.label}
                   className="status-row-hover flex items-center justify-between px-5 py-3.5"
                 >
-                  <dt className="font-mono text-sm text-muted">{fact.label}</dt>
-                  <dd className="font-mono text-sm text-secondary">
+                  <dt className="font-mono text-sm text-muted shrink-0">{fact.label}</dt>
+                  <dd className="font-mono text-sm text-secondary text-right">
                     {fact.value}
                   </dd>
                 </div>
