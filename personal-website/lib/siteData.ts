@@ -128,10 +128,10 @@ export const writings: Writing[] = [
 ];
 
 export const quickFacts = [
-  { label: 'Location', value: 'San Diego native · based in Los Angeles' },
+  { label: 'Location', value: 'San Diego, Los Angeles, San Francisco, NYC' },
   {
     label: 'Education',
-    value: "UCLA CS '27 student, Technical Breadth in ECE",
+    value: "UCLA B.S. in Computer Science '27",
   },
   {
     label: 'Focus',
