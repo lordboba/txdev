@@ -101,14 +101,117 @@ A small circular button fixed to the right edge of the viewport at vertical cent
 
 - **Page load:** Staggered fade + translate-up reveals (`motion-safe`). Hero elements enter first (heading → subheading → CTAs → terminal, 80ms stagger). Sections below reveal on scroll.
 - **Hover states:** Cards lift with `scale(1.01)` and shadow deepening (no tilt — keep it grounded). Buttons transition color and shadow over 200ms ease.
-- **Cursor glow:** A faint `--accent` radial gradient follows the cursor on the hero section only. Implemented via CSS `radial-gradient` repositioned on `mousemove`. Subtle — 200px radius at 4% opacity.
+- **Cursor glow:** A faint `--accent` radial gradient follows the cursor on the hero section only. Implemented via CSS `radial-gradient` repositioned on `mousemove`. Subtle — 400px radius at 6% opacity.
 - **Terminal typing:** Hero terminal text types in at 45ms per character with natural pauses at punctuation. Keep total duration under 3s.
 - **Accessibility:** Large text contrast >= 3:1, body text >= 4.5:1 against `--bg`. All animations respect `prefers-reduced-motion`. Focus rings use `--accent` with 2px offset.
 
-## TODO After Approval
+## 3D & Depth System
 
-- Load fonts: `@font-face` for Clash Display and Satoshi (Fontshare CDN), Monaspace Neon (GitHub CDN or self-hosted).
-- Update `globals.css` theme block with new color tokens, font stacks, and shadow values.
-- Refactor components to use `--accent` / `--secondary` tokens instead of hard-coded purple/green values.
-- Replace template `app/page.tsx` sections and routes for Past Experience and Schedule a Call.
-- Add metadata (OpenGraph image, description) to `app/layout.tsx`.
+All 3D effects use CSS `perspective()` and `transform-style: preserve-3d`. No WebGL or external 3D libraries — everything runs on the GPU via CSS transforms and composited layers. All 3D motion respects `prefers-reduced-motion` and is disabled on coarse pointer (touch) devices.
+
+### Perspective Grid
+- A CSS-only infinite grid recedes into the hero background using `perspective: 600px` and `rotateX(65deg)`.
+- Grid lines use `--accent` at 6% opacity with a `background-size: 60px 60px` repeating pattern.
+- Masked with `linear-gradient` so it fades to nothing before midscreen. Grid scrolls vertically via `@keyframes grid-scroll` (20s loop) for a subtle "approaching horizon" effect.
+- Hidden on mobile (`max-width: 900px`) and `prefers-reduced-motion`.
+
+### Floating Depth Orbs
+- Three `position: fixed` blurred radial gradients (`filter: blur(80px)`) drift slowly via `@keyframes orb-drift` at different durations (18s, 22s, 28s).
+- Each orb parallax-shifts on scroll at different rates (`0.02`, `-0.015`, `0.025`) using `translate3d` driven by `scrollY`, creating layered depth as the user scrolls.
+- Uses `--accent` and `--secondary` colors at low opacity so they adapt to light/dark themes.
+
+### 3D Card Tilt
+- **Profile shell:** `perspective(900px)` with `rotateX`/`rotateY` driven by mouse position. Tilt range increased to ±12° (from ±8°). Includes a `::after` pseudo-element for a glass-like reflection glare that shifts with tilt. `transform-style: preserve-3d` enables the floating badge at `translateZ(40px)`.
+- **Project cards:** Same tilt system at ±10° with `preserve-3d`. Internal layers (`.project-tab` at `translateZ(8px)`, `.project-body` at `translateZ(4px)`) create parallax depth within the card. A `::after` edge-highlight reflection layer appears on hover.
+- **Status card:** Lighter tilt at ±8° with its own CSS custom properties (`--card-tilt-x`, `--card-tilt-y`).
+
+### 3D Reveal Animations
+Two new reveal variants supplement the existing `reveal` class:
+- **`reveal-3d`:** Elements enter with `perspective(800px) rotateX(8deg) translateY(30px) scale(0.97)` and settle to neutral. Used on project cards and the status monitor. Origin is `bottom center` for a "rising from the page" feel.
+- **`reveal-flip`:** Elements enter with `perspective(600px) rotateY(-12deg) translateX(-20px)` for a side-door effect. Used on timeline items.
+
+### Hero Text Depth
+- The `.highlight` span on "Agents" uses layered `text-shadow` to create a subtle 3D extrusion: two warm `--accent` shadows at 1px and 2px offset plus a deeper ambient shadow. On hover, the extrusion deepens to 4px with a lift (`translateY(-2px)`).
+- Light theme reduces the extrusion to a single subtle shadow for readability.
+
+### Terminal Depth
+- The terminal tilts slightly on hover: `perspective(800px) rotateX(-1deg) translateY(-2px)` with a deeper shadow. Creates the impression of the terminal surface lifting toward the viewer.
+
+### Timeline Glow
+- A `::after` pseudo-element on `.timeline` creates a traveling glow — a thin 40px-tall gradient bar that animates from top to bottom over 4s, giving the timeline connector a "data flowing" feel.
+
+### Grain Overlay
+- A full-viewport `position: fixed` layer using an inline SVG `feTurbulence` noise pattern at 2.8% opacity with `mix-blend-mode: overlay`. Adds film-grain texture to all surfaces. Light theme uses `multiply` blend at 3.5% opacity.
+
+### Button Shimmer
+- Primary button has a `::after` pseudo with a diagonal `linear-gradient` highlight that sweeps left-to-right on hover (500ms). Creates a polished "catch the light" shimmer.
+
+### Performance Notes
+- All 3D transforms target `transform` and `opacity` only — no layout thrash.
+- `will-change: transform, opacity` on orbs; all tilt handlers are `requestAnimationFrame`-throttled.
+- Orbs and grid are hidden via `display: none` in `prefers-reduced-motion`, not just frozen.
+
+## TODO — Actionable Diff (Mockup → Live Site)
+
+Items are grouped by file. Check off as completed.
+
+### `globals.css` — 3D & Depth Additions
+
+- [ ] **Grain overlay class.** Add `.grain-overlay` (fixed, inset, `feTurbulence` SVG noise, 2.8% opacity `mix-blend-mode: overlay`; light theme uses `multiply` at 3.5%). The live site has no texture layer.
+- [ ] **Floating depth orbs.** Add `.depth-orb`, `.depth-orb--1/2/3` classes — fixed blurred radial gradients with `@keyframes orb-drift` (different durations: 18s/22s/28s). Hidden on `prefers-reduced-motion`.
+- [ ] **Hero perspective grid.** Add `.hero-grid-bg` + `.hero-grid-plane` — CSS-only infinite receding grid (`perspective: 600px`, `rotateX(65deg)`, `@keyframes grid-scroll` 20s loop). Masked with gradient fade. Hidden below 900px.
+- [ ] **Hero cursor glow.** Add `.hero-cursor-glow` — a 400px blurred `--accent` radial gradient that follows the mouse via JS. The live site has pointer glow on cards but not a freeform hero glow.
+- [ ] **3D reveal variants.** Add `.reveal-3d` (`perspective(800px) rotateX(8deg) translateY(30px) scale(0.97)`, origin `bottom center`) and `.reveal-flip` (`perspective(600px) rotateY(-12deg) translateX(-20px)`). Wire into `useRevealOnScroll` selector.
+- [ ] **Hero text extrusion.** Add layered `text-shadow` on `.hero-heading .highlight` (two warm `--accent` shadows at 1–2px + ambient). Hover deepens to 4px with `translateY(-2px)`. Light theme: single subtle shadow.
+- [ ] **Terminal 3D hover.** Add `perspective(800px) rotateX(-1deg) translateY(-2px)` + deeper shadow on `.terminal:hover` / `[data-terminal-shell]:hover`.
+- [ ] **Timeline glow bar.** Add `::after` on `.timeline-motion` — a traveling 40px gradient bar animating top-to-bottom over 4s (`@keyframes timeline-glow`).
+- [ ] **Status card 3D tilt.** Add `--card-tilt-x`/`--card-tilt-y` custom properties and `perspective(700px)` transform on the status monitor pane. Add a pulsing live indicator dot (`.status-card-header::before`, `@keyframes status-pulse`).
+- [ ] **Project card enhancements.** Add `::after` edge-highlight reflection layer (subtle diagonal gradient, `opacity: 0` → `1` on hover). Add `.project-tab-dot` glow on hover (`box-shadow` with `--accent`). Increase tilt from ±6° to ±10° in `usePointerGlow` call.
+- [ ] **Button shimmer.** Add `::after` on `.btn-primary` — diagonal `linear-gradient` highlight sweep left-to-right on hover (500ms transition).
+- [ ] **Status row hover.** Add `background: color-mix(in srgb, var(--accent) 3%, transparent)` on status card row hover.
+- [ ] **Changelog item hover.** Add `transform: translateX(4px)` on `.changelog-item:hover` / writing entries on hover.
+- [ ] **Project link arrow gap.** Change `hover:opacity-75` to `gap` animation (`gap: 6px → 10px`) on project card "View project" links.
+- [ ] **Contact link lift.** Add `transform: translateY(-1px)` on `.contact-elsewhere a:hover`.
+- [ ] **Update `prefers-reduced-motion` block.** Add the new animation/transition selectors (`.reveal-3d`, `.reveal-flip`, `.depth-orb`, `.hero-grid-plane`, `.grain-overlay`, `.timeline::after`, etc.) to the disabled list.
+
+### `app/layout.tsx` — Grain & Orbs Markup
+
+- [ ] **Add ambient DOM elements.** Insert grain overlay `<div>` and three depth orb `<div>`s as first children of `<body>`, so they appear on all pages. These are `aria-hidden`, `pointer-events: none`, `position: fixed`.
+
+### `components/HomeMotionEffects.tsx` — New JS Behaviors
+
+- [ ] **Hero cursor glow.** Add `mousemove` listener on `.hero` / hero `<section>` that repositions a `#heroCursorGlow` element (CSS `left`/`top` with `translate(-50%, -50%)`). Disabled on coarse pointer and reduced motion.
+- [ ] **Status card tilt.** Add a new `usePointerGlow` call targeting the status monitor card (`[data-pointer-status]` or similar), with `maxTilt: 8` and custom property names `--card-tilt-x`/`--card-tilt-y`.
+- [ ] **Scroll parallax for orbs.** Add a `scroll` listener (rAF-throttled) that applies `translate3d(0, scrollY * rate, 0)` to each `.depth-orb` at different rates. Disabled on reduced motion.
+- [ ] **Wire 3D reveal classes.** Extend `useRevealOnScroll` call to also observe `.reveal-3d, .reveal-flip` selectors (or update the selector string to `'.reveal-on-scroll, .reveal-3d, .reveal-flip'`).
+- [ ] **Increase profile tilt.** Change `maxTilt: 8` → `maxTilt: 12` on the profile shell `usePointerGlow` call.
+- [ ] **Increase card tilt.** Change `maxTilt: 6` → `maxTilt: 10` on the project card `usePointerGlow` call.
+
+### `app/page.tsx` — Markup Changes
+
+- [ ] **Hero cursor glow element.** Add `<div className="hero-cursor-glow" id="heroCursorGlow" aria-hidden="true" />` inside the hero `<section>`.
+- [ ] **Hero grid background.** Add perspective grid markup (`<div className="hero-grid-bg"><div className="hero-grid-plane" /></div>`) as first child of hero section.
+- [ ] **Profile floating badge.** Add `<span className="profile-badge">open to work</span>` inside the profile shell div (needs `transform-style: preserve-3d` on parent, badge at `translateZ(40px)` with `@keyframes badge-float`).
+- [ ] **Profile shell reflection.** The `profile-halo-shell` class needs a `::after` glare layer in CSS — no markup change, just the CSS addition.
+- [ ] **Swap reveal classes on project cards.** Replace `reveal-on-scroll` with `reveal-3d` on project card articles.
+- [ ] **Swap reveal classes on status card.** Replace `reveal-on-scroll reveal-slide-right` with `reveal-3d` on the status monitor pane.
+- [ ] **Swap reveal classes on timeline items.** Replace `reveal-on-scroll reveal-slide-left/right` with `reveal-flip` on timeline entries.
+- [ ] **Add status card data attribute.** Add `data-pointer-status` to the status monitor pane so the new tilt hook can target it.
+
+### Design Improvements — Visual Polish
+
+- [ ] **Nav active link glow.** Add `box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 25%, transparent)` to the nav indicator bar. The mockup has a subtle underline glow; the live site has a flat 2px bar.
+- [ ] **Card shadow depth in light theme.** Current light-theme card shadow is very faint (`0.06` alpha). Increase to `0 4px 24px rgba(0,0,0,0.10), 0 1px 2px rgba(0,0,0,0.06)` for more perceived depth.
+- [ ] **Body `overflow-x: hidden`.** The mockup sets this to prevent horizontal scroll from the 3D grid and orbs. Add to the live `body` styles.
+- [ ] **Selection highlight.** Already in `globals.css` — good.
+- [ ] **Timeline entry border.** In the mockup, timeline items have a visible `1px solid var(--divider)` border at rest. The live site uses `border: 1px solid transparent`. Consider matching the mockup for more structure.
+- [ ] **Hero section `position: relative; overflow: hidden`.** Needed to contain the perspective grid and cursor glow. Add to the hero section wrapper.
+
+### Fonts — Status
+
+Fonts are already loaded correctly in `globals.css`:
+- Clash Display + Satoshi via Fontshare CDN `@import`
+- Monaspace Neon via `@font-face` from jsDelivr
+- CSS variables `--font-display`, `--font-sans`, `--font-mono` are set and wired into Tailwind v4 `@theme`
+
+No font changes needed. The mockup and live site use identical stacks.
