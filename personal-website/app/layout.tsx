@@ -61,7 +61,13 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="bg-background text-foreground">{children}</body>
+      <body className="bg-background text-foreground">
+        <div className="grain-overlay" aria-hidden="true" />
+        <div className="depth-orb depth-orb--1" aria-hidden="true" />
+        <div className="depth-orb depth-orb--2" aria-hidden="true" />
+        <div className="depth-orb depth-orb--3" aria-hidden="true" />
+        {children}
+      </body>
     </html>
   );
 }

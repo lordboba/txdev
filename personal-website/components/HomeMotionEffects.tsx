@@ -5,20 +5,71 @@ import { usePointerGlow } from './motion/usePointerGlow';
 import { useRevealOnScroll } from './motion/useRevealOnScroll';
 
 export function HomeMotionEffects() {
-  useRevealOnScroll('.reveal-on-scroll', 'is-visible');
+  // Standard reveal + 3D reveal variants
+  useRevealOnScroll('.reveal-on-scroll, .reveal-3d, .reveal-flip', 'is-visible');
 
   usePointerGlow({
     selector: '[data-pointer-profile]',
-    maxTilt: 8,
+    maxTilt: 12,
     pointerXVar: '--profile-pointer-x',
     pointerYVar: '--profile-pointer-y',
   });
 
   usePointerGlow({
     selector: '[data-pointer-card]',
-    maxTilt: 6,
+    maxTilt: 10,
   });
 
+  usePointerGlow({
+    selector: '[data-pointer-status]',
+    maxTilt: 8,
+    tiltXVar: '--card-tilt-x',
+    tiltYVar: '--card-tilt-y',
+    pointerXVar: '--status-pointer-x',
+    pointerYVar: '--status-pointer-y',
+  });
+
+  // Hero cursor glow
+  useEffect(() => {
+    const heroSection = document.querySelector<HTMLElement>('.hero-section');
+    const cursorGlow = document.getElementById('heroCursorGlow');
+    if (!heroSection || !cursorGlow) return;
+
+    const prefersReducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
+    const coarsePointer = window.matchMedia(
+      '(hover: none), (pointer: coarse)',
+    ).matches;
+
+    if (prefersReducedMotion || coarsePointer) return;
+
+    let frame = 0;
+    let lastEvent: MouseEvent | null = null;
+
+    const update = () => {
+      frame = 0;
+      if (!lastEvent) return;
+      const rect = heroSection.getBoundingClientRect();
+      cursorGlow.style.left = lastEvent.clientX - rect.left + 'px';
+      cursorGlow.style.top = lastEvent.clientY - rect.top + 'px';
+    };
+
+    const onMove = (e: MouseEvent) => {
+      lastEvent = e;
+      if (frame) return;
+      frame = requestAnimationFrame(update);
+    };
+
+    heroSection.addEventListener('mousemove', onMove);
+
+    return () => {
+      heroSection.removeEventListener('mousemove', onMove);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, []);
+
+  // Terminal wake pulse
   useEffect(() => {
     const terminalShell = document.querySelector<HTMLElement>(
       '[data-terminal-shell]',
@@ -44,6 +95,7 @@ export function HomeMotionEffects() {
     };
   }, []);
 
+  // Timeline hover focus
   useEffect(() => {
     const timeline = document.querySelector<HTMLElement>(
       '[data-timeline-root]',
@@ -100,6 +152,41 @@ export function HomeMotionEffects() {
 
     return () => {
       cleanups.forEach((cleanup) => cleanup());
+    };
+  }, []);
+
+  // Scroll parallax for depth orbs
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
+    if (prefersReducedMotion) return;
+
+    const orbs = Array.from(
+      document.querySelectorAll<HTMLElement>('.depth-orb'),
+    );
+    if (!orbs.length) return;
+
+    const rates = [0.02, -0.015, 0.025];
+    let frame = 0;
+
+    const onScroll = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        const scrollY = window.scrollY;
+        orbs.forEach((orb, i) => {
+          const rate = rates[i] || 0.02;
+          orb.style.transform = `translate3d(0, ${scrollY * rate * 60}px, 0)`;
+        });
+      });
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (frame) cancelAnimationFrame(frame);
     };
   }, []);
 

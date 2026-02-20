@@ -46,15 +46,19 @@ export default async function Home() {
         <HomeMotionEffects />
 
         {/* ═══ Hero ═══ */}
-        <section className="flex flex-col items-start gap-10 sm:gap-16">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-8 sm:gap-16 max-w-3xl">
+        <section className="hero-section relative flex flex-col items-start gap-10 overflow-hidden sm:gap-16">
+          <div className="hero-grid-bg" aria-hidden="true">
+            <div className="hero-grid-plane" />
+          </div>
+          <div className="hero-cursor-glow" id="heroCursorGlow" aria-hidden="true" />
+          <div className="relative z-[1] flex flex-col sm:flex-row items-start sm:items-center gap-8 sm:gap-16 max-w-3xl">
             <div className="flex flex-col gap-6">
               <div className="space-y-4">
                 <p className="hero-stage hero-stage-1 font-mono text-sm text-muted">
                   {"// hi, i'm tyler"}
                 </p>
                 <h1 className="hero-stage hero-stage-2 font-display text-5xl font-bold tracking-tight sm:text-7xl">
-                  I build <span className="text-accent">Agents</span> and
+                  I build <span className="text-accent hero-text-highlight">Agents</span> and
                   backend systems.
                 </h1>
               </div>
@@ -67,7 +71,7 @@ export default async function Home() {
               <div className="hero-stage hero-stage-4 flex flex-wrap gap-4">
                 <Link
                   href="#contact"
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-7 py-3 font-mono text-sm font-semibold text-background shadow-[0_2px_12px_rgba(232,196,104,0.2)] transition hover:shadow-[0_4px_20px_rgba(232,196,104,0.3)] hover:-translate-y-0.5"
+                  className="btn-shimmer inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-7 py-3 font-mono text-sm font-semibold text-background shadow-[0_2px_12px_rgba(232,196,104,0.2)] transition hover:shadow-[0_4px_20px_rgba(232,196,104,0.3)] hover:-translate-y-0.5"
                 >
                   <span>&#9654;</span> Contact
                 </Link>
@@ -91,6 +95,7 @@ export default async function Home() {
                 className="h-full w-full rounded-full object-cover"
                 priority
               />
+              <span className="profile-badge">open to work</span>
             </div>
           </div>
           <div className="hero-stage hero-stage-4 w-full">
@@ -110,8 +115,11 @@ export default async function Home() {
               description="UCLA student studying Computer Science — focused on building systems that work."
             />
           </div>
-          <div className="pane reveal-on-scroll reveal-slide-right overflow-hidden">
-            <div className="border-b border-divider px-5 py-3">
+          <div
+            data-pointer-status
+            className="pane reveal-3d status-card-3d overflow-hidden"
+          >
+            <div className="status-card-live border-b border-divider px-5 py-3">
               <span className="font-mono text-xs tracking-widest uppercase text-muted">
                 status monitor
               </span>
@@ -120,7 +128,7 @@ export default async function Home() {
               {quickFacts.map((fact) => (
                 <div
                   key={fact.label}
-                  className="flex items-center justify-between px-5 py-3.5"
+                  className="status-row-hover flex items-center justify-between px-5 py-3.5"
                 >
                   <dt className="font-mono text-sm text-muted">{fact.label}</dt>
                   <dd className="font-mono text-sm text-secondary">
@@ -151,9 +159,7 @@ export default async function Home() {
                 key={`${exp.company}-${exp.role}`}
                 data-timeline-item
                 tabIndex={0}
-                className={`timeline-entry reveal-on-scroll relative space-y-3 ${
-                  i % 2 === 0 ? 'reveal-slide-right' : 'reveal-slide-left'
-                }`}
+                className="timeline-entry reveal-flip relative space-y-3"
               >
                 {/* Timeline node */}
                 <div className="timeline-node absolute -left-8 top-1.5 h-[9px] w-[9px] rounded-full bg-accent shadow-[0_0_0_4px_var(--background),0_0_12px_rgba(232,196,104,0.2)]" />
@@ -208,11 +214,11 @@ export default async function Home() {
               <article
                 key={project.title}
                 data-pointer-card
-                className="pane project-motion-card reveal-on-scroll flex h-full flex-col overflow-hidden transition hover:scale-[1.01]"
+                className="pane project-motion-card reveal-3d flex h-full flex-col overflow-hidden transition hover:scale-[1.01]"
               >
                 {/* Tab bar */}
                 <div className="flex items-center gap-2 border-b border-divider px-5 py-3 font-mono text-sm text-accent">
-                  <span className="h-2 w-2 rounded-full bg-accent/40" />
+                  <span data-tab-dot className="h-2 w-2 rounded-full bg-accent/40" />
                   {project.title
                     .toLowerCase()
                     .replace(/\s+/g, '-')
@@ -244,7 +250,7 @@ export default async function Home() {
                   </div>
                   <Link
                     href={project.link}
-                    className="mt-4 inline-flex items-center gap-2 font-mono text-sm font-medium text-accent transition hover:opacity-75"
+                    className="project-link-animate mt-4 inline-flex items-center gap-2 font-mono text-sm font-medium text-accent transition"
                   >
                     View project &#8599;
                   </Link>
@@ -266,7 +272,7 @@ export default async function Home() {
               <Link
                 key={article.slug}
                 href={`/blog/${article.slug}`}
-                className="group reveal-on-scroll flex items-baseline gap-4 border-b border-divider py-4 transition hover:border-accent/35"
+                className="group reveal-on-scroll writing-entry-hover flex items-baseline gap-4 border-b border-divider py-4 transition hover:border-accent/35"
               >
                 <span className="font-mono text-sm text-muted whitespace-nowrap">
                   {article.formattedDate}
@@ -327,7 +333,7 @@ export default async function Home() {
                   <Link
                     key={link.label}
                     href={link.href}
-                    className="flex items-center justify-between rounded-lg px-3 py-2.5 font-mono text-muted transition hover:bg-surface-raised hover:text-accent"
+                    className="contact-link-lift flex items-center justify-between rounded-lg px-3 py-2.5 font-mono text-muted transition hover:bg-surface-raised hover:text-accent"
                   >
                     <span>{link.label}</span>
                     <span>&#8599;</span>
