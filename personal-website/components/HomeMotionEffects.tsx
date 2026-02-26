@@ -32,46 +32,6 @@ export function HomeMotionEffects() {
     pointerYVar: '--status-pointer-y',
   });
 
-  // Hero cursor glow
-  useEffect(() => {
-    const heroSection = document.querySelector<HTMLElement>('.hero-section');
-    const cursorGlow = document.getElementById('heroCursorGlow');
-    if (!heroSection || !cursorGlow) return;
-
-    const prefersReducedMotion = window.matchMedia(
-      '(prefers-reduced-motion: reduce)',
-    ).matches;
-    const coarsePointer = window.matchMedia(
-      '(hover: none), (pointer: coarse)',
-    ).matches;
-
-    if (prefersReducedMotion || coarsePointer) return;
-
-    let frame = 0;
-    let lastEvent: MouseEvent | null = null;
-
-    const update = () => {
-      frame = 0;
-      if (!lastEvent) return;
-      const rect = heroSection.getBoundingClientRect();
-      cursorGlow.style.left = lastEvent.clientX - rect.left + 'px';
-      cursorGlow.style.top = lastEvent.clientY - rect.top + 'px';
-    };
-
-    const onMove = (e: MouseEvent) => {
-      lastEvent = e;
-      if (frame) return;
-      frame = requestAnimationFrame(update);
-    };
-
-    heroSection.addEventListener('mousemove', onMove);
-
-    return () => {
-      heroSection.removeEventListener('mousemove', onMove);
-      if (frame) cancelAnimationFrame(frame);
-    };
-  }, []);
-
   // Terminal wake pulse
   useEffect(() => {
     const terminalShell = document.querySelector<HTMLElement>(
@@ -155,41 +115,6 @@ export function HomeMotionEffects() {
 
     return () => {
       cleanups.forEach((cleanup) => cleanup());
-    };
-  }, []);
-
-  // Scroll parallax for depth orbs
-  useEffect(() => {
-    const prefersReducedMotion = window.matchMedia(
-      '(prefers-reduced-motion: reduce)',
-    ).matches;
-    if (prefersReducedMotion) return;
-
-    const orbs = Array.from(
-      document.querySelectorAll<HTMLElement>('.depth-orb'),
-    );
-    if (!orbs.length) return;
-
-    const rates = [0.02, -0.015, 0.025];
-    let frame = 0;
-
-    const onScroll = () => {
-      if (frame) return;
-      frame = requestAnimationFrame(() => {
-        frame = 0;
-        const scrollY = window.scrollY;
-        orbs.forEach((orb, i) => {
-          const rate = rates[i] || 0.02;
-          orb.style.transform = `translate3d(0, ${scrollY * rate * 60}px, 0)`;
-        });
-      });
-    };
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      if (frame) cancelAnimationFrame(frame);
     };
   }, []);
 

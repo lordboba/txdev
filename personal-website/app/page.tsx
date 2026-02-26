@@ -11,6 +11,7 @@ import { UserCountTracker } from '@/components/UserCountTracker';
 import { NavBar } from '@/components/NavBar';
 import { getRecentPostMeta } from '@/lib/blog';
 import { HomeMotionEffects } from '@/components/HomeMotionEffects';
+import { TetrahedronField } from '@/components/TetrahedronField';
 
 function SectionHeading({
   eyebrow,
@@ -47,14 +48,7 @@ export default async function Home() {
 
         {/* ═══ Hero ═══ */}
         <section className="hero-section relative flex flex-col items-start gap-10 overflow-hidden sm:gap-16">
-          <div className="hero-grid-bg" aria-hidden="true">
-            <div className="hero-grid-plane" />
-          </div>
-          <div
-            className="hero-cursor-glow"
-            id="heroCursorGlow"
-            aria-hidden="true"
-          />
+          <TetrahedronField />
           <div className="relative z-[1] flex flex-col sm:flex-row items-start sm:items-center gap-8 sm:gap-16 max-w-3xl">
             <div className="flex flex-col gap-6">
               <div className="space-y-4">
@@ -62,10 +56,7 @@ export default async function Home() {
                   {"// hi, i'm tyler"}
                 </p>
                 <h1 className="hero-stage hero-stage-2 font-display text-5xl font-bold tracking-tight sm:text-7xl">
-                  I build{' '}
-                  <span className="text-accent hero-text-highlight">
-                    Agents
-                  </span>{' '}
+                  I build <span className="hero-text-highlight">Agents</span>{' '}
                   and backend systems.
                 </h1>
               </div>
@@ -107,7 +98,7 @@ export default async function Home() {
               <span className="profile-badge">sidequesting</span>
             </div>
           </div>
-          <div className="hero-stage hero-stage-4 w-full">
+          <div className="hero-stage hero-stage-4 hero-terminal-wrap w-full">
             <HomeTerminal />
           </div>
         </section>
@@ -163,7 +154,7 @@ export default async function Home() {
             className="timeline-motion relative space-y-5 pl-8"
           >
             {/* Timeline line */}
-            <div className="absolute left-[7px] top-2 bottom-2 w-px bg-accent/30 shadow-[0_0_8px_rgba(232,196,104,0.15)]" />
+            <div className="timeline-line absolute left-[7px] top-2 bottom-2 w-px" />
 
             {experiences.map((exp, i) => (
               <article
@@ -173,7 +164,7 @@ export default async function Home() {
                 className="timeline-entry reveal-flip relative space-y-3"
               >
                 {/* Timeline node */}
-                <div className="timeline-node absolute -left-8 top-1.5 h-[9px] w-[9px] rounded-full bg-accent shadow-[0_0_0_4px_var(--background),0_0_12px_rgba(232,196,104,0.2)]" />
+                <div className="timeline-node absolute -left-8 top-1.5 h-[9px] w-[9px] rounded-full" />
 
                 <div className="flex items-center gap-3 font-mono text-xs text-muted">
                   <span>
