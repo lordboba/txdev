@@ -52,7 +52,7 @@ function rotatePoint(
   return [x3, y3, z2];
 }
 
-export function TetrahedronField() {
+export function TetrahedronField({ className }: { className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const [isLightTheme, setIsLightTheme] = useState(false);
@@ -283,7 +283,11 @@ export function TetrahedronField() {
   }, [isLightTheme]);
 
   return (
-    <div ref={rootRef} className="tetra-field" aria-hidden="true">
+    <div
+      ref={rootRef}
+      className={className ? `tetra-field ${className}` : 'tetra-field'}
+      aria-hidden="true"
+    >
       <canvas ref={canvasRef} className="tetra-canvas" />
     </div>
   );

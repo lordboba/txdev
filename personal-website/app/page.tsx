@@ -48,9 +48,8 @@ export default async function Home() {
 
         {/* ═══ Hero ═══ */}
         <section className="hero-section relative flex flex-col items-start gap-10 overflow-hidden sm:gap-16">
-          <TetrahedronField />
-          <div className="relative z-[1] flex flex-col sm:flex-row items-start sm:items-center gap-8 sm:gap-16 max-w-3xl">
-            <div className="flex flex-col gap-6">
+          <div className="relative z-[1] flex w-full max-w-5xl flex-col gap-10 lg:flex-row lg:items-start lg:justify-between lg:gap-12">
+            <div className="flex max-w-3xl flex-col gap-6">
               <div className="space-y-4">
                 <p className="hero-stage hero-stage-1 font-mono text-sm text-muted">
                   {"// hi, i'm tyler"}
@@ -81,21 +80,26 @@ export default async function Home() {
                 </Link>
               </div>
             </div>
-            <div
-              data-pointer-profile
-              className="hero-stage hero-stage-4 profile-halo-shell relative h-64 w-64 sm:h-80 sm:w-80 flex-shrink-0 rounded-full border-2 border-divider"
-            >
-              <div className="h-full w-full overflow-hidden rounded-full">
-                <Image
-                  src="/pfp.JPG"
-                  alt="Tyler Xiao"
-                  width={400}
-                  height={400}
-                  className="h-full w-full object-cover"
-                  priority
-                />
+            <div className="hero-visual-stack w-full max-w-[360px] lg:w-[360px]">
+              <div
+                data-pointer-profile
+                className="hero-stage hero-stage-4 profile-halo-shell relative h-56 w-56 sm:h-72 sm:w-72 flex-shrink-0 rounded-full border-2 border-divider"
+              >
+                <div className="h-full w-full overflow-hidden rounded-full">
+                  <Image
+                    src="/pfp.JPG"
+                    alt="Tyler Xiao"
+                    width={400}
+                    height={400}
+                    className="h-full w-full object-cover"
+                    priority
+                  />
+                </div>
+                <span className="profile-badge">sidequesting</span>
               </div>
-              <span className="profile-badge">sidequesting</span>
+              <div className="hero-stage hero-stage-4 hero-tetra-wrap">
+                <TetrahedronField />
+              </div>
             </div>
           </div>
           <div className="hero-stage hero-stage-4 hero-terminal-wrap w-full">

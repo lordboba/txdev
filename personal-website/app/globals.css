@@ -945,13 +945,26 @@ button {
   isolation: isolate;
 }
 
+.hero-visual-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(1rem, 2.4vw, 1.5rem);
+}
+
+.hero-tetra-wrap {
+  width: 100%;
+  height: clamp(220px, 34vw, 280px);
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, var(--motion-ink) 12%, transparent);
+  background: color-mix(in srgb, var(--background) 88%, transparent);
+  overflow: hidden;
+}
+
 .tetra-field {
-  position: absolute;
-  top: clamp(4.2rem, 12vh, 8.2rem);
-  left: -6%;
-  right: -6%;
-  height: min(56vh, 520px);
-  z-index: 0;
+  position: relative;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
 }
 
@@ -962,20 +975,6 @@ button {
   opacity: 0.82;
   filter: drop-shadow(
     0 12px 40px color-mix(in srgb, var(--motion-ink) 15%, transparent)
-  );
-  mask-image: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 1) 0%,
-    rgba(0, 0, 0, 0.95) 58%,
-    rgba(0, 0, 0, 0.25) 82%,
-    transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 1) 0%,
-    rgba(0, 0, 0, 0.95) 58%,
-    rgba(0, 0, 0, 0.25) 82%,
-    transparent 100%
   );
 }
 
@@ -1213,8 +1212,7 @@ button {
     opacity: 1;
   }
 
-  .tetra-canvas {
-    mask-image: none;
-    -webkit-mask-image: none;
+  .hero-tetra-wrap {
+    display: none;
   }
 }
