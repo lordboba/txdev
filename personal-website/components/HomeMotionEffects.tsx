@@ -34,12 +34,11 @@ export function HomeMotionEffects() {
 
   // Terminal wake pulse
   useEffect(() => {
-    const terminalShell = document.querySelector<HTMLElement>(
-      '[data-terminal-shell]',
-    );
-    if (!terminalShell) return;
-
     const triggerPulse = () => {
+      const terminalShell = document.querySelector<HTMLElement>(
+        '[data-terminal-shell]',
+      );
+      if (!terminalShell) return;
       terminalShell.classList.add('terminal-awake');
       setTimeout(() => {
         terminalShell.classList.remove('terminal-awake');

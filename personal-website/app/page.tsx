@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import {
   contactLinks,
@@ -6,12 +5,11 @@ import {
   projects,
   quickFacts,
 } from '@/lib/siteData';
-import { HomeTerminal } from '@/components/Terminal/HomeTerminal';
 import { UserCountTracker } from '@/components/UserCountTracker';
 import { NavBar } from '@/components/NavBar';
 import { getRecentPostMeta } from '@/lib/blog';
 import { HomeMotionEffects } from '@/components/HomeMotionEffects';
-import { TetrahedronField } from '@/components/TetrahedronField';
+import { HomeHero } from '@/components/HomeHero';
 
 function SectionHeading({
   eyebrow,
@@ -47,65 +45,7 @@ export default async function Home() {
         <HomeMotionEffects />
 
         {/* ═══ Hero ═══ */}
-        <section className="hero-section relative flex flex-col items-start gap-10 overflow-hidden sm:gap-16">
-          <div className="relative z-[1] flex w-full max-w-5xl flex-col gap-10 lg:flex-row lg:items-start lg:justify-between lg:gap-12">
-            <div className="flex max-w-3xl flex-col gap-6">
-              <div className="space-y-4">
-                <p className="hero-stage hero-stage-1 font-mono text-sm text-muted">
-                  {"// hi, i'm tyler"}
-                </p>
-                <h1 className="hero-stage hero-stage-2 font-display text-5xl font-bold tracking-tight sm:text-7xl">
-                  I build <span className="hero-text-highlight">Agents</span>{' '}
-                  and backend systems.
-                </h1>
-              </div>
-              <p className="hero-stage hero-stage-3 max-w-2xl text-lg text-muted leading-relaxed">
-                CS student at UCLA. From trust &amp; safety automations to
-                multiplayer card games, I like solving challenging problems,
-                building efficient backend systems, and automating repetitive
-                tasks.
-              </p>
-              <div className="hero-stage hero-stage-4 flex flex-wrap gap-4">
-                <Link
-                  href="#contact"
-                  className="btn-shimmer inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-7 py-3 font-mono text-sm font-semibold text-[#1c1207] dark:text-background shadow-[0_2px_12px_rgba(232,196,104,0.2)] transition hover:shadow-[0_4px_20px_rgba(232,196,104,0.3)] hover:-translate-y-0.5"
-                >
-                  <span>&#9654;</span> Contact
-                </Link>
-                <Link
-                  href="/past-experience"
-                  className="inline-flex items-center justify-center rounded-lg border border-dashed border-divider px-7 py-3 font-mono text-sm font-semibold text-muted transition hover:border-accent hover:text-foreground"
-                >
-                  View Past Experience
-                </Link>
-              </div>
-            </div>
-            <div className="hero-visual-stack w-full max-w-[360px] lg:w-[360px]">
-              <div
-                data-pointer-profile
-                className="hero-stage hero-stage-4 profile-halo-shell relative h-56 w-56 sm:h-72 sm:w-72 flex-shrink-0 rounded-full border-2 border-divider"
-              >
-                <div className="h-full w-full overflow-hidden rounded-full">
-                  <Image
-                    src="/pfp.JPG"
-                    alt="Tyler Xiao"
-                    width={400}
-                    height={400}
-                    className="h-full w-full object-cover"
-                    priority
-                  />
-                </div>
-                <span className="profile-badge">sidequesting</span>
-              </div>
-              <div className="hero-stage hero-stage-4 hero-tetra-wrap">
-                <TetrahedronField />
-              </div>
-            </div>
-          </div>
-          <div className="hero-stage hero-stage-4 hero-terminal-wrap w-full">
-            <HomeTerminal />
-          </div>
-        </section>
+        <HomeHero />
 
         {/* ═══ About ═══ */}
         <section
