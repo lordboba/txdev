@@ -143,7 +143,7 @@ export const contactLinks = [
   { label: 'Email', href: 'mailto:tylerxiao@ucla.edu' },
   { label: 'GitHub', href: 'https://github.com/lordboba' },
   { label: 'LinkedIn', href: 'https://www.linkedin.com/in/tyler-xiao' },
-  { label: 'Twitter', href: 'https://x.com/txiaotech' },
+  { label: 'Twitter', href: 'https://x.com/tylerxdev' },
 ];
 
 export const callHighlights = [
