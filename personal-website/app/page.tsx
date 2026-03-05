@@ -11,6 +11,54 @@ import { getRecentPostMeta } from '@/lib/blog';
 import { HomeMotionEffects } from '@/components/HomeMotionEffects';
 import { HomeHero } from '@/components/HomeHero';
 
+function ContactIcon({ label }: { label: string }) {
+  if (label.startsWith('GitHub')) {
+    return (
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        className="h-4 w-4 fill-current"
+      >
+        <path d="M12 2C6.48 2 2 6.58 2 12.23c0 4.51 2.87 8.34 6.84 9.69.5.1.68-.22.68-.49 0-.24-.01-1.04-.01-1.89-2.78.62-3.37-1.2-3.37-1.2-.45-1.18-1.11-1.49-1.11-1.49-.91-.64.07-.63.07-.63 1 .07 1.53 1.05 1.53 1.05.9 1.57 2.35 1.12 2.92.86.09-.67.35-1.12.63-1.38-2.22-.26-4.56-1.14-4.56-5.08 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.31.1-2.73 0 0 .84-.27 2.75 1.05A9.3 9.3 0 0 1 12 6.85c.85 0 1.71.12 2.52.36 1.91-1.32 2.75-1.05 2.75-1.05.55 1.42.2 2.47.1 2.73.64.72 1.03 1.63 1.03 2.75 0 3.95-2.35 4.82-4.59 5.08.36.32.68.95.68 1.92 0 1.39-.01 2.5-.01 2.84 0 .27.18.6.69.49A10.25 10.25 0 0 0 22 12.23C22 6.58 17.52 2 12 2Z" />
+      </svg>
+    );
+  }
+
+  if (label.startsWith('LinkedIn')) {
+    return (
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        className="h-4 w-4 fill-current"
+      >
+        <path d="M4.98 3.5A2.48 2.48 0 1 0 5 8.46a2.48 2.48 0 0 0-.02-4.96ZM3 9h4v12H3V9Zm7 0h3.83v1.71h.05c.53-1 1.83-2.06 3.77-2.06 4.03 0 4.78 2.7 4.78 6.22V21h-4v-5.45c0-1.3-.02-2.98-1.78-2.98-1.78 0-2.05 1.42-2.05 2.89V21h-4V9Z" />
+      </svg>
+    );
+  }
+
+  if (label.startsWith('Twitter')) {
+    return (
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        className="h-4 w-4 fill-current"
+      >
+        <path d="M18.9 2H22l-6.77 7.74L23.2 22h-6.27l-4.9-7.42L5.54 22H2.43l7.24-8.28L1.8 2h6.43l4.43 6.73L18.9 2Zm-1.1 18h1.73L7.3 3.9H5.45L17.8 20Z" />
+      </svg>
+    );
+  }
+
+  if (label.startsWith('Buy Me a Coffee')) {
+    return (
+      <span aria-hidden="true" className="text-sm leading-none">
+        ☕
+      </span>
+    );
+  }
+
+  return null;
+}
+
 function SectionHeading({
   eyebrow,
   title,
@@ -277,15 +325,20 @@ export default async function Home() {
               <h3 className="font-mono text-xs uppercase tracking-widest text-muted">
                 Elsewhere
               </h3>
-              <div className="mt-4 space-y-1 text-sm">
+              <div className="mt-4 flex flex-col gap-1 text-sm">
                 {contactLinks.map((link) => (
                   <Link
                     key={link.label}
                     href={link.href}
-                    className="contact-link-lift flex items-center justify-between rounded-lg px-3 py-2.5 font-mono text-muted transition hover:bg-surface-raised hover:text-accent"
+                    className="contact-link-lift flex w-full items-center rounded-lg px-3 py-2.5 font-mono text-muted transition hover:bg-surface-raised hover:text-accent"
                   >
-                    <span>{link.label}</span>
-                    <span>&#8599;</span>
+                    <span className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center">
+                        <ContactIcon label={link.label} />
+                      </span>
+                      <span>{link.label}</span>
+                      <span>&#8599;</span>
+                    </span>
                   </Link>
                 ))}
               </div>

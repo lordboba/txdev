@@ -144,6 +144,10 @@ export const contactLinks = [
   { label: 'GitHub', href: 'https://github.com/lordboba' },
   { label: 'LinkedIn', href: 'https://www.linkedin.com/in/tyler-xiao' },
   { label: 'Twitter', href: 'https://x.com/tylerxdev' },
+  {
+    label: 'Buy Me a Coffee ☕',
+    href: 'https://buymeacoffee.com/yxiao1717o',
+  },
 ];
 
 export const callHighlights = [
