@@ -24,7 +24,7 @@ export default function ScheduleCallPage() {
       </Link>
 
       <header className="pane p-6">
-        <p className="eyebrow">// schedule a call</p>
+        <p className="eyebrow">{'// schedule a call'}</p>
         <h1 className="mt-4 font-display text-4xl font-semibold tracking-tight">
           15-minute chat to align on goals.
         </h1>

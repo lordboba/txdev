@@ -24,7 +24,7 @@ export default function PastExperiencePage() {
       </Link>
 
       <header className="space-y-4">
-        <p className="eyebrow">// past experience</p>
+        <p className="eyebrow">{'// past experience'}</p>
         <h1 className="font-display text-4xl font-semibold tracking-tight">
           Commit history of roles and leadership.
         </h1>
@@ -50,7 +50,7 @@ export default function PastExperiencePage() {
       </section>
 
       <section className="space-y-6">
-        {experiences.map((exp, i) => (
+        {experiences.map((exp) => (
           <article key={`${exp.company}-${exp.role}`} className="pane p-6">
             <div className="flex flex-wrap items-center justify-between gap-3 font-mono text-xs text-muted">
               <span>
@@ -77,7 +77,7 @@ export default function PastExperiencePage() {
 
       <section className="space-y-4">
         <div>
-          <p className="eyebrow">// projects</p>
+          <p className="eyebrow">{'// projects'}</p>
           <h2 className="mt-2 font-display text-3xl font-semibold">Projects</h2>
           <p className="mt-2 text-sm text-muted">Click any project.</p>
           <div className="mt-3 h-px bg-divider" />

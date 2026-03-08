@@ -17,7 +17,10 @@ export const navLinks = [
 export const NavBar = () => {
   const pathname = usePathname();
   const [homeActiveHref, setHomeActiveHref] = useState<string>('/');
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileMenuState, setMobileMenuState] = useState({
+    open: false,
+    pathname,
+  });
   const navListRef = useRef<HTMLDivElement>(null);
   const navIndicatorRef = useRef<HTMLSpanElement>(null);
 
@@ -32,6 +35,8 @@ export const NavBar = () => {
   }, [pathname]);
 
   const activeHref = pathname === '/' ? homeActiveHref : normalizedPath;
+  const mobileOpen =
+    mobileMenuState.pathname === pathname && mobileMenuState.open;
 
   const updateIndicator = useCallback(() => {
     const navList = navListRef.current;
@@ -94,11 +99,6 @@ export const NavBar = () => {
     return () => window.removeEventListener('resize', updateIndicator);
   }, [updateIndicator]);
 
-  // Close mobile menu on route change
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
-
   return (
     <header className="sticky top-0 z-20 border-b border-divider bg-surface/85 backdrop-blur-xl">
       <nav className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-7 py-3 sm:px-5 sm:py-4">
@@ -150,7 +150,12 @@ export const NavBar = () => {
         <div className="flex items-center gap-3 md:hidden">
           <ThemeToggle />
           <button
-            onClick={() => setMobileOpen((prev) => !prev)}
+            onClick={() =>
+              setMobileMenuState((prev) => ({
+                open: prev.pathname === pathname ? !prev.open : true,
+                pathname,
+              }))
+            }
             className="flex h-9 w-9 items-center justify-center rounded-lg border border-divider bg-surface text-foreground transition hover:border-accent/40"
             aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={mobileOpen}
@@ -196,7 +201,7 @@ export const NavBar = () => {
                 key={link.label}
                 href={link.href}
                 onClick={() => {
-                  setMobileOpen(false);
+                  setMobileMenuState({ open: false, pathname });
                   if (pathname === '/' && link.href.startsWith('/#')) {
                     setHomeActiveHref(link.href);
                   }
