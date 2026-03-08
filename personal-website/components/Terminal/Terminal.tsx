@@ -78,7 +78,7 @@ export const Terminal = ({
 
   return (
     <div
-      className={`${containerClass} ${textClass} terminal-root text-[#E8ECF1] font-mono flex flex-col overflow-hidden transition-all duration-400`}
+      className={`${containerClass} ${textClass} terminal-root font-mono flex flex-col overflow-hidden transition-all duration-400`}
       onClick={(e) => {
         const input = e.currentTarget.querySelector('input');
         if (input) (input as HTMLElement).focus();
@@ -87,12 +87,12 @@ export const Terminal = ({
       {/* Terminal Header / Controls */}
       <div className="flex items-center justify-between bg-terminal-bar px-4 py-2.5 border-b border-terminal-border shrink-0">
         <div className="flex gap-2">
-          <div className="h-2.5 w-2.5 rounded-full bg-[#E8C468]/30 border border-[#E8C468]/20" />
-          <div className="h-2.5 w-2.5 rounded-full bg-[#E8C468]/20 border border-[#E8C468]/15" />
-          <div className="h-2.5 w-2.5 rounded-full bg-[#E8C468]/10 border border-[#E8C468]/10" />
+          <div className="h-2.5 w-2.5 rounded-full border border-[color:color-mix(in_srgb,var(--accent)_20%,transparent)] bg-[color:color-mix(in_srgb,var(--accent)_30%,transparent)]" />
+          <div className="h-2.5 w-2.5 rounded-full border border-[color:color-mix(in_srgb,var(--accent)_15%,transparent)] bg-[color:color-mix(in_srgb,var(--accent)_20%,transparent)]" />
+          <div className="h-2.5 w-2.5 rounded-full border border-[color:color-mix(in_srgb,var(--accent)_10%,transparent)] bg-[color:color-mix(in_srgb,var(--accent)_10%,transparent)]" />
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-[#6C7689] hidden sm:inline-block">
+          <span className="terminal-muted hidden text-xs sm:inline-block">
             guest@tyler-portfolio: ~
           </span>
         </div>
@@ -103,7 +103,7 @@ export const Terminal = ({
                 e.stopPropagation();
                 onToggleFullScreen();
               }}
-              className="text-[#6C7689] transition hover:text-[#E8C468]"
+              className="terminal-muted transition hover:text-accent"
               title={
                 isFullScreen ? 'Exit Full Screen (Esc)' : 'Enter Full Screen'
               }
@@ -185,7 +185,7 @@ export const Terminal = ({
           )}
 
           {isBooting && (
-            <div className="mt-2 animate-pulse text-[#4ECDC4]">
+            <div className="terminal-soft mt-2 animate-pulse">
               System initializing...
             </div>
           )}

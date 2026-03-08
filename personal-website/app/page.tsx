@@ -226,11 +226,6 @@ export default async function Home() {
                 <div className="flex flex-1 flex-col p-5">
                   <div className="flex flex-wrap gap-2 text-xs">
                     <span className="chip">{project.role}</span>
-                    {project.focus.map((f) => (
-                      <span key={f} className="chip-secondary chip">
-                        {f}
-                      </span>
-                    ))}
                   </div>
                   <h3 className="mt-3 font-display text-xl font-semibold">
                     {project.title}

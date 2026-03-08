@@ -89,12 +89,7 @@ export default function PastExperiencePage() {
               href={project.link}
               className="pane block p-5 transition hover:scale-[1.01]"
             >
-              <div className="flex items-center justify-between font-mono text-xs text-muted">
-                <span>{project.role}</span>
-                <span className="text-secondary">
-                  {project.focus.join(' / ')}
-                </span>
-              </div>
+              <div className="font-mono text-xs text-muted">{project.role}</div>
               <h3 className="mt-3 font-display text-xl font-semibold">
                 {project.title}
               </h3>

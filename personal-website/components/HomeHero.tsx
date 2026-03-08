@@ -72,7 +72,7 @@ export function HomeHero() {
             <div className="hero-stage hero-stage-4 flex flex-wrap gap-4">
               <Link
                 href="#contact"
-                className="btn-shimmer inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-7 py-3 font-mono text-sm font-semibold text-[#1c1207] dark:text-background shadow-[0_2px_12px_rgba(232,196,104,0.2)] transition hover:shadow-[0_4px_20px_rgba(232,196,104,0.3)] hover:-translate-y-0.5"
+                className="btn-shimmer accent-action inline-flex items-center justify-center gap-2 rounded-lg px-7 py-3 font-mono text-sm font-semibold shadow-[0_2px_12px_rgba(232,196,104,0.2)] transition hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(232,196,104,0.3)]"
               >
                 <span>&#9654;</span> Contact
               </Link>

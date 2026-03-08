@@ -39,6 +39,7 @@
   --foreground: #e8ecf1;
   --muted: #6c7689;
   --accent: #e8c468;
+  --accent-ink: #1c1207;
   --accent-muted: rgba(232, 196, 104, 0.12);
   --secondary: #4ecdc4;
   --secondary-muted: rgba(78, 205, 196, 0.1);
@@ -58,6 +59,11 @@
   --terminal-bg: #0a0d14;
   --terminal-bar: #11141c;
   --terminal-border: rgba(232, 196, 104, 0.08);
+  --terminal-foreground: color-mix(in srgb, var(--accent) 72%, white);
+  --terminal-muted: color-mix(in srgb, var(--accent) 34%, var(--muted));
+  --terminal-soft: color-mix(in srgb, var(--accent) 56%, white);
+  --terminal-link: color-mix(in srgb, var(--accent) 76%, white);
+  --terminal-surface: color-mix(in srgb, var(--accent) 12%, transparent);
   --motion-ink: rgba(255, 255, 255, 0.95);
   --motion-ink-soft: rgba(255, 255, 255, 0.42);
   --motion-ink-faint: rgba(255, 255, 255, 0.16);
@@ -72,6 +78,7 @@
   --foreground: #1a1d24;
   --muted: #6b7280;
   --accent: #a07d1c;
+  --accent-ink: #140f05;
   --accent-muted: rgba(160, 125, 28, 0.08);
   --secondary: #168f86;
   --secondary-muted: rgba(22, 143, 134, 0.08);
@@ -81,6 +88,11 @@
   --terminal-bg: #1a1d24;
   --terminal-bar: #22262f;
   --terminal-border: rgba(255, 255, 255, 0.06);
+  --terminal-foreground: color-mix(in srgb, var(--accent) 78%, white);
+  --terminal-muted: color-mix(in srgb, var(--accent) 40%, #8d949f);
+  --terminal-soft: color-mix(in srgb, var(--accent) 62%, white);
+  --terminal-link: color-mix(in srgb, var(--accent) 72%, #f4ead0);
+  --terminal-surface: color-mix(in srgb, var(--accent) 14%, transparent);
   --motion-ink: rgba(15, 18, 25, 0.95);
   --motion-ink-soft: rgba(15, 18, 25, 0.34);
   --motion-ink-faint: rgba(15, 18, 25, 0.14);
@@ -210,6 +222,16 @@ a:hover {
 
 [data-theme='light'] .pane:hover {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+.accent-action {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.accent-action:hover,
+.accent-action:focus-visible {
+  color: var(--accent-ink);
 }
 
 .chip {
@@ -553,9 +575,9 @@ button {
 }
 
 .terminal-root .terminal-command-chip {
-  border: 1px solid color-mix(in srgb, var(--secondary) 30%, transparent);
-  background: color-mix(in srgb, var(--secondary) 9%, transparent);
-  color: var(--secondary);
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+  background: var(--terminal-surface);
+  color: var(--terminal-soft);
   border-radius: 999px;
   padding: 0.24rem 0.62rem;
   font-size: 0.72rem;
@@ -563,14 +585,16 @@ button {
   transition:
     transform var(--motion-fast) var(--ease-spring),
     color var(--motion-fast) var(--ease-standard),
-    background var(--motion-fast) var(--ease-standard);
+    background var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard);
 }
 
 .terminal-root .terminal-command-chip:hover,
 .terminal-root .terminal-command-chip:focus-visible {
   transform: translateY(-1px);
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 11%, transparent);
+  color: var(--accent-ink);
+  border-color: color-mix(in srgb, var(--accent) 72%, transparent);
+  background: var(--accent);
 }
 
 .terminal-root .terminal-tip {
@@ -590,7 +614,7 @@ button {
 }
 
 .terminal-root .terminal-tip code {
-  color: var(--secondary);
+  color: var(--terminal-soft);
 }
 
 .terminal-root .terminal-tip.is-visible {
@@ -637,6 +661,48 @@ button {
 .terminal-prompt-arrow.is-flashing {
   color: var(--accent);
   text-shadow: 0 0 10px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.terminal-root .terminal-boot,
+.terminal-root .terminal-output {
+  color: var(--terminal-foreground);
+}
+
+.terminal-root .terminal-command-line {
+  color: var(--terminal-muted);
+}
+
+.terminal-root .terminal-accent {
+  color: var(--accent);
+}
+
+.terminal-root .terminal-soft {
+  color: var(--terminal-soft);
+}
+
+.terminal-root .terminal-link {
+  color: var(--terminal-link);
+}
+
+.terminal-root .terminal-link:hover,
+.terminal-root .terminal-link:focus-visible {
+  color: var(--accent);
+}
+
+.terminal-root .terminal-muted {
+  color: var(--terminal-muted);
+}
+
+.terminal-root .terminal-danger {
+  color: #f87171;
+}
+
+.terminal-root .terminal-input-field {
+  color: var(--terminal-foreground);
+}
+
+.terminal-root .terminal-input-field::placeholder {
+  color: var(--terminal-muted);
 }
 
 /* Timeline glow bar */

@@ -19,7 +19,7 @@ export const useTerminal = () => {
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       const initialOutput = (
-        <div className="whitespace-pre font-bold text-green-500 text-[10px] sm:text-xs leading-[1.1] overflow-x-auto no-scrollbar">
+        <div className="terminal-boot whitespace-pre overflow-x-auto no-scrollbar text-[10px] font-bold leading-[1.1] sm:text-xs">
           {ASCII_ART}
           <br />
           {WELCOME_MESSAGE.map((line, i) => (
@@ -71,23 +71,23 @@ export const useTerminal = () => {
         case 'help':
           output = (
             <div className="grid grid-cols-[auto_1fr] sm:grid-cols-[120px_1fr] gap-x-2 sm:gap-x-4 gap-y-2">
-              <span className="text-yellow-400">about</span>
+              <span className="terminal-accent">about</span>
               <span>Who is Tyler?</span>
-              <span className="text-yellow-400">projects</span>
+              <span className="terminal-accent">projects</span>
               <span>View my work</span>
-              <span className="text-yellow-400">experience</span>
+              <span className="terminal-accent">experience</span>
               <span>View my career history</span>
-              <span className="text-yellow-400">contact</span>
+              <span className="terminal-accent">contact</span>
               <span>Get in touch</span>
-              <span className="text-yellow-400">ls</span>
+              <span className="terminal-accent">ls</span>
               <span>List files</span>
-              <span className="text-yellow-400">cat &lt;file&gt;</span>
+              <span className="terminal-accent">cat &lt;file&gt;</span>
               <span>Read a file</span>
-              <span className="text-yellow-400">echo &lt;text&gt;</span>
+              <span className="terminal-accent">echo &lt;text&gt;</span>
               <span>Print text</span>
-              <span className="text-yellow-400">ascii</span>
+              <span className="terminal-accent">ascii</span>
               <span>Show splash art</span>
-              <span className="text-yellow-400">clear</span>
+              <span className="terminal-accent">clear</span>
               <span>Clear terminal</span>
             </div>
           );
@@ -101,7 +101,7 @@ export const useTerminal = () => {
                 { text: "Hello! I'm Tyler Xiao." },
                 ...quickFacts.map((fact) => ({
                   text: `${fact.label}: ${fact.value}`,
-                  className: 'text-blue-300',
+                  className: 'terminal-soft',
                 })),
               ]}
             />
@@ -114,11 +114,11 @@ export const useTerminal = () => {
               lines={[
                 {
                   text: "Here are some things I've built:",
-                  className: 'text-gray-300',
+                  className: 'terminal-muted',
                 },
                 ...projects.map((project) => ({
                   text: `- ${project.title} (${project.role})`,
-                  className: 'text-blue-300',
+                  className: 'terminal-soft',
                 })),
               ]}
             />
@@ -131,11 +131,11 @@ export const useTerminal = () => {
               lines={[
                 {
                   text: 'My professional journey:',
-                  className: 'text-gray-300',
+                  className: 'terminal-muted',
                 },
                 ...experiences.map((exp) => ({
                   text: `- ${exp.start} - ${exp.end}: ${exp.role} @ ${exp.company}`,
-                  className: 'text-green-300',
+                  className: 'terminal-accent',
                 })),
               ]}
             />
@@ -149,12 +149,12 @@ export const useTerminal = () => {
               <div className="grid grid-cols-[100px_1fr] gap-1">
                 {contactLinks.map((link, i) => (
                   <div key={i} className="contents">
-                    <span className="text-purple-400">{link.label}:</span>
+                    <span className="terminal-soft">{link.label}:</span>
                     <a
                       href={link.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hover:underline text-blue-300"
+                      className="terminal-link hover:underline"
                     >
                       {link.href.replace('mailto:', '')}
                     </a>
@@ -169,7 +169,7 @@ export const useTerminal = () => {
           output = (
             <div className="flex gap-4">
               {Object.keys(INITIAL_FILES).map((file) => (
-                <span key={file} className="text-blue-400">
+                <span key={file} className="terminal-soft">
                   {file}
                 </span>
               ))}
@@ -183,7 +183,7 @@ export const useTerminal = () => {
 
         case 'ascii':
           output = (
-            <div className="whitespace-pre font-bold text-green-500 text-[10px] sm:text-xs leading-[1.1] overflow-x-auto no-scrollbar">
+            <div className="terminal-boot whitespace-pre overflow-x-auto no-scrollbar text-[10px] font-bold leading-[1.1] sm:text-xs">
               {ASCII_ART}
             </div>
           );
@@ -193,7 +193,9 @@ export const useTerminal = () => {
           const fileName = args[0];
           if (!fileName) {
             output = (
-              <span className="text-red-400">Usage: cat &lt;filename&gt;</span>
+              <span className="terminal-danger">
+                Usage: cat &lt;filename&gt;
+              </span>
             );
           } else if (fileName === 'resume.pdf') {
             const resumePath = '/resume/resume.pdf';
@@ -203,14 +205,14 @@ export const useTerminal = () => {
             }
             output = (
               <div className="space-y-1">
-                <div className="text-yellow-400">
+                <div className="terminal-accent">
                   Opening resume in a new tab...
                 </div>
                 <a
                   href={resumePath}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-400 hover:underline"
+                  className="terminal-link hover:underline"
                 >
                   Download resume.pdf
                 </a>
@@ -218,13 +220,13 @@ export const useTerminal = () => {
             );
           } else if (INITIAL_FILES[fileName]) {
             output = (
-              <div className="whitespace-pre-wrap text-gray-300">
+              <div className="terminal-output whitespace-pre-wrap">
                 {INITIAL_FILES[fileName].content}
               </div>
             );
           } else {
             output = (
-              <span className="text-red-400">
+              <span className="terminal-danger">
                 cat: {fileName}: No such file or directory
               </span>
             );
@@ -243,9 +245,9 @@ export const useTerminal = () => {
         default:
           isValid = false;
           output = (
-            <span className="text-red-400">
+            <span className="terminal-danger">
               Command not found: {command}. Type{' '}
-              <span className="text-yellow-400">help</span> for list.
+              <span className="terminal-accent">help</span> for list.
             </span>
           );
       }

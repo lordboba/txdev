@@ -36,7 +36,7 @@ export default function ScheduleCallPage() {
         <div className="mt-6 flex flex-wrap gap-4">
           <Link
             href="#calendly"
-            className="inline-flex items-center justify-center rounded-lg bg-accent px-6 py-3 font-mono text-sm font-semibold text-background shadow-[0_2px_12px_rgba(232,196,104,0.2)] transition hover:shadow-[0_4px_20px_rgba(232,196,104,0.3)] hover:-translate-y-0.5"
+            className="accent-action inline-flex items-center justify-center rounded-lg px-6 py-3 font-mono text-sm font-semibold shadow-[0_2px_12px_rgba(232,196,104,0.2)] transition hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(232,196,104,0.3)]"
           >
             Book now
           </Link>

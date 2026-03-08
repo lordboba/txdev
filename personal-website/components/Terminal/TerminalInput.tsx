@@ -98,13 +98,13 @@ export const TerminalInput = ({
       }`}
     >
       <span
-        className={`terminal-prompt-arrow text-[#4ECDC4] ${
+        className={`terminal-prompt-arrow terminal-accent ${
           isPromptFlashing ? 'is-flashing' : ''
         }`}
       >
         &#10148;
       </span>
-      <span className="text-[#E8C468]">~</span>
+      <span className="terminal-soft">~</span>
       <input
         ref={inputRef}
         type="text"
@@ -112,7 +112,7 @@ export const TerminalInput = ({
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
         disabled={disabled}
-        className="flex-1 bg-transparent outline-none border-none text-[#E8ECF1] placeholder-[#6C7689]"
+        className="terminal-input-field flex-1 border-none bg-transparent outline-none"
         autoComplete="off"
         spellCheck="false"
       />
