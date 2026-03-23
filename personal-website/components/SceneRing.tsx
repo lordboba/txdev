@@ -4,11 +4,18 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { useRef, useMemo, useEffect } from 'react';
 import * as THREE from 'three';
 
+function getWireColor() {
+  return document.documentElement.getAttribute('data-theme') === 'light'
+    ? '#1a1d24'
+    : '#ffffff';
+}
+
 function WireRing() {
   const ref = useRef<THREE.Group>(null);
   const line1Ref = useRef<THREE.Line>(null);
   const line2Ref = useRef<THREE.Line>(null);
   const line3Ref = useRef<THREE.Line>(null);
+  const matsRef = useRef<THREE.LineBasicMaterial[]>([]);
 
   const geometry = useMemo(() => {
     const pts: THREE.Vector3[] = [];
@@ -23,21 +30,23 @@ function WireRing() {
   }, []);
 
   useEffect(() => {
+    const wireColor = getWireColor();
     const mat1 = new THREE.LineBasicMaterial({
-      color: '#ffffff',
+      color: wireColor,
       transparent: true,
       opacity: 0.06,
     });
     const mat2 = new THREE.LineBasicMaterial({
-      color: '#ffffff',
+      color: wireColor,
       transparent: true,
       opacity: 0.03,
     });
     const mat3 = new THREE.LineBasicMaterial({
-      color: '#ffffff',
+      color: wireColor,
       transparent: true,
       opacity: 0.02,
     });
+    matsRef.current = [mat1, mat2, mat3];
 
     const l1 = new THREE.Line(geometry, mat1);
     const l2 = new THREE.Line(geometry, mat2);
@@ -53,7 +62,17 @@ function WireRing() {
       ref.current.add(l1, l2, l3);
     }
 
+    const observer = new MutationObserver(() => {
+      const c = new THREE.Color(getWireColor());
+      matsRef.current.forEach((m) => m.color.copy(c));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme'],
+    });
+
     return () => {
+      observer.disconnect();
       geometry.dispose();
       mat1.dispose();
       mat2.dispose();

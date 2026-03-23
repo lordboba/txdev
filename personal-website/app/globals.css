@@ -96,6 +96,12 @@
   --motion-ink: rgba(15, 18, 25, 0.95);
   --motion-ink-soft: rgba(15, 18, 25, 0.34);
   --motion-ink-faint: rgba(15, 18, 25, 0.14);
+
+  --c-accent: #24272e;
+  --c-accent-soft: rgba(36, 39, 46, 0.07);
+  --c-accent-border: rgba(36, 39, 46, 0.12);
+  --c-glow: rgba(36, 39, 46, 0.05);
+  --c-dot: #4a8;
 }
 
 /* ═══ Tailwind v4 Theme ═══ */
@@ -1622,7 +1628,7 @@ button {
 }
 
 /* ═══════════════════════════════════════════════
-   NEW: Color Theme System
+   Color Theme System
    ═══════════════════════════════════════════════ */
 
 :root {
@@ -1633,6 +1639,7 @@ button {
   --c-dot: #5a5;
 }
 
+/* ── Dark Mono (default — matches :root) ── */
 [data-color-theme='mono'] {
   --c-accent: #ffffff;
   --c-accent-soft: rgba(255, 255, 255, 0.12);
@@ -1641,28 +1648,145 @@ button {
   --c-dot: #5a5;
 }
 
+/* ── Dark Ember ── */
 [data-color-theme='ember'] {
   --c-accent: #e8a060;
   --c-accent-soft: rgba(232, 160, 96, 0.12);
   --c-accent-border: rgba(232, 160, 96, 0.1);
   --c-glow: rgba(232, 160, 96, 0.08);
   --c-dot: #e8a060;
+
+  --background: #0c0907;
+  --surface: #15100a;
+  --surface-raised: #201812;
+  --accent: #e8a060;
+  --accent-ink: #1a0e05;
+  --accent-muted: rgba(232, 160, 96, 0.12);
+  --muted: #8a7768;
+  --divider: rgba(232, 160, 96, 0.08);
+  --code: #15100a;
+  --motion-ink: rgba(255, 235, 210, 0.92);
+  --motion-ink-soft: rgba(255, 235, 210, 0.38);
+  --motion-ink-faint: rgba(255, 235, 210, 0.14);
 }
 
+/* ── Dark Ice ── */
 [data-color-theme='ice'] {
   --c-accent: #5090e0;
   --c-accent-soft: rgba(80, 144, 224, 0.12);
   --c-accent-border: rgba(80, 144, 224, 0.08);
   --c-glow: rgba(80, 144, 224, 0.08);
   --c-dot: #5090e0;
+
+  --background: #060a11;
+  --surface: #0d1320;
+  --surface-raised: #161e2e;
+  --accent: #5090e0;
+  --accent-ink: #081428;
+  --accent-muted: rgba(80, 144, 224, 0.12);
+  --muted: #687a92;
+  --divider: rgba(80, 144, 224, 0.08);
+  --code: #0d1320;
+  --motion-ink: rgba(200, 220, 250, 0.92);
+  --motion-ink-soft: rgba(200, 220, 250, 0.38);
+  --motion-ink-faint: rgba(200, 220, 250, 0.14);
 }
 
+/* ── Dark Terminal ── */
 [data-color-theme='terminal'] {
   --c-accent: #80e840;
   --c-accent-soft: rgba(128, 232, 64, 0.1);
   --c-accent-border: rgba(128, 232, 64, 0.08);
   --c-glow: rgba(128, 232, 64, 0.06);
   --c-dot: #80e840;
+
+  --background: #050b04;
+  --surface: #0c150a;
+  --surface-raised: #141e12;
+  --accent: #80e840;
+  --accent-ink: #081a04;
+  --accent-muted: rgba(128, 232, 64, 0.1);
+  --muted: #668460;
+  --divider: rgba(128, 232, 64, 0.07);
+  --code: #0c150a;
+  --motion-ink: rgba(210, 250, 190, 0.92);
+  --motion-ink-soft: rgba(210, 250, 190, 0.38);
+  --motion-ink-faint: rgba(210, 250, 190, 0.14);
+}
+
+/* ── Light Mono ── */
+[data-theme='light'][data-color-theme='mono'] {
+  --c-accent: #24272e;
+  --c-accent-soft: rgba(36, 39, 46, 0.07);
+  --c-accent-border: rgba(36, 39, 46, 0.12);
+  --c-glow: rgba(36, 39, 46, 0.05);
+  --c-dot: #4a8;
+}
+
+/* ── Light Ember ── */
+[data-theme='light'][data-color-theme='ember'] {
+  --background: #faf2e6;
+  --surface: #fffcf7;
+  --surface-raised: #f0e4d2;
+  --accent: #b86a1e;
+  --accent-ink: #1a0e05;
+  --accent-muted: rgba(184, 106, 30, 0.1);
+  --muted: #8a7260;
+  --divider: rgba(184, 106, 30, 0.1);
+  --code: #f5ece0;
+  --motion-ink: rgba(60, 30, 10, 0.9);
+  --motion-ink-soft: rgba(60, 30, 10, 0.3);
+  --motion-ink-faint: rgba(60, 30, 10, 0.12);
+
+  --c-accent: #c07028;
+  --c-accent-soft: rgba(192, 112, 40, 0.08);
+  --c-accent-border: rgba(192, 112, 40, 0.15);
+  --c-glow: rgba(192, 112, 40, 0.08);
+  --c-dot: #c07028;
+}
+
+/* ── Light Ice ── */
+[data-theme='light'][data-color-theme='ice'] {
+  --background: #edf4fc;
+  --surface: #f7faff;
+  --surface-raised: #dce8f6;
+  --accent: #2862b0;
+  --accent-ink: #081428;
+  --accent-muted: rgba(40, 98, 176, 0.1);
+  --muted: #5c7590;
+  --divider: rgba(40, 98, 176, 0.1);
+  --code: #e6effa;
+  --motion-ink: rgba(10, 25, 55, 0.9);
+  --motion-ink-soft: rgba(10, 25, 55, 0.3);
+  --motion-ink-faint: rgba(10, 25, 55, 0.12);
+
+  --c-accent: #2a68b8;
+  --c-accent-soft: rgba(42, 104, 184, 0.08);
+  --c-accent-border: rgba(42, 104, 184, 0.14);
+  --c-glow: rgba(42, 104, 184, 0.08);
+  --c-dot: #2a68b8;
+}
+
+/* ── Light Terminal ── */
+[data-theme='light'][data-color-theme='terminal'] {
+  --background: #eef8eb;
+  --surface: #f7fcf5;
+  --surface-raised: #daf0d4;
+  --accent: #288c12;
+  --accent-ink: #081a04;
+  --accent-muted: rgba(40, 140, 18, 0.1);
+  --muted: #587a50;
+  --divider: rgba(40, 140, 18, 0.1);
+  --code: #e4f2de;
+  --motion-ink: rgba(10, 40, 5, 0.9);
+  --motion-ink-soft: rgba(10, 40, 5, 0.3);
+  --motion-ink-faint: rgba(10, 40, 5, 0.12);
+
+  --c-accent: #2a8c14;
+  --c-accent-soft: rgba(42, 140, 20, 0.08);
+  --c-accent-border: rgba(42, 140, 20, 0.14);
+  --c-glow: rgba(42, 140, 20, 0.08);
+  --c-dot: #2a8c14;
 }
 
 /* ═══ App Shell ═══ */
@@ -2437,6 +2561,38 @@ button {
 
 .theme-swatch:hover .theme-swatch-tooltip {
   opacity: 1;
+}
+
+.theme-bar-divider {
+  width: 1px;
+  height: 16px;
+  background: var(--c-accent-border);
+  margin: 0 6px;
+}
+
+.theme-bar-mode-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--c-accent-border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    color 0.3s,
+    border-color 0.3s,
+    background 0.3s,
+    transform 0.2s var(--ease-spring);
+}
+
+.theme-bar-mode-toggle:hover {
+  color: var(--c-accent);
+  border-color: var(--c-accent);
+  background: var(--c-accent-soft);
+  transform: scale(1.15);
 }
 
 /* ═══ Modal Overlay ═══ */
