@@ -10,3 +10,5 @@ personal-website/content/blog/drafts/*
 /**/*.fdb_latexmk
 /**/*.fls
 /**/*.synctex.gz
+
+.superpowers

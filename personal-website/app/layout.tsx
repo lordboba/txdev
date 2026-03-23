@@ -46,6 +46,10 @@ const themeInitScript = `
     } else {
       document.documentElement.setAttribute('data-theme', 'dark');
     }
+    var ct = localStorage.getItem('color-theme');
+    if (ct) {
+      document.documentElement.setAttribute('data-color-theme', ct);
+    }
   } catch(e) {
     document.documentElement.setAttribute('data-theme', 'dark');
   }
