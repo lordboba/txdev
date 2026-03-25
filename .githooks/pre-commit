@@ -1,0 +1,28 @@
+#!/bin/sh
+set -e
+
+echo "Running pre-commit hook: Formatting code..."
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "$REPO_ROOT/personal-website"
+
+# Install only Prettier if it is not already available locally.
+if [ ! -x "./node_modules/.bin/prettier" ]; then
+  PRETTIER_VERSION=$(node -p "require('./package.json').devDependencies.prettier")
+
+  if [ -z "$PRETTIER_VERSION" ] || [ "$PRETTIER_VERSION" = "undefined" ]; then
+    echo "Unable to determine the configured Prettier version."
+    exit 1
+  fi
+
+  echo "Prettier not found. Installing prettier@$PRETTIER_VERSION..."
+  npm install --no-save --ignore-scripts "prettier@$PRETTIER_VERSION"
+fi
+
+# Run Prettier directly so the hook only depends on the formatter package.
+./node_modules/.bin/prettier --write .
+
+# Automatically stage any changes made by the formatter.
+git add .
+
+echo "Pre-commit hook finished successfully."
