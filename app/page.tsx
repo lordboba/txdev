@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Carousel3D, type Section } from '@/components/Carousel3D';
 import { ThemeBar } from '@/components/ThemeBar';
 import { ContentPanel } from '@/components/ContentPanel';
@@ -109,7 +110,17 @@ function AllProjectsModal({ onClose }: { onClose: () => void }) {
               className="modal-project-img-slot"
               data-project={project.title.toLowerCase().replace(/\s+/g, '-')}
             >
-              <span className="modal-project-img-placeholder">&#9635;</span>
+              {project.image ? (
+                <Image
+                  src={project.image}
+                  alt={`${project.title} screenshot`}
+                  width={640}
+                  height={360}
+                  className="modal-project-img"
+                />
+              ) : (
+                <span className="modal-project-img-placeholder">&#9635;</span>
+              )}
             </div>
             <span className="modal-project-role">{project.role}</span>
             <h4 className="modal-project-name">{project.title}</h4>

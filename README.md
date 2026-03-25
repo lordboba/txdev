@@ -1,49 +1,90 @@
-# Tyler Xiao's Personal Website!
+# Tyler Xiao Personal Website
 
-Website Link: https://www.tylerx.dev/
+Personal portfolio built with Next.js 16, React 19, and Tailwind CSS v4. The site is designed to feel technical, warm, and a little hidden-in-plain-sight: editorial typography, terminal-native interactions, gold accent lighting, and motion that reacts to user intent instead of running constantly.
 
-San Diego native and UCLA CS student. Ate a head of lettuce in 1 minute and 51 seconds.
+## Current Design Direction
 
-- B.S. Computer Science @ UCLA (Class of 2027)
-- From San Diego, now in Los Angeles
-- Specializes in building AI Agents + Backend Systems
+- Dark by default, with a light theme that keeps the same hierarchy and interaction model.
+- Warm gold accent as the primary highlight color, with teal reserved as a secondary support tone.
+- Clear type pairing:
+  - `Clash Display` for headings
+  - `Satoshi` for body and UI text
+  - `Monaspace Neon` for terminal and monospace surfaces
+- Portfolio framing that mixes product-engineering polish with terminal-inspired affordances.
 
-## Experience
-- **SafetyKit — Member of Technical Staff (May 2025 – Sep 2025):** First intern helping ship agentic AI workflows for trust & safety review processes.
-- **Scale AI — Technical Advisor Intern (Nov 2024 – May 2025):** Trained generative AI systems on complex coding and reasoning tasks.
-- **Upsilon Pi Epsilon @ UCLA — Induction & Membership Chair (May 2025 – Present):** Scaled onboarding and built Discord automation for the honor society.
+## Recent Design Choices
 
-## Featured Projects
-| Project | What it is | Tech |
-| --- | --- | --- |
-| [Multiplayer Card Games](https://35-lproject.vercel.app) | Full-stack web application simulating the card games Fish and Viet Cong. | TypeScript, Next.js, Vercel |
-| [StonksGame](https://github.com/lordboba/stonksgame) | Discord bot running live stock-trading simulations with leaderboards and analytics. | Python, Discord.py, Alpha Vantage API |
-| [Wildfire Detection](https://github.com/lordboba/wildfire-detection) | ML pipeline that flags wildfire risk signals from air-quality telemetry. | TypeScript, TensorFlow, Node.js |
-| [DocuPilot](https://github.com/lordboba/docupilot) | AI Google Drive agent that executes file workflows from natural language chat. | FastAPI, LangChain, Gemini API, React |
-| [LectureGen](https://github.com/safinsingh/LectureGen) | Automated lecture builder delivering multi-modal lessons via instructor+TA agents. | Next.js, Fastify, LiveKit, Anthropic Claude API |
-| [Grow & Give](https://github.com/lordboba/PAR) | iOS application to improve personal productivity. | Swift, SwiftUI |
+- Hero now supports two modes:
+  - headline mode for the main personal pitch
+  - a hidden terminal mode for interactive exploration
+- Yellow accent surfaces now use dark ink for contrast-sensitive CTA treatment.
+- Terminal colors were updated to match the site accent system instead of the older green-heavy palette.
+- Motion favors reveal-on-scroll, tilt, and subtle glow effects over always-on animation.
+- Navigation stays lightweight and sticky, with an accent indicator on desktop and a compact mobile menu.
 
-## Toolbox
-- Languages: TypeScript, Python, Swift, C, C++, Java, JavaScript, MATLAB
-- Frameworks: Next.js, React, SwiftUI, Node.js, Vite
-- Platforms: Discord, Vercel, Firebase, AWS, Google Cloud Platform
-- Interests: Agentic AI, trust & safety, backend systems, startups
+## Site Structure
 
-## Misc Clubs + Involvement
-- **ACM ICPC** Competitive Team - UCLA ICPC Regional Team Competitor
-- Upsilon Pi Epsilon Induction & Membership Chair - Help induct members into honors society
-- GLITCH @ UCLA Projects Director - Leads projects and organization in GLITCH @ UCLA
-- Cellist in Symphony Orchestra
-- Jogging Club Runners
+- `/`
+  - sticky navigation
+  - hero with headline/terminal mode toggle
+  - about/status monitor
+  - experience timeline
+  - selected projects
+  - writing feed
+  - contact block
+- `/blog`
+  - changelog-style writing index
+- `/blog/[slug]`
+  - individual writing pages
+- `/past-experience`
+  - extended timeline and project archive
+- `/schedule-a-call`
+  - CTA-led booking page with Calendly embed
+- `/terminal`
+  - fullscreen terminal experience
 
-## Awards
-- USACO Gold
-- Lettuce Eating Competition Winner
-- 4x AIME Qualifier
-- Virtual Global Hackathon Winner (2nd out of 2500+ Participants)
-- 3rd in the DTCC Code-A-Thon out of 2000+ Participants
+## Design System Notes
 
-## Socials
-- GitHub: [@lordboba](https://github.com/lordboba)
-- LinkedIn: [Tyler Xiao](https://www.linkedin.com/in/tyler-xiao/)
-- Email: tylerxiao@ucla.edu (feel free to reach out!)
+Most visual decisions flow through [`app/globals.css`](./app/globals.css):
+
+- Theme tokens define background, surface, foreground, accent, divider, and terminal colors.
+- Light mode preserves the same layout language rather than becoming a separate design.
+- Terminal-specific tokens control shell background, accent-led text, muted text, links, and chip states.
+- Shared utility classes handle accent CTA ink color, terminal command chips, reveal animations, and motion polish.
+
+Primary implementation files:
+
+- [`app/page.tsx`](./app/page.tsx)
+- [`components/HomeHero.tsx`](./components/HomeHero.tsx)
+- [`components/NavBar.tsx`](./components/NavBar.tsx)
+- [`components/Terminal/Terminal.tsx`](./components/Terminal/Terminal.tsx)
+- [`components/Terminal/useTerminal.tsx`](./components/Terminal/useTerminal.tsx)
+
+## Local Development
+
+```bash
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+## Scripts
+
+```bash
+npm run dev
+npm run build
+npm run start
+npm run lint
+```
+
+## Stack
+
+- Next.js 16
+- React 19
+- Tailwind CSS v4
+- TypeScript
+
+## Status
+
+This README reflects the current visual system in the app code rather than the default `create-next-app` template.

@@ -100,7 +100,17 @@ function ProjectsContent({
               className="panel-project-img-slot"
               data-project={project.title.toLowerCase().replace(/\s+/g, '-')}
             >
-              <span className="panel-project-img-placeholder">&#9635;</span>
+              {project.image ? (
+                <Image
+                  src={project.image}
+                  alt={`${project.title} screenshot`}
+                  width={320}
+                  height={180}
+                  className="panel-project-img"
+                />
+              ) : (
+                <span className="panel-project-img-placeholder">&#9635;</span>
+              )}
             </div>
             <span className="panel-project-name">{project.title}</span>
             <span className="panel-project-role">{project.role}</span>
