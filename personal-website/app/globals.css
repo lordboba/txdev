@@ -2390,7 +2390,7 @@ button {
 
 .panel-project-img-slot {
   width: 100%;
-  height: 48px;
+  height: 140px;
   border-radius: 6px;
   background: var(--c-accent-soft);
   border: 1px dashed var(--c-accent-border);
@@ -2441,7 +2441,7 @@ button {
 
 .modal-project-img-slot {
   width: 100%;
-  height: 60px;
+  height: 140px;
   border-radius: 8px;
   background: var(--c-accent-soft);
   border: 1px dashed var(--c-accent-border);

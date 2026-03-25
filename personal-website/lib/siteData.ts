@@ -13,6 +13,7 @@ export type Project = {
   description: string;
   tech: string[];
   link: string;
+  image?: string;
 };
 
 export type Writing = {
@@ -68,6 +69,7 @@ export const projects: Project[] = [
       'Full-stack platform for playing Fish and Viet Cong online with synchronized state, matchmaking, and polished animations.',
     tech: ['TypeScript', 'Next.js', 'Vercel'],
     link: 'https://35-lproject.vercel.app',
+    image: '/projects/multiplayer-card-games.png',
   },
   {
     title: 'StonksGame',
@@ -76,6 +78,7 @@ export const projects: Project[] = [
       'Discord bot that runs live stock-trading simulations complete with leaderboards, analytics, and Alpha Vantage powered data feeds.',
     tech: ['Python', 'Discord.py', 'Alpha Vantage API'],
     link: 'https://github.com/lordboba/stonksgame',
+    image: '/projects/stonksgame.png',
   },
   {
     title: 'Wildfire Detection',
@@ -100,6 +103,7 @@ export const projects: Project[] = [
       'Automated lecture builder that uses instructor and TA agents to deliver multi-modal lessons with live collaboration tools.',
     tech: ['Next.js', 'Fastify', 'LiveKit', 'Anthropic Claude API'],
     link: 'https://github.com/safinsingh/LectureGen',
+    image: '/projects/kinetic.png',
   },
   {
     title: 'Grow & Give',
@@ -108,6 +112,7 @@ export const projects: Project[] = [
       'SwiftUI productivity app that helps students set goals and stay accountable through habit tracking and gentle reminders.',
     tech: ['Swift', 'SwiftUI'],
     link: 'https://github.com/lordboba/PAR',
+    image: '/projects/grow-and-give.png',
   },
 ];
 
