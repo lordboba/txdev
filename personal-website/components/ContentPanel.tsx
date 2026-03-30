@@ -1,6 +1,11 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type TransitionEvent as ReactTransitionEvent,
+} from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -20,6 +25,7 @@ function HomeContent({ onOpenModal }: { onOpenModal: (id: string) => void }) {
             alt="Tyler Xiao"
             width={80}
             height={80}
+            loading="eager"
             className="panel-avatar-img"
           />
         </div>
@@ -195,30 +201,100 @@ export function ContentPanel({
   sectionId,
   onClose,
   onOpenModal,
+  isPaused,
+  onPanelClick,
 }: {
   sectionId: string | null;
   onClose: () => void;
   onOpenModal: (id: string) => void;
+  isPaused?: boolean;
+  onPanelClick?: () => void;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const [displayed, setDisplayed] = useState<string | null>(sectionId);
+  const [phase, setPhase] = useState<'in' | 'out'>('in');
+  const nextSectionRef = useRef<string | null>(sectionId);
+  const frameRef = useRef<number>(0);
 
   useEffect(() => {
-    if (sectionId && panelRef.current) {
+    nextSectionRef.current = sectionId;
+    if (sectionId === displayed) return;
+
+    frameRef.current = requestAnimationFrame(() => {
+      if (!displayed) {
+        setDisplayed(sectionId);
+        setPhase('in');
+        return;
+      }
+
+      setPhase('out');
+    });
+
+    return () => {
+      if (frameRef.current) cancelAnimationFrame(frameRef.current);
+    };
+  }, [sectionId, displayed]);
+
+  useEffect(() => {
+    if (displayed && panelRef.current) {
       panelRef.current.scrollTop = 0;
     }
-  }, [sectionId]);
+  }, [displayed]);
 
-  if (!sectionId) return null;
+  // Click outside to resume
+  useEffect(() => {
+    if (!isPaused) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isPaused, onClose]);
 
-  const PanelContent = PANELS[sectionId];
+  useEffect(() => {
+    return () => {
+      if (frameRef.current) cancelAnimationFrame(frameRef.current);
+    };
+  }, []);
+
+  if (!displayed) return null;
+
+  const PanelContent = PANELS[displayed];
   if (!PanelContent) return null;
 
+  const handleTransitionEnd = (event: ReactTransitionEvent<HTMLDivElement>) => {
+    if (
+      event.target !== event.currentTarget ||
+      event.propertyName !== 'opacity' ||
+      phase !== 'out'
+    ) {
+      return;
+    }
+
+    const nextSection = nextSectionRef.current;
+    setDisplayed(nextSection);
+
+    if (!nextSection) {
+      return;
+    }
+
+    frameRef.current = requestAnimationFrame(() => {
+      setPhase('in');
+    });
+  };
+
   return (
-    <div className="content-panel" ref={panelRef}>
-      <div className="content-panel-inner">
-        <button className="content-panel-close" onClick={onClose}>
-          &times;
-        </button>
+    <div
+      className={`content-panel ${isPaused ? 'is-paused' : ''}`}
+      ref={panelRef}
+      onClick={onPanelClick}
+    >
+      <div
+        className={`content-panel-inner panel-phase-${phase}`}
+        onTransitionEnd={handleTransitionEnd}
+      >
         <PanelContent onOpenModal={onOpenModal} />
       </div>
     </div>

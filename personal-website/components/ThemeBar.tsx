@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 
 const THEMES = [
   { id: 'mono', label: 'Mono', color: '#ffffff' },
@@ -9,30 +9,63 @@ const THEMES = [
   { id: 'terminal', label: 'Terminal', color: '#80e840' },
 ] as const;
 
-export function ThemeBar() {
-  const [active, setActive] = useState('mono');
-  const [isDark, setIsDark] = useState(true);
+const THEME_EVENT = 'theme-preference-change';
 
-  useEffect(() => {
-    const saved = localStorage.getItem('color-theme');
-    if (saved && THEMES.some((t) => t.id === saved)) {
-      setActive(saved);
-      document.documentElement.setAttribute('data-color-theme', saved);
-    }
-    setIsDark(document.documentElement.getAttribute('data-theme') !== 'light');
-  }, []);
+function subscribeToThemePreferences(onStoreChange: () => void) {
+  if (typeof window === 'undefined') {
+    return () => {};
+  }
+
+  window.addEventListener('storage', onStoreChange);
+  window.addEventListener(THEME_EVENT, onStoreChange);
+
+  return () => {
+    window.removeEventListener('storage', onStoreChange);
+    window.removeEventListener(THEME_EVENT, onStoreChange);
+  };
+}
+
+function getSavedColorTheme() {
+  if (typeof window === 'undefined') return 'mono';
+
+  const saved = window.localStorage.getItem('color-theme');
+  return saved && THEMES.some((theme) => theme.id === saved) ? saved : 'mono';
+}
+
+function getIsDarkTheme() {
+  if (typeof document === 'undefined') return true;
+  return document.documentElement.getAttribute('data-theme') !== 'light';
+}
+
+function announceThemeChange() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(THEME_EVENT));
+  }
+}
+
+export function ThemeBar() {
+  const active = useSyncExternalStore(
+    subscribeToThemePreferences,
+    getSavedColorTheme,
+    () => 'mono',
+  );
+  const isDark = useSyncExternalStore(
+    subscribeToThemePreferences,
+    getIsDarkTheme,
+    () => true,
+  );
 
   const select = (id: string) => {
-    setActive(id);
     document.documentElement.setAttribute('data-color-theme', id);
     localStorage.setItem('color-theme', id);
+    announceThemeChange();
   };
 
   const toggleMode = useCallback(() => {
     const next = isDark ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('theme', next);
-    setIsDark(!isDark);
+    announceThemeChange();
 
     const reduceMotion = window.matchMedia(
       '(prefers-reduced-motion: reduce)',

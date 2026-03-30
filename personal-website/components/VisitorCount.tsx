@@ -39,8 +39,10 @@ export function VisitorCount() {
       '(prefers-reduced-motion: reduce)',
     ).matches;
     if (reduceMotion) {
-      setAnimatedCount(count);
-      return;
+      const frame = window.requestAnimationFrame(() => {
+        setAnimatedCount(count);
+      });
+      return () => window.cancelAnimationFrame(frame);
     }
 
     let frame = 0;

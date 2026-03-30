@@ -67,9 +67,13 @@ function activeIndex(angle: number): number {
 export function Carousel3D({
   onSelect,
   selectedId,
+  onActiveChange,
+  paused,
 }: {
   onSelect: (section: Section) => void;
   selectedId: string | null;
+  onActiveChange?: (section: Section) => void;
+  paused?: boolean;
 }) {
   const [rotation, setRotation] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -83,8 +87,17 @@ export function Carousel3D({
   const containerRef = useRef<HTMLDivElement>(null);
   const autoRef = useRef<number>(0);
   const idleTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const hasHandledPausedRef = useRef(false);
 
   const currentActive = activeIndex(rotation);
+  const prevActiveRef = useRef(currentActive);
+
+  useEffect(() => {
+    if (currentActive !== prevActiveRef.current) {
+      prevActiveRef.current = currentActive;
+      onActiveChange?.(SECTIONS[currentActive]);
+    }
+  }, [currentActive, onActiveChange]);
 
   const startAutoRotate = useCallback(() => {
     if (autoRef.current) cancelAnimationFrame(autoRef.current);
@@ -110,6 +123,25 @@ export function Carousel3D({
     stopAutoRotate();
     idleTimer.current = setTimeout(() => startAutoRotate(), 4000);
   }, [startAutoRotate, stopAutoRotate]);
+
+  // Pause/resume auto-rotation from parent
+  useEffect(() => {
+    if (!hasHandledPausedRef.current) {
+      hasHandledPausedRef.current = true;
+      if (paused) {
+        stopAutoRotate();
+        if (idleTimer.current) clearTimeout(idleTimer.current);
+      }
+      return;
+    }
+
+    if (paused) {
+      stopAutoRotate();
+      if (idleTimer.current) clearTimeout(idleTimer.current);
+    } else {
+      resetIdleTimer();
+    }
+  }, [paused, stopAutoRotate, resetIdleTimer]);
 
   useEffect(() => {
     const timer = setTimeout(() => startAutoRotate(), 2000);
@@ -159,7 +191,6 @@ export function Carousel3D({
       (dragRef.current.lastX - dragRef.current.startX) * 0.35;
     const target = nearestSnap(current + vel * 2);
 
-    let frame = 0;
     const spring = () => {
       current += (target - current) * 0.12;
       if (Math.abs(target - current) < 0.1) {
@@ -168,7 +199,7 @@ export function Carousel3D({
         return;
       }
       setRotation(current);
-      frame = requestAnimationFrame(spring);
+      animRef.current = requestAnimationFrame(spring);
     };
     animRef.current = requestAnimationFrame(spring);
   }, [isDragging, resetIdleTimer]);
@@ -244,6 +275,7 @@ export function Carousel3D({
                       alt="Tyler Xiao"
                       width={120}
                       height={90}
+                      loading="eager"
                       className="carousel-card-img"
                     />
                   ) : (

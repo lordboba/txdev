@@ -199,15 +199,30 @@ function ScheduleModal({ onClose }: { onClose: () => void }) {
 }
 
 export default function Home() {
-  const [selectedSection, setSelectedSection] = useState<string | null>(null);
+  const [selectedSection, setSelectedSection] = useState<string | null>('home');
   const [activeModal, setActiveModal] = useState<string | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
 
   const handleSelect = useCallback((section: Section) => {
-    setSelectedSection((prev) => (prev === section.id ? null : section.id));
+    setSelectedSection(section.id);
+    setIsPaused(true);
+  }, []);
+
+  const handleActiveChange = useCallback(
+    (section: Section) => {
+      if (!isPaused) {
+        setSelectedSection(section.id);
+      }
+    },
+    [isPaused],
+  );
+
+  const handlePanelClick = useCallback(() => {
+    setIsPaused(true);
   }, []);
 
   const handleClose = useCallback(() => {
-    setSelectedSection(null);
+    setIsPaused(false);
   }, []);
 
   const handleOpenModal = useCallback((id: string) => {
@@ -235,11 +250,18 @@ export default function Home() {
 
       <main className="app-main">
         <SceneRing />
-        <Carousel3D onSelect={handleSelect} selectedId={selectedSection} />
+        <Carousel3D
+          onSelect={handleSelect}
+          selectedId={selectedSection}
+          onActiveChange={handleActiveChange}
+          paused={isPaused}
+        />
         <ContentPanel
           sectionId={selectedSection}
           onClose={handleClose}
           onOpenModal={handleOpenModal}
+          isPaused={isPaused}
+          onPanelClick={handlePanelClick}
         />
       </main>
 
