@@ -110,7 +110,7 @@ export const NavBar = () => {
         <div className="hidden items-center gap-2 text-sm md:flex">
           <div
             ref={navListRef}
-            className="relative flex items-center gap-1 rounded-lg bg-surface-raised/30 p-1"
+            className="relative flex items-center gap-1 rounded-sm bg-surface-raised/30 p-1"
           >
             <span
               ref={navIndicatorRef}
@@ -130,7 +130,7 @@ export const NavBar = () => {
                       setHomeActiveHref(link.href);
                     }
                   }}
-                  className={`relative rounded-md px-3 py-1.5 font-medium transition-colors duration-200 ${
+                  className={`relative rounded-sm px-3 py-1.5 font-medium transition-colors duration-200 ${
                     isActive
                       ? 'text-accent'
                       : 'text-muted hover:text-foreground'
@@ -156,7 +156,7 @@ export const NavBar = () => {
                 pathname,
               }))
             }
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-divider bg-surface text-foreground transition hover:border-accent/40"
+            className="flex h-9 w-9 items-center justify-center rounded-sm border border-divider bg-surface text-foreground transition hover:border-accent/40"
             aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={mobileOpen}
           >
@@ -206,7 +206,7 @@ export const NavBar = () => {
                     setHomeActiveHref(link.href);
                   }
                 }}
-                className={`rounded-lg px-4 py-2.5 font-mono text-sm font-medium transition-colors duration-200 ${
+                className={`rounded-sm px-4 py-2.5 font-mono text-sm font-medium transition-colors duration-200 ${
                   isActive
                     ? 'bg-accent-muted text-accent'
                     : 'text-muted hover:bg-surface-raised hover:text-foreground'

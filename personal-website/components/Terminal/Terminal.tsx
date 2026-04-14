@@ -69,7 +69,7 @@ export const Terminal = ({
 
   const containerClass = isFullScreen
     ? 'fixed inset-0 z-50 h-screen w-screen bg-terminal-bg'
-    : 'relative h-full w-full rounded-xl bg-terminal-bg border border-terminal-border';
+    : 'relative h-full w-full rounded-sm bg-terminal-bg border border-terminal-border';
 
   const textClass = isFullScreen
     ? 'text-sm sm:text-base'

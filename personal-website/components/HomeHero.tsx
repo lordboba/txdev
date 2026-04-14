@@ -72,13 +72,13 @@ export function HomeHero() {
             <div className="hero-stage hero-stage-4 flex flex-wrap gap-4">
               <Link
                 href="#contact"
-                className="btn-shimmer accent-action inline-flex items-center justify-center gap-2 rounded-lg px-7 py-3 font-mono text-sm font-semibold shadow-[0_2px_12px_rgba(232,196,104,0.2)] transition hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(232,196,104,0.3)]"
+                className="btn-shimmer accent-action inline-flex items-center justify-center gap-2 rounded-sm px-7 py-3 font-mono text-sm font-semibold shadow-[0_2px_12px_rgba(232,196,104,0.2)] transition hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(232,196,104,0.3)]"
               >
                 <span>&#9654;</span> Contact
               </Link>
               <Link
                 href="/past-experience"
-                className="inline-flex items-center justify-center rounded-lg border border-dashed border-divider px-7 py-3 font-mono text-sm font-semibold text-muted transition hover:border-accent hover:text-foreground"
+                className="inline-flex items-center justify-center rounded-sm border border-dashed border-divider px-7 py-3 font-mono text-sm font-semibold text-muted transition hover:border-accent hover:text-foreground"
               >
                 View Past Experience
               </Link>

@@ -13,7 +13,7 @@ export const HomeTerminal = ({ className = '' }: HomeTerminalProps) => {
   return (
     <div
       data-terminal-shell
-      className={`h-[400px] w-full rounded-xl overflow-hidden border border-terminal-border shadow-card transition-[box-shadow,border-color] duration-500 ease-out ${className}`}
+      className={`h-[400px] w-full rounded-sm overflow-hidden border border-terminal-border shadow-card transition-[box-shadow,border-color] duration-500 ease-out ${className}`}
     >
       <Terminal
         isFullScreen={isFullScreen}

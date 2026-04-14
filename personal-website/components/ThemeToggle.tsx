@@ -30,7 +30,7 @@ export const ThemeToggle = () => {
       onClick={toggle}
       aria-label="Toggle theme"
       title="Toggle theme"
-      className="theme-toggle-button relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg border border-divider text-muted transition-all duration-300 hover:border-accent/35 hover:text-accent"
+      className="theme-toggle-button relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-sm border border-divider text-muted transition-all duration-300 hover:border-accent/35 hover:text-accent"
     >
       <span className="theme-icon theme-icon-sun pointer-events-none absolute">
         <svg

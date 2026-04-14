@@ -36,13 +36,13 @@ export default function ScheduleCallPage() {
         <div className="mt-6 flex flex-wrap gap-4">
           <Link
             href="#calendly"
-            className="accent-action inline-flex items-center justify-center rounded-lg px-6 py-3 font-mono text-sm font-semibold shadow-[0_2px_12px_rgba(232,196,104,0.2)] transition hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(232,196,104,0.3)]"
+            className="accent-action inline-flex items-center justify-center rounded-sm px-6 py-3 font-mono text-sm font-semibold shadow-[0_2px_12px_rgba(232,196,104,0.2)] transition hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(232,196,104,0.3)]"
           >
             Book now
           </Link>
           <Link
             href="mailto:tylerxiao@ucla.edu"
-            className="inline-flex items-center justify-center rounded-lg border border-dashed border-divider px-6 py-3 font-mono text-sm font-semibold text-muted transition hover:border-accent hover:text-foreground"
+            className="inline-flex items-center justify-center rounded-sm border border-dashed border-divider px-6 py-3 font-mono text-sm font-semibold text-muted transition hover:border-accent hover:text-foreground"
           >
             Email instead
           </Link>
@@ -67,7 +67,7 @@ export default function ScheduleCallPage() {
             {callHighlights.map((highlight) => (
               <li
                 key={highlight}
-                className="rounded-lg border border-divider bg-surface-raised/60 px-4 py-3"
+                className="rounded-sm border border-divider bg-surface-raised/60 px-4 py-3"
               >
                 {highlight}
               </li>
@@ -82,7 +82,7 @@ export default function ScheduleCallPage() {
             {callSocialProof.map((item) => (
               <div
                 key={item}
-                className="flex items-center gap-2 rounded-lg border border-divider bg-surface-raised/60 px-4 py-3 text-muted"
+                className="flex items-center gap-2 rounded-sm border border-divider bg-surface-raised/60 px-4 py-3 text-muted"
               >
                 <span className="font-mono text-secondary">[ok]</span>
                 <span>{item}</span>
