@@ -1,15 +1,48 @@
 'use client';
 
+import { useCallback, useSyncExternalStore } from 'react';
+
+const THEME_EVENT = 'theme-preference-change';
+
+function subscribeToThemePreferences(onStoreChange: () => void) {
+  if (typeof window === 'undefined') {
+    return () => {};
+  }
+
+  window.addEventListener('storage', onStoreChange);
+  window.addEventListener(THEME_EVENT, onStoreChange);
+
+  return () => {
+    window.removeEventListener('storage', onStoreChange);
+    window.removeEventListener(THEME_EVENT, onStoreChange);
+  };
+}
+
+function getIsDarkTheme() {
+  if (typeof document === 'undefined') return true;
+  return document.documentElement.getAttribute('data-theme') !== 'light';
+}
+
+function announceThemeChange() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(THEME_EVENT));
+  }
+}
+
 export const ThemeToggle = () => {
-  const toggle = () => {
-    const currentTheme =
-      document.documentElement.getAttribute('data-theme') === 'light'
-        ? 'light'
-        : 'dark';
+  const isDark = useSyncExternalStore(
+    subscribeToThemePreferences,
+    getIsDarkTheme,
+    () => true,
+  );
+
+  const toggle = useCallback(() => {
+    const currentTheme = isDark ? 'dark' : 'light';
     const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
     document.documentElement.setAttribute('data-theme', nextTheme);
     localStorage.setItem('theme', nextTheme);
+    announceThemeChange();
 
     const reduceMotion = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
@@ -18,21 +51,27 @@ export const ThemeToggle = () => {
       document.body.classList.remove('theme-flash-active');
       requestAnimationFrame(() => {
         document.body.classList.add('theme-flash-active');
-        window.setTimeout(() => {
+        setTimeout(() => {
           document.body.classList.remove('theme-flash-active');
         }, 520);
       });
     }
-  };
+  }, [isDark]);
 
   return (
     <button
       onClick={toggle}
-      aria-label="Toggle theme"
-      title="Toggle theme"
-      className="theme-toggle-button relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-sm border border-divider text-muted transition-all duration-300 hover:border-accent/35 hover:text-accent"
+      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-sm border border-divider bg-transparent text-muted transition-all duration-200 hover:border-accent hover:text-accent"
     >
-      <span className="theme-icon theme-icon-sun pointer-events-none absolute">
+      <span
+        className={`pointer-events-none absolute inset-0 flex items-center justify-center transition-all duration-300 ${
+          isDark
+            ? 'opacity-0 scale-75 rotate-[-70deg]'
+            : 'opacity-100 scale-100 rotate-0'
+        }`}
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="16"
@@ -55,7 +94,13 @@ export const ThemeToggle = () => {
           <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
         </svg>
       </span>
-      <span className="theme-icon theme-icon-moon pointer-events-none absolute">
+      <span
+        className={`pointer-events-none absolute inset-0 flex items-center justify-center transition-all duration-300 ${
+          isDark
+            ? 'opacity-100 scale-100 rotate-0'
+            : 'opacity-0 scale-75 rotate-[62deg]'
+        }`}
+      >
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="16"

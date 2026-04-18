@@ -3,23 +3,17 @@
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Carousel3D, type Section } from '@/components/Carousel3D';
+import { OrbitalHero } from '@/components/OrbitalHero';
 import { ThemeBar } from '@/components/ThemeBar';
 import { ContentPanel } from '@/components/ContentPanel';
 import { Modal } from '@/components/Modal';
-import { VisitorCount } from '@/components/VisitorCount';
+import type { OrbitalSectionId } from '@/lib/orbitalData';
 import {
   experiences,
   projects,
   callHighlights,
   callSocialProof,
 } from '@/lib/siteData';
-import dynamic from 'next/dynamic';
-
-const SceneRing = dynamic(
-  () => import('@/components/SceneRing').then((m) => m.SceneRing),
-  { ssr: false },
-);
 
 const CALENDLY_URL =
   'https://calendly.com/yxiao1717/glitch-dev-team-officer-interview';
@@ -199,30 +193,16 @@ function ScheduleModal({ onClose }: { onClose: () => void }) {
 }
 
 export default function Home() {
-  const [selectedSection, setSelectedSection] = useState<string | null>('home');
+  const [selectedSection, setSelectedSection] =
+    useState<OrbitalSectionId | null>('home');
   const [activeModal, setActiveModal] = useState<string | null>(null);
-  const [isPaused, setIsPaused] = useState(false);
 
-  const handleSelect = useCallback((section: Section) => {
-    setSelectedSection(section.id);
-    setIsPaused(true);
-  }, []);
-
-  const handleActiveChange = useCallback(
-    (section: Section) => {
-      if (!isPaused) {
-        setSelectedSection(section.id);
-      }
-    },
-    [isPaused],
-  );
-
-  const handlePanelClick = useCallback(() => {
-    setIsPaused(true);
+  const handleSelect = useCallback((sectionId: OrbitalSectionId) => {
+    setSelectedSection(sectionId);
   }, []);
 
   const handleClose = useCallback(() => {
-    setIsPaused(false);
+    setSelectedSection(null);
   }, []);
 
   const handleOpenModal = useCallback((id: string) => {
@@ -235,37 +215,19 @@ export default function Home() {
 
   return (
     <div className="app-shell">
-      <header className="app-topbar">
-        <Link href="/" className="app-logo">
-          TX
-        </Link>
-        <div className="app-topbar-right">
-          <VisitorCount />
-          <Link href="/terminal" className="terminal-toggle-btn">
-            <span className="terminal-toggle-dot" />
-            Terminal
-          </Link>
-        </div>
-      </header>
-
       <main className="app-main">
-        <SceneRing />
-        <Carousel3D
-          onSelect={handleSelect}
-          selectedId={selectedSection}
-          onActiveChange={handleActiveChange}
-          paused={isPaused}
-        />
+        <OrbitalHero selectedId={selectedSection} onSelect={handleSelect} />
         <ContentPanel
           sectionId={selectedSection}
           onClose={handleClose}
           onOpenModal={handleOpenModal}
-          isPaused={isPaused}
-          onPanelClick={handlePanelClick}
+          isPaused={false}
+          onPanelClick={() => {}}
         />
       </main>
-
-      <ThemeBar />
+      <div className="home-theme-dock">
+        <ThemeBar compact />
+      </div>
 
       {activeModal === 'timeline' && (
         <TimelineModal onClose={handleCloseModal} />

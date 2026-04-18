@@ -65,12 +65,17 @@ export function VisitorCount() {
   if (count === null) return null;
 
   return (
-    <div className="visitor-count">
+    <div
+      className="visitor-count"
+      role="status"
+      aria-live="polite"
+      title="Estimated total portfolio visits"
+    >
       <span className="visitor-count-dot" />
       <span className="visitor-count-number">
         {animatedCount.toLocaleString()}
       </span>
-      <span className="visitor-count-label">visits</span>
+      <span className="visitor-count-label">site visits</span>
     </div>
   );
 }

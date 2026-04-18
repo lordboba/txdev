@@ -14,6 +14,7 @@ const AVAILABLE_COMMANDS: CommandType[] = [
   'projects',
   'experience',
   'contact',
+  'exit',
   'clear',
   'ls',
   'cat',

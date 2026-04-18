@@ -100,21 +100,24 @@ export const NavBar = () => {
   }, [updateIndicator]);
 
   return (
-    <header className="sticky top-0 z-20 border-b border-divider bg-surface/85 backdrop-blur-xl">
-      <nav className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-7 py-3 sm:px-5 sm:py-4">
-        <span className="font-display text-lg font-bold tracking-tight text-foreground">
+    <header className="sticky top-0 z-30 border-b border-divider bg-surface/85 backdrop-blur-xl">
+      <nav className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
+        <Link
+          href="/"
+          className="inline-flex items-center rounded-sm px-2 py-1 text-sm font-[var(--font-display)] font-semibold tracking-tight text-foreground transition-colors duration-200 hover:text-accent"
+        >
           TYLER XIAO
-        </span>
+        </Link>
 
         {/* Desktop nav */}
-        <div className="hidden items-center gap-2 text-sm md:flex">
+        <div className="hidden items-center gap-2 md:flex">
           <div
             ref={navListRef}
-            className="relative flex items-center gap-1 rounded-sm bg-surface-raised/30 p-1"
+            className="relative flex items-center gap-1 rounded-sm border border-divider/80 bg-surface/70 p-1"
           >
             <span
               ref={navIndicatorRef}
-              className="pointer-events-none absolute bottom-1 h-0.5 w-0 rounded-full bg-accent nav-indicator-glow opacity-0 transition-all duration-300 ease-out"
+              className="pointer-events-none absolute inset-y-1 rounded-sm bg-accent transition-all duration-300"
               aria-hidden
             />
             {navLinks.map((link) => {
@@ -130,11 +133,12 @@ export const NavBar = () => {
                       setHomeActiveHref(link.href);
                     }
                   }}
-                  className={`relative rounded-sm px-3 py-1.5 font-medium transition-colors duration-200 ${
+                  className={`relative z-10 rounded-sm px-3 py-1.5 text-xs font-medium transition-colors duration-200 sm:text-sm ${
                     isActive
                       ? 'text-accent'
                       : 'text-muted hover:text-foreground'
                   }`}
+                  aria-current={isActive ? 'page' : undefined}
                 >
                   {link.label}
                 </Link>
@@ -147,7 +151,7 @@ export const NavBar = () => {
         </div>
 
         {/* Mobile: theme toggle + hamburger */}
-        <div className="flex items-center gap-3 md:hidden">
+        <div className="flex items-center gap-2 md:hidden">
           <ThemeToggle />
           <button
             onClick={() =>
@@ -156,7 +160,7 @@ export const NavBar = () => {
                 pathname,
               }))
             }
-            className="flex h-9 w-9 items-center justify-center rounded-sm border border-divider bg-surface text-foreground transition hover:border-accent/40"
+            className="flex h-9 w-9 items-center justify-center rounded-sm border border-divider bg-surface text-muted transition-all duration-200 hover:border-accent hover:text-accent"
             aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={mobileOpen}
           >
@@ -192,7 +196,7 @@ export const NavBar = () => {
           mobileOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
-        <div className="mx-auto flex max-w-5xl flex-col gap-1 px-7 py-3 sm:px-5">
+        <div className="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-2 sm:px-6">
           {navLinks.map((link) => {
             const isActive = activeHref === link.href;
 
@@ -206,11 +210,12 @@ export const NavBar = () => {
                     setHomeActiveHref(link.href);
                   }
                 }}
-                className={`rounded-sm px-4 py-2.5 font-mono text-sm font-medium transition-colors duration-200 ${
+                className={`rounded-sm px-4 py-2.5 text-[12px] font-[var(--font-mono)] font-medium transition-colors duration-200 ${
                   isActive
                     ? 'bg-accent-muted text-accent'
                     : 'text-muted hover:bg-surface-raised hover:text-foreground'
                 }`}
+                aria-current={isActive ? 'page' : undefined}
               >
                 {link.label}
               </Link>

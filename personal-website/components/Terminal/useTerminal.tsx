@@ -9,7 +9,11 @@ import {
   quickFacts,
 } from '../../lib/siteData';
 
-export const useTerminal = () => {
+type UseTerminalOptions = {
+  onExit?: () => boolean | void;
+};
+
+export const useTerminal = ({ onExit }: UseTerminalOptions = {}) => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isBooting, setIsBooting] = useState(true);
 
@@ -79,6 +83,8 @@ export const useTerminal = () => {
               <span>View my career history</span>
               <span className="terminal-accent">contact</span>
               <span>Get in touch</span>
+              <span className="terminal-accent">exit</span>
+              <span>Return to the main site</span>
               <span className="terminal-accent">ls</span>
               <span>List files</span>
               <span className="terminal-accent">cat &lt;file&gt;</span>
@@ -164,6 +170,19 @@ export const useTerminal = () => {
             </div>
           );
           break;
+
+        case 'exit': {
+          const didExit = onExit?.();
+          output =
+            didExit === false ? (
+              <span className="terminal-muted">Already at the main site.</span>
+            ) : (
+              <span className="terminal-accent">
+                Returning to the main site...
+              </span>
+            );
+          break;
+        }
 
         case 'ls':
           output = (
@@ -255,7 +274,7 @@ export const useTerminal = () => {
       addToHistory(trimmedCmd, output);
       return isValid;
     },
-    [addToHistory],
+    [addToHistory, onExit],
   );
 
   return {

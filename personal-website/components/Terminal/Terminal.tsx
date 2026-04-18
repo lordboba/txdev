@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useTerminal } from './useTerminal';
 import { TerminalInput } from './TerminalInput';
 import { TerminalOutput } from './TerminalOutput';
@@ -14,10 +15,32 @@ export const Terminal = ({
   onToggleFullScreen?: () => void;
   autoFocusInput?: boolean;
 }) => {
-  const { history, handleCommand, isBooting } = useTerminal();
+  const router = useRouter();
+  const pathname = usePathname();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const tipTimerRef = useRef<number | null>(null);
   const [showTip, setShowTip] = useState(false);
+  const handleExitCommand = useCallback(() => {
+    if (pathname === '/terminal') {
+      router.push('/');
+      return true;
+    }
+
+    if (isFullScreen && onToggleFullScreen) {
+      onToggleFullScreen();
+      return true;
+    }
+
+    if (pathname !== '/') {
+      router.push('/');
+      return true;
+    }
+
+    return false;
+  }, [isFullScreen, onToggleFullScreen, pathname, router]);
+  const { history, handleCommand, isBooting } = useTerminal({
+    onExit: handleExitCommand,
+  });
 
   const quickCommands = ['about', 'projects', 'experience', 'help'] as const;
 

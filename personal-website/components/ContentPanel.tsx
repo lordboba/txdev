@@ -30,10 +30,36 @@ function HomeContent({ onOpenModal }: { onOpenModal: (id: string) => void }) {
           />
         </div>
         <div>
-          <h3 className="panel-title">Tyler Xiao</h3>
+          <h3 className="panel-title" style={{ marginBottom: 6 }}>
+            Tyler Xiao
+          </h3>
           <p className="panel-subtitle">
-            CS @ UCLA &middot; Building agents and backend systems
+            CS @ UCLA · Building agentic systems and shipping reliable
+            infrastructure.
           </p>
+          <p
+            className="panel-desc"
+            style={{ margin: '6px 0 0', fontFamily: 'var(--font-sans)' }}
+          >
+            This portfolio is a single operating room for selected work: ideas,
+            execution notes, and the most recent builds worth keeping visible.
+          </p>
+        </div>
+      </div>
+      <div
+        className="panel-section-label"
+        style={{ marginTop: 2, marginBottom: 10 }}
+      >
+        Current Focus
+      </div>
+      <div className="panel-facts" aria-label="Core signals">
+        <div className="panel-fact">
+          <dt>Primary Track</dt>
+          <dd>AI workflow tooling · backend systems</dd>
+        </div>
+        <div className="panel-fact">
+          <dt>Mission</dt>
+          <dd>Build products that move users from confusion to action</dd>
         </div>
       </div>
       <div className="panel-home-links">
@@ -41,13 +67,13 @@ function HomeContent({ onOpenModal }: { onOpenModal: (id: string) => void }) {
           className="panel-quick-link"
           onClick={() => onOpenModal('timeline')}
         >
-          Full experience &rarr;
+          Full timeline &rarr;
         </button>
         <button
           className="panel-quick-link"
           onClick={() => onOpenModal('schedule')}
         >
-          Schedule a call &rarr;
+          Open scheduling channel &rarr;
         </button>
       </div>
     </div>
@@ -58,6 +84,13 @@ function AboutContent({ onOpenModal }: { onOpenModal: (id: string) => void }) {
   return (
     <div className="panel-about">
       <h3 className="panel-title">About</h3>
+      <p
+        className="panel-desc"
+        style={{ marginBottom: 10, fontFamily: 'var(--font-sans)' }}
+      >
+        I care about systems that are technically rigorous and easy to reason
+        about. The goal is to make complex work feel practical and maintainable.
+      </p>
       <dl className="panel-facts">
         {quickFacts.map((fact) => (
           <div key={fact.label} className="panel-fact">
@@ -67,7 +100,12 @@ function AboutContent({ onOpenModal }: { onOpenModal: (id: string) => void }) {
         ))}
       </dl>
       <div className="panel-experience-peek">
-        <h4 className="panel-section-label">Recent</h4>
+        <h4
+          className="panel-section-label"
+          style={{ marginTop: 14, marginBottom: 8 }}
+        >
+          Recent Assignments
+        </h4>
         {experiences.slice(0, 2).map((exp) => (
           <div key={`${exp.company}-${exp.role}`} className="panel-exp-item">
             <span className="panel-exp-role">{exp.role}</span>
@@ -93,6 +131,13 @@ function ProjectsContent({
   return (
     <div className="panel-projects">
       <h3 className="panel-title">Projects</h3>
+      <p
+        className="panel-desc"
+        style={{ marginBottom: 10, fontFamily: 'var(--font-sans)' }}
+      >
+        A small cluster of shipped systems and prototypes focused on AI,
+        products, and infrastructure.
+      </p>
       <div className="panel-project-grid">
         {projects.slice(0, 4).map((project) => (
           <Link
@@ -118,8 +163,20 @@ function ProjectsContent({
                 <span className="panel-project-img-placeholder">&#9635;</span>
               )}
             </div>
-            <span className="panel-project-name">{project.title}</span>
+            <h4 className="panel-project-name">{project.title}</h4>
             <span className="panel-project-role">{project.role}</span>
+            <p
+              className="panel-project-desc"
+              style={{
+                margin: 0,
+                fontSize: '11px',
+                lineHeight: 1.45,
+                color: 'var(--muted)',
+                fontFamily: 'var(--font-sans)',
+              }}
+            >
+              {project.description}
+            </p>
             <div className="panel-project-tech">
               {project.tech.slice(0, 3).map((t) => (
                 <span key={t} className="panel-tech-chip">
@@ -134,7 +191,7 @@ function ProjectsContent({
         className="panel-expand-btn"
         onClick={() => onOpenModal('all-projects')}
       >
-        Show all {projects.length} projects &rarr;
+        Browse all {projects.length} projects &rarr;
       </button>
     </div>
   );
@@ -147,6 +204,9 @@ function BlogContent() {
       <p className="panel-desc">
         Technical notes on product engineering, AI workflows, and design
         systems.
+      </p>
+      <p className="panel-section-label" style={{ marginTop: 4 }}>
+        Current Reading Lane
       </p>
       <Link href="/blog" className="panel-cta">
         Read all posts &rarr;
@@ -163,6 +223,13 @@ function ContactContent({
   return (
     <div className="panel-contact">
       <h3 className="panel-title">Contact</h3>
+      <p
+        className="panel-desc"
+        style={{ marginBottom: 8, fontFamily: 'var(--font-sans)' }}
+      >
+        Reach out directly for collaborations, consulting windows, or technical
+        reviews.
+      </p>
       <div className="panel-contact-links">
         {contactLinks.map((link) => (
           <Link
@@ -180,7 +247,7 @@ function ContactContent({
         ))}
       </div>
       <button className="panel-cta" onClick={() => onOpenModal('schedule')}>
-        Schedule a call &rarr;
+        Open schedule workflow &rarr;
       </button>
     </div>
   );

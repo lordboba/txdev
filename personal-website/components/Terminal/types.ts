@@ -6,6 +6,7 @@ export type CommandType =
   | 'projects'
   | 'experience'
   | 'contact'
+  | 'exit'
   | 'clear'
   | 'ls'
   | 'cat'
