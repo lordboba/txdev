@@ -12,6 +12,7 @@ type OrbitalSceneProps = {
   activeId: OrbitalSectionId;
   onHover: (id: OrbitalSectionId | null) => void;
   onSelect: (id: OrbitalSectionId) => void;
+  reducedMotion: boolean;
 };
 
 const TWO_PI = Math.PI * 2;
@@ -20,6 +21,7 @@ export function OrbitalScene({
   activeId,
   onHover,
   onSelect,
+  reducedMotion,
 }: OrbitalSceneProps) {
   const bodyRefs = useRef<Record<OrbitalSectionId, HTMLButtonElement | null>>({
     home: null,
@@ -30,7 +32,6 @@ export function OrbitalScene({
   });
 
   useEffect(() => {
-    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
     let raf = 0;
     const start = performance.now();
 
@@ -63,7 +64,7 @@ export function OrbitalScene({
       }
     };
 
-    if (media.matches) {
+    if (reducedMotion) {
       apply(0);
       return;
     }
@@ -75,7 +76,7 @@ export function OrbitalScene({
 
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [reducedMotion]);
 
   return (
     <div className="orb-scene" aria-label="Orbital scene">

@@ -3087,20 +3087,20 @@ button {
 
 /* === Orbital homepage =================================================== */
 :root {
-  --orb-ink: #110d09;
-  --orb-deep: #18120e;
-  --orb-dusk: #2d2219;
-  --orb-violet: #5d4734;
-  --orb-wine: #7a5537;
-  --orb-ember: #dbb17a;
-  --orb-flame: #c78052;
-  --orb-peach: #f0dcc1;
-  --orb-paper: #fbf1df;
+  --orb-ink: #0a0614;
+  --orb-deep: #14082a;
+  --orb-dusk: #2a1f4a;
+  --orb-violet: #4c3388;
+  --orb-wine: #6b2a5a;
+  --orb-ember: #f2c79e;
+  --orb-flame: #e89b74;
+  --orb-peach: #f7dcc0;
+  --orb-paper: #fff5ea;
 
-  --orb-haze: rgba(251, 241, 223, 0.8);
-  --orb-whisper: rgba(251, 241, 223, 0.5);
-  --orb-hairline: rgba(219, 177, 122, 0.18);
-  --orb-hairline-s: rgba(219, 177, 122, 0.08);
+  --orb-haze: rgba(247, 220, 192, 0.8);
+  --orb-whisper: rgba(247, 220, 192, 0.5);
+  --orb-hairline: rgba(247, 220, 192, 0.18);
+  --orb-hairline-s: rgba(247, 220, 192, 0.08);
   --orb-nebula-1: color-mix(in srgb, var(--orb-ember) 34%, transparent);
   --orb-nebula-2: color-mix(in srgb, var(--orb-flame) 22%, transparent);
   --orb-nebula-3: color-mix(in srgb, var(--orb-violet) 46%, transparent);
@@ -3134,44 +3134,44 @@ button {
 }
 
 [data-theme='light'] {
-  --orb-ink: #f4eadc;
-  --orb-deep: #e9dcc9;
-  --orb-dusk: #d7c2a7;
-  --orb-violet: #bea380;
-  --orb-wine: #9b8163;
-  --orb-ember: #8f6940;
-  --orb-flame: #b07849;
-  --orb-peach: #fff8ef;
-  --orb-paper: #5e4832;
+  --orb-ink: #fff6ea;
+  --orb-deep: #fbeada;
+  --orb-dusk: #f4d7b8;
+  --orb-violet: #8a6bb1;
+  --orb-wine: #9a5a7a;
+  --orb-ember: #b75a1e;
+  --orb-flame: #d46d2d;
+  --orb-peach: #fff9f0;
+  --orb-paper: #2c1c3d;
 
-  --orb-haze: rgba(94, 72, 50, 0.84);
-  --orb-whisper: rgba(94, 72, 50, 0.64);
-  --orb-hairline: rgba(143, 105, 64, 0.24);
-  --orb-hairline-s: rgba(143, 105, 64, 0.16);
-  --orb-nebula-1: color-mix(in srgb, var(--orb-peach) 70%, white 30%);
-  --orb-nebula-2: color-mix(in srgb, var(--orb-ember) 16%, transparent);
-  --orb-nebula-3: color-mix(in srgb, var(--orb-violet) 12%, transparent);
-  --orb-nebula-4: color-mix(in srgb, var(--orb-flame) 10%, transparent);
+  --orb-haze: rgba(44, 28, 61, 0.86);
+  --orb-whisper: rgba(44, 28, 61, 0.62);
+  --orb-hairline: rgba(76, 51, 136, 0.3);
+  --orb-hairline-s: rgba(76, 51, 136, 0.18);
+  --orb-nebula-1: color-mix(in srgb, var(--orb-peach) 72%, white 28%);
+  --orb-nebula-2: color-mix(in srgb, var(--orb-ember) 18%, transparent);
+  --orb-nebula-3: color-mix(in srgb, var(--orb-violet) 20%, transparent);
+  --orb-nebula-4: color-mix(in srgb, var(--orb-wine) 14%, transparent);
   --orb-core-light: color-mix(in srgb, var(--orb-peach) 94%, white 6%);
   --orb-core-mid: color-mix(in srgb, var(--orb-peach) 62%, var(--orb-ember));
-  --orb-core-hot: color-mix(in srgb, var(--orb-flame) 58%, var(--orb-ember));
-  --orb-core-shadow: color-mix(in srgb, var(--orb-wine) 52%, var(--orb-ink));
-  --orb-core-halo-1: color-mix(in srgb, var(--orb-ember) 20%, transparent);
-  --orb-core-halo-2: color-mix(in srgb, var(--orb-flame) 12%, transparent);
-  --orb-core-halo-3: color-mix(in srgb, var(--orb-flame) 7%, transparent);
-  --orb-corona: color-mix(in srgb, var(--orb-peach) 28%, transparent);
-  --orb-ring-bright: rgba(143, 105, 64, 0.38);
-  --orb-planet-home-glow: color-mix(in srgb, var(--orb-ember) 16%, transparent);
-  --orb-text-strong: #5e3920;
-  --orb-text-medium: rgba(94, 57, 32, 0.84);
-  --orb-text-soft: rgba(94, 57, 32, 0.68);
-  --orb-ring-base: rgba(143, 105, 64, 0.19);
-  --orb-ring-active: rgba(143, 105, 64, 0.5);
-  --orb-particle-dust: rgba(124, 92, 58, 0.42);
-  --orb-particle-dust-shadow: rgba(124, 92, 58, 0);
-  --orb-particle-chart: rgba(143, 105, 64, 0.82);
-  --orb-particle-chart-shadow: rgba(143, 105, 64, 0.12);
-  --orb-index-surface: rgba(143, 105, 64, 0.075);
+  --orb-core-hot: color-mix(in srgb, var(--orb-flame) 62%, var(--orb-ember));
+  --orb-core-shadow: color-mix(in srgb, var(--orb-wine) 58%, var(--orb-paper));
+  --orb-core-halo-1: color-mix(in srgb, var(--orb-ember) 26%, transparent);
+  --orb-core-halo-2: color-mix(in srgb, var(--orb-flame) 16%, transparent);
+  --orb-core-halo-3: color-mix(in srgb, var(--orb-violet) 10%, transparent);
+  --orb-corona: color-mix(in srgb, var(--orb-peach) 32%, transparent);
+  --orb-ring-bright: rgba(76, 51, 136, 0.46);
+  --orb-planet-home-glow: color-mix(in srgb, var(--orb-ember) 22%, transparent);
+  --orb-text-strong: #2c1c3d;
+  --orb-text-medium: rgba(44, 28, 61, 0.84);
+  --orb-text-soft: rgba(44, 28, 61, 0.62);
+  --orb-ring-base: rgba(76, 51, 136, 0.22);
+  --orb-ring-active: rgba(183, 90, 30, 0.6);
+  --orb-particle-dust: rgba(76, 51, 136, 0.38);
+  --orb-particle-dust-shadow: rgba(76, 51, 136, 0);
+  --orb-particle-chart: rgba(183, 90, 30, 0.82);
+  --orb-particle-chart-shadow: rgba(183, 90, 30, 0.14);
+  --orb-index-surface: rgba(76, 51, 136, 0.07);
 }
 
 /* Atmosphere layers — siblings of .app-shell, fixed to viewport */
@@ -3333,14 +3333,14 @@ button {
   display: grid;
   grid-template-columns: 1fr var(--orb-scene) 260px 1fr;
   grid-template-rows: auto auto;
-  column-gap: 36px;
-  row-gap: 22px;
+  column-gap: 48px;
+  row-gap: 14px;
   align-items: center;
-  padding: 0 32px 16px;
+  padding: 1.25rem 3.5rem 1rem;
 }
 
 [data-theme='light'] .orb-stage {
-  column-gap: 42px;
+  column-gap: 54px;
 }
 
 .orb-hero-head {
@@ -3349,36 +3349,37 @@ button {
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 24px;
+  gap: 18px;
   align-items: start;
-  min-height: 11.5rem;
-  padding-top: 2.75rem;
+  min-height: 0;
+  padding-top: 1.5rem;
 }
 
 .orb-title {
   justify-self: center;
-  width: min(100%, calc(100% - 30rem));
-  max-width: 38rem;
+  width: min(100%, calc(100% - 22rem));
+  max-width: 42rem;
   text-align: center;
   animation: orb-rise 1.1s 0.15s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 .orb-title h1 {
   font-family: var(--orb-display);
-  font-weight: 500;
-  font-size: clamp(4.4rem, 6vw, 5.6rem);
-  line-height: 0.9;
-  letter-spacing: -0.03em;
+  font-weight: 300;
+  font-size: clamp(3.8rem, 5.4vw, 5rem);
+  line-height: 0.95;
+  letter-spacing: -0.008em;
   color: var(--orb-text-strong);
   text-shadow: 0 4px 28px rgba(0, 0, 0, 0.3);
 }
 
 [data-theme='light'] .orb-title h1 {
-  text-shadow: 0 10px 32px rgba(111, 77, 46, 0.08);
+  text-shadow: 0 10px 32px rgba(76, 51, 136, 0.07);
 }
 
 .orb-title h1 em {
   font-style: italic;
-  font-weight: 400;
+  font-weight: 300;
+  color: var(--orb-ember);
 }
 
 .orb-title-copy {
@@ -3782,11 +3783,11 @@ button {
   color: var(--orb-text-soft);
 }
 .orb-index-item .name {
-  font-family: var(--orb-sans), system-ui, sans-serif;
-  font-size: 15px;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  line-height: 1.25;
+  font-family: var(--orb-display), 'Cormorant Garamond', serif;
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.15;
 }
 .orb-index-item .meta {
   font-family: var(--orb-mono);
@@ -3816,6 +3817,7 @@ button {
 }
 .orb-index-item.is-on .name {
   color: var(--orb-ember);
+  font-style: italic;
 }
 .orb-index-item.is-on::before {
   background: var(--orb-ember);

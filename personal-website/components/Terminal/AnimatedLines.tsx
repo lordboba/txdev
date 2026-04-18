@@ -1,7 +1,7 @@
 'use client';
 
 import type { CSSProperties } from 'react';
-import { useSyncExternalStore } from 'react';
+import { useReducedMotion } from '@/components/runtime/themePreferences';
 
 type AnimatedLine = {
   text: string;
@@ -13,19 +13,7 @@ type AnimatedLinesProps = {
 };
 
 export function AnimatedLines({ lines }: AnimatedLinesProps) {
-  const prefersReducedMotion = useSyncExternalStore(
-    (callback) => {
-      if (typeof window === 'undefined') return () => {};
-      const query = window.matchMedia('(prefers-reduced-motion: reduce)');
-      query.addEventListener('change', callback);
-      return () => query.removeEventListener('change', callback);
-    },
-    () => {
-      if (typeof window === 'undefined') return false;
-      return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    },
-    () => false,
-  );
+  const prefersReducedMotion = useReducedMotion();
 
   return (
     <div className="space-y-1">

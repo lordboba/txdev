@@ -1,61 +1,18 @@
 'use client';
 
-import { useCallback, useSyncExternalStore } from 'react';
-
-const THEME_EVENT = 'theme-preference-change';
-
-function subscribeToThemePreferences(onStoreChange: () => void) {
-  if (typeof window === 'undefined') {
-    return () => {};
-  }
-
-  window.addEventListener('storage', onStoreChange);
-  window.addEventListener(THEME_EVENT, onStoreChange);
-
-  return () => {
-    window.removeEventListener('storage', onStoreChange);
-    window.removeEventListener(THEME_EVENT, onStoreChange);
-  };
-}
-
-function getIsDarkTheme() {
-  if (typeof document === 'undefined') return true;
-  return document.documentElement.getAttribute('data-theme') !== 'light';
-}
-
-function announceThemeChange() {
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new Event(THEME_EVENT));
-  }
-}
+import { useCallback } from 'react';
+import {
+  setThemeMode,
+  triggerThemeFlash,
+  useIsDarkTheme,
+} from '@/components/runtime/themePreferences';
 
 export const ThemeToggle = () => {
-  const isDark = useSyncExternalStore(
-    subscribeToThemePreferences,
-    getIsDarkTheme,
-    () => true,
-  );
+  const isDark = useIsDarkTheme();
 
   const toggle = useCallback(() => {
-    const currentTheme = isDark ? 'dark' : 'light';
-    const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
-    document.documentElement.setAttribute('data-theme', nextTheme);
-    localStorage.setItem('theme', nextTheme);
-    announceThemeChange();
-
-    const reduceMotion = window.matchMedia(
-      '(prefers-reduced-motion: reduce)',
-    ).matches;
-    if (!reduceMotion) {
-      document.body.classList.remove('theme-flash-active');
-      requestAnimationFrame(() => {
-        document.body.classList.add('theme-flash-active');
-        setTimeout(() => {
-          document.body.classList.remove('theme-flash-active');
-        }, 520);
-      });
-    }
+    setThemeMode(isDark ? 'light' : 'dark');
+    triggerThemeFlash();
   }, [isDark]);
 
   return (

@@ -1,84 +1,37 @@
 'use client';
 
-import { useCallback, useSyncExternalStore } from 'react';
+import { useCallback } from 'react';
+import {
+  setColorTheme,
+  setThemeMode,
+  triggerThemeFlash,
+  useColorTheme,
+  useIsDarkTheme,
+  type ColorTheme,
+} from '@/components/runtime/themePreferences';
 
 const THEMES = [
   { id: 'mono', label: 'Mono', color: '#ffffff' },
   { id: 'ember', label: 'Ember', color: '#e8a060' },
   { id: 'ice', label: 'Ice', color: '#5090e0' },
   { id: 'terminal', label: 'Terminal', color: '#80e840' },
-] as const;
-
-const THEME_EVENT = 'theme-preference-change';
-
-function subscribeToThemePreferences(onStoreChange: () => void) {
-  if (typeof window === 'undefined') {
-    return () => {};
-  }
-
-  window.addEventListener('storage', onStoreChange);
-  window.addEventListener(THEME_EVENT, onStoreChange);
-
-  return () => {
-    window.removeEventListener('storage', onStoreChange);
-    window.removeEventListener(THEME_EVENT, onStoreChange);
-  };
-}
-
-function getSavedColorTheme() {
-  if (typeof window === 'undefined') return 'mono';
-
-  const saved = window.localStorage.getItem('color-theme');
-  return saved && THEMES.some((theme) => theme.id === saved) ? saved : 'mono';
-}
-
-function getIsDarkTheme() {
-  if (typeof document === 'undefined') return true;
-  return document.documentElement.getAttribute('data-theme') !== 'light';
-}
-
-function announceThemeChange() {
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new Event(THEME_EVENT));
-  }
-}
+] as const satisfies ReadonlyArray<{
+  id: ColorTheme;
+  label: string;
+  color: string;
+}>;
 
 export function ThemeBar({ compact = false }: { compact?: boolean }) {
-  const active = useSyncExternalStore(
-    subscribeToThemePreferences,
-    getSavedColorTheme,
-    () => 'mono',
-  );
-  const isDark = useSyncExternalStore(
-    subscribeToThemePreferences,
-    getIsDarkTheme,
-    () => true,
-  );
+  const active = useColorTheme();
+  const isDark = useIsDarkTheme();
 
-  const select = (id: string) => {
-    document.documentElement.setAttribute('data-color-theme', id);
-    localStorage.setItem('color-theme', id);
-    announceThemeChange();
+  const select = (id: ColorTheme) => {
+    setColorTheme(id);
   };
 
   const toggleMode = useCallback(() => {
-    const next = isDark ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('theme', next);
-    announceThemeChange();
-
-    const reduceMotion = window.matchMedia(
-      '(prefers-reduced-motion: reduce)',
-    ).matches;
-    if (!reduceMotion) {
-      document.body.classList.remove('theme-flash-active');
-      requestAnimationFrame(() => {
-        document.body.classList.add('theme-flash-active');
-        setTimeout(() => {
-          document.body.classList.remove('theme-flash-active');
-        }, 520);
-      });
-    }
+    setThemeMode(isDark ? 'light' : 'dark');
+    triggerThemeFlash();
   }, [isDark]);
 
   const controls = (

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, KeyboardEvent } from 'react';
+import { useState, KeyboardEvent } from 'react';
 import { CommandType, INITIAL_FILES } from './types';
 
 interface TerminalInputProps {
@@ -35,13 +35,6 @@ export const TerminalInput = ({
   const [input, setInput] = useState('');
   const [isInvalid, setIsInvalid] = useState(false);
   const [isPromptFlashing, setIsPromptFlashing] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!disabled && autoFocus) {
-      inputRef.current?.focus();
-    }
-  }, [disabled, autoFocus]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -107,7 +100,6 @@ export const TerminalInput = ({
       </span>
       <span className="terminal-soft">~</span>
       <input
-        ref={inputRef}
         type="text"
         value={input}
         onChange={(e) => setInput(e.target.value)}
@@ -116,6 +108,7 @@ export const TerminalInput = ({
         className="terminal-input-field flex-1 border-none bg-transparent outline-none"
         autoComplete="off"
         spellCheck="false"
+        autoFocus={autoFocus && !disabled}
       />
     </div>
   );

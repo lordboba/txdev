@@ -2,43 +2,19 @@
 
 import { useEffect, useState } from 'react';
 
-type CountResponse = {
+export function VisitorCount({
+  count,
+  reducedMotion,
+}: {
   count: number | null;
-  error?: string;
-};
-
-export function VisitorCount() {
-  const [count, setCount] = useState<number | null>(null);
+  reducedMotion: boolean;
+}) {
   const [animatedCount, setAnimatedCount] = useState(0);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const fetchCount = async () => {
-      try {
-        const response = await fetch('/api/user-count', { method: 'POST' });
-        const data = (await response.json()) as CountResponse;
-        if (!cancelled && !data.error && data.count !== null) {
-          setCount(data.count);
-        }
-      } catch {
-        // silently fail — counter is non-critical
-      }
-    };
-
-    fetchCount();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     if (count === null) return;
 
-    const reduceMotion = window.matchMedia(
-      '(prefers-reduced-motion: reduce)',
-    ).matches;
-    if (reduceMotion) {
+    if (reducedMotion) {
       const frame = window.requestAnimationFrame(() => {
         setAnimatedCount(count);
       });
@@ -60,7 +36,7 @@ export function VisitorCount() {
 
     frame = window.requestAnimationFrame(animate);
     return () => window.cancelAnimationFrame(frame);
-  }, [count]);
+  }, [count, reducedMotion]);
 
   if (count === null) return null;
 

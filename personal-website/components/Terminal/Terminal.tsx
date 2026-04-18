@@ -18,8 +18,7 @@ export const Terminal = ({
   const router = useRouter();
   const pathname = usePathname();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const tipTimerRef = useRef<number | null>(null);
-  const [showTip, setShowTip] = useState(false);
+  const [showTip, setShowTip] = useState(true);
   const handleExitCommand = useCallback(() => {
     if (pathname === '/terminal') {
       router.push('/');
@@ -38,7 +37,7 @@ export const Terminal = ({
 
     return false;
   }, [isFullScreen, onToggleFullScreen, pathname, router]);
-  const { history, handleCommand, isBooting } = useTerminal({
+  const { history, handleCommand } = useTerminal({
     onExit: handleExitCommand,
   });
 
@@ -53,7 +52,7 @@ export const Terminal = ({
       top: container.scrollHeight,
       behavior: 'smooth',
     });
-  }, [history, isBooting]);
+  }, [history]);
 
   // Handle Escape key to exit full screen
   useEffect(() => {
@@ -66,28 +65,8 @@ export const Terminal = ({
     return () => window.removeEventListener('keydown', handleEsc);
   }, [isFullScreen, onToggleFullScreen]);
 
-  useEffect(() => {
-    const tipSeen = localStorage.getItem('terminal-tip-seen');
-    if (tipSeen) return;
-
-    tipTimerRef.current = window.setTimeout(() => {
-      setShowTip(true);
-    }, 520);
-
-    return () => {
-      if (tipTimerRef.current) {
-        window.clearTimeout(tipTimerRef.current);
-      }
-    };
-  }, []);
-
   const dismissTip = () => {
-    if (tipTimerRef.current) {
-      window.clearTimeout(tipTimerRef.current);
-      tipTimerRef.current = null;
-    }
     setShowTip(false);
-    localStorage.setItem('terminal-tip-seen', '1');
   };
 
   const containerClass = isFullScreen
@@ -199,19 +178,11 @@ export const Terminal = ({
 
           <TerminalOutput history={history} />
 
-          {!isBooting && (
-            <TerminalInput
-              onCommand={handleCommand}
-              onCommandStart={dismissTip}
-              autoFocus={autoFocusInput}
-            />
-          )}
-
-          {isBooting && (
-            <div className="terminal-soft mt-2 animate-pulse">
-              System initializing...
-            </div>
-          )}
+          <TerminalInput
+            onCommand={handleCommand}
+            onCommandStart={dismissTip}
+            autoFocus={autoFocusInput}
+          />
         </div>
       </div>
     </div>

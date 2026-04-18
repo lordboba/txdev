@@ -2,7 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useState } from 'react';
+import {
+  getOrbitalSectionHref,
+  setOrbitalSectionId,
+  useOrbitalSectionId,
+} from '@/components/runtime/orbitalSectionStore';
 import { ThemeToggle } from './ThemeToggle';
 
 export const navLinks = [
@@ -16,126 +21,71 @@ export const navLinks = [
 
 export const NavBar = () => {
   const pathname = usePathname();
-  const [homeActiveHref, setHomeActiveHref] = useState<string>('/');
+  const homeSection = useOrbitalSectionId();
   const [mobileMenuState, setMobileMenuState] = useState({
     open: false,
     pathname,
   });
-  const navListRef = useRef<HTMLDivElement>(null);
-  const navIndicatorRef = useRef<HTMLSpanElement>(null);
 
-  const homeSectionLinks = useMemo(
-    () => navLinks.filter((link) => Boolean(link.sectionId)),
-    [],
-  );
-
-  const normalizedPath = useMemo(() => {
-    if (pathname.startsWith('/blog')) return '/blog';
-    return pathname;
-  }, [pathname]);
-
-  const activeHref = pathname === '/' ? homeActiveHref : normalizedPath;
+  const normalizedPath = pathname.startsWith('/blog') ? '/blog' : pathname;
+  const activeHref =
+    pathname === '/' ? getOrbitalSectionHref(homeSection) : normalizedPath;
   const mobileOpen =
     mobileMenuState.pathname === pathname && mobileMenuState.open;
 
-  const updateIndicator = useCallback(() => {
-    const navList = navListRef.current;
-    const indicator = navIndicatorRef.current;
-    if (!navList || !indicator) return;
+  const handleNavClick = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+    href: string,
+    sectionId: string | null,
+  ) => {
+    setMobileMenuState({ open: false, pathname });
 
-    const activeLink = navList.querySelector<HTMLElement>(
-      `[data-nav-href="${activeHref}"]`,
-    );
-    if (!activeLink) {
-      indicator.style.opacity = '0';
+    if (pathname !== '/') {
       return;
     }
 
-    const listRect = navList.getBoundingClientRect();
-    const activeRect = activeLink.getBoundingClientRect();
-    const left = activeRect.left - listRect.left;
+    if (href === '/') {
+      event.preventDefault();
+      setOrbitalSectionId('home');
+      return;
+    }
 
-    indicator.style.opacity = '1';
-    indicator.style.width = `${activeRect.width}px`;
-    indicator.style.transform = `translateX(${left}px)`;
-  }, [activeHref]);
-
-  useEffect(() => {
-    if (pathname !== '/') return;
-
-    const pickSection = () => {
-      const marker = window.scrollY + window.innerHeight * 0.35;
-      let selected = '/';
-
-      homeSectionLinks.forEach((link) => {
-        if (!link.sectionId) return;
-        const section = document.getElementById(link.sectionId);
-        if (!section) return;
-        if (section.offsetTop <= marker) {
-          selected = link.href;
-        }
-      });
-
-      setHomeActiveHref(selected);
-    };
-
-    const frame = window.requestAnimationFrame(pickSection);
-    window.addEventListener('scroll', pickSection, { passive: true });
-    window.addEventListener('hashchange', pickSection);
-
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.removeEventListener('scroll', pickSection);
-      window.removeEventListener('hashchange', pickSection);
-    };
-  }, [pathname, homeSectionLinks]);
-
-  useEffect(() => {
-    updateIndicator();
-  }, [updateIndicator]);
-
-  useEffect(() => {
-    window.addEventListener('resize', updateIndicator);
-    return () => window.removeEventListener('resize', updateIndicator);
-  }, [updateIndicator]);
+    if (sectionId === 'about' || sectionId === 'projects') {
+      event.preventDefault();
+      setOrbitalSectionId(sectionId);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-30 border-b border-divider bg-surface/85 backdrop-blur-xl">
       <nav className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
         <Link
           href="/"
+          prefetch={false}
+          onClick={(event) => handleNavClick(event, '/', null)}
           className="inline-flex items-center rounded-sm px-2 py-1 text-sm font-[var(--font-display)] font-semibold tracking-tight text-foreground transition-colors duration-200 hover:text-accent"
         >
           TYLER XIAO
         </Link>
 
-        {/* Desktop nav */}
         <div className="hidden items-center gap-2 md:flex">
-          <div
-            ref={navListRef}
-            className="relative flex items-center gap-1 rounded-sm border border-divider/80 bg-surface/70 p-1"
-          >
-            <span
-              ref={navIndicatorRef}
-              className="pointer-events-none absolute inset-y-1 rounded-sm bg-accent transition-all duration-300"
-              aria-hidden
-            />
+          <div className="relative flex items-center gap-1 rounded-sm border border-divider/80 bg-surface/70 p-1">
             {navLinks.map((link) => {
               const isActive = activeHref === link.href;
+              const shouldDisablePrefetch =
+                link.href === '/' || link.href.startsWith('/#');
 
               return (
                 <Link
                   key={link.label}
                   href={link.href}
-                  data-nav-href={link.href}
-                  onClick={() => {
-                    if (pathname === '/' && link.href.startsWith('/#')) {
-                      setHomeActiveHref(link.href);
-                    }
-                  }}
+                  prefetch={shouldDisablePrefetch ? false : undefined}
+                  onClick={(event) =>
+                    handleNavClick(event, link.href, link.sectionId)
+                  }
                   className={`relative z-10 rounded-sm px-3 py-1.5 text-xs font-medium transition-colors duration-200 sm:text-sm ${
                     isActive
-                      ? 'text-accent'
+                      ? 'bg-accent text-accent-ink'
                       : 'text-muted hover:text-foreground'
                   }`}
                   aria-current={isActive ? 'page' : undefined}
@@ -150,7 +100,6 @@ export const NavBar = () => {
           </div>
         </div>
 
-        {/* Mobile: theme toggle + hamburger */}
         <div className="flex items-center gap-2 md:hidden">
           <ThemeToggle />
           <button
@@ -190,7 +139,6 @@ export const NavBar = () => {
         </div>
       </nav>
 
-      {/* Mobile dropdown */}
       <div
         className={`overflow-hidden border-t border-divider bg-surface/95 backdrop-blur-xl transition-[max-height,opacity] duration-300 ease-out md:hidden ${
           mobileOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
@@ -199,17 +147,17 @@ export const NavBar = () => {
         <div className="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-2 sm:px-6">
           {navLinks.map((link) => {
             const isActive = activeHref === link.href;
+            const shouldDisablePrefetch =
+              link.href === '/' || link.href.startsWith('/#');
 
             return (
               <Link
                 key={link.label}
                 href={link.href}
-                onClick={() => {
-                  setMobileMenuState({ open: false, pathname });
-                  if (pathname === '/' && link.href.startsWith('/#')) {
-                    setHomeActiveHref(link.href);
-                  }
-                }}
+                prefetch={shouldDisablePrefetch ? false : undefined}
+                onClick={(event) =>
+                  handleNavClick(event, link.href, link.sectionId)
+                }
                 className={`rounded-sm px-4 py-2.5 text-[12px] font-[var(--font-mono)] font-medium transition-colors duration-200 ${
                   isActive
                     ? 'bg-accent-muted text-accent'

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, ReactNode } from 'react';
+import { useState, useCallback, ReactNode } from 'react';
 import { HistoryItem, INITIAL_FILES } from './types';
 import { ASCII_ART, WELCOME_MESSAGE } from './ascii';
 import { AnimatedLines } from './AnimatedLines';
@@ -14,15 +14,11 @@ type UseTerminalOptions = {
 };
 
 export const useTerminal = ({ onExit }: UseTerminalOptions = {}) => {
-  const [history, setHistory] = useState<HistoryItem[]>([]);
-  const [isBooting, setIsBooting] = useState(true);
-
-  useEffect(() => {
-    const bootSequence = async () => {
-      // Simulate boot delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      const initialOutput = (
+  const [history, setHistory] = useState<HistoryItem[]>(() => [
+    {
+      id: 'boot',
+      command: '',
+      output: (
         <div className="terminal-boot whitespace-pre overflow-x-auto no-scrollbar text-[10px] font-bold leading-[1.1] sm:text-xs">
           {ASCII_ART}
           <br />
@@ -33,20 +29,9 @@ export const useTerminal = ({ onExit }: UseTerminalOptions = {}) => {
           ))}
           <br />
         </div>
-      );
-
-      setHistory([
-        {
-          id: 'boot',
-          command: '',
-          output: initialOutput,
-        },
-      ]);
-      setIsBooting(false);
-    };
-
-    bootSequence();
-  }, []);
+      ),
+    },
+  ]);
 
   const addToHistory = useCallback((command: string, output: ReactNode) => {
     setHistory((prev) => [
@@ -280,6 +265,5 @@ export const useTerminal = ({ onExit }: UseTerminalOptions = {}) => {
   return {
     history,
     handleCommand,
-    isBooting,
   };
 };

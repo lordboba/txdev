@@ -1,13 +1,13 @@
 'use client';
 
 import {
-  useEffect,
+  useReducer,
   useRef,
-  useState,
   type TransitionEvent as ReactTransitionEvent,
 } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import type { OrbitalSectionId } from '@/lib/orbitalData';
 import {
   quickFacts,
   projects,
@@ -254,7 +254,7 @@ function ContactContent({
 }
 
 const PANELS: Record<
-  string,
+  OrbitalSectionId,
   (props: { onOpenModal: (id: string) => void }) => React.JSX.Element
 > = {
   home: HomeContent,
@@ -264,102 +264,100 @@ const PANELS: Record<
   contact: ContactContent,
 };
 
+type PanelTransitionState = {
+  displayed: OrbitalSectionId;
+  phase: 'in' | 'out';
+  pending: OrbitalSectionId | null;
+  requested: OrbitalSectionId;
+};
+
+type PanelAction =
+  | { type: 'request'; sectionId: OrbitalSectionId }
+  | { type: 'finish-transition' };
+
+function reducePanelState(
+  state: PanelTransitionState,
+  action: PanelAction,
+): PanelTransitionState {
+  if (action.type === 'request') {
+    if (action.sectionId === state.requested) {
+      return state;
+    }
+
+    if (action.sectionId === state.displayed) {
+      return {
+        displayed: state.displayed,
+        phase: 'in',
+        pending: null,
+        requested: action.sectionId,
+      };
+    }
+
+    return {
+      displayed: state.displayed,
+      phase: 'out',
+      pending: action.sectionId,
+      requested: action.sectionId,
+    };
+  }
+
+  if (state.phase !== 'out' || state.pending === null) {
+    return state;
+  }
+
+  return {
+    displayed: state.pending,
+    phase: 'in',
+    pending: null,
+    requested: state.pending,
+  };
+}
+
 export function ContentPanel({
   sectionId,
-  onClose,
   onOpenModal,
-  isPaused,
-  onPanelClick,
 }: {
-  sectionId: string | null;
-  onClose: () => void;
+  sectionId: OrbitalSectionId;
   onOpenModal: (id: string) => void;
-  isPaused?: boolean;
-  onPanelClick?: () => void;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
-  const [displayed, setDisplayed] = useState<string | null>(sectionId);
-  const [phase, setPhase] = useState<'in' | 'out'>('in');
-  const nextSectionRef = useRef<string | null>(sectionId);
-  const frameRef = useRef<number>(0);
+  const [transitionState, dispatch] = useReducer(reducePanelState, {
+    displayed: sectionId,
+    phase: 'in',
+    pending: null,
+    requested: sectionId,
+  });
 
-  useEffect(() => {
-    nextSectionRef.current = sectionId;
-    if (sectionId === displayed) return;
+  if (transitionState.requested !== sectionId) {
+    dispatch({ type: 'request', sectionId });
+  }
 
-    frameRef.current = requestAnimationFrame(() => {
-      if (!displayed) {
-        setDisplayed(sectionId);
-        setPhase('in');
-        return;
-      }
+  const PanelContent = PANELS[transitionState.displayed];
 
-      setPhase('out');
-    });
-
-    return () => {
-      if (frameRef.current) cancelAnimationFrame(frameRef.current);
-    };
-  }, [sectionId, displayed]);
-
-  useEffect(() => {
-    if (displayed && panelRef.current) {
+  const resetScrollPosition = (node: HTMLDivElement | null) => {
+    if (node && panelRef.current) {
       panelRef.current.scrollTop = 0;
     }
-  }, [displayed]);
-
-  // Click outside to resume
-  useEffect(() => {
-    if (!isPaused) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isPaused, onClose]);
-
-  useEffect(() => {
-    return () => {
-      if (frameRef.current) cancelAnimationFrame(frameRef.current);
-    };
-  }, []);
-
-  if (!displayed) return null;
-
-  const PanelContent = PANELS[displayed];
-  if (!PanelContent) return null;
+  };
 
   const handleTransitionEnd = (event: ReactTransitionEvent<HTMLDivElement>) => {
     if (
       event.target !== event.currentTarget ||
       event.propertyName !== 'opacity' ||
-      phase !== 'out'
+      transitionState.phase !== 'out'
     ) {
       return;
     }
 
-    const nextSection = nextSectionRef.current;
-    setDisplayed(nextSection);
-
-    if (!nextSection) {
-      return;
-    }
-
-    frameRef.current = requestAnimationFrame(() => {
-      setPhase('in');
-    });
+    dispatch({ type: 'finish-transition' });
   };
 
   return (
-    <div
-      className={`content-panel ${isPaused ? 'is-paused' : ''}`}
-      ref={panelRef}
-      onClick={onPanelClick}
-    >
+    <div className="content-panel" ref={panelRef}>
       <div
-        className={`content-panel-inner panel-phase-${phase}`}
+        key={transitionState.displayed}
+        ref={resetScrollPosition}
+        className={`content-panel-inner panel-phase-${transitionState.phase}`}
         onTransitionEnd={handleTransitionEnd}
       >
         <PanelContent onOpenModal={onOpenModal} />

@@ -1,13 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { OrbitalScene } from '@/components/OrbitalScene';
 import { SideIndex } from '@/components/SideIndex';
 import { VisitorCount } from '@/components/VisitorCount';
-import { PLANETS, type OrbitalSectionId } from '@/lib/orbitalData';
-
-type ThemeMode = 'dark' | 'light';
+import type { ThemeMode } from '@/components/runtime/themePreferences';
+import {
+  PLANETS,
+  PLANET_BY_ID,
+  type OrbitalSectionId,
+} from '@/lib/orbitalData';
 
 type AtmosphereSeed = {
   type: 'star' | 'dust' | 'chart';
@@ -23,6 +26,9 @@ type AtmosphereSeed = {
 type OrbitalHeroProps = {
   selectedId: OrbitalSectionId | null;
   onSelect: (id: OrbitalSectionId) => void;
+  themeMode: ThemeMode;
+  visitorCount: number | null;
+  reducedMotion: boolean;
 };
 
 type ExclusionZone = {
@@ -31,8 +37,6 @@ type ExclusionZone = {
   top: number;
   bottom: number;
 };
-
-const THEME_EVENT = 'theme-preference-change';
 
 const LIGHT_EXCLUSION_ZONES: ExclusionZone[] = [
   { left: 10, right: 90, top: 0, bottom: 25 },
@@ -45,16 +49,6 @@ function createSeededRandom(seed: number) {
     seed = (seed * 1103515245 + 12345) & 0x7fffffff;
     return (seed % 10000) / 10000;
   };
-}
-
-function getThemeMode(): ThemeMode {
-  if (typeof document === 'undefined') {
-    return 'dark';
-  }
-
-  return document.documentElement.getAttribute('data-theme') === 'light'
-    ? 'light'
-    : 'dark';
 }
 
 function pickPosition(next: () => number, exclusions: ExclusionZone[]) {
@@ -142,42 +136,21 @@ function createAtmosphereSeeds(mode: ThemeMode): AtmosphereSeed[] {
     : createDarkAtmosphereSeeds();
 }
 
-export function OrbitalHero({ selectedId, onSelect }: OrbitalHeroProps) {
+export function OrbitalHero({
+  selectedId,
+  onSelect,
+  themeMode,
+  visitorCount,
+  reducedMotion,
+}: OrbitalHeroProps) {
   const [hoverId, setHoverId] = useState<OrbitalSectionId | null>(null);
-  const [themeMode, setThemeMode] = useState<ThemeMode>(getThemeMode);
-  const [atmosphere, setAtmosphere] = useState<AtmosphereSeed[]>(() =>
-    createAtmosphereSeeds(getThemeMode()),
+  const atmosphere = useMemo(
+    () => createAtmosphereSeeds(themeMode),
+    [themeMode],
   );
 
-  useEffect(() => {
-    const syncTheme = () => {
-      const nextMode = getThemeMode();
-      setThemeMode(nextMode);
-      setAtmosphere(createAtmosphereSeeds(nextMode));
-    };
-
-    syncTheme();
-
-    window.addEventListener(THEME_EVENT, syncTheme);
-    window.addEventListener('storage', syncTheme);
-
-    const observer = new MutationObserver(syncTheme);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['data-theme'],
-    });
-
-    return () => {
-      window.removeEventListener(THEME_EVENT, syncTheme);
-      window.removeEventListener('storage', syncTheme);
-      observer.disconnect();
-    };
-  }, []);
-
   const activeId: OrbitalSectionId = hoverId ?? selectedId ?? 'home';
-
-  const activePlanet =
-    PLANETS.find((planet) => planet.id === activeId) ?? PLANETS[0];
+  const activePlanet = PLANET_BY_ID[activeId] ?? PLANETS[0];
 
   return (
     <>
@@ -215,7 +188,10 @@ export function OrbitalHero({ selectedId, onSelect }: OrbitalHeroProps) {
               </p>
             </div>
             <div className="orb-hero-tools">
-              <VisitorCount />
+              <VisitorCount
+                count={visitorCount}
+                reducedMotion={reducedMotion}
+              />
               <Link href="/terminal" className="terminal-toggle-btn">
                 <span className="terminal-toggle-dot" />
                 Terminal
@@ -228,6 +204,7 @@ export function OrbitalHero({ selectedId, onSelect }: OrbitalHeroProps) {
               activeId={activeId}
               onHover={setHoverId}
               onSelect={onSelect}
+              reducedMotion={reducedMotion}
             />
             <div className="orb-active-label" aria-live="polite">
               <div className="name">{activePlanet.label}</div>
