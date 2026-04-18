@@ -95,6 +95,7 @@ export const projects: Project[] = [
       'Google Drive agent that executes document workflows from natural language chat, handling routing, summarization, and task updates.',
     tech: ['FastAPI', 'LangChain', 'Gemini API', 'React'],
     link: 'https://github.com/lordboba/docupilot',
+    image: '/projects/docupilot-v1.png',
   },
   {
     title: 'Kinetic',
