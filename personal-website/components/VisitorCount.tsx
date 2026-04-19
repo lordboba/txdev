@@ -48,10 +48,9 @@ export function VisitorCount({
       title="Estimated total portfolio visits"
     >
       <span className="visitor-count-dot" />
-      <span className="visitor-count-number">
-        {animatedCount.toLocaleString()}
+      <span className="visitor-count-text">
+        {animatedCount.toLocaleString()} <em>observers</em>
       </span>
-      <span className="visitor-count-label">site visits</span>
     </div>
   );
 }
