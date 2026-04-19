@@ -3535,7 +3535,15 @@ button {
 /* Bodies — each .orb-body is positioned per frame by JS */
 .orb-bodies {
   position: absolute;
-  inset: 0;
+  left: 50%;
+  top: 50%;
+  width: var(--orb-scene);
+  height: var(--orb-scene);
+  margin-left: calc(var(--orb-scene) / -2);
+  margin-top: calc(var(--orb-scene) / -2);
+  transform: scale(var(--scene-scale, 1));
+  transform-origin: center center;
+  pointer-events: none;
 }
 .orb-body {
   position: absolute;
@@ -3549,6 +3557,7 @@ button {
   background: none;
   border: 0;
   padding: 0;
+  pointer-events: auto;
 }
 .orb-body .orb-planet {
   position: absolute;
@@ -3558,7 +3567,11 @@ button {
   border-radius: 50%;
   transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.orb-body:hover .orb-planet {
+/* Hover-driven scale uses the JS-managed .is-active class instead of
+   :hover so it releases when the planet animates out from under a
+   stationary cursor (the native :hover state otherwise stays stuck
+   until the next mousemove). */
+.orb-body.is-active .orb-planet {
   transform: translate(-50%, -50%) scale(1.15);
 }
 
@@ -3678,8 +3691,7 @@ button {
     color 0.35s;
   pointer-events: none;
 }
-.orb-body.is-active .orb-tag,
-.orb-body:hover .orb-tag {
+.orb-body.is-active .orb-tag {
   opacity: 1;
   color: var(--orb-ember);
 }
@@ -3926,11 +3938,23 @@ button {
   .orb-scene-slot {
     grid-row: 2 / 3;
     width: min(100%, var(--orb-scene));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   .orb-scene {
     width: min(100vw - 48px, var(--orb-scene));
     height: min(100vw - 48px, var(--orb-scene));
+  }
+
+  .orb-active-label {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    transform: none;
+    margin-top: 0.5rem;
+    margin-bottom: 2rem;
   }
 
   .orb-index {
