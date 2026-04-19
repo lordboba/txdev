@@ -191,7 +191,10 @@ function ProjectsContent({
         className="panel-expand-btn"
         onClick={() => onOpenModal('all-projects')}
       >
-        Browse all {projects.length} projects &rarr;
+        <span>Browse all</span>
+        <span>{projects.length}</span>
+        <span>projects</span>
+        <span aria-hidden="true">&rarr;</span>
       </button>
     </div>
   );
