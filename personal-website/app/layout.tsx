@@ -32,7 +32,7 @@ const mono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tylerxiao.com',
+    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://tylerx.dev',
   ),
   title: "Tyler Xiao's Portfolio",
   description:
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     siteName: 'Tyler Xiao',
     images: [
       {
-        url: '/lordboba.png',
+        url: 'https://tylerx.dev/lordboba.png',
         width: 1200,
         height: 1200,
         alt: 'Tyler Xiao avatar',
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
     title: "Tyler Xiao's Portfolio",
     description:
       "Explore Tyler Xiao's experience, projects, and ways to collaborate on AI agents and backend systems.",
-    images: ['/lordboba.png'],
+    images: ['https://tylerx.dev/lordboba.png'],
   },
   icons: {
     icon: [
