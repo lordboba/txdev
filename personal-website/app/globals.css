@@ -2269,70 +2269,7 @@ button {
 }
 
 /* ═══ Content Panel ═══ */
-.content-panel {
-  position: relative;
-  z-index: 3;
-  width: 100%;
-  max-width: 560px;
-  margin-top: 12px;
-  animation: panelSlideDown 0.4s var(--ease-spring) forwards;
-  cursor: pointer;
-}
-
-.content-panel.is-paused {
-  cursor: default;
-}
-
-.content-panel.is-paused .content-panel-inner {
-  border-color: var(--c-accent);
-  box-shadow:
-    0 16px 48px rgba(0, 0, 0, 0.3),
-    0 0 24px var(--c-glow),
-    0 0 0 1px var(--c-accent);
-}
-
-@keyframes panelSlideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.content-panel-inner {
-  background: var(--surface);
-  border: 1px solid var(--c-accent-border);
-  border-radius: 8px;
-  padding: 24px;
-  position: relative;
-  backdrop-filter: blur(12px);
-  box-shadow:
-    0 16px 48px rgba(0, 0, 0, 0.3),
-    0 0 24px var(--c-glow);
-  max-height: 320px;
-  overflow-y: auto;
-  transition:
-    opacity 0.2s var(--ease-spring),
-    transform 0.3s var(--ease-spring),
-    border-color 0.4s,
-    box-shadow 0.4s;
-  will-change: opacity, transform;
-}
-
-.content-panel-inner.panel-phase-in {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-}
-
-.content-panel-inner.panel-phase-out {
-  opacity: 0;
-  transform: translateY(6px) scale(0.98);
-}
-
-/* Panel content styles */
+/* Panel content styles (rendered inside .modal-body) */
 .panel-title {
   font-family: var(--font-display), Georgia, serif;
   font-size: 18px;
@@ -3061,15 +2998,6 @@ button {
     letter-spacing: 5px;
   }
 
-  .content-panel {
-    max-width: calc(100vw - 32px);
-  }
-
-  .content-panel-inner {
-    max-height: 260px;
-    padding: 18px;
-  }
-
   .panel-project-grid {
     grid-template-columns: 1fr;
   }
@@ -3140,7 +3068,7 @@ button {
   --orb-sans: var(--font-sans), system-ui, sans-serif;
   --orb-mono: var(--font-mono), ui-monospace, Menlo, monospace;
 
-  --orb-scene: 700px;
+  --orb-scene: min(700px, calc(100dvh - 200px));
 }
 
 [data-theme='light'] {
@@ -3344,9 +3272,9 @@ button {
   grid-template-columns: 1fr var(--orb-scene) 260px 1fr;
   grid-template-rows: auto auto;
   column-gap: 48px;
-  row-gap: 14px;
+  row-gap: 4px;
   align-items: center;
-  padding: 1.25rem 3.5rem 1rem;
+  padding: 0.5rem 3.5rem 0.75rem;
 }
 
 [data-theme='light'] .orb-stage {
@@ -3359,10 +3287,10 @@ button {
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 18px;
+  gap: 10px;
   align-items: start;
   min-height: 0;
-  padding-top: 2.4rem;
+  padding-top: calc(1rem + 2px);
 }
 
 .orb-title {
@@ -3393,11 +3321,11 @@ button {
 }
 
 .orb-title-copy {
-  margin: 1.7rem auto 0;
+  margin: 0.85rem auto 0;
   max-width: 35rem;
   font-family: var(--orb-sans), system-ui, sans-serif;
   font-size: 1.02rem;
-  line-height: 1.9;
+  line-height: 1.7;
   color: var(--orb-text-soft);
 }
 
@@ -3692,51 +3620,107 @@ button {
   pointer-events: none;
 }
 .orb-body.is-active .orb-tag {
-  opacity: 1;
-  color: var(--orb-ember);
+  opacity: 0;
 }
 
-.orb-active-label {
+/* Screen-reader-only announcement for the active planet */
+.orb-active-announce {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Active-planet label that rides the orbit alongside its planet.
+   Positioned above the planet body; hidden for non-active planets. */
+.orb-body-active-label {
   position: absolute;
   left: 50%;
-  bottom: 8px;
-  transform: translateX(-50%);
-  text-align: center;
-  z-index: 5;
+  top: 50%;
+  transform: translate(-50%, calc(-100% - 44px));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
   pointer-events: none;
-  animation: orb-rise 1.1s 1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  opacity: 0;
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+  z-index: 6;
+  white-space: nowrap;
 }
 
-[data-theme='light'] .orb-active-label {
-  padding: 0.75rem 1.35rem 0.2rem;
-  border-radius: 999px;
-  background: radial-gradient(
-    circle at 50% 35%,
-    rgba(255, 248, 239, 0.96) 0%,
-    rgba(255, 248, 239, 0.72) 55%,
-    rgba(255, 248, 239, 0) 100%
-  );
+.orb-body.is-active .orb-body-active-label {
+  opacity: 1;
 }
-.orb-active-label .name {
+
+.orb-body-active-label .name {
   font-family: var(--orb-display);
   font-style: italic;
   font-weight: 400;
-  font-size: 40px;
+  font-size: 30px;
+  line-height: 1;
   letter-spacing: -0.008em;
   color: var(--orb-text-strong);
-  text-shadow: 0 4px 30px rgba(0, 0, 0, 0.35);
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
 }
 
-[data-theme='light'] .orb-active-label .name {
-  text-shadow: 0 10px 24px rgba(111, 77, 46, 0.08);
+[data-theme='light'] .orb-body-active-label .name {
+  text-shadow: 0 8px 20px rgba(111, 77, 46, 0.1);
 }
-.orb-active-label .serial {
-  margin-top: 2px;
+
+.orb-body-active-label .hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--orb-hairline-s);
+  border-radius: 999px;
   font-family: var(--orb-mono);
-  font-size: 10px;
-  letter-spacing: 0.28em;
+  font-size: 9px;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
+  color: var(--orb-text-soft);
+  background: color-mix(in srgb, var(--orb-ink, #0a0614) 32%, transparent);
+  backdrop-filter: blur(6px);
+  animation: orb-hint-pulse 2.6s ease-in-out infinite;
+}
+
+.orb-body-active-label .hint .arrow {
   color: var(--orb-ember);
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+[data-theme='light'] .orb-body-active-label .hint {
+  border-color: var(--orb-ring-base);
+  color: var(--orb-text-medium);
+  background: rgba(255, 248, 239, 0.82);
+}
+
+@keyframes orb-hint-pulse {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-1px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orb-body-active-label .hint {
+    animation: none;
+    opacity: 0.9;
+  }
 }
 
 /* Side index */
@@ -3946,15 +3930,6 @@ button {
   .orb-scene {
     width: min(100vw - 48px, var(--orb-scene));
     height: min(100vw - 48px, var(--orb-scene));
-  }
-
-  .orb-active-label {
-    position: relative;
-    left: auto;
-    bottom: auto;
-    transform: none;
-    margin-top: 0.5rem;
-    margin-bottom: 2rem;
   }
 
   .orb-index {

@@ -5,7 +5,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { OrbitalHero } from '@/components/OrbitalHero';
 import { ThemeBar } from '@/components/ThemeBar';
-import { ContentPanel } from '@/components/ContentPanel';
+import {
+  SectionContent,
+  SECTION_MODAL_TITLES,
+} from '@/components/ContentPanel';
 import { Modal } from '@/components/Modal';
 import {
   useOrbitalSectionId,
@@ -15,12 +18,25 @@ import {
   useReducedMotion,
   useThemeMode,
 } from '@/components/runtime/themePreferences';
+import type { OrbitalSectionId } from '@/lib/orbitalData';
 import {
   experiences,
   projects,
   callHighlights,
   callSocialProof,
 } from '@/lib/siteData';
+
+const SECTION_IDS: OrbitalSectionId[] = [
+  'home',
+  'about',
+  'projects',
+  'blog',
+  'contact',
+];
+
+function isSectionId(id: string): id is OrbitalSectionId {
+  return (SECTION_IDS as string[]).includes(id);
+}
 
 const CALENDLY_URL =
   'https://calendly.com/yxiao1717/glitch-dev-team-officer-interview';
@@ -213,25 +229,40 @@ export function HomeClient({ visitorCount }: { visitorCount: number | null }) {
     setActiveModal(null);
   }, []);
 
+  const handleSelectSection = useCallback((id: OrbitalSectionId) => {
+    setOrbitalSectionId(id);
+    setActiveModal(id);
+  }, []);
+
+  const activeSectionId =
+    activeModal && isSectionId(activeModal) ? activeModal : null;
+
   return (
     <div className="app-shell">
       <main className="app-main">
         <OrbitalHero
           selectedId={selectedSection}
-          onSelect={setOrbitalSectionId}
+          onSelect={handleSelectSection}
           themeMode={themeMode}
           visitorCount={visitorCount}
           reducedMotion={reducedMotion}
-        />
-        <ContentPanel
-          sectionId={selectedSection}
-          onOpenModal={handleOpenModal}
         />
       </main>
       <div className="home-theme-dock">
         <ThemeBar compact />
       </div>
 
+      {activeSectionId && (
+        <Modal
+          title={SECTION_MODAL_TITLES[activeSectionId]}
+          onClose={handleCloseModal}
+        >
+          <SectionContent
+            sectionId={activeSectionId}
+            onOpenModal={handleOpenModal}
+          />
+        </Modal>
+      )}
       {activeModal === 'timeline' && (
         <TimelineModal onClose={handleCloseModal} />
       )}

@@ -293,6 +293,12 @@ export function OrbitalScene({
               >
                 {planet.numeral} · {planet.label}
               </span>
+              <span className="orb-body-active-label" aria-hidden="true">
+                <span className="name">{planet.label}</span>
+                <span className="hint">
+                  Click to open <span className="arrow">&#8599;</span>
+                </span>
+              </span>
             </button>
           );
         })}

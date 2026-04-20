@@ -1,10 +1,5 @@
 'use client';
 
-import {
-  useReducer,
-  useRef,
-  type TransitionEvent as ReactTransitionEvent,
-} from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { OrbitalSectionId } from '@/lib/orbitalData';
@@ -15,7 +10,9 @@ import {
   contactLinks,
 } from '@/lib/siteData';
 
-function HomeContent({ onOpenModal }: { onOpenModal: (id: string) => void }) {
+type PanelProps = { onOpenModal: (id: string) => void };
+
+function HomeContent({ onOpenModal }: PanelProps) {
   return (
     <div className="panel-home">
       <div className="panel-home-intro">
@@ -80,10 +77,9 @@ function HomeContent({ onOpenModal }: { onOpenModal: (id: string) => void }) {
   );
 }
 
-function AboutContent({ onOpenModal }: { onOpenModal: (id: string) => void }) {
+function AboutContent({ onOpenModal }: PanelProps) {
   return (
     <div className="panel-about">
-      <h3 className="panel-title">About</h3>
       <p
         className="panel-desc"
         style={{ marginBottom: 10, fontFamily: 'var(--font-sans)' }}
@@ -123,14 +119,9 @@ function AboutContent({ onOpenModal }: { onOpenModal: (id: string) => void }) {
   );
 }
 
-function ProjectsContent({
-  onOpenModal,
-}: {
-  onOpenModal: (id: string) => void;
-}) {
+function ProjectsContent({ onOpenModal }: PanelProps) {
   return (
     <div className="panel-projects">
-      <h3 className="panel-title">Projects</h3>
       <p
         className="panel-desc"
         style={{ marginBottom: 10, fontFamily: 'var(--font-sans)' }}
@@ -203,7 +194,6 @@ function ProjectsContent({
 function BlogContent() {
   return (
     <div className="panel-blog">
-      <h3 className="panel-title">Blog</h3>
       <p className="panel-desc">
         Technical notes on product engineering, AI workflows, and design
         systems.
@@ -218,14 +208,9 @@ function BlogContent() {
   );
 }
 
-function ContactContent({
-  onOpenModal,
-}: {
-  onOpenModal: (id: string) => void;
-}) {
+function ContactContent({ onOpenModal }: PanelProps) {
   return (
     <div className="panel-contact">
-      <h3 className="panel-title">Contact</h3>
       <p
         className="panel-desc"
         style={{ marginBottom: 8, fontFamily: 'var(--font-sans)' }}
@@ -258,7 +243,7 @@ function ContactContent({
 
 const PANELS: Record<
   OrbitalSectionId,
-  (props: { onOpenModal: (id: string) => void }) => React.JSX.Element
+  (props: PanelProps) => React.JSX.Element
 > = {
   home: HomeContent,
   about: AboutContent,
@@ -267,104 +252,21 @@ const PANELS: Record<
   contact: ContactContent,
 };
 
-type PanelTransitionState = {
-  displayed: OrbitalSectionId;
-  phase: 'in' | 'out';
-  pending: OrbitalSectionId | null;
-  requested: OrbitalSectionId;
+export const SECTION_MODAL_TITLES: Record<OrbitalSectionId, string> = {
+  home: 'Tyler Xiao',
+  about: 'About',
+  projects: 'Projects',
+  blog: 'Blog',
+  contact: 'Contact',
 };
 
-type PanelAction =
-  | { type: 'request'; sectionId: OrbitalSectionId }
-  | { type: 'finish-transition' };
-
-function reducePanelState(
-  state: PanelTransitionState,
-  action: PanelAction,
-): PanelTransitionState {
-  if (action.type === 'request') {
-    if (action.sectionId === state.requested) {
-      return state;
-    }
-
-    if (action.sectionId === state.displayed) {
-      return {
-        displayed: state.displayed,
-        phase: 'in',
-        pending: null,
-        requested: action.sectionId,
-      };
-    }
-
-    return {
-      displayed: state.displayed,
-      phase: 'out',
-      pending: action.sectionId,
-      requested: action.sectionId,
-    };
-  }
-
-  if (state.phase !== 'out' || state.pending === null) {
-    return state;
-  }
-
-  return {
-    displayed: state.pending,
-    phase: 'in',
-    pending: null,
-    requested: state.pending,
-  };
-}
-
-export function ContentPanel({
+export function SectionContent({
   sectionId,
   onOpenModal,
 }: {
   sectionId: OrbitalSectionId;
   onOpenModal: (id: string) => void;
 }) {
-  const panelRef = useRef<HTMLDivElement>(null);
-  const [transitionState, dispatch] = useReducer(reducePanelState, {
-    displayed: sectionId,
-    phase: 'in',
-    pending: null,
-    requested: sectionId,
-  });
-
-  if (transitionState.requested !== sectionId) {
-    dispatch({ type: 'request', sectionId });
-  }
-
-  const PanelContent = PANELS[transitionState.displayed];
-
-  const resetScrollPosition = (node: HTMLDivElement | null) => {
-    if (node && panelRef.current) {
-      panelRef.current.scrollTop = 0;
-    }
-  };
-
-  const handleTransitionEnd = (event: ReactTransitionEvent<HTMLDivElement>) => {
-    if (
-      event.target !== event.currentTarget ||
-      event.propertyName !== 'opacity' ||
-      transitionState.phase !== 'out'
-    ) {
-      return;
-    }
-
-    dispatch({ type: 'finish-transition' });
-  };
-
-  return (
-    <div className="content-panel" ref={panelRef}>
-      <div
-        key={transitionState.displayed}
-        ref={resetScrollPosition}
-        className={`content-panel-inner panel-phase-${transitionState.phase}`}
-        onTransitionEnd={handleTransitionEnd}
-      >
-        <PanelContent onOpenModal={onOpenModal} />
-      </div>
-    </div>
-  );
+  const Panel = PANELS[sectionId];
+  return <Panel onOpenModal={onOpenModal} />;
 }

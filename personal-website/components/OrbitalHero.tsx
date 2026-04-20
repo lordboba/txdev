@@ -208,9 +208,8 @@ export function OrbitalHero({
               onSelect={onSelect}
               reducedMotion={reducedMotion}
             />
-            <div className="orb-active-label" aria-live="polite">
-              <div className="name">{activePlanet.label}</div>
-              <div className="serial">{activePlanet.serial}</div>
+            <div className="orb-active-announce" aria-live="polite">
+              {activePlanet.label} · {activePlanet.serial}
             </div>
           </div>
 
