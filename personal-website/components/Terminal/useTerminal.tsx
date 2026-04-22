@@ -19,7 +19,7 @@ export const useTerminal = ({ onExit }: UseTerminalOptions = {}) => {
       id: 'boot',
       command: '',
       output: (
-        <div className="terminal-boot whitespace-pre overflow-x-auto no-scrollbar text-[10px] font-bold leading-[1.1] sm:text-xs">
+        <div className="terminal-boot terminal-banner overflow-x-auto no-scrollbar">
           {ASCII_ART}
           <br />
           {WELCOME_MESSAGE.map((line, i) => (
@@ -187,7 +187,7 @@ export const useTerminal = ({ onExit }: UseTerminalOptions = {}) => {
 
         case 'ascii':
           output = (
-            <div className="terminal-boot whitespace-pre overflow-x-auto no-scrollbar text-[10px] font-bold leading-[1.1] sm:text-xs">
+            <div className="terminal-boot terminal-banner overflow-x-auto no-scrollbar">
               {ASCII_ART}
             </div>
           );

@@ -882,6 +882,25 @@ button {
   color: var(--terminal-foreground);
 }
 
+.terminal-root .terminal-banner {
+  display: inline-block;
+  min-width: max-content;
+  white-space: pre;
+  font-family:
+    var(--font-mono), 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono',
+    monospace;
+  font-size: 0.62rem;
+  font-weight: 400;
+  line-height: 1.08;
+  letter-spacing: 0;
+}
+
+@media (min-width: 640px) {
+  .terminal-root .terminal-banner {
+    font-size: 0.75rem;
+  }
+}
+
 .terminal-root .terminal-command-line {
   color: var(--terminal-muted);
 }
