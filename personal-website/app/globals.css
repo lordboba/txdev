@@ -3131,6 +3131,42 @@ button {
   --orb-index-surface: rgba(76, 51, 136, 0.07);
 }
 
+[data-theme='dark'][data-color-theme='ember'] {
+  --orb-ink: #140b06;
+  --orb-deep: #24130b;
+  --orb-dusk: #432113;
+  --orb-violet: #80442b;
+  --orb-wine: #9f5531;
+  --orb-ember: #f0b274;
+  --orb-flame: #dd7c44;
+  --orb-peach: #f7dec1;
+  --orb-paper: #fff3e5;
+}
+
+[data-theme='dark'][data-color-theme='ice'] {
+  --orb-ink: #050b14;
+  --orb-deep: #0a1526;
+  --orb-dusk: #132745;
+  --orb-violet: #23466f;
+  --orb-wine: #325a88;
+  --orb-ember: #8ec5ff;
+  --orb-flame: #5da1f0;
+  --orb-peach: #c8e4ff;
+  --orb-paper: #eef6ff;
+}
+
+[data-theme='dark'][data-color-theme='terminal'] {
+  --orb-ink: #041005;
+  --orb-deep: #08200b;
+  --orb-dusk: #103617;
+  --orb-violet: #1d5421;
+  --orb-wine: #2b6e2f;
+  --orb-ember: #9cf06a;
+  --orb-flame: #67cb45;
+  --orb-peach: #daf7c7;
+  --orb-paper: #f1ffe8;
+}
+
 /* Atmosphere layers — siblings of .app-shell, fixed to viewport */
 .orb-sky {
   position: fixed;
@@ -3761,26 +3797,26 @@ button {
   height: 38px;
   background: radial-gradient(
     circle at 32% 30%,
-    #f7dcc0 0%,
-    #c98b7a 42%,
-    #5a2a6b 94%
+    var(--orb-peach) 0%,
+    color-mix(in srgb, var(--orb-ember) 64%, var(--orb-violet)) 42%,
+    color-mix(in srgb, var(--orb-violet) 74%, var(--orb-ink)) 94%
   );
   box-shadow:
     inset -8px -5px 12px rgba(0, 0, 0, 0.45),
-    0 0 14px rgba(201, 139, 122, 0.25);
+    0 0 14px color-mix(in srgb, var(--orb-ember) 26%, transparent);
 }
 .orb-planet.kind-projects {
   width: 54px;
   height: 54px;
   background: radial-gradient(
     circle at 30% 28%,
-    #f2c79e 0%,
-    #a0648c 42%,
-    #3b2266 94%
+    var(--orb-ember) 0%,
+    color-mix(in srgb, var(--orb-flame) 46%, var(--orb-violet)) 42%,
+    color-mix(in srgb, var(--orb-wine) 62%, var(--orb-ink)) 94%
   );
   box-shadow:
     inset -12px -8px 18px rgba(0, 0, 0, 0.55),
-    0 0 22px rgba(160, 100, 140, 0.3);
+    0 0 22px color-mix(in srgb, var(--orb-violet) 30%, transparent);
 }
 .orb-planet.kind-projects::before {
   content: '';
@@ -3789,7 +3825,7 @@ button {
   top: 50%;
   width: 112px;
   height: 22px;
-  border: 1.5px solid rgba(242, 199, 158, 0.85);
+  border: 1.5px solid color-mix(in srgb, var(--orb-ember) 85%, transparent);
   border-radius: 50%;
   transform: translate(-50%, -50%) rotate(-24deg);
 }
@@ -3800,7 +3836,7 @@ button {
   top: 50%;
   width: 132px;
   height: 30px;
-  border: 1px dashed rgba(242, 199, 158, 0.35);
+  border: 1px dashed color-mix(in srgb, var(--orb-ember) 35%, transparent);
   border-radius: 50%;
   transform: translate(-50%, -50%) rotate(-24deg);
 }
@@ -3809,25 +3845,25 @@ button {
   height: 34px;
   background: radial-gradient(
     circle at 30% 28%,
-    #fff5ea 0%,
-    #e6d4b8 32%,
-    #9c93b4 62%,
-    #3a3361 100%
+    var(--orb-paper) 0%,
+    var(--orb-peach) 32%,
+    color-mix(in srgb, var(--orb-violet) 62%, var(--orb-paper)) 62%,
+    color-mix(in srgb, var(--orb-violet) 70%, var(--orb-ink)) 100%
   );
   box-shadow:
     inset -11px -3px 14px rgba(0, 0, 0, 0.6),
-    0 0 14px rgba(255, 245, 234, 0.12);
+    0 0 14px color-mix(in srgb, var(--orb-paper) 12%, transparent);
 }
 .orb-planet.kind-contact {
   width: 20px;
   height: 20px;
   background: radial-gradient(
     circle at 30% 28%,
-    #f2c79e 0%,
-    #8a5f8c 60%,
-    #2e1a4b 100%
+    var(--orb-ember) 0%,
+    color-mix(in srgb, var(--orb-violet) 72%, var(--orb-flame)) 60%,
+    color-mix(in srgb, var(--orb-wine) 68%, var(--orb-ink)) 100%
   );
-  box-shadow: 0 0 12px rgba(242, 199, 158, 0.2);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--orb-ember) 20%, transparent);
 }
 .orb-body.is-active .orb-planet {
   animation: orb-halo 3.2s ease-in-out infinite;
