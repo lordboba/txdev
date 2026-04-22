@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { OrbitalAxisControls } from '@/components/OrbitalAxisControls';
 import { OrbitalScene } from '@/components/OrbitalScene';
 import { SideIndex } from '@/components/SideIndex';
 import { VisitorCount } from '@/components/VisitorCount';
@@ -11,6 +12,10 @@ import {
   PLANET_BY_ID,
   type OrbitalSectionId,
 } from '@/lib/orbitalData';
+import {
+  DEFAULT_ORBITAL_AXIS,
+  type OrbitalAxisState,
+} from '@/lib/orbitalPhysics';
 
 type AtmosphereSeed = {
   type: 'star' | 'dust' | 'chart';
@@ -144,10 +149,16 @@ export function OrbitalHero({
   reducedMotion,
 }: OrbitalHeroProps) {
   const [hoverId, setHoverId] = useState<OrbitalSectionId | null>(null);
+  const [axisState, setAxisState] = useState<OrbitalAxisState>({
+    ...DEFAULT_ORBITAL_AXIS,
+  });
   const atmosphere = useMemo(
     () => createAtmosphereSeeds(themeMode),
     [themeMode],
   );
+  const resetAxis = useCallback(() => {
+    setAxisState({ ...DEFAULT_ORBITAL_AXIS });
+  }, []);
 
   const activeId: OrbitalSectionId = hoverId ?? selectedId ?? 'home';
   const activePlanet = PLANET_BY_ID[activeId] ?? PLANETS[0];
@@ -204,6 +215,7 @@ export function OrbitalHero({
           <div className="orb-scene-slot">
             <OrbitalScene
               activeId={activeId}
+              axisState={axisState}
               onHover={setHoverId}
               onSelect={onSelect}
               reducedMotion={reducedMotion}
@@ -213,11 +225,18 @@ export function OrbitalHero({
             </div>
           </div>
 
-          <SideIndex
-            activeId={activeId}
-            onHover={setHoverId}
-            onSelect={onSelect}
-          />
+          <div className="orb-side-column">
+            <SideIndex
+              activeId={activeId}
+              onHover={setHoverId}
+              onSelect={onSelect}
+            />
+            <OrbitalAxisControls
+              axisState={axisState}
+              onAxisChange={setAxisState}
+              onReset={resetAxis}
+            />
+          </div>
         </div>
       </div>
     </>

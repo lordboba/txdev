@@ -1,23 +1,26 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import {
   PLANETS,
-  SCENE_CENTER,
   SCENE_SIZE,
   type OrbitalPlanetKind,
   type OrbitalSectionId,
-  type OrbitalSectionMeta,
 } from '@/lib/orbitalData';
+import {
+  computeOrbitalFrame,
+  createOrbitPath,
+  type OrbitalAxisState,
+  type OrbitalFrame,
+} from '@/lib/orbitalPhysics';
 
 type OrbitalSceneProps = {
   activeId: OrbitalSectionId;
+  axisState: OrbitalAxisState;
   onHover: (id: OrbitalSectionId | null) => void;
   onSelect: (id: OrbitalSectionId) => void;
   reducedMotion: boolean;
 };
-
-const TWO_PI = Math.PI * 2;
 
 // Approximate visible radii of each planet sprite (matches the CSS sizes
 // in .orb-planet.kind-*, padded slightly so the click target feels generous).
@@ -29,20 +32,11 @@ const KIND_HIT_RADIUS: Record<OrbitalPlanetKind, number> = {
   contact: 13,
 };
 
-type FramePosition = {
-  sx: number;
-  sy: number;
-  scale: number;
-  z: number;
-  opacity: number;
-  blur: number;
-};
-
-type Positions = Record<OrbitalSectionId, FramePosition>;
+type Positions = Record<OrbitalSectionId, OrbitalFrame>;
 type BodyRefs = Record<OrbitalSectionId, HTMLButtonElement | null>;
 type Cursor = { x: number; y: number } | null;
 
-const ZERO_FRAME: FramePosition = {
+const ZERO_FRAME: OrbitalFrame = {
   sx: 0,
   sy: 0,
   scale: 1,
@@ -71,38 +65,15 @@ function createInitialBodyRefs(): BodyRefs {
   };
 }
 
-function computeFrame(
-  planet: OrbitalSectionMeta,
-  elapsed: number,
-): FramePosition {
-  const phi = (elapsed / planet.period) * TWO_PI + planet.phase;
-  const x0 = planet.radius * Math.cos(phi);
-  const y0 = planet.radius * Math.sin(phi);
-  const y1 = y0 * Math.cos(planet.inclination);
-  const z = y0 * Math.sin(planet.inclination);
-  const cosYaw = Math.cos(planet.yaw);
-  const sinYaw = Math.sin(planet.yaw);
-  const sx = cosYaw * x0 - sinYaw * y1;
-  const sy = sinYaw * x0 + cosYaw * y1;
-  const depth = z / planet.radius;
-  const normalized = (depth + 1) / 2;
-  const scale = 0.75 + 0.35 * normalized * 1.1;
-  const opacity = 0.55 + 0.45 * normalized;
-  const blur = depth < -0.3 ? Math.abs(depth + 0.3) * 2.4 : 0;
-  return { sx, sy, scale, z, opacity, blur };
-}
-
 function applyFrameToBody(
   body: HTMLButtonElement,
-  { sx, sy, scale, z, opacity, blur }: FramePosition,
+  { sx, sy, scale, z, opacity, blur }: OrbitalFrame,
 ): void {
   body.style.transform = `translate(calc(-50% + ${sx.toFixed(2)}px), calc(-50% + ${sy.toFixed(2)}px)) scale(${scale.toFixed(3)})`;
   body.style.opacity = opacity.toFixed(3);
-  // Base offset of 300 keeps every planet above the surrounding
-  // .orb-shell content (z-index 0) even at the deepest part of an
-  // inclined orbit, so hit-testing isn't shadowed by transparent
-  // siblings (Planet V's z reaches -149, Planet III's -112).
-  body.style.zIndex = String(300 + Math.round(z));
+  // Keep far-side planets above the shell while leaving room for near-side
+  // planets to pass in front of the star when the global axis is tilted.
+  body.style.zIndex = String(500 + Math.round(z));
   body.style.filter = blur > 0 ? `blur(${blur.toFixed(1)}px)` : '';
 }
 
@@ -110,13 +81,14 @@ function stepFrame(
   bodies: BodyRefs,
   positions: Positions,
   elapsed: number,
+  axisState: OrbitalAxisState,
 ): void {
   for (const planet of PLANETS) {
     const body = bodies[planet.id];
     if (!body) {
       continue;
     }
-    const frame = computeFrame(planet, elapsed);
+    const frame = computeOrbitalFrame(planet, elapsed, axisState);
     applyFrameToBody(body, frame);
     positions[planet.id] = frame;
   }
@@ -156,6 +128,7 @@ function cursorFromEvent(
 
 export function OrbitalScene({
   activeId,
+  axisState,
   onHover,
   onSelect,
   reducedMotion,
@@ -165,6 +138,17 @@ export function OrbitalScene({
   const positionsRef = useRef<Positions>(createInitialPositions());
   const cursorRef = useRef<Cursor>(null);
   const hoverIdRef = useRef<OrbitalSectionId | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+  const orbitPaths = useMemo(
+    () =>
+      Object.fromEntries(
+        PLANETS.map((planet) => [
+          planet.id,
+          createOrbitPath(planet, axisState),
+        ]),
+      ) as Record<OrbitalSectionId, string>,
+    [axisState],
+  );
 
   // Latest onHover without retriggering the animation effect on every render.
   const onHoverRef = useRef(onHover);
@@ -184,7 +168,11 @@ export function OrbitalScene({
   // cursor releases hover when the planet drifts away (native :hover and
   // mouseenter/mouseleave only update on actual cursor movement).
   useEffect(() => {
-    const start = performance.now();
+    if (startTimeRef.current === null) {
+      startTimeRef.current = performance.now();
+    }
+
+    const start = startTimeRef.current;
 
     const syncHoverFromCursor = () => {
       const cursor = cursorRef.current;
@@ -194,18 +182,23 @@ export function OrbitalScene({
     };
 
     if (reducedMotion) {
-      stepFrame(bodyRefs.current, positionsRef.current, 0);
+      stepFrame(bodyRefs.current, positionsRef.current, 0, axisState);
       syncHoverFromCursor();
       return;
     }
 
     let raf = requestAnimationFrame(function tick(now) {
-      stepFrame(bodyRefs.current, positionsRef.current, (now - start) / 1000);
+      stepFrame(
+        bodyRefs.current,
+        positionsRef.current,
+        (now - start) / 1000,
+        axisState,
+      );
       syncHoverFromCursor();
       raf = requestAnimationFrame(tick);
     });
     return () => cancelAnimationFrame(raf);
-  }, [reducedMotion]);
+  }, [axisState, reducedMotion]);
 
   // Pointer wiring on the scene root. Hit-testing happens here (via the
   // shared positions ref) instead of on individual buttons, so negative
@@ -254,13 +247,9 @@ export function OrbitalScene({
         aria-hidden="true"
       >
         {PLANETS.map((planet) => (
-          <ellipse
+          <path
             key={planet.id}
-            cx={SCENE_CENTER}
-            cy={SCENE_CENTER}
-            rx={planet.radius}
-            ry={planet.radius * Math.cos(planet.inclination)}
-            transform={`rotate(${((planet.yaw * 180) / Math.PI).toFixed(2)} ${SCENE_CENTER} ${SCENE_CENTER})`}
+            d={orbitPaths[planet.id]}
             className={planet.id === activeId ? 'orb-ring-bright' : undefined}
           />
         ))}

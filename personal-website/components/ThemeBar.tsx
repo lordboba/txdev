@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import {
   setColorTheme,
   setThemeMode,
@@ -24,6 +24,7 @@ const THEMES = [
 export function ThemeBar({ compact = false }: { compact?: boolean }) {
   const active = useColorTheme();
   const isDark = useIsDarkTheme();
+  const [isCompactOpen, setIsCompactOpen] = useState(false);
 
   const select = (id: ColorTheme) => {
     setColorTheme(id);
@@ -111,8 +112,21 @@ export function ThemeBar({ compact = false }: { compact?: boolean }) {
 
   if (compact) {
     return (
-      <div className="flex items-center gap-2 rounded-full border border-[color:color-mix(in_srgb,var(--accent)_22%,transparent)] bg-[color:color-mix(in_srgb,var(--surface)_78%,transparent)] px-3 py-2 backdrop-blur-[10px]">
-        {controls}
+      <div className="theme-compact-bar" data-open={isCompactOpen}>
+        <button
+          type="button"
+          className="theme-compact-toggle"
+          onClick={() => setIsCompactOpen((open) => !open)}
+          aria-label={
+            isCompactOpen ? 'Collapse color selector' : 'Expand color selector'
+          }
+          aria-expanded={isCompactOpen}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="m7 14 5-5 5 5" />
+          </svg>
+        </button>
+        <div className="theme-compact-controls">{controls}</div>
       </div>
     );
   }
