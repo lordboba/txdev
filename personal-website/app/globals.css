@@ -3599,7 +3599,14 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
   margin-bottom: 8px;
+}
+
+.orb-axis-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .orb-axis-kicker {
@@ -3611,7 +3618,7 @@ button {
   color: var(--orb-text-soft);
 }
 
-.orb-axis-reset {
+.orb-axis-button {
   display: grid;
   width: 26px;
   height: 26px;
@@ -3628,7 +3635,7 @@ button {
     opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.orb-axis-reset svg {
+.orb-axis-button svg {
   width: 15px;
   height: 15px;
   fill: none;
@@ -3638,17 +3645,22 @@ button {
   stroke-width: 1.7;
 }
 
-.orb-axis-reset:hover:not(:disabled),
-.orb-axis-reset:focus-visible {
+.orb-axis-button circle {
+  fill: currentColor;
+  stroke: none;
+}
+
+.orb-axis-button:hover:not(:disabled),
+.orb-axis-button:focus-visible {
   border-color: var(--orb-ring-active);
   color: var(--orb-text-strong);
 }
 
-.orb-axis-reset:active:not(:disabled) {
+.orb-axis-button:active:not(:disabled) {
   transform: translateY(1px) scale(0.98);
 }
 
-.orb-axis-reset:disabled {
+.orb-axis-button:disabled {
   cursor: default;
   opacity: 0.42;
 }
