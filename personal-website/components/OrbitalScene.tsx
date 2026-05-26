@@ -69,12 +69,14 @@ function applyFrameToBody(
   body: HTMLButtonElement,
   { sx, sy, scale, z, opacity, blur }: OrbitalFrame,
 ): void {
-  body.style.transform = `translate(calc(-50% + ${sx.toFixed(2)}px), calc(-50% + ${sy.toFixed(2)}px)) scale(${scale.toFixed(3)})`;
-  body.style.opacity = opacity.toFixed(3);
   // Keep far-side planets above the shell while leaving room for near-side
   // planets to pass in front of the star when the global axis is tilted.
-  body.style.zIndex = String(500 + Math.round(z));
-  body.style.filter = blur > 0 ? `blur(${blur.toFixed(1)}px)` : '';
+  body.style.cssText = [
+    `transform: translate(calc(-50% + ${sx.toFixed(2)}px), calc(-50% + ${sy.toFixed(2)}px)) scale(${scale.toFixed(3)})`,
+    `opacity: ${opacity.toFixed(3)}`,
+    `z-index: ${500 + Math.round(z)}`,
+    `filter: ${blur > 0 ? `blur(${blur.toFixed(1)}px)` : 'none'}`,
+  ].join(';');
 }
 
 function stepFrame(

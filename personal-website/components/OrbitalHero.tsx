@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { OrbitalAxisControls } from '@/components/OrbitalAxisControls';
 import { OrbitalScene } from '@/components/OrbitalScene';
@@ -26,6 +26,16 @@ type AtmosphereSeed = {
   blur?: string;
   delay: string;
   duration: string;
+};
+
+type AtmosphereParticleStyle = CSSProperties & {
+  '--orb-particle-left': string;
+  '--orb-particle-top': string;
+  '--orb-particle-size': string;
+  '--orb-particle-opacity': string;
+  '--orb-particle-blur': string;
+  '--orb-particle-delay': string;
+  '--orb-particle-duration': string;
 };
 
 type OrbitalHeroProps = {
@@ -141,6 +151,20 @@ function createAtmosphereSeeds(mode: ThemeMode): AtmosphereSeed[] {
     : createDarkAtmosphereSeeds();
 }
 
+function getAtmosphereParticleStyle(
+  particle: AtmosphereSeed,
+): AtmosphereParticleStyle {
+  return {
+    '--orb-particle-left': particle.left,
+    '--orb-particle-top': particle.top,
+    '--orb-particle-size': particle.size,
+    '--orb-particle-opacity': String(particle.opacity),
+    '--orb-particle-blur': particle.blur ? `blur(${particle.blur})` : 'none',
+    '--orb-particle-delay': particle.delay,
+    '--orb-particle-duration': particle.duration,
+  };
+}
+
 export function OrbitalHero({
   selectedId,
   onSelect,
@@ -149,6 +173,7 @@ export function OrbitalHero({
   reducedMotion,
 }: OrbitalHeroProps) {
   const [hoverId, setHoverId] = useState<OrbitalSectionId | null>(null);
+  const [axisControlsOpen, setAxisControlsOpen] = useState(false);
   const [axisState, setAxisState] = useState<OrbitalAxisState>({
     ...DEFAULT_ORBITAL_AXIS,
   });
@@ -167,20 +192,11 @@ export function OrbitalHero({
     <>
       <div className="orb-sky" aria-hidden="true" />
       <div className="orb-stars" data-mode={themeMode} aria-hidden="true">
-        {atmosphere.map((particle, index) => (
+        {atmosphere.map((particle) => (
           <i
-            key={`orb-particle-${particle.type}-${index}`}
+            key={`orb-particle-${particle.type}-${particle.left}-${particle.top}-${particle.size}`}
             className={`orb-particle orb-particle-${particle.type}`}
-            style={{
-              left: particle.left,
-              top: particle.top,
-              width: particle.size,
-              height: particle.size,
-              opacity: particle.opacity,
-              filter: particle.blur ? `blur(${particle.blur})` : undefined,
-              animationDelay: particle.delay,
-              animationDuration: particle.duration,
-            }}
+            style={getAtmosphereParticleStyle(particle)}
           />
         ))}
       </div>
@@ -199,10 +215,12 @@ export function OrbitalHero({
               </p>
             </div>
             <div className="orb-hero-tools">
-              <VisitorCount
-                count={visitorCount}
-                reducedMotion={reducedMotion}
-              />
+              <div className="orb-visitor-secondary">
+                <VisitorCount
+                  count={visitorCount}
+                  reducedMotion={reducedMotion}
+                />
+              </div>
               <Link href="/terminal" className="terminal-toggle-btn">
                 Terminal
                 <span className="terminal-toggle-arrow" aria-hidden="true">
@@ -231,11 +249,22 @@ export function OrbitalHero({
               onHover={setHoverId}
               onSelect={onSelect}
             />
-            <OrbitalAxisControls
-              axisState={axisState}
-              onAxisChange={setAxisState}
-              onReset={resetAxis}
-            />
+            <div className="orb-axis-disclosure" data-open={axisControlsOpen}>
+              <button
+                type="button"
+                className="orb-axis-disclosure-toggle"
+                aria-expanded={axisControlsOpen}
+                onClick={() => setAxisControlsOpen((open) => !open)}
+              >
+                Orbit controls
+                <span aria-hidden="true">{axisControlsOpen ? '-' : '+'}</span>
+              </button>
+              <OrbitalAxisControls
+                axisState={axisState}
+                onAxisChange={setAxisState}
+                onReset={resetAxis}
+              />
+            </div>
           </div>
         </div>
       </div>

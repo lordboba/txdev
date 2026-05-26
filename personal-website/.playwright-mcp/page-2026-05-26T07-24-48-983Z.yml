@@ -1,0 +1,84 @@
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - generic [ref=e6]:
+      - img [ref=e7]
+      - strong [ref=e10]: Personal Software Builder
+    - navigation "Managed apps" [ref=e11]:
+      - text: Workspace Active
+      - generic [ref=e12]: No managed apps yet
+    - generic [ref=e13]:
+      - generic [ref=e14]: LB
+      - generic [ref=e15]: Local builder
+  - main [ref=e16]:
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e19]: Workspace Active
+        - heading "What would you like to build?" [level=1] [ref=e20]
+        - paragraph [ref=e21]: Describe the result in plain language. The generated workspace, checks, and approvals stay organized behind one clean flow.
+      - generic "Generated workspace flow" [ref=e22]:
+        - generic [ref=e23]:
+          - generic [ref=e24]: "1"
+          - strong [ref=e25]: Generate
+        - generic [ref=e26]:
+          - generic [ref=e27]: "2"
+          - strong [ref=e28]: Review
+        - generic [ref=e29]:
+          - generic [ref=e30]: "3"
+          - strong [ref=e31]: Check
+        - generic [ref=e32]:
+          - generic [ref=e33]: "4"
+          - strong [ref=e34]: Apply
+      - generic [ref=e35]:
+        - generic [ref=e36]: Build request
+        - textbox "Build request 0/4000 Refine Brief" [ref=e37]:
+          - /placeholder: Build a beautiful onboarding flow that explains the app in 3 steps and connects a first service.
+        - generic [ref=e38]:
+          - generic [ref=e39]: 0/4000
+          - button "Refine Brief" [disabled] [ref=e40]:
+            - img [ref=e41]
+            - text: Refine Brief
+      - generic "Quick intent suggestions" [ref=e44]:
+        - button "Improve experience" [ref=e45] [cursor=pointer]:
+          - img [ref=e46]
+          - text: Improve experience
+        - button "Add a feature" [ref=e49] [cursor=pointer]:
+          - img [ref=e50]
+          - text: Add a feature
+        - button "Fix an issue" [ref=e53] [cursor=pointer]:
+          - img [ref=e54]
+          - text: Fix an issue
+        - button "Redesign a screen" [ref=e57] [cursor=pointer]:
+          - img [ref=e58]
+          - text: Redesign a screen
+      - generic [ref=e61]:
+        - generic [ref=e62]:
+          - generic [ref=e63]: GitHub repository URL
+          - generic [ref=e64]:
+            - img [ref=e65]
+            - textbox "GitHub repository URL" [ref=e68]:
+              - /placeholder: https://github.com/username/existing-repo
+        - button "Research" [ref=e69] [cursor=pointer]:
+          - img [ref=e70]
+          - text: Research
+        - button "New" [ref=e75] [cursor=pointer]:
+          - img [ref=e76]
+          - text: New
+        - button "Plan & Build" [disabled] [ref=e77]:
+          - img [ref=e78]
+          - text: Plan & Build
+      - button "Advanced inputs" [ref=e81] [cursor=pointer]:
+        - img [ref=e82]
+        - text: Advanced inputs
+    - generic [ref=e84]:
+      - generic [ref=e85]:
+        - generic [ref=e86]: Activity
+        - generic [ref=e87]: Approvals
+        - generic [ref=e88]: Logs
+        - generic [ref=e89]: Preview
+        - generic [ref=e90]: Artifacts
+        - generic [ref=e91]: Config
+        - generic [ref=e92]: Publish
+      - generic [ref=e93]:
+        - img [ref=e94]
+        - heading "No managed app yet." [level=2] [ref=e99]
+        - paragraph [ref=e100]: Write a brief above, attach a GitHub source if you have one, then start the approval-gated local workflow.

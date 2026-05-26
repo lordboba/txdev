@@ -6,11 +6,112 @@ import type { OrbitalSectionId } from '@/lib/orbitalData';
 import {
   quickFacts,
   projects,
-  experiences,
+  experienceGroups,
   contactLinks,
+  type Project,
 } from '@/lib/siteData';
 
 type PanelProps = { onOpenModal: (id: string) => void };
+
+function ProjectProofCard({
+  project,
+  index,
+  compact = false,
+}: {
+  project: Project;
+  index: number;
+  compact?: boolean;
+}) {
+  return (
+    <Link
+      href={project.link}
+      className="panel-proof-card"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <div
+        className="panel-project-img-slot"
+        data-project={project.title.toLowerCase().replace(/\s+/g, '-')}
+      >
+        {project.image ? (
+          <Image
+            src={project.image}
+            alt={`${project.title} proof`}
+            width={compact ? 320 : 640}
+            height={compact ? 180 : 360}
+            className="panel-project-img"
+          />
+        ) : (
+          <div className="panel-project-proof-fallback">
+            <span>{project.proofLabel}</span>
+            <strong>{project.tech.slice(0, 2).join(' / ')}</strong>
+          </div>
+        )}
+      </div>
+      <div className="panel-proof-meta">
+        <span>{String(index + 1).padStart(2, '0')}</span>
+        <span>{project.proofLabel}</span>
+      </div>
+      <h4 className="panel-project-name">{project.title}</h4>
+      <span className="panel-project-role">{project.role}</span>
+      <p className="panel-project-desc">{project.description}</p>
+      <p className="panel-project-proof">{project.proof}</p>
+      <div className="panel-project-tech">
+        {project.tech.slice(0, compact ? 3 : project.tech.length).map((t) => (
+          <span key={t} className="panel-tech-chip">
+            {t}
+          </span>
+        ))}
+      </div>
+      <span className="panel-link-label">{project.linkLabel} &rarr;</span>
+    </Link>
+  );
+}
+
+function ExperienceGroupRows({ limit }: { limit?: number }) {
+  const visibleGroups = experienceGroups
+    .map((group) => ({
+      ...group,
+      items:
+        typeof limit === 'number' ? group.items.slice(0, limit) : group.items,
+    }))
+    .filter((group) => group.items.length > 0);
+
+  return (
+    <div className="panel-timeline-groups">
+      {visibleGroups.map((group) => (
+        <section key={group.status} className="panel-timeline-group">
+          <div className="panel-timeline-head">
+            <span>{group.label}</span>
+            <span>{String(group.items.length).padStart(2, '0')}</span>
+          </div>
+          <div className="panel-timeline-list">
+            {group.items.map((exp) => (
+              <article
+                key={`${exp.company}-${exp.role}`}
+                className="panel-timeline-item"
+              >
+                <div className="panel-proof-meta">
+                  <span>{exp.period}</span>
+                  <span>{exp.company}</span>
+                </div>
+                <h4 className="panel-exp-role">{exp.role}</h4>
+                <p className="panel-exp-summary">{exp.proof}</p>
+                <div className="panel-project-tech">
+                  {exp.focus.map((label) => (
+                    <span key={label} className="panel-tech-chip">
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
 
 function HomeContent({ onOpenModal }: PanelProps) {
   return (
@@ -49,7 +150,7 @@ function HomeContent({ onOpenModal }: PanelProps) {
       >
         Current Focus
       </div>
-      <div className="panel-facts" aria-label="Core signals">
+      <dl className="panel-facts" aria-label="Core signals">
         <div className="panel-fact">
           <dt>Primary Track</dt>
           <dd>AI workflow tooling · backend systems</dd>
@@ -58,7 +159,7 @@ function HomeContent({ onOpenModal }: PanelProps) {
           <dt>Mission</dt>
           <dd>Build products that move users from confusion to action</dd>
         </div>
-      </div>
+      </dl>
       <div className="panel-home-links">
         <button
           className="panel-quick-link"
@@ -100,14 +201,9 @@ function AboutContent({ onOpenModal }: PanelProps) {
           className="panel-section-label"
           style={{ marginTop: 14, marginBottom: 8 }}
         >
-          Recent Assignments
+          Timeline
         </h4>
-        {experiences.slice(0, 2).map((exp) => (
-          <div key={`${exp.company}-${exp.role}`} className="panel-exp-item">
-            <span className="panel-exp-role">{exp.role}</span>
-            <span className="panel-exp-co">{exp.company}</span>
-          </div>
-        ))}
+        <ExperienceGroupRows limit={2} />
         <button
           className="panel-more-link"
           onClick={() => onOpenModal('timeline')}
@@ -130,52 +226,13 @@ function ProjectsContent({ onOpenModal }: PanelProps) {
         products, and infrastructure.
       </p>
       <div className="panel-project-grid">
-        {projects.slice(0, 4).map((project) => (
-          <Link
+        {projects.slice(0, 4).map((project, index) => (
+          <ProjectProofCard
             key={project.title}
-            href={project.link}
-            className="panel-project-card"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <div
-              className="panel-project-img-slot"
-              data-project={project.title.toLowerCase().replace(/\s+/g, '-')}
-            >
-              {project.image ? (
-                <Image
-                  src={project.image}
-                  alt={`${project.title} screenshot`}
-                  width={320}
-                  height={180}
-                  className="panel-project-img"
-                />
-              ) : (
-                <span className="panel-project-img-placeholder">&#9635;</span>
-              )}
-            </div>
-            <h4 className="panel-project-name">{project.title}</h4>
-            <span className="panel-project-role">{project.role}</span>
-            <p
-              className="panel-project-desc"
-              style={{
-                margin: 0,
-                fontSize: '11px',
-                lineHeight: 1.45,
-                color: 'var(--muted)',
-                fontFamily: 'var(--font-sans)',
-              }}
-            >
-              {project.description}
-            </p>
-            <div className="panel-project-tech">
-              {project.tech.slice(0, 3).map((t) => (
-                <span key={t} className="panel-tech-chip">
-                  {t}
-                </span>
-              ))}
-            </div>
-          </Link>
+            project={project}
+            index={index}
+            compact
+          />
         ))}
       </div>
       <button
@@ -253,10 +310,10 @@ const PANELS: Record<
 };
 
 export const SECTION_MODAL_TITLES: Record<OrbitalSectionId, string> = {
-  home: 'Tyler Xiao',
-  about: 'About',
+  home: 'Home Overview',
+  about: 'Profile',
   projects: 'Projects',
-  blog: 'Blog',
+  blog: 'Writing',
   contact: 'Contact',
 };
 

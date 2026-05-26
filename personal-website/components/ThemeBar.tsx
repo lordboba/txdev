@@ -41,7 +41,7 @@ export function ThemeBar({ compact = false }: { compact?: boolean }) {
         {THEMES.map((t) => (
           <button
             key={t.id}
-            className={`group relative h-5 w-5 rounded-full border transition-all duration-200 ${
+            className={`group relative size-5 rounded-full border transition-all duration-200 ${
               active === t.id
                 ? 'scale-105 border-accent shadow-[0_0_14px_rgba(232,196,104,0.3)]'
                 : 'border-divider/80'
@@ -66,14 +66,14 @@ export function ThemeBar({ compact = false }: { compact?: boolean }) {
       </div>
       <div className="h-4 w-px bg-divider/80" />
       <button
-        className="flex h-8 w-8 items-center justify-center rounded-sm border border-divider bg-surface text-muted transition-all duration-200 hover:border-accent hover:text-accent"
+        className="flex size-8 items-center justify-center rounded-sm border border-divider bg-surface text-muted transition-all duration-200 hover:border-accent hover:text-accent"
         onClick={toggleMode}
         aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
         title={isDark ? 'Light mode' : 'Dark mode'}
       >
         {isDark ? (
           <svg
-            className="h-[14px] w-[14px] transition-transform duration-200"
+            className="size-[14px] transition-transform duration-200"
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
             fill="none"
@@ -94,7 +94,7 @@ export function ThemeBar({ compact = false }: { compact?: boolean }) {
           </svg>
         ) : (
           <svg
-            className="h-[14px] w-[14px] transition-transform duration-200"
+            className="size-[14px] transition-transform duration-200"
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
             fill="none"
@@ -136,7 +136,7 @@ export function ThemeBar({ compact = false }: { compact?: boolean }) {
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <div className="flex items-center gap-2 text-[10px] font-[var(--font-mono)] uppercase tracking-[0.18em] text-muted">
           <span>Theme controls</span>
-          <span className="h-1 w-1 rounded-full bg-muted/60" />
+          <span className="size-1 rounded-full bg-muted/60" />
         </div>
         <div className="flex items-center gap-2">{controls}</div>
       </div>

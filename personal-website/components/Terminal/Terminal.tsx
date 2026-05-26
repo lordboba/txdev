@@ -1,6 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+} from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTerminal } from './useTerminal';
 import { TerminalInput } from './TerminalInput';
@@ -15,13 +21,13 @@ export const Terminal = ({
   onToggleFullScreen?: () => void;
   autoFocusInput?: boolean;
 }) => {
-  const router = useRouter();
+  const { push } = useRouter();
   const pathname = usePathname();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showTip, setShowTip] = useState(true);
   const handleExitCommand = useCallback(() => {
     if (pathname === '/terminal') {
-      router.push('/');
+      push('/');
       return true;
     }
 
@@ -31,12 +37,12 @@ export const Terminal = ({
     }
 
     if (pathname !== '/') {
-      router.push('/');
+      push('/');
       return true;
     }
 
     return false;
-  }, [isFullScreen, onToggleFullScreen, pathname, router]);
+  }, [isFullScreen, onToggleFullScreen, pathname, push]);
   const { history, handleCommand } = useTerminal({
     onExit: handleExitCommand,
   });
@@ -55,15 +61,19 @@ export const Terminal = ({
   }, [history]);
 
   // Handle Escape key to exit full screen
+  const handleToggleFullScreen = useEffectEvent(() => {
+    onToggleFullScreen?.();
+  });
+
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (isFullScreen && e.key === 'Escape' && onToggleFullScreen) {
-        onToggleFullScreen();
+      if (isFullScreen && e.key === 'Escape') {
+        handleToggleFullScreen();
       }
     };
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
-  }, [isFullScreen, onToggleFullScreen]);
+  }, [isFullScreen]);
 
   const dismissTip = () => {
     setShowTip(false);
@@ -80,18 +90,26 @@ export const Terminal = ({
 
   return (
     <div
+      role="button"
+      tabIndex={-1}
       className={`${containerClass} ${textClass} terminal-root font-mono flex flex-col overflow-hidden transition-all duration-400`}
       onClick={(e) => {
         const input = e.currentTarget.querySelector('input');
         if (input) (input as HTMLElement).focus();
       }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          const input = e.currentTarget.querySelector('input');
+          if (input) (input as HTMLElement).focus();
+        }
+      }}
     >
       {/* Terminal Header / Controls */}
       <div className="flex items-center justify-between bg-terminal-bar px-4 py-2.5 border-b border-terminal-border shrink-0">
         <div className="flex gap-2">
-          <div className="h-2.5 w-2.5 rounded-full border border-[color:color-mix(in_srgb,var(--accent)_20%,transparent)] bg-[color:color-mix(in_srgb,var(--accent)_30%,transparent)]" />
-          <div className="h-2.5 w-2.5 rounded-full border border-[color:color-mix(in_srgb,var(--accent)_15%,transparent)] bg-[color:color-mix(in_srgb,var(--accent)_20%,transparent)]" />
-          <div className="h-2.5 w-2.5 rounded-full border border-[color:color-mix(in_srgb,var(--accent)_10%,transparent)] bg-[color:color-mix(in_srgb,var(--accent)_10%,transparent)]" />
+          <div className="size-2.5 rounded-full border border-[color:color-mix(in_srgb,var(--accent)_20%,transparent)] bg-[color:color-mix(in_srgb,var(--accent)_30%,transparent)]" />
+          <div className="size-2.5 rounded-full border border-[color:color-mix(in_srgb,var(--accent)_15%,transparent)] bg-[color:color-mix(in_srgb,var(--accent)_20%,transparent)]" />
+          <div className="size-2.5 rounded-full border border-[color:color-mix(in_srgb,var(--accent)_10%,transparent)] bg-[color:color-mix(in_srgb,var(--accent)_10%,transparent)]" />
         </div>
         <div className="flex items-center gap-2">
           <span className="terminal-muted hidden text-xs sm:inline-block">

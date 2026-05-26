@@ -36,14 +36,16 @@ function parseTags(rawTags?: string): string[] {
     return normalized
       .slice(1, -1)
       .split(',')
-      .map((tag) => tag.replace(/['"]/g, '').trim())
-      .filter(Boolean);
+      .flatMap((tag) => {
+        const trimmed = tag.replace(/['"]/g, '').trim();
+        return trimmed ? [trimmed] : [];
+      });
   }
 
-  return normalized
-    .split(',')
-    .map((tag) => tag.trim())
-    .filter(Boolean);
+  return normalized.split(',').flatMap((tag) => {
+    const trimmed = tag.trim();
+    return trimmed ? [trimmed] : [];
+  });
 }
 
 function splitFrontmatter(rawContent: string): {
@@ -63,8 +65,10 @@ function splitFrontmatter(rawContent: string): {
   const rawMetadata = trimmed
     .slice(3, endIndex)
     .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean);
+    .flatMap((line) => {
+      const trimmedLine = line.trim();
+      return trimmedLine ? [trimmedLine] : [];
+    });
 
   const metadataEntries = rawMetadata.map((line) => {
     const separator = line.indexOf(':');
@@ -321,7 +325,7 @@ async function readBlogFile(fileName: string): Promise<BlogPost | null> {
   };
 }
 
-export async function getAllPosts(): Promise<BlogPost[]> {
+async function getAllPosts(): Promise<BlogPost[]> {
   let files: string[] = [];
 
   try {

@@ -22,8 +22,8 @@ export const useTerminal = ({ onExit }: UseTerminalOptions = {}) => {
         <div className="terminal-boot terminal-banner overflow-x-auto no-scrollbar">
           {ASCII_ART}
           <br />
-          {WELCOME_MESSAGE.map((line, i) => (
-            <div key={i} className="text-sm sm:text-base">
+          {WELCOME_MESSAGE.map((line) => (
+            <div key={line} className="text-sm sm:text-base">
               {line}
             </div>
           ))}
@@ -138,8 +138,8 @@ export const useTerminal = ({ onExit }: UseTerminalOptions = {}) => {
             <div className="space-y-2">
               <p>Let&apos;s connect!</p>
               <div className="grid grid-cols-[100px_1fr] gap-1">
-                {contactLinks.map((link, i) => (
-                  <div key={i} className="contents">
+                {contactLinks.map((link) => (
+                  <div key={link.href} className="contents">
                     <span className="terminal-soft">{link.label}:</span>
                     <a
                       href={link.href}
@@ -163,7 +163,7 @@ export const useTerminal = ({ onExit }: UseTerminalOptions = {}) => {
               <span className="terminal-muted">Already at the main site.</span>
             ) : (
               <span className="terminal-accent">
-                Returning to the main site...
+                Returning to the main site…
               </span>
             );
           break;
@@ -210,7 +210,7 @@ export const useTerminal = ({ onExit }: UseTerminalOptions = {}) => {
             output = (
               <div className="space-y-1">
                 <div className="terminal-accent">
-                  Opening resume in a new tab...
+                  Opening resume in a new tab…
                 </div>
                 <a
                   href={resumePath}

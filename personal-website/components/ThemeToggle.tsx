@@ -20,7 +20,7 @@ export const ThemeToggle = () => {
       onClick={toggle}
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
       title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-      className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-sm border border-divider bg-transparent text-muted transition-all duration-200 hover:border-accent hover:text-accent"
+      className="relative flex size-9 items-center justify-center overflow-hidden rounded-sm border border-divider bg-transparent text-muted transition-all duration-200 hover:border-accent hover:text-accent"
     >
       <span
         className={`pointer-events-none absolute inset-0 flex items-center justify-center transition-all duration-300 ${

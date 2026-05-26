@@ -1,0 +1,62 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - navigation [ref=e4]:
+        - link "TYLER XIAO" [ref=e5] [cursor=pointer]:
+          - /url: /
+        - generic [ref=e6]:
+          - button "Switch to light mode" [ref=e7]:
+            - generic:
+              - img
+            - generic:
+              - img
+          - button "Open menu" [ref=e8]:
+            - img [ref=e9]
+      - generic [ref=e11]:
+        - link "Home" [ref=e12] [cursor=pointer]:
+          - /url: /
+        - link "About" [ref=e13] [cursor=pointer]:
+          - /url: /#about
+        - link "Projects" [ref=e14] [cursor=pointer]:
+          - /url: /#projects
+        - link "Blog" [ref=e15] [cursor=pointer]:
+          - /url: /blog
+        - link "Past Experience" [ref=e16] [cursor=pointer]:
+          - /url: /past-experience
+        - link "Schedule a Call" [ref=e17] [cursor=pointer]:
+          - /url: /schedule-a-call
+    - main [ref=e18]:
+      - generic [ref=e19]:
+        - generic [ref=e20]:
+          - paragraph [ref=e21]: Journal
+          - generic [ref=e22]:
+            - heading "Blog" [level=1] [ref=e23]
+            - paragraph [ref=e24]: Technical notes on AI agents, backend systems, and product engineering.
+        - link "February 13, 2026 1 min read 01 Introduction first blog post :) AI systems school" [ref=e26] [cursor=pointer]:
+          - /url: /blog/introduction
+          - generic [ref=e27]:
+            - generic [ref=e28]: February 13, 2026
+            - generic [ref=e30]: 1 min read
+            - generic [ref=e31]: "01"
+          - heading "Introduction" [level=2] [ref=e32]
+          - paragraph [ref=e33]: first blog post :)
+          - generic [ref=e34]:
+            - generic [ref=e35]: AI systems
+            - generic [ref=e36]: school
+    - contentinfo [ref=e37]:
+      - generic [ref=e38]:
+        - generic [ref=e40]: Theme controls
+        - generic [ref=e42]:
+          - generic [ref=e43]:
+            - button "Mono theme" [pressed] [ref=e44]:
+              - generic: Mono
+            - button "Ember theme" [ref=e45]:
+              - generic: Ember
+            - button "Ice theme" [ref=e46]:
+              - generic: Ice
+            - button "Terminal theme" [ref=e47]:
+              - generic: Terminal
+          - button "Switch to light mode" [ref=e49]:
+            - img [ref=e50]
+  - button "Open Next.js Dev Tools" [ref=e61] [cursor=pointer]:
+    - img [ref=e62]

@@ -10,12 +10,12 @@ import {
 } from '@/components/runtime/orbitalSectionStore';
 import { ThemeToggle } from './ThemeToggle';
 
-export const navLinks = [
+const navLinks = [
   { label: 'Home', href: '/', sectionId: null },
   { label: 'About', href: '/#about', sectionId: 'about' },
   { label: 'Projects', href: '/#projects', sectionId: 'projects' },
   { label: 'Blog', href: '/blog', sectionId: null },
-  { label: 'Past Experience', href: '/past-experience', sectionId: null },
+  { label: 'Experience', href: '/past-experience', sectionId: null },
   { label: 'Schedule a Call', href: '/schedule-a-call', sectionId: null },
 ] as const;
 
@@ -109,7 +109,7 @@ export const NavBar = () => {
                 pathname,
               }))
             }
-            className="flex h-9 w-9 items-center justify-center rounded-sm border border-divider bg-surface text-muted transition-all duration-200 hover:border-accent hover:text-accent"
+            className="flex size-9 items-center justify-center rounded-sm border border-divider bg-surface text-muted transition-all duration-200 hover:border-accent hover:text-accent"
             aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={mobileOpen}
           >

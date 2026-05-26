@@ -19,7 +19,7 @@ export function AnimatedLines({ lines }: AnimatedLinesProps) {
     <div className="space-y-1">
       {lines.map((line, index) => (
         <div
-          key={`${line.text}-${index}`}
+          key={`${line.className ?? 'line'}-${line.text}`}
           className={`${line.className ?? ''} ${
             prefersReducedMotion ? '' : 'terminal-typed-line'
           }`}

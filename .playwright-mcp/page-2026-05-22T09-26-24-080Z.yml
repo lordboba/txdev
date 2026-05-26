@@ -1,0 +1,110 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - main [ref=e3]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e7]:
+            - heading "Tyler Xiao's portfolio" [level=1] [ref=e8]:
+              - text: Tyler Xiao's
+              - emphasis [ref=e9]: portfolio
+            - paragraph [ref=e10]: Selected work across AI systems, backend infrastructure, and product engineering.
+          - generic [ref=e11]:
+            - status "Estimated total portfolio visits" [ref=e13]:
+              - generic [ref=e15]:
+                - text: "0"
+                - emphasis [ref=e16]: observers
+            - link "Terminal" [ref=e17] [cursor=pointer]:
+              - /url: /terminal
+              - text: Terminal
+              - generic [ref=e18]: ↗
+        - generic [ref=e19]:
+          - generic "Orbital scene" [ref=e20]:
+            - img
+            - generic:
+              - button "I · Home":
+                - generic: I · Home
+                - generic:
+                  - generic: Home
+                  - generic:
+                    - text: Click to open
+                    - generic: ↗
+              - button "II · Profile":
+                - generic: II · Profile
+                - generic:
+                  - generic: Profile
+                  - generic:
+                    - text: Click to open
+                    - generic: ↗
+              - button "III · Projects":
+                - generic: III · Projects
+                - generic:
+                  - generic: Projects
+                  - generic:
+                    - text: Click to open
+                    - generic: ↗
+              - button "IV · Writing":
+                - generic: IV · Writing
+                - generic:
+                  - generic: Writing
+                  - generic:
+                    - text: Click to open
+                    - generic: ↗
+              - button "V · Connect":
+                - generic: V · Connect
+                - generic:
+                  - generic: Connect
+                  - generic:
+                    - text: Click to open
+                    - generic: ↗
+          - generic [ref=e27]: Home · No. I · overview
+        - generic [ref=e28]:
+          - complementary "Section index" [ref=e29]:
+            - generic [ref=e30]:
+              - generic [ref=e31]: Orbit Index
+              - generic [ref=e32]: 5 regions
+            - list [ref=e33]:
+              - listitem [ref=e34]:
+                - button "Switch to Home" [ref=e35] [cursor=pointer]:
+                  - generic [ref=e36]: I
+                  - generic [ref=e37]: Home
+                  - generic [ref=e38]: overview
+              - listitem [ref=e39]:
+                - button "Switch to Profile" [ref=e40] [cursor=pointer]:
+                  - generic [ref=e41]: II
+                  - generic [ref=e42]: Profile
+                  - generic [ref=e43]: timeline
+              - listitem [ref=e44]:
+                - button "Switch to Projects" [ref=e45] [cursor=pointer]:
+                  - generic [ref=e46]: III
+                  - generic [ref=e47]: Projects
+                  - generic [ref=e48]: proof
+              - listitem [ref=e49]:
+                - button "Switch to Writing" [ref=e50] [cursor=pointer]:
+                  - generic [ref=e51]: IV
+                  - generic [ref=e52]: Writing
+                  - generic [ref=e53]: notes
+              - listitem [ref=e54]:
+                - button "Switch to Connect" [ref=e55] [cursor=pointer]:
+                  - generic [ref=e56]: V
+                  - generic [ref=e57]: Connect
+                  - generic [ref=e58]: channel
+          - button "Orbit controls" [ref=e60]:
+            - text: Orbit controls
+            - generic [ref=e61]: +
+    - generic [ref=e63]:
+      - button "Expand color selector" [ref=e64] [cursor=pointer]:
+        - img [ref=e65]
+      - generic:
+        - generic:
+          - button "Mono theme" [pressed]:
+            - generic: Mono
+          - button "Ember theme":
+            - generic: Ember
+          - button "Ice theme":
+            - generic: Ice
+          - button "Terminal theme":
+            - generic: Terminal
+        - button "Switch to light mode":
+          - img
+  - button "Open Next.js Dev Tools" [ref=e72] [cursor=pointer]:
+    - img [ref=e73]

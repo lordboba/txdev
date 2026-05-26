@@ -20,7 +20,7 @@ import {
 } from '@/components/runtime/themePreferences';
 import type { OrbitalSectionId } from '@/lib/orbitalData';
 import {
-  experiences,
+  experienceGroups,
   projects,
   callHighlights,
   callSocialProof,
@@ -44,11 +44,15 @@ const CALENDLY_EMBED_URL = `${CALENDLY_URL}?embed_domain=tylerxiao.com&embed_typ
 
 function TimelineModal({ onClose }: { onClose: () => void }) {
   const focusAreas = Array.from(
-    new Set(experiences.flatMap((exp) => exp.focus)),
+    new Set(
+      experienceGroups.flatMap((group) =>
+        group.items.flatMap((exp) => exp.focus),
+      ),
+    ),
   ).sort();
 
   return (
-    <Modal title="Past Experience" onClose={onClose}>
+    <Modal title="Experience Timeline" onClose={onClose}>
       <div className="modal-section">
         <div className="modal-chips">
           {focusAreas.map((area) => (
@@ -61,31 +65,44 @@ function TimelineModal({ onClose }: { onClose: () => void }) {
 
       <div className="modal-section">
         <h3 className="modal-section-title">Timeline</h3>
-        {experiences.map((exp) => (
-          <div key={`${exp.company}-${exp.role}`} className="modal-exp-card">
-            <div className="modal-exp-meta">
-              <span>
-                {exp.start} — {exp.end}
-              </span>
-              <span className="modal-exp-company">{exp.company}</span>
-            </div>
-            <h4 className="modal-exp-role">{exp.role}</h4>
-            <p className="modal-exp-summary">{exp.summary}</p>
-            <div className="modal-chips">
-              {exp.focus.map((label) => (
-                <span key={label} className="chip">
-                  {label}
-                </span>
-              ))}
-            </div>
-          </div>
-        ))}
+        <div className="modal-timeline-groups">
+          {experienceGroups
+            .filter((group) => group.items.length > 0)
+            .map((group) => (
+              <section key={group.status} className="modal-timeline-group">
+                <div className="modal-timeline-head">
+                  <span>{group.label}</span>
+                  <span>{group.description}</span>
+                </div>
+                {group.items.map((exp) => (
+                  <div
+                    key={`${exp.company}-${exp.role}`}
+                    className="modal-exp-card"
+                  >
+                    <div className="modal-exp-meta">
+                      <span>{exp.period}</span>
+                      <span className="modal-exp-company">{exp.company}</span>
+                    </div>
+                    <h4 className="modal-exp-role">{exp.role}</h4>
+                    <p className="modal-exp-summary">{exp.proof}</p>
+                    <div className="modal-chips">
+                      {exp.focus.map((label) => (
+                        <span key={label} className="chip">
+                          {label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </section>
+            ))}
+        </div>
       </div>
 
       <div className="modal-section">
-        <h3 className="modal-section-title">Projects</h3>
+        <h3 className="modal-section-title">Project Proof</h3>
         <div className="modal-project-grid">
-          {projects.map((project) => (
+          {projects.slice(0, 4).map((project, index) => (
             <Link
               key={project.title}
               href={project.link}
@@ -93,16 +110,22 @@ function TimelineModal({ onClose }: { onClose: () => void }) {
               target="_blank"
               rel="noopener noreferrer"
             >
-              <span className="modal-project-role">{project.role}</span>
+              <div className="modal-project-proof-meta">
+                <span>{String(index + 1).padStart(2, '0')}</span>
+                <span>{project.proofLabel}</span>
+              </div>
               <h4 className="modal-project-name">{project.title}</h4>
-              <p className="modal-project-desc">{project.description}</p>
+              <p className="modal-project-desc">{project.proof}</p>
               <div className="modal-chips">
-                {project.tech.map((tech) => (
+                {project.tech.slice(0, 3).map((tech) => (
                   <span key={tech} className="panel-tech-chip">
                     {tech}
                   </span>
                 ))}
               </div>
+              <span className="modal-link-label">
+                {project.linkLabel} &rarr;
+              </span>
             </Link>
           ))}
         </div>
@@ -115,7 +138,7 @@ function AllProjectsModal({ onClose }: { onClose: () => void }) {
   return (
     <Modal title="All Projects" onClose={onClose}>
       <div className="modal-project-grid">
-        {projects.map((project) => (
+        {projects.map((project, index) => (
           <Link
             key={project.title}
             href={project.link}
@@ -130,18 +153,26 @@ function AllProjectsModal({ onClose }: { onClose: () => void }) {
               {project.image ? (
                 <Image
                   src={project.image}
-                  alt={`${project.title} screenshot`}
+                  alt={`${project.title} proof`}
                   width={640}
                   height={360}
                   className="modal-project-img"
                 />
               ) : (
-                <span className="modal-project-img-placeholder">&#9635;</span>
+                <div className="modal-project-proof-fallback">
+                  <span>{project.proofLabel}</span>
+                  <strong>{project.tech.slice(0, 2).join(' / ')}</strong>
+                </div>
               )}
+            </div>
+            <div className="modal-project-proof-meta">
+              <span>{String(index + 1).padStart(2, '0')}</span>
+              <span>{project.proofLabel}</span>
             </div>
             <span className="modal-project-role">{project.role}</span>
             <h4 className="modal-project-name">{project.title}</h4>
             <p className="modal-project-desc">{project.description}</p>
+            <p className="modal-project-proof">{project.proof}</p>
             <div className="modal-chips">
               {project.tech.map((tech) => (
                 <span key={tech} className="panel-tech-chip">
@@ -149,6 +180,7 @@ function AllProjectsModal({ onClose }: { onClose: () => void }) {
                 </span>
               ))}
             </div>
+            <span className="modal-link-label">{project.linkLabel} &rarr;</span>
           </Link>
         ))}
       </div>
@@ -206,7 +238,7 @@ function ScheduleModal({ onClose }: { onClose: () => void }) {
         <div className="modal-list">
           {callSocialProof.map((item) => (
             <div key={item} className="modal-list-item">
-              <span className="modal-check">✓</span> {item}
+              <span className="modal-check">[ok]</span> {item}
             </div>
           ))}
         </div>

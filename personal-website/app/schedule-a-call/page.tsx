@@ -34,8 +34,8 @@ export default function ScheduleCallPage() {
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-7 text-muted sm:text-base">
           We&rsquo;ll cover what you&rsquo;re building, how I can help, and
-          immediate next steps. Keep it lightweight — think of it as a quick
-          code review for your roadmap.
+          immediate next steps. Keep it lightweight: think of it as a quick code
+          review for your roadmap.
         </p>
         <div className="mt-6 flex flex-wrap gap-4">
           <Link
@@ -111,7 +111,7 @@ export default function ScheduleCallPage() {
       </section>
 
       <footer className="rounded-sm border border-divider bg-surface p-5 text-sm text-muted">
-        Leave a short brief or NDA request in the Calendly notes — I&rsquo;ll
+        Leave a short brief or NDA request in the Calendly notes. I&rsquo;ll
         respond before the call.
       </footer>
       <ThemeBar />

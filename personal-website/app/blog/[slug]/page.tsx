@@ -65,7 +65,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         <header className="space-y-5 border-b border-divider pb-8">
           <div className="flex flex-wrap items-center gap-2 text-xs font-[var(--font-mono)] text-muted">
             <span>{post.formattedDate}</span>
-            <span className="h-1.5 w-1.5 rounded-full bg-divider" />
+            <span className="size-1.5 rounded-full bg-divider" />
             <span className="text-accent">{post.readTime}</span>
           </div>
           <h1 className="font-[var(--font-display)] text-3xl font-semibold leading-tight tracking-tight text-foreground sm:text-4xl">
@@ -95,7 +95,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           [&_h1]:font-semibold [&_h2]:font-semibold [&_h3]:font-semibold
           [&_p]:text-[1rem] [&_p]:leading-8 [&_p]:text-muted
           [&_a]:font-medium [&_a]:text-accent hover:[&_a]:underline [&_a]:underline-offset-4
-          [&_blockquote]:rounded-sm [&_blockquote]:border-l-2 [&_blockquote]:border-accent [&_blockquote]:pl-4 [&_blockquote]:text-muted
+          [&_blockquote]:rounded-sm [&_blockquote]:bg-accent-muted [&_blockquote]:px-4 [&_blockquote]:py-3 [&_blockquote]:text-muted
           [&_code]:rounded-sm [&_code]:border [&_code]:border-divider [&_code]:bg-surface-raised [&_code]:px-1.5 [&_code]:py-0.5
           [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:border [&_pre]:border-divider [&_pre]:bg-surface-raised [&_pre]:p-4"
           dangerouslySetInnerHTML={{ __html: articleHtml }}

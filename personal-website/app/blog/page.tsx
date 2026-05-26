@@ -42,7 +42,7 @@ export default async function BlogIndexPage() {
             >
               <div className="flex flex-wrap items-center gap-2 text-[11px] font-[var(--font-mono)] text-muted">
                 <span>{post.formattedDate}</span>
-                <span className="h-1.5 w-1.5 rounded-full bg-divider" />
+                <span className="size-1.5 rounded-full bg-divider" />
                 <span className="text-accent">{post.readTime}</span>
                 <span className="ml-auto rounded-sm border border-divider px-2 py-1 text-[10px] text-muted">
                   {String(index + 1).padStart(2, '0')}

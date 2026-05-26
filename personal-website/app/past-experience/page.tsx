@@ -1,17 +1,22 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { experiences, projects } from '@/lib/siteData';
+import Image from 'next/image';
+import { experienceGroups, projects } from '@/lib/siteData';
 import { NavBar } from '@/components/NavBar';
 import { ThemeBar } from '@/components/ThemeBar';
 
 export const metadata: Metadata = {
-  title: 'Past Experience — Tyler Xiao',
+  title: 'Experience — Tyler Xiao',
   description:
-    "Detailed look at Tyler Xiao's experience, responsibilities, and related project write-ups.",
+    "Detailed look at Tyler Xiao's upcoming, current, and past work with related project proof.",
 };
 
 const focusAreas = Array.from(
-  new Set(experiences.flatMap((exp) => exp.focus)),
+  new Set(
+    experienceGroups.flatMap((group) =>
+      group.items.flatMap((exp) => exp.focus),
+    ),
+  ),
 ).sort();
 
 export default function PastExperiencePage() {
@@ -28,13 +33,14 @@ export default function PastExperiencePage() {
 
       <header className="space-y-4">
         <p className="font-[var(--font-mono)] text-xs font-medium uppercase tracking-[0.22em] text-muted">
-          Past Experience
+          Experience
         </p>
         <h1 className="max-w-3xl font-[var(--font-display)] text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
-          Commit history of roles and leadership.
+          Timeline of upcoming, current, and shipped responsibility.
         </h1>
         <p className="max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
-          Deeper snippets from internships, projects, and campus orgs.
+          Role history grouped by time, with proof signals for systems work,
+          agent workflows, and infrastructure ownership.
         </p>
         <div className="h-px bg-divider/80" />
       </header>
@@ -57,36 +63,59 @@ export default function PastExperiencePage() {
         </div>
       </section>
 
-      <section className="space-y-4">
-        {experiences.map((exp) => (
-          <article
-            key={`${exp.company}-${exp.role}`}
-            className="rounded-sm border border-divider bg-surface p-5 transition-all duration-300 hover:border-accent hover:bg-accent-muted sm:p-6"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-[var(--font-mono)] text-muted">
-              <span>
-                {exp.start} — {exp.end}
-              </span>
-              <span className="font-medium text-secondary">{exp.company}</span>
-            </div>
-            <h2 className="mt-4 font-[var(--font-display)] text-2xl font-semibold tracking-tight">
-              {exp.role}
-            </h2>
-            <p className="mt-3 max-w-4xl text-sm leading-7 text-muted">
-              {exp.summary}
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {exp.focus.map((label) => (
-                <span
-                  key={label}
-                  className="rounded-sm border border-divider bg-surface-raised px-2.5 py-1 text-[11px] font-[var(--font-mono)] text-muted"
-                >
-                  {label}
+      <section className="space-y-8">
+        {experienceGroups
+          .filter((group) => group.items.length > 0)
+          .map((group) => (
+            <div key={group.status} className="space-y-4">
+              <div className="flex flex-wrap items-end justify-between gap-3 border-b border-divider pb-3">
+                <div>
+                  <p className="font-[var(--font-mono)] text-xs font-medium uppercase tracking-[0.22em] text-muted">
+                    {group.label}
+                  </p>
+                  <p className="mt-1 text-sm text-muted">{group.description}</p>
+                </div>
+                <span className="font-[var(--font-mono)] text-xs text-accent">
+                  {String(group.items.length).padStart(2, '0')} entries
                 </span>
-              ))}
+              </div>
+
+              <div className="grid gap-4">
+                {group.items.map((exp) => (
+                  <article
+                    key={`${exp.company}-${exp.role}`}
+                    className="rounded-sm border border-divider bg-surface p-5 transition-all duration-300 hover:border-accent hover:bg-accent-muted sm:p-6"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-[var(--font-mono)] text-muted">
+                      <span>{exp.period}</span>
+                      <span className="font-medium text-secondary">
+                        {exp.company}
+                      </span>
+                    </div>
+                    <h2 className="mt-4 font-[var(--font-display)] text-2xl font-semibold tracking-tight">
+                      {exp.role}
+                    </h2>
+                    <p className="mt-3 max-w-4xl text-sm leading-7 text-muted">
+                      {exp.summary}
+                    </p>
+                    <p className="mt-3 max-w-4xl border-l border-accent pl-4 text-sm leading-7 text-foreground">
+                      {exp.proof}
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {exp.focus.map((label) => (
+                        <span
+                          key={label}
+                          className="rounded-sm border border-divider bg-surface-raised px-2.5 py-1 text-[11px] font-[var(--font-mono)] text-muted"
+                        >
+                          {label}
+                        </span>
+                      ))}
+                    </div>
+                  </article>
+                ))}
+              </div>
             </div>
-          </article>
-        ))}
+          ))}
       </section>
 
       <section className="space-y-4">
@@ -97,7 +126,10 @@ export default function PastExperiencePage() {
           <h2 className="mt-2 font-[var(--font-display)] text-3xl font-semibold tracking-tight">
             Projects
           </h2>
-          <p className="mt-2 text-sm text-muted">Click any project.</p>
+          <p className="mt-2 text-sm text-muted">
+            Each entry pairs a shipped surface or system signal with the stack
+            behind it.
+          </p>
           <div className="mt-3 h-px bg-divider/80" />
         </div>
         <div className="grid gap-4 md:grid-cols-2">
@@ -107,33 +139,59 @@ export default function PastExperiencePage() {
               href={project.link}
               target="_blank"
               rel="noopener noreferrer"
-              className="group rounded-sm border border-divider bg-surface p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent hover:bg-accent-muted"
+              className="group overflow-hidden rounded-sm border border-divider bg-surface transition-all duration-300 hover:-translate-y-0.5 hover:border-accent hover:bg-accent-muted"
             >
-              <div className="text-xs font-[var(--font-mono)] text-muted">
-                {project.role}
+              <div className="relative flex aspect-[16/9] items-center justify-center border-b border-divider bg-accent-muted">
+                {project.image ? (
+                  <Image
+                    src={project.image}
+                    alt={`${project.title} proof`}
+                    fill
+                    sizes="(min-width: 768px) 50vw, 100vw"
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full flex-col items-center justify-center gap-2 px-6 text-center font-[var(--font-mono)]">
+                    <span className="text-[10px] uppercase tracking-[0.24em] text-accent">
+                      {project.proofLabel}
+                    </span>
+                    <strong className="text-xs font-medium text-foreground">
+                      {project.tech.slice(0, 2).join(' / ')}
+                    </strong>
+                  </div>
+                )}
               </div>
-              <h3 className="mt-3 font-[var(--font-display)] text-xl font-semibold">
-                {project.title}
-              </h3>
-              <p className="mt-2 text-sm leading-7 text-muted">
-                {project.description}
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {project.tech.map((tech) => (
-                  <span
-                    key={tech}
-                    className="rounded-sm border border-divider bg-accent-muted px-2 py-1 text-[11px] font-[var(--font-mono)] text-accent"
-                  >
-                    {tech}
+              <div className="p-5">
+                <div className="flex items-center justify-between gap-3 text-xs font-[var(--font-mono)] text-muted">
+                  <span>{project.role}</span>
+                  <span className="text-accent">{project.proofLabel}</span>
+                </div>
+                <h3 className="mt-3 font-[var(--font-display)] text-xl font-semibold">
+                  {project.title}
+                </h3>
+                <p className="mt-2 text-sm leading-7 text-muted">
+                  {project.description}
+                </p>
+                <p className="mt-3 border-l border-accent pl-3 text-sm leading-6 text-foreground">
+                  {project.proof}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {project.tech.map((tech) => (
+                    <span
+                      key={tech}
+                      className="rounded-sm border border-divider bg-accent-muted px-2 py-1 text-[11px] font-[var(--font-mono)] text-accent"
+                    >
+                      {tech}
+                    </span>
+                  ))}
+                </div>
+                <p className="mt-4 inline-flex items-center text-xs font-medium text-muted transition-colors duration-200 group-hover:text-foreground">
+                  {project.linkLabel}
+                  <span aria-hidden className="ml-2 text-accent">
+                    →
                   </span>
-                ))}
+                </p>
               </div>
-              <p className="mt-4 inline-flex items-center text-xs font-medium text-muted transition-colors duration-200 group-hover:text-foreground">
-                Visit project
-                <span aria-hidden className="ml-2 text-accent">
-                  →
-                </span>
-              </p>
             </Link>
           ))}
         </div>
