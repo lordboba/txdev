@@ -1,0 +1,432 @@
+.shell {
+  --paper: #f4f2ed;
+  --ink: #0c0c0c;
+  --accent: #ff3b1f;
+
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-height: 100dvh;
+  background: var(--ink);
+  color: var(--ink);
+  font-family: var(--font-sans), sans-serif;
+}
+
+.masthead {
+  position: relative;
+  overflow: hidden;
+  background: var(--paper);
+  border-bottom: 2px solid var(--ink);
+}
+
+/* Set oversize and allowed to run off the plate, the way a printed masthead
+   is trimmed by the page rather than fitted to it. */
+.wordmark {
+  margin: 0;
+  padding: 0.1em 0 0.06em;
+  font-size: 17.8vw;
+  font-weight: 600;
+  letter-spacing: -0.065em;
+  line-height: 0.78;
+  white-space: nowrap;
+  transform: translateX(-0.05em);
+}
+
+.index {
+  display: flex;
+  border-top: 2px solid var(--ink);
+}
+
+.index button,
+.home {
+  display: inline-flex;
+  align-items: center;
+  min-height: 46px;
+  padding: 0 1.1rem;
+  border: 0;
+  border-right: 2px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.home:hover {
+  background: var(--ink);
+  color: var(--paper);
+  text-decoration: none;
+}
+
+.index button:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.index button[data-active='true'] {
+  background: var(--accent);
+  color: var(--paper);
+}
+
+/* 1px of the black ground showing through the gaps does the ruling — every
+   cell is a printed box, nothing floats. */
+.sheet {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 2px;
+  padding: 2px 0 2px;
+  background: var(--ink);
+  animation: slam 200ms steps(3, end) both;
+}
+
+.cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  grid-column: span 12;
+  padding: 1.4rem 1.3rem 1.6rem;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.span4 {
+  grid-column: span 4;
+}
+
+.span5 {
+  grid-column: span 5;
+}
+
+.span45 {
+  grid-column: span 6;
+}
+
+.span9 {
+  grid-column: span 9;
+}
+
+.span12 {
+  grid-column: span 12;
+}
+
+.objectCell {
+  grid-column: span 3;
+  min-height: 320px;
+  padding: 0;
+}
+
+.object {
+  position: absolute;
+  inset: 0;
+}
+
+.cellTag {
+  position: relative;
+  z-index: 1;
+  align-self: flex-start;
+  margin-bottom: 0.9rem;
+  padding: 0.22rem 0.45rem;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.56rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.objectCell .cellTag {
+  position: absolute;
+  bottom: 0.7rem;
+  left: 0.7rem;
+  margin: 0;
+}
+
+.lead {
+  margin: 0;
+  max-width: 24ch;
+  font-size: clamp(1.4rem, 2.4vw, 2.1rem);
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 1.12;
+}
+
+.inline {
+  margin: 0;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+}
+
+.note {
+  margin: 0.7rem 0 0;
+  max-width: 62ch;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  gap: 2px;
+  margin-top: auto;
+  padding-top: 1.6rem;
+}
+
+.button,
+.buttonGhost {
+  display: inline-flex;
+  align-items: center;
+  min-height: 46px;
+  padding: 0 1.2rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.64rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.button {
+  align-self: flex-start;
+  margin-top: 1.2rem;
+  background: var(--accent);
+  color: var(--paper);
+}
+
+.actions .button {
+  margin-top: 0;
+}
+
+.button:hover {
+  background: var(--ink);
+  text-decoration: none;
+}
+
+.buttonGhost {
+  border: 2px solid var(--ink);
+  color: var(--ink);
+}
+
+.buttonGhost:hover {
+  background: var(--ink);
+  color: var(--paper);
+  text-decoration: none;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.72rem;
+  text-align: left;
+}
+
+.table td,
+.table th {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--ink);
+  font-weight: 400;
+}
+
+.table td {
+  width: 6.5rem;
+  opacity: 0.55;
+}
+
+.projectCell {
+  color: var(--ink);
+}
+
+.projectCell:hover {
+  background: var(--accent);
+  color: var(--paper);
+  text-decoration: none;
+}
+
+.projectCell:hover .cellTag {
+  background: var(--paper);
+  color: var(--accent);
+}
+
+.projectTitle {
+  margin: 0 0 1rem;
+  font-size: clamp(1.6rem, 3vw, 2.6rem);
+  font-weight: 600;
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+}
+
+.shot {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 2px solid currentColor;
+  background: var(--ink);
+  filter: grayscale(1) contrast(1.35);
+}
+
+.shot img {
+  object-fit: cover;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 2.4rem minmax(0, 1fr) auto;
+  gap: 0 1rem;
+  padding: 1rem 0;
+  border-top: 2px solid var(--ink);
+}
+
+.rowKey {
+  font-family: var(--font-mono), monospace;
+  font-size: 1.1rem;
+}
+
+.rowTitle {
+  margin: 0;
+  font-size: clamp(1.1rem, 1.9vw, 1.6rem);
+  font-weight: 500;
+  letter-spacing: -0.035em;
+}
+
+.rowStatus {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.row .note {
+  grid-column: 2 / -1;
+}
+
+.void {
+  background: var(--accent);
+  color: var(--paper);
+}
+
+.voidText {
+  margin: 0;
+  font-size: clamp(2rem, 6vw, 4.6rem);
+  font-weight: 600;
+  letter-spacing: -0.06em;
+  line-height: 0.9;
+  text-transform: uppercase;
+}
+
+.void .cellTag {
+  background: var(--paper);
+  color: var(--accent);
+}
+
+/* The plate ends where the content ends; the black below it is the press bed,
+   closed off by a colophon rather than left as dead space. */
+.colophon {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.6rem;
+  padding: 0.9rem 1.3rem;
+  border-top: 2px solid var(--paper);
+  color: var(--paper);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.colophon span:last-child {
+  margin-left: auto;
+  color: var(--accent);
+}
+
+.eras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.era {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  min-height: 46px;
+  padding: 0 1rem;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.era span {
+  opacity: 0.5;
+  font-size: 0.56rem;
+}
+
+.era:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.era[data-active='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--paper);
+}
+
+.index button:focus-visible,
+.era:focus-visible,
+.button:focus-visible,
+.buttonGhost:focus-visible,
+.projectCell:focus-visible,
+.home:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+
+/* Stepped, not eased. Nothing on this concept glides. */
+@keyframes slam {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 900px) {
+  .sheet {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cell,
+  .span4,
+  .span5,
+  .span45,
+  .span9,
+  .span12,
+  .objectCell {
+    grid-column: span 1;
+  }
+
+  .objectCell {
+    min-height: 220px;
+  }
+
+  .index {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .index button,
+  .home {
+    flex: 0 0 auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet {
+    animation: none;
+  }
+}

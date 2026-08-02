@@ -1,26 +1,15 @@
-import { headers } from 'next/headers';
 import type { Metadata } from 'next';
-import { HomeClient } from '@/components/home/HomeClient';
-import { getVisitorCount, incrementVisitorCount } from '@/lib/userCount';
+import { BenchHome } from '@/components/home/BenchHome';
+import { getInitialVisitorCount } from '@/lib/userCount';
 
 export const metadata: Metadata = {
   title: 'Tyler Xiao',
   description:
-    'Tyler Xiao portfolio for AI systems, backend infrastructure, and product engineering.',
+    'Tyler Xiao’s studio bench: iCalarms, Personal Env, Med Negotiate, and Charades 2026, alongside work at Scale AI, SafetyKit, Ramp, and Snowflake.',
 };
-
-async function getInitialVisitorCount() {
-  const requestHeaders = await headers();
-  const isPrefetch =
-    requestHeaders.get('purpose') === 'prefetch' ||
-    requestHeaders.get('next-router-prefetch') === '1' ||
-    requestHeaders.get('x-middleware-prefetch') === '1';
-
-  return isPrefetch ? getVisitorCount() : incrementVisitorCount();
-}
 
 export default async function Home() {
   const visitorCount = await getInitialVisitorCount();
 
-  return <HomeClient visitorCount={visitorCount} />;
+  return <BenchHome visitorCount={visitorCount} />;
 }
