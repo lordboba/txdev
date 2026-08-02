@@ -10,12 +10,21 @@ import {
   featuredProjects,
   gitEras,
   personalNotes,
+  sideProjects,
   type ConceptViewId,
 } from '../conceptData';
 import { setConceptView, useConceptView } from '../conceptViewStore';
 import { useMounted, usePrefersReducedMotion } from '../shared/runtime';
 import { BenchScene } from './BenchScene';
-import { setBenchHover, setBenchSelection } from './benchStore';
+import {
+  closeBenchGallery,
+  openBenchGallery,
+  readBenchGallery,
+  setBenchGalleryPiece,
+  setBenchHover,
+  setBenchSelection,
+  subscribeBenchGallery,
+} from './benchStore';
 import styles from './Bench.module.css';
 
 const MOBILE_QUERY = '(max-width: 700px)';
@@ -43,8 +52,16 @@ const logoMarks: Record<
   UCLA: { src: '/logos/ucla.svg', width: 49, height: 16 },
 };
 
-/** Company run order, plus the UCLA credential mark, for the work view. */
-const credibilityMarks = [...companyRun.map((entry) => entry.company), 'UCLA'];
+/**
+ * The company run reads as one sentence here, not as a second logo row. The
+ * employer marks are engraved on the signature fixture standing in the 3D work
+ * shot, and rendering the same five SVGs again a hundred pixels below it made
+ * the DOM the louder of the two — this line is the caption under that object.
+ */
+const companyCaption = [
+  ...companyRun.map((entry) => entry.company),
+  'UCLA',
+].join(' · ');
 
 const noMobileSubscribe = () => () => {};
 let webGLSupport: boolean | undefined;
@@ -88,7 +105,79 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   return <span className={styles.fieldLabel}>{children}</span>;
 }
 
+function useBenchGallery() {
+  return useSyncExternalStore(
+    subscribeBenchGallery,
+    readBenchGallery,
+    readBenchGallery,
+  );
+}
+
+/**
+ * The gallery's DOM half. Two jobs the canvas cannot do: give the hang a
+ * keyboard-reachable equivalent (a button per piece, driving the same store the
+ * raycast drives), and carry the one thing a rendered placard must not — a real
+ * anchor to the real URL.
+ */
+function GalleryDetails({ piece }: { piece: number }) {
+  const focused = piece >= 0 ? sideProjects[piece] : null;
+
+  return (
+    <div className={`${styles.details} ${styles.galleryDetails}`}>
+      <div className={styles.galleryBar}>
+        <button
+          className={styles.galleryBack}
+          onClick={closeBenchGallery}
+          type="button"
+        >
+          <span aria-hidden="true">←</span> Back to the bench
+        </button>
+        <ul className={styles.galleryIndex}>
+          {sideProjects.map((entry, index) => (
+            <li key={entry.title}>
+              <button
+                aria-pressed={index === piece}
+                data-active={index === piece}
+                onClick={() => setBenchGalleryPiece(index)}
+                type="button"
+              >
+                {entry.title}
+              </button>
+            </li>
+          ))}
+        </ul>
+        <span className={styles.galleryHint}>Esc to exit</span>
+      </div>
+
+      {focused ? (
+        /*
+         * The wall label beside the piece already states role, title, tech and
+         * host. This is the other half of the record — the sentence and the
+         * live anchor — not a second printing of it.
+         */
+        <div className={styles.galleryPlacard}>
+          <p>
+            <FieldLabel>{focused.title}</FieldLabel>
+            {focused.description}
+          </p>
+          <a href={focused.link} rel="noreferrer" target="_blank">
+            {focused.linkLabel} <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+      ) : (
+        <p className={styles.galleryPrompt}>Pick a piece to read its label.</p>
+      )}
+    </div>
+  );
+}
+
 function WorkDetails() {
+  const gallery = useBenchGallery();
+
+  if (gallery.open) {
+    return <GalleryDetails piece={gallery.piece} />;
+  }
+
   return (
     <div className={`${styles.details} ${styles.workDetails}`}>
       {featuredProjects.map((project, index) => (
@@ -114,24 +203,30 @@ function WorkDetails() {
         </a>
       ))}
       <div className={styles.credLine}>
-        <FieldLabel>Company run</FieldLabel>
-        {credibilityMarks.map((company) => {
-          const mark = logoMarks[company];
-          return mark ? (
-            <Image
-              alt={company}
-              className={styles.credMark}
-              height={mark.height}
-              key={company}
-              src={mark.src}
-              width={mark.width}
-            />
-          ) : (
-            <span className={styles.credWordmark} key={company}>
-              {company}
-            </span>
-          );
-        })}
+        {/*
+         * The tablet on the bench is the primary control; this is its
+         * keyboard-reachable twin, and it lights the same hover slot the
+         * raycast does so the two surfaces agree.
+         */}
+        <button
+          className={styles.galleryCue}
+          onBlur={() => setBenchHover('work', -1)}
+          onClick={openBenchGallery}
+          onFocus={() => setBenchHover('work', featuredProjects.length)}
+          onPointerEnter={() => setBenchHover('work', featuredProjects.length)}
+          onPointerLeave={() => setBenchHover('work', -1)}
+          type="button"
+        >
+          <FieldLabel>On the tablet</FieldLabel>
+          <span>
+            {sideProjects.length} side projects{' '}
+            <span aria-hidden="true">→</span>
+          </span>
+        </button>
+        <p className={styles.credCaption}>
+          <FieldLabel>Signed</FieldLabel>
+          {companyCaption}
+        </p>
       </div>
     </div>
   );
@@ -247,14 +342,17 @@ type BenchProps = {
 
 export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
   const view = useConceptView(initialView);
+  const gallery = useBenchGallery();
   const mounted = useMounted();
   const webGLSupported = useWebGLSupport();
   const reducedMotion = usePrefersReducedMotion();
   const mobile = useMobileLayout();
   const activeView =
     conceptViews.find((entry) => entry.id === view) ?? conceptViews[0];
+  const inGallery = view === 'work' && gallery.open;
 
   const selectView = useCallback((nextView: ConceptViewId) => {
+    closeBenchGallery();
     setConceptView(nextView);
     setBenchHover(nextView, -1);
   }, []);
@@ -301,10 +399,22 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
         {actions ?? <span className={styles.context}>Product study</span>}
       </header>
 
-      <section className={styles.intro} aria-labelledby="bench-title">
-        <FieldLabel>{activeView.label}</FieldLabel>
-        <h1 id="bench-title">{introHeadings[activeView.id]}</h1>
-        <p>{activeView.description}</p>
+      <section
+        aria-labelledby="bench-title"
+        className={styles.intro}
+        data-compact={inGallery ? 'true' : undefined}
+      >
+        <FieldLabel>
+          {inGallery ? 'Side projects' : activeView.label}
+        </FieldLabel>
+        <h1 id="bench-title">
+          {inGallery ? 'The rest of the shelf.' : introHeadings[activeView.id]}
+        </h1>
+        <p>
+          {inGallery
+            ? 'Everything I have built that is not one of the four shipped products — benchmarks, bots, games, and tools, each with its repo or live link.'
+            : activeView.description}
+        </p>
       </section>
 
       <div className={styles.sceneStage}>

@@ -1,3 +1,11 @@
+/*
+ * The `.ts` extension is deliberate and load-bearing: this module is imported
+ * by conceptData.test.mts under `node --test`, whose ESM resolver does not
+ * extension-guess. tsconfig sets `allowImportingTsExtensions`, and bundlers
+ * resolve the literal path, so the same specifier works in all three.
+ */
+import { projects, type Project } from '../../lib/siteData.ts';
+
 export type ConceptViewId = 'profile' | 'work' | 'signals' | 'history';
 
 export type ConceptView = {
@@ -123,6 +131,39 @@ export const featuredProjects: FeaturedProject[] = [
     accent: 'SwiftUI / StoreKit 2',
   },
 ];
+
+/**
+ * Everything in the full project list that is NOT one of the four shipped
+ * products staged on the bench. These are the gallery hang behind the side
+ * projects tablet — same records, same real links, no second copy of the data.
+ *
+ * `image` is nullable on purpose: one entry has no capture in public/projects,
+ * and inventing a screenshot for it would be the one thing this gallery must
+ * never do. The renderer draws a stated "no capture" plate instead.
+ */
+export type SideProject = {
+  title: string;
+  role: string;
+  description: string;
+  tech: string[];
+  link: string;
+  linkLabel: string;
+  image: string | null;
+};
+
+const FEATURED_TITLES = new Set(featuredProjects.map((entry) => entry.title));
+
+export const sideProjects: SideProject[] = projects
+  .filter((entry: Project) => !FEATURED_TITLES.has(entry.title))
+  .map((entry: Project) => ({
+    title: entry.title,
+    role: entry.role,
+    description: entry.description,
+    tech: entry.tech,
+    link: entry.link,
+    linkLabel: entry.linkLabel,
+    image: entry.image ?? null,
+  }));
 
 export const experiments = [
   {

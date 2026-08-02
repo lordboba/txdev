@@ -163,6 +163,31 @@
 }
 
 /*
+ * Gallery sub-view. The 4.35rem display heading owns a 26rem x 260px block in
+ * the top-left, which is precisely where the hang's first framed piece lands —
+ * the intro would sit on top of an exhibit. It steps down to a caption here:
+ * still the page's h1, no longer the loudest object in a room full of work.
+ */
+.intro[data-compact='true'] {
+  width: min(21rem, 30vw);
+}
+
+.intro[data-compact='true'] h1 {
+  margin: 0.35rem 0 0.3rem;
+  font-family: inherit;
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.intro[data-compact='true'] p {
+  max-width: 34ch;
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+/*
  * Staged view transition, DOM half.
  *
  * The scene now leaves at lambda 4.6 and arrives at 2.6, so the outgoing set is
@@ -352,45 +377,180 @@
  * screenshots stay the only color on the page. Widths stay auto so each
  * mark keeps its native aspect ratio at a fixed cap height.
  */
-.tableMark,
-.credMark {
+.tableMark {
   display: block;
   width: auto;
+  height: 13px;
+  opacity: 0.82;
   filter: grayscale(1) brightness(0);
 }
 
-.tableMark {
-  height: 13px;
-  opacity: 0.82;
-}
-
-.credMark {
-  height: 15px;
-  opacity: 0.62;
-}
-
+/*
+ * The work view's bottom rail. It used to be a second copy of the employer
+ * logos, competing with the engraved ones on the bench; it is now the gallery
+ * control plus a one-line caption under the 3D signature.
+ */
 .credLine {
   display: flex;
   grid-column: 1 / -1;
   flex-wrap: wrap;
-  gap: 0.9rem clamp(1.1rem, 2.6vw, 2.4rem);
-  align-items: center;
+  gap: 0.6rem clamp(1.1rem, 2.6vw, 2.4rem);
+  align-items: baseline;
+  justify-content: space-between;
   margin-top: 0.95rem;
   padding-top: 0.85rem;
   border-top: 1px solid var(--hairline);
 }
 
-.credLine .fieldLabel {
+.credLine .fieldLabel,
+.credCaption .fieldLabel {
   display: inline-block;
-  margin-right: 0.35rem;
+  margin-right: 0.5rem;
 }
 
-.credWordmark {
+.credCaption {
+  margin: 0;
   color: var(--ink-body);
-  font-size: 0.62rem;
+  font-size: 0.66rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.galleryCue {
+  display: flex;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  gap: 0.75rem;
+  align-items: baseline;
+  cursor: pointer;
+}
+
+.galleryCue span:last-child {
+  border-bottom: 1px solid var(--hairline);
+  padding-bottom: 2px;
+}
+
+.galleryCue:hover span:last-child,
+.galleryCue:focus-visible span:last-child {
+  border-bottom-color: var(--ink);
+}
+
+/* ---- Side-projects gallery sub-view ---------------------------------- */
+
+.galleryDetails {
+  display: grid;
+  gap: 1px;
+}
+
+.galleryBar,
+.galleryPlacard,
+.galleryPrompt {
+  border: 1px solid var(--hairline);
+  background: var(--paper);
+  backdrop-filter: blur(12px);
+}
+
+.galleryBar {
+  display: flex;
+  gap: 0.85rem clamp(0.9rem, 2vw, 1.6rem);
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 0.7rem 0.95rem;
+}
+
+.galleryBack,
+.galleryIndex button {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--hairline);
+  background: none;
+  color: var(--ink-body);
+  font: inherit;
+  font-size: 0.63rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 160ms linear;
+}
+
+.galleryBack {
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.galleryIndex {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  flex: 1 1 auto;
+}
+
+.galleryBack:hover,
+.galleryIndex button:hover,
+.galleryIndex button[data-active='true'] {
+  border-color: var(--ink);
+  background: rgba(245, 245, 244, 0.9);
+  color: var(--ink);
+}
+
+.galleryHint {
+  color: var(--ink-body);
+  font-size: 0.58rem;
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.galleryPlacard {
+  display: flex;
+  gap: 0.6rem clamp(1rem, 2.4vw, 2rem);
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0.7rem 0.95rem;
+  color: var(--ink);
+}
+
+.galleryPlacard p {
+  margin: 0;
+  max-width: 82ch;
+  color: var(--ink-body);
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.galleryPlacard .fieldLabel {
+  display: inline-block;
+  margin-right: 0.55rem;
+}
+
+.galleryPlacard a {
+  justify-self: start;
+  color: var(--ink);
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.galleryPlacard a:hover,
+.galleryPlacard a:focus-visible {
+  border-bottom-color: var(--ink);
+}
+
+.galleryPrompt {
+  margin: 0;
+  padding: 0.85rem 0.95rem;
+  color: var(--ink-body);
+  font-size: 0.68rem;
 }
 
 .companyCell {
@@ -562,6 +722,10 @@
 
 .nav button:focus-visible,
 .projectPlate:focus-visible,
+.galleryCue:focus-visible,
+.galleryBack:focus-visible,
+.galleryIndex button:focus-visible,
+.galleryPlacard a:focus-visible,
 .wordmark:focus-visible {
   outline: 1px solid var(--ink);
   outline-offset: 3px;
@@ -640,6 +804,16 @@
     content: none;
   }
 
+  /* The compact width exists to clear the hang; stacked, nothing overlaps. */
+  .intro[data-compact='true'] {
+    width: auto;
+  }
+
+  /* No Escape key on a phone. */
+  .galleryHint {
+    display: none;
+  }
+
   .intro h1 {
     margin-top: 0.4rem;
     font-size: 2.6rem;
@@ -707,7 +881,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .nav button::after,
-  .projectPlate {
+  .projectPlate,
+  .galleryBack,
+  .galleryIndex button {
     transition-duration: 1ms;
   }
 }

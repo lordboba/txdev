@@ -85,8 +85,6 @@ export function BenchHome({ visitorCount }: { visitorCount: number | null }) {
                 >
                   🚀
                 </span>
-                <span className={styles.desktopLabel}>Orbital</span>
-                <span className={styles.mobileLabel}>Orbit</span>
               </Link>
               <Link
                 href="/terminal"
@@ -94,10 +92,16 @@ export function BenchHome({ visitorCount }: { visitorCount: number | null }) {
                 aria-label="Terminal"
               >
                 <span className={styles.terminalGlyph} aria-hidden="true">
-                  &gt;_
+                  <span className={styles.binaryRain}>
+                    <span>0</span>
+                    <span>1</span>
+                    <span>1</span>
+                    <span>0</span>
+                    <span>1</span>
+                    <span>0</span>
+                  </span>
+                  <span className={styles.terminalEmoji}>🖥️</span>
                 </span>
-                <span className={styles.desktopLabel}>Terminal</span>
-                <span className={styles.mobileLabel}>Term</span>
               </Link>
             </div>
           }

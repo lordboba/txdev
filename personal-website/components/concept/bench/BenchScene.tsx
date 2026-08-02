@@ -8,7 +8,7 @@ import {
   useTexture,
 } from '@react-three/drei';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { useMemo, useRef, useSyncExternalStore } from 'react';
+import { Suspense, useMemo, useRef, useSyncExternalStore } from 'react';
 import * as THREE from 'three';
 import {
   companyRun,
@@ -16,8 +16,10 @@ import {
   featuredProjects,
   gitEras,
   personalNotes,
+  sideProjects,
   type ConceptViewId,
   type FeaturedProject,
+  type SideProject,
 } from '../conceptData';
 import { useConceptView } from '../conceptViewStore';
 import {
@@ -27,14 +29,21 @@ import {
   usePointerListener,
 } from '../shared/runtime';
 import {
+  clearBenchGalleryPiece,
   clearBenchSelection,
+  closeBenchGallery,
+  openBenchGallery,
   readBenchFocus,
+  readBenchGallery,
   readBenchPointer,
   readBenchSettled,
+  releaseBenchGallery,
+  setBenchGalleryPiece,
   setBenchHover,
   setBenchPointer,
   setBenchSelection,
   setBenchSettled,
+  subscribeBenchGallery,
   subscribeBenchSettled,
 } from './benchStore';
 
@@ -105,14 +114,21 @@ const HISTORY_ARC = 16;
  * 72 CSS — an off-balance shot with a dead half. The lens now rides the cluster
  * itself and the DOM gets out of its way instead.
  */
-const WORK_CENTER_X = 0.35;
+/*
+ * Re-centred from 0.35 with the tablet: the arrangement is no longer four
+ * devices, it is a tablet at x −2, four devices, and a signature, and its
+ * centroid moved camera-left with the tablet.
+ */
+const WORK_CENTER_X = 0.22;
 /**
  * Camera distance for the work lens; the tighter value is the selected pose.
- * Pulled in from 7.15 with the re-centre: the four-device silhouette was
- * leaving ~260 CSS of bench on both sides once it was centred, and the devices
- * are the subject — they get the viewport.
+ * It was pulled in to 6.5 when the shot held four devices and 260 CSS of dead
+ * bench on each side. It holds six subjects now spanning ~6.4 world units, and
+ * at 6.5 the tablet ran off the left edge and the signature crowded the right;
+ * 7.35 buys back the ~0.6 of world width the two new objects need without
+ * giving the margins back to empty bench.
  */
-const WORK_CAMERA_Z = 6.5;
+const WORK_CAMERA_Z = 7.35;
 
 /**
  * The display needs the world position and world normal of every fragment, not
@@ -408,73 +424,88 @@ const LOGO_SOURCES: Record<string, { file: string; aspect: number }> = {
 };
 
 /**
- * Shop marking, not an award.
+ * The shop's signature: who the work was done between runs at.
  *
- * The marks used to stand on the bench as a leaning trophy placard on a milled
- * foot. Two things were wrong with that and neither was fixable by moving it:
- * a freestanding plaque is a prize, and in /#work it sat dead centre restating
- * the DOM COMPANY RUN row a hundred pixels below it. They are now five small
- * laser-marked inserts dropped flush into the bench surface — a kerf, a satin
- * insert face and the mark cut into it — camera-left of the product cluster.
- * A machinist's bench carries its supplier marks this way: in the work
- * surface, at the size the laser cut them, competing with nothing.
+ * Two earlier attempts are worth stating, because this geometry is the answer
+ * to both. First a freestanding trophy placard — a prize, not a marking, and
+ * it sat dead centre restating the DOM COMPANY RUN row a hundred pixels below
+ * it. Then five inserts laser-marked flush INTO the bench, which fixed the
+ * trophy problem and created a worse one: the work lens rakes the bench at
+ * about 18°, so a mark whose normal points straight up is read at 71° off
+ * axis. cos(71°) is 0.32 — the marks were rendering at a third of their height
+ * and were, correctly, called illegible.
  *
- * Two rows of 2 / 3 rather than one row of five: at the height the marks need
- * to survive the bench's ~18° incidence, a single row is 2.6 units wide and
- * spans a third of every frame. Split, the block is 1.5 x 0.44 and sits in the
- * empty left gutter the work lens leaves.
+ * So the marks are back off the floor, but on a machinist's angle block rather
+ * than a plinth: one satin plate canted 55° off the bench on a milled wedge,
+ * yawed to face the work camera, with all five marks and one field label cut
+ * into the single face. At that cant the plate normal lands within ~16° of the
+ * view ray — cos 0.96, effectively face-on — while the object itself is still
+ * unmistakably a shop fixture bolted to a bench.
+ *
+ * It is the only place the employer marks appear now. The DOM row that used to
+ * duplicate it is a text caption.
  */
-const SHOP_MARK_HEIGHT = 0.085;
-const SHOP_PAD_X = 0.048;
-const SHOP_PAD_Y = 0.04;
-const SHOP_GAP = 0.055;
-const SHOP_ROW_GAP = 0.05;
-/** Width of the milled kerf showing around each insert. */
-const SHOP_SEAM = 0.011;
-const SHOP_PLATE_HEIGHT = SHOP_MARK_HEIGHT + SHOP_PAD_Y * 2;
-/**
- * Insert stock: a light machined face a step ABOVE the bench it is set into.
- * A dropped-in plate reads as milled metal only if it out-values its host —
- * seated a step under, the same rectangle reads as a paper label stuck down.
- */
-const SHOP_INSERT = '#d2d4d6';
-/** The kerf the insert is dropped into — the only dark value in the assembly. */
-const SHOP_KERF = '#77797b';
+const SIGN_MARK_HEIGHT = 0.078;
+const SIGN_MARK_GAP = 0.085;
+const SIGN_ROW_GAP = 0.062;
+const SIGN_PLATE_WIDTH = 1.18;
+const SIGN_PLATE_HEIGHT = 0.45;
+const SIGN_PLATE_THICKNESS = 0.055;
+/** Cant off the bench, radians. 55° — see the note above for why. */
+const SIGN_TILT = 0.96;
+/** Plate stock: a machined face a clear step above the bench it stands on. */
+const SIGN_PLATE = '#cbcdcf';
+const SIGN_LABEL_HEIGHT = 0.05;
 
 /** Chronological run, then the credential — split 2 / 3 so the rows balance. */
-const SHOP_ROWS: string[][] = (() => {
+const SIGN_ROWS: string[][] = (() => {
   const companies = [...companyRun.map((entry) => entry.company), 'UCLA'];
   return [companies.slice(0, 2), companies.slice(2)];
 })();
 
-type ShopPlate = {
+type SignMark = {
   company: string;
   width: number;
   x: number;
   y: number;
 };
 
-const SHOP_PLATES: ShopPlate[] = SHOP_ROWS.flatMap((row, rowIndex) => {
+/**
+ * Row layout on the plate face, centred. The label takes the top band, then the
+ * two mark rows, all measured down from the plate's top edge so the optical
+ * margins stay equal however the aspect ratios shake out.
+ */
+const SIGN_LABEL_Y = SIGN_PLATE_HEIGHT / 2 - 0.062 - SIGN_LABEL_HEIGHT / 2;
+
+const SIGN_MARKS: SignMark[] = SIGN_ROWS.flatMap((row, rowIndex) => {
   const entries = row.map((company) => {
     const source = LOGO_SOURCES[company];
-    const markWidth = SHOP_MARK_HEIGHT * (source ? source.aspect : 3);
-    return { company, width: markWidth + SHOP_PAD_X * 2 };
+    return {
+      company,
+      width: SIGN_MARK_HEIGHT * (source ? source.aspect : 3),
+    };
   });
   const total =
     entries.reduce((sum, entry) => sum + entry.width, 0) +
-    SHOP_GAP * (entries.length - 1);
+    SIGN_MARK_GAP * (entries.length - 1);
   const y =
-    ((SHOP_ROWS.length - 1 - rowIndex * 2) *
-      (SHOP_PLATE_HEIGHT + SHOP_ROW_GAP)) /
-    2;
+    SIGN_LABEL_Y -
+    SIGN_LABEL_HEIGHT / 2 -
+    SIGN_ROW_GAP -
+    SIGN_MARK_HEIGHT / 2 -
+    rowIndex * (SIGN_MARK_HEIGHT + SIGN_ROW_GAP);
   let cursor = -total / 2;
 
   return entries.map((entry) => {
     const x = cursor + entry.width / 2;
-    cursor += entry.width + SHOP_GAP;
+    cursor += entry.width + SIGN_MARK_GAP;
     return { company: entry.company, width: entry.width, x, y };
   });
 });
+
+/** Where the canted plate's back edge lands, measured from its bottom hinge. */
+const SIGN_RISE = SIGN_PLATE_HEIGHT * Math.sin(SIGN_TILT);
+const SIGN_REACH = SIGN_PLATE_HEIGHT * Math.cos(SIGN_TILT);
 
 /** Badge fields, label above value, straight out of the real personal notes. */
 const BADGE_FIELDS = [
@@ -987,6 +1018,76 @@ function getLogoAlpha(file: string, aspect: number) {
   return texture;
 }
 
+/**
+ * The wedge under the signature plate: a right-triangle prism whose hypotenuse
+ * lies exactly on the plate's underside, so the two parts touch along a full
+ * line instead of intersecting. Authored in the (z, y) plane and rotated in,
+ * because ExtrudeGeometry only ever extrudes an XY shape along +Z — the same
+ * construction the Signals angle blocks use.
+ */
+let signWedgeGeometry: THREE.ExtrudeGeometry | null = null;
+
+const SIGN_WEDGE_WIDTH = 0.62;
+
+function getSignWedge() {
+  if (signWedgeGeometry) {
+    return signWedgeGeometry;
+  }
+
+  const shape = new THREE.Shape();
+  shape.moveTo(0, 0);
+  shape.lineTo(-SIGN_REACH, 0);
+  shape.lineTo(-SIGN_REACH, SIGN_RISE);
+  shape.closePath();
+
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    bevelEnabled: false,
+    depth: SIGN_WEDGE_WIDTH,
+    steps: 1,
+  });
+  /* Shape x → world z, extrusion → world −x; recentre under the plate. */
+  geometry.rotateY(-Math.PI / 2);
+  geometry.translate(SIGN_WEDGE_WIDTH / 2, 0, 0);
+  geometry.computeVertexNormals();
+  signWedgeGeometry = geometry;
+  return geometry;
+}
+
+/**
+ * The one field label on the signature plate, as a white-on-transparent alpha
+ * mask. Same contract as every other engraving in the set: white is the mask,
+ * the ink comes from the host metal.
+ */
+let signLabelAlpha: THREE.Texture | null = null;
+
+const SIGN_LABEL_ASPECT = 1024 / 128;
+
+function getSignLabelAlpha() {
+  if (signLabelAlpha) {
+    return signLabelAlpha;
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 128;
+  const context = canvas.getContext('2d') as SpacedContext | null;
+
+  if (context) {
+    context.fillStyle = '#ffffff';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.letterSpacing = '26px';
+    context.font = '600 74px Helvetica Neue, Arial, sans-serif';
+    /* The trailing tracking space is what keeps a letterspaced run centred. */
+    context.fillText('WORKED AT', canvas.width / 2 + 13, canvas.height / 2);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.anisotropy = 8;
+  signLabelAlpha = texture;
+  return texture;
+}
+
 const bezelRingCache = new Map<string, THREE.ExtrudeGeometry>();
 
 function roundedRectShape(width: number, height: number, radius: number) {
@@ -1248,6 +1349,267 @@ function createNameTexture() {
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = 8;
+  return texture;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Side projects: tablet screen, gallery placards                               */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The tablet's own UI, drawn the way every other screen on this bench is drawn:
+ * as a real capture-shaped sheet, in the page's own greys and ink, so it sits
+ * in the same colour world as Tyler's four shipped screenshots without
+ * pretending to be one of them.
+ *
+ * The eight hairline cells are not decoration — they are the eight side
+ * projects, and the count under the title is read off the same array the hang
+ * is built from.
+ */
+let tabletScreenTexture: THREE.Texture | null = null;
+
+const TABLET_SCREEN_ASPECT = 1024 / 1400;
+
+function getTabletScreenTexture() {
+  if (tabletScreenTexture) {
+    return tabletScreenTexture;
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 1400;
+  const context = canvas.getContext('2d') as SpacedContext | null;
+
+  if (context) {
+    context.fillStyle = '#f4f4f3';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.textBaseline = 'alphabetic';
+
+    context.letterSpacing = '16px';
+    context.fillStyle = 'rgba(20,21,23,0.5)';
+    context.font = '600 42px Helvetica Neue, Arial, sans-serif';
+    context.fillText('GALLERY', 82, 168);
+
+    context.letterSpacing = '-3px';
+    context.fillStyle = 'rgba(20,21,23,0.94)';
+    context.font = '600 126px Helvetica Neue, Arial, sans-serif';
+    context.fillText('Side', 78, 320);
+    context.fillText('Projects', 78, 446);
+
+    context.fillStyle = 'rgba(20,21,23,0.18)';
+    context.fillRect(82, 512, 860, 3);
+
+    context.letterSpacing = '0px';
+    context.fillStyle = 'rgba(20,21,23,0.62)';
+    context.font = '500 50px Helvetica Neue, Arial, sans-serif';
+    context.fillText(
+      `${sideProjects.length} pieces, not the shipped four`,
+      82,
+      588,
+    );
+
+    /* The hang, in miniature: four columns, two rows, hairline only. */
+    const cellWidth = 196;
+    const cellHeight = 128;
+    const gapX = 26;
+    const gapY = 30;
+    context.strokeStyle = 'rgba(20,21,23,0.26)';
+    context.lineWidth = 3;
+
+    sideProjects.forEach((_, index) => {
+      const column = index % 4;
+      const row = Math.floor(index / 4);
+      context.strokeRect(
+        82 + column * (cellWidth + gapX),
+        676 + row * (cellHeight + gapY),
+        cellWidth,
+        cellHeight,
+      );
+    });
+
+    context.fillStyle = 'rgba(20,21,23,0.18)';
+    context.fillRect(82, 1096, 860, 3);
+
+    context.letterSpacing = '13px';
+    context.fillStyle = 'rgba(20,21,23,0.88)';
+    context.font = '600 54px Helvetica Neue, Arial, sans-serif';
+    context.fillText('OPEN', 82, 1194);
+    context.letterSpacing = '0px';
+    context.font = '500 60px Helvetica Neue, Arial, sans-serif';
+    context.fillText('→', 322, 1196);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
+  tabletScreenTexture = texture;
+  return texture;
+}
+
+/**
+ * The stand-in a framed piece gets when there is no capture for it in
+ * public/projects. Stating "no capture" is the only honest option — the one
+ * thing a portfolio gallery may never do is invent a screenshot.
+ */
+const placeholderCache = new Map<string, THREE.Texture>();
+
+function getPlaceholderTexture(title: string, tech: string[]) {
+  const cached = placeholderCache.get(title);
+
+  if (cached) {
+    return cached;
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 576;
+  const context = canvas.getContext('2d') as SpacedContext | null;
+
+  if (context) {
+    context.fillStyle = '#e6e6e5';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.textBaseline = 'alphabetic';
+
+    context.strokeStyle = 'rgba(20,21,23,0.2)';
+    context.lineWidth = 3;
+    context.setLineDash([14, 12]);
+    context.strokeRect(56, 56, canvas.width - 112, canvas.height - 112);
+    context.setLineDash([]);
+
+    context.letterSpacing = '14px';
+    context.fillStyle = 'rgba(20,21,23,0.5)';
+    context.font = '600 34px Helvetica Neue, Arial, sans-serif';
+    context.fillText('NO CAPTURE', 110, 250);
+
+    context.letterSpacing = '-1px';
+    context.fillStyle = 'rgba(20,21,23,0.88)';
+    context.font = '600 62px Helvetica Neue, Arial, sans-serif';
+    context.fillText(title, 110, 330);
+
+    context.letterSpacing = '0px';
+    context.fillStyle = 'rgba(20,21,23,0.55)';
+    context.font = '500 36px Helvetica Neue, Arial, sans-serif';
+    context.fillText(tech.join('  ·  '), 110, 392);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
+  placeholderCache.set(title, texture);
+  return texture;
+}
+
+/**
+ * The title strip cut into a frame's bottom rail, as an alpha mask on a canvas
+ * whose aspect matches the strip exactly — a 4:1 canvas stretched across a 20:1
+ * plane is how engraved type turns into a smear.
+ */
+const FRAME_TITLE_ASPECT = 1400 / 104;
+const FRAME_TITLE_W = 1.02;
+const frameTitleCache = new Map<string, THREE.Texture>();
+
+function getFrameTitleTexture(title: string) {
+  const cached = frameTitleCache.get(title);
+
+  if (cached) {
+    return cached;
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 1400;
+  canvas.height = 104;
+  const context = canvas.getContext('2d') as SpacedContext | null;
+
+  if (context) {
+    /*
+     * A frame is ~200 CSS wide at the browse camera, so the cap height this
+     * strip can carry is about eleven pixels. Tracking is held to 6px: at this
+     * size the 16px the rest of the set's micro-labels use turns the word into
+     * a row of separate glyphs.
+     */
+    context.fillStyle = '#ffffff';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.letterSpacing = '6px';
+    context.font = '600 74px Helvetica Neue, Arial, sans-serif';
+    context.fillText(
+      title.toUpperCase(),
+      canvas.width / 2 + 3,
+      canvas.height / 2 + 3,
+      canvas.width - 70,
+    );
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.anisotropy = 8;
+  frameTitleCache.set(title, texture);
+  return texture;
+}
+
+/**
+ * The museum label beside a focused piece: role, title, tech, and the host the
+ * piece lives on.
+ *
+ * Deliberately NOT the description, and deliberately not a clickable link. The
+ * DOM focus bar below carries the sentence and the real anchor — it has to,
+ * because a canvas texture is invisible to assistive tech and a URL you cannot
+ * click is furniture. Printing the same paragraph on both surfaces two hundred
+ * pixels apart is the exact duplication the company-run row was just cured of,
+ * so the two halves split the record instead: the object states what the piece
+ * IS, the DOM states what it does and where it goes.
+ */
+const placardCache = new Map<string, THREE.Texture>();
+
+/** Bare host of a real link, for the "where this lives" line. */
+function linkHost(link: string) {
+  return link.replace(/^https?:\/\//, '').replace(/\/$/, '');
+}
+
+function getPlacardTexture(piece: SideProject) {
+  const cached = placardCache.get(piece.title);
+
+  if (cached) {
+    return cached;
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 1200;
+  canvas.height = 560;
+  const context = canvas.getContext('2d') as SpacedContext | null;
+
+  if (context) {
+    context.fillStyle = '#eeeeed';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.textBaseline = 'alphabetic';
+
+    context.letterSpacing = '14px';
+    context.fillStyle = 'rgba(20,21,23,0.52)';
+    context.font = '600 34px Helvetica Neue, Arial, sans-serif';
+    context.fillText(piece.role.toUpperCase(), 62, 116);
+
+    context.letterSpacing = '-1px';
+    context.fillStyle = 'rgba(20,21,23,0.92)';
+    context.font = '600 76px Helvetica Neue, Arial, sans-serif';
+    context.fillText(piece.title, 60, 232, 1080);
+
+    context.fillStyle = 'rgba(20,21,23,0.16)';
+    context.fillRect(62, 300, 1076, 2);
+
+    context.letterSpacing = '2px';
+    context.fillStyle = 'rgba(20,21,23,0.68)';
+    context.font = '500 38px Helvetica Neue, Arial, sans-serif';
+    context.fillText(piece.tech.join('   ·   '), 62, 380, 1076);
+
+    context.letterSpacing = '0px';
+    context.fillStyle = 'rgba(20,21,23,0.46)';
+    context.font = '400 34px Helvetica Neue, Arial, sans-serif';
+    context.fillText(linkHost(piece.link), 62, 460, 1076);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
+  placardCache.set(piece.title, texture);
   return texture;
 }
 
@@ -1860,121 +2222,170 @@ function BenchTop() {
 }
 
 /**
- * Per-view seats, damped like every other subject in the set.
- *
- * The marks lie IN the bench now, so a seat is a patch of empty work surface
- * rather than somewhere a prop can stand: rotation is the bench normal in every
- * view and only the patch and its apparent size change. Scale rises with camera
- * distance so the laser marking holds one size on screen across four lenses.
- *
- * `SHOP_FLUSH_Y` clears the ContactShadows catch plane at y 0.005; below it the
- * insert faces z-fight with the shadow buffer.
- */
-const SHOP_FLUSH_Y = 0.0075;
-const SHOP_FLAT: [number, number, number] = [-Math.PI / 2, 0, 0];
-
-/**
- * Parked pose for the marks. Distinct from HIDDEN only in that it keeps the
- * bench-normal rotation: damping from a face-up patch through a 90° flip on the
- * way out is a rotating billboard, which is the one thing a milled mark cannot
- * do.
+ * Per-view seats, damped like every other subject in the set. The signature is
+ * a standing fixture now, so a seat is a patch of bench plus the yaw that turns
+ * the canted face toward that view's lens — the cant itself lives inside the
+ * component and never changes.
  */
 const SHOP_HIDDEN: Transform = {
   position: [0, -2.8, 3.5],
-  rotation: SHOP_FLAT,
+  rotation: [0, 0, 0],
   scale: HIDDEN.scale,
 };
 
 const NAMEPLATE_SEATS: Record<ConceptViewId, Transform> = {
-  /* The empty left gutter the work lens leaves beside the device cluster. */
+  /*
+   * The near foreground, slightly camera-right of the cluster axis — where a
+   * maker signs a photograph. The left gutter it used to hold belongs to the
+   * side-projects tablet now, and the two candidate patches on the right both
+   * failed: parked beside the Charades phone the phone body ate the Ramp mark,
+   * and pushed clear of it the plinth ran off the right edge of a 33° frame.
+   * The trough in front of the two phones is open bench in every work frame,
+   * and a fixture standing there is nearer the lens than anything else in the
+   * set, which is exactly the read a signature wants.
+   */
   work: {
-    position: [-1.72, SHOP_FLUSH_Y, 0.15],
-    rotation: SHOP_FLAT,
-    scale: 1,
+    position: [0.52, 0, 0.68],
+    rotation: [0, -0.06, 0],
+    scale: 0.9,
   },
   /*
-   * Foreground strip, in front of the run rather than beside it. The old
-   * standing plate clipped the bottom edge of the third blank; a flush marking
-   * on bench the blanks do not occupy cannot collide with anything.
+   * Foreground strip, in front of the blank run rather than beside it. The
+   * fixture is only ~0.4 tall, so it clears the blanks' sight line even parked
+   * this far forward.
    */
   signals: {
-    position: [-1.95, SHOP_FLUSH_Y, 1.05],
-    rotation: SHOP_FLAT,
-    scale: 1.05,
+    position: [-1.85, 0, 1.45],
+    rotation: [0, 0.28, 0],
+    scale: 0.95,
   },
   /*
-   * History parks them. Six era cards on a 1.52 pitch fill the whole frame and
-   * the lens tracks laterally across them, so any patch of bench the marks
+   * History parks it. Six era cards on a 1.52 pitch fill the whole frame and
+   * the lens tracks laterally across them, so any patch of bench the signature
    * could take is bench a card is standing on.
    */
   history: SHOP_HIDDEN,
   /*
    * Profile: camera-left of the badge and on its ground line, so the frame
-   * reads as one arrangement — the card holding the right two-thirds and a
-   * quiet marking on the empty bench opposite it.
+   * reads as one arrangement — the card holding the right two-thirds and the
+   * signature on the empty bench opposite it.
    */
   profile: {
-    position: [-1.6, SHOP_FLUSH_Y, -2.6],
-    rotation: SHOP_FLAT,
-    scale: 1.55,
+    position: [-1.62, 0, -2.35],
+    rotation: [0, 0.3, 0],
+    scale: 1.3,
   },
 };
 
 /**
- * One laser-marked insert: the milled kerf it is dropped into, the satin insert
- * face, and the mark cut into that face with the same groove/lip shading every
- * other engraving in the set uses. Aspect comes off the manifest viewBox, so
- * the marks are never scaled non-uniformly.
+ * The signature fixture: a milled base plinth, a wedge, and the canted plate
+ * with the field label and all five marks cut into its single face. Aspects
+ * come off the manifest viewBox, so no mark is ever scaled non-uniformly.
  */
-function ShopMarks({
+function ShopSignature({
   plateRef,
 }: {
   plateRef: (node: THREE.Group | null) => void;
 }) {
+  const wedge = useMemo(() => getSignWedge(), []);
+  const labelAlpha = useMemo(() => getSignLabelAlpha(), []);
+
   return (
     <group
       position={NAMEPLATE_SEATS.work.position}
       ref={plateRef}
       rotation={NAMEPLATE_SEATS.work.rotation}
     >
-      {SHOP_PLATES.map((plate) => (
-        <group key={plate.company} position={[plate.x, plate.y, 0]}>
-          {/* Kerf: the darkened gap the insert is seated in. */}
-          <mesh position={[0, 0, 0.0004]}>
-            <planeGeometry
-              args={[plate.width + SHOP_SEAM, SHOP_PLATE_HEIGHT + SHOP_SEAM]}
-            />
-            <meshStandardMaterial
-              color={SHOP_KERF}
-              envMapIntensity={0.5}
-              metalness={0.3}
-              roughness={0.85}
-            />
-          </mesh>
-          {/* Insert face, flush with the work surface. */}
-          <mesh position={[0, 0, 0.001]}>
-            <planeGeometry args={[plate.width, SHOP_PLATE_HEIGHT]} />
-            <meshStandardMaterial
-              color={SHOP_INSERT}
+      <ContactCore depth={0.62} width={1.5} z={-0.09} />
+
+      {/* Base plinth: the machined foot the whole fixture stands on. */}
+      <RoundedBox
+        args={[SIGN_PLATE_WIDTH + 0.09, 0.034, SIGN_REACH + 0.13]}
+        castShadow
+        position={[0, 0.017, -SIGN_REACH / 2 + 0.05]}
+        radius={0.008}
+        receiveShadow
+        smoothness={3}
+      >
+        <AluminumMaterial
+          color={ALUMINUM_BRIGHT}
+          envMapIntensity={1.7}
+          metalness={0.8}
+          roughness={0.24}
+        />
+      </RoundedBox>
+
+      {/* Support wedge, narrower than the plate so the plate reads as stock. */}
+      <mesh castShadow geometry={wedge} position={[0, 0.034, 0.02]}>
+        <AluminumMaterial
+          color={ALUMINUM_DARK}
+          envMapIntensity={1.1}
+          metalness={0.9}
+          roughness={0.38}
+        />
+      </mesh>
+
+      {/*
+       * The plate itself, hinged on its bottom-front edge so the cant lifts it
+       * off the plinth instead of driving it through.
+       */}
+      <group
+        position={[0, 0.034, 0.02]}
+        rotation={[SIGN_TILT - Math.PI / 2, 0, 0]}
+      >
+        <group position={[0, SIGN_PLATE_HEIGHT / 2, 0]}>
+          <RoundedBox
+            args={[SIGN_PLATE_WIDTH, SIGN_PLATE_HEIGHT, SIGN_PLATE_THICKNESS]}
+            castShadow
+            radius={0.01}
+            receiveShadow
+            smoothness={3}
+          >
+            <AluminumMaterial
+              color={SIGN_PLATE}
               envMapIntensity={1.5}
-              metalness={0.5}
+              metalness={0.55}
               roughness={0.26}
             />
-          </mesh>
-          <EtchedMark
-            company={plate.company}
-            envMapIntensity={1.2}
-            floor={0.42}
-            height={SHOP_MARK_HEIGHT}
-            hostColor={SHOP_INSERT}
-            lipMix={0.5}
-            metalness={0.5}
-            offset={0.003}
-            position={[0, 0, 0.0016]}
-            roughness={0.34}
+          </RoundedBox>
+          <ChamferBand
+            args={[SIGN_PLATE_WIDTH, SIGN_PLATE_HEIGHT, SIGN_PLATE_THICKNESS]}
+            color={ALUMINUM_BRIGHT}
+            radius={0.01}
+            smoothness={3}
           />
+
+          <EngravedDecal
+            alpha={labelAlpha}
+            envMapIntensity={1.2}
+            floor={0.45}
+            height={SIGN_LABEL_HEIGHT}
+            hostColor={SIGN_PLATE}
+            lipMix={0.5}
+            metalness={0.55}
+            offset={0.0026}
+            position={[0, SIGN_LABEL_Y, SIGN_PLATE_THICKNESS / 2 + 0.001]}
+            roughness={0.3}
+            width={SIGN_LABEL_HEIGHT * SIGN_LABEL_ASPECT}
+          />
+
+          {SIGN_MARKS.map((mark) => (
+            <EtchedMark
+              company={mark.company}
+              envMapIntensity={1.2}
+              floor={0.4}
+              height={SIGN_MARK_HEIGHT}
+              hostColor={SIGN_PLATE}
+              key={mark.company}
+              lipMix={0.52}
+              metalness={0.55}
+              offset={0.003}
+              position={[mark.x, mark.y, SIGN_PLATE_THICKNESS / 2 + 0.001]}
+              roughness={0.32}
+            />
+          ))}
         </group>
-      ))}
+      </group>
     </group>
   );
 }
@@ -2807,6 +3218,200 @@ function ProjectDevice({
 }
 
 /* -------------------------------------------------------------------------- */
+/* Side projects tablet                                                         */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * A real 11-inch tablet, at the same scale as everything else on the bench: the
+ * phones put one world unit at ~159mm, so a 178 x 250mm slab is 1.12 x 1.57.
+ * It is the only device here that is not one of Tyler's shipped products, which
+ * is exactly why it is modeled as an ordinary tablet on an ordinary easel
+ * rather than dressed up — it is the door to the gallery, not an exhibit.
+ */
+const TABLET_WIDTH = 1.12;
+const TABLET_THICKNESS = 0.052;
+const TABLET_RADIUS = 0.07;
+const TABLET_BEZEL = 0.066;
+const TABLET_SCREEN_W = TABLET_WIDTH - TABLET_BEZEL * 2;
+/*
+ * Body height is derived from the screen canvas, not chosen: `Screen` cover-
+ * crops whatever it is handed, so a display whose aspect disagrees with its
+ * texture silently eats the margins of the UI drawn on it.
+ */
+const TABLET_SCREEN_H = TABLET_SCREEN_W / TABLET_SCREEN_ASPECT;
+const TABLET_HEIGHT = TABLET_SCREEN_H + TABLET_BEZEL * 2;
+const TABLET_LEAN = 0.3;
+
+/**
+ * Hover slot for the tablet. It rides one past the four featured devices in the
+ * same `work` focus channel, so it can never collide with a project index and
+ * the DOM cue and the raycast agree about what is lit.
+ */
+const TABLET_INDEX = featuredProjects.length;
+
+/**
+ * The left gutter the work lens leaves beside the device cluster — the patch
+ * the employer marks used to be milled into. It is the only seat the tablet
+ * has: it belongs to the work shot and nothing else, so every other view parks
+ * it rather than restaging it.
+ */
+const TABLET_SEAT: Transform = {
+  position: [-1.9, 0, 0.78],
+  /*
+   * 0.88, not 1. At true scale an 11-inch portrait tablet is taller in frame
+   * than a 14-inch laptop lid — correct, and wrong for this shot, because the
+   * one object here that is not a shipped product would be the largest thing
+   * in it. Backed off until it reads as the door it is.
+   */
+  scale: 0.88,
+  rotation: [0, 0.24, 0],
+};
+
+function TabletEasel() {
+  return (
+    <group>
+      <RoundedBox
+        args={[1.34, 0.055, 0.62]}
+        castShadow
+        position={[0, 0.0275, -0.1]}
+        radius={0.014}
+        receiveShadow
+        smoothness={3}
+      >
+        <AluminumMaterial roughness={0.28} />
+      </RoundedBox>
+      {/* Front lip the tablet's bottom edge seats against. */}
+      <mesh castShadow position={[0, 0.095, 0.16]}>
+        <boxGeometry args={[1.34, 0.11, 0.05]} />
+        <AluminumMaterial roughness={0.28} />
+      </mesh>
+      {/* Back leg, on the tablet's own lean so it beds flat against it. */}
+      <mesh
+        castShadow
+        position={[0, 0.28, -0.28]}
+        rotation={[-TABLET_LEAN, 0, 0]}
+      >
+        <boxGeometry args={[1.34, 0.5, 0.05]} />
+        <AluminumMaterial roughness={0.28} />
+      </mesh>
+    </group>
+  );
+}
+
+function SideProjectsTablet({
+  tabletRef,
+}: {
+  tabletRef: (node: THREE.Group | null) => void;
+}) {
+  const screen = useMemo(() => getTabletScreenTexture(), []);
+  const bezel = useMemo(
+    () =>
+      getBezelRing(
+        TABLET_WIDTH,
+        TABLET_HEIGHT,
+        TABLET_SCREEN_W,
+        TABLET_SCREEN_H,
+        TABLET_RADIUS,
+        TABLET_RADIUS - 0.03,
+        0.006,
+      ),
+    [],
+  );
+  const rail = useMemo(
+    () =>
+      getBezelRing(
+        TABLET_WIDTH + 0.026,
+        TABLET_HEIGHT + 0.026,
+        TABLET_WIDTH - 0.034,
+        TABLET_HEIGHT - 0.034,
+        TABLET_RADIUS + 0.012,
+        TABLET_RADIUS - 0.016,
+        TABLET_THICKNESS + 0.006,
+      ),
+    [],
+  );
+
+  return (
+    <group
+      onClick={(event) => {
+        event.stopPropagation();
+        /*
+         * Warm the hang's textures on the same gesture that asks for them: the
+         * camera transit is ~600ms and the decode lands inside it, so the
+         * frames are already resolved when the gallery shot arrives.
+         */
+        useTexture.preload(GALLERY_IMAGES);
+        openBenchGallery();
+      }}
+      onPointerEnter={(event) => {
+        event.stopPropagation();
+        setBenchHover('work', TABLET_INDEX);
+      }}
+      onPointerLeave={() => setBenchHover('work', -1)}
+      position={HIDDEN.position}
+      ref={tabletRef}
+      scale={HIDDEN.scale}
+    >
+      <ContactCore depth={1.05} width={1.85} z={-0.08} />
+      <TabletEasel />
+
+      <group position={[0, 0.12, 0.1]} rotation={[-TABLET_LEAN, 0, 0]}>
+        <group position={[0, TABLET_HEIGHT / 2 - 0.02, 0]}>
+          <RoundedBox
+            args={[TABLET_WIDTH, TABLET_HEIGHT, TABLET_THICKNESS]}
+            castShadow
+            radius={TABLET_RADIUS}
+            smoothness={5}
+          >
+            <InkMetalMaterial />
+          </RoundedBox>
+
+          {/* Polished side band, the same treatment the phone rails get. */}
+          <mesh
+            castShadow
+            geometry={rail}
+            position={[0, 0, -TABLET_THICKNESS / 2 - 0.003]}
+          >
+            <AluminumMaterial
+              color={ALUMINUM_BRIGHT}
+              envMapIntensity={2.0}
+              roughness={0.12}
+            />
+          </mesh>
+
+          {/* Bezel land, its face proud of the recessed display. */}
+          <mesh
+            geometry={bezel}
+            position={[0, 0, TABLET_THICKNESS / 2 - 0.001]}
+          >
+            <InkMetalMaterial roughness={0.4} />
+          </mesh>
+          <mesh position={[0, 0, TABLET_THICKNESS / 2 + 0.0005]}>
+            <planeGeometry args={[TABLET_SCREEN_W, TABLET_SCREEN_H]} />
+            <meshStandardMaterial color={SCREEN_WELL} roughness={0.22} />
+          </mesh>
+
+          <Screen
+            height={TABLET_SCREEN_H}
+            position={[0, 0, TABLET_THICKNESS / 2 + 0.0018]}
+            radius={0.045}
+            seed={0.42}
+            texture={screen}
+            width={TABLET_SCREEN_W}
+          />
+          <GlassCover
+            height={TABLET_SCREEN_H}
+            position={[0, 0, TABLET_THICKNESS / 2 + 0.0055]}
+            radius={0.045}
+            width={TABLET_SCREEN_W}
+          />
+        </group>
+      </group>
+    </group>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /* Profile badge                                                                */
 /* -------------------------------------------------------------------------- */
 
@@ -3466,6 +4071,450 @@ function HistoryArtifact({
 /* Scene                                                                        */
 /* -------------------------------------------------------------------------- */
 
+/* -------------------------------------------------------------------------- */
+/* Side projects gallery                                                        */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The hang: a standing rack on the bench with two cross rails, eight framed
+ * plates suspended from them on hairline wires. A rack rather than a wall,
+ * because this set has no near wall — the cove is thirteen units back — and a
+ * frame floating in air with nothing holding it is the one thing a gallery
+ * never shows you.
+ *
+ * Real screenshots only. The single piece with no capture in public/projects
+ * gets a stated "no capture" plate rather than an invented one.
+ */
+const GALLERY_COLUMNS = 4;
+const FRAME_INNER_W = 1.16;
+const FRAME_INNER_H = FRAME_INNER_W * (9 / 16);
+const FRAME_BORDER = 0.09;
+const FRAME_OUTER_W = FRAME_INNER_W + FRAME_BORDER * 2;
+const FRAME_OUTER_H = FRAME_INNER_H + FRAME_BORDER * 2;
+const FRAME_PITCH_X = FRAME_OUTER_W + 0.26;
+/*
+ * Eight 16:9 frames in four columns is a 2.7-aspect subject inside a 1.6
+ * viewport, which parks the whole hang in the top half and leaves a dead lower
+ * third. The extra 0.28 of row pitch spends that slack on air between the rows
+ * instead — the vertical proportions of an actual gallery wall.
+ */
+const FRAME_PITCH_Y = FRAME_OUTER_H + 0.7;
+const FRAME_TOP_Y = 3.15;
+const FRAME_Z = -0.7;
+/** Wire drop from a rail to the frame hanging off it. */
+const WIRE_DROP = 0.26;
+/** Posts stand clear of the outermost frame rather than through it. */
+const RAIL_HALF_SPAN =
+  (FRAME_PITCH_X * (GALLERY_COLUMNS - 1)) / 2 + FRAME_OUTER_W / 2 + 0.3;
+
+/** Only the pieces that actually have a capture ever reach `useTexture`. */
+const GALLERY_IMAGES: string[] = sideProjects
+  .map((piece) => piece.image)
+  .filter((image): image is string => image !== null);
+
+const GALLERY_ROWS = Math.ceil(sideProjects.length / GALLERY_COLUMNS);
+
+type GallerySeat = { x: number; y: number };
+
+const GALLERY_SEATS: GallerySeat[] = sideProjects.map((_, index) => {
+  const column = index % GALLERY_COLUMNS;
+  const row = Math.floor(index / GALLERY_COLUMNS);
+
+  return {
+    x: (column - (GALLERY_COLUMNS - 1) / 2) * FRAME_PITCH_X,
+    y: FRAME_TOP_Y - row * FRAME_PITCH_Y,
+  };
+});
+
+/**
+ * Where a focused piece steps to: forward of the hang and camera-left of
+ * centre, leaving the right of the frame for its wall label. Below the work
+ * would have been the more usual arrangement and it does not survive here —
+ * the DOM detail band owns the bottom 260 CSS of every view, and a label
+ * hung under the piece lands inside it.
+ */
+const GALLERY_FOCUS: Transform = {
+  position: [-0.62, 2.58, 1.35],
+  rotation: [0, 0, 0],
+  scale: 1.4,
+};
+
+const PLACARD_W = 1.36;
+const PLACARD_H = PLACARD_W * (560 / 1200);
+const PLACARD_SEAT: [number, number, number] = [1.12, 2.55, 1.35];
+
+/** Collapsed pose, small enough that `dampTransform` culls the group. */
+const GALLERY_STOWED_SCALE = 0.05;
+
+/**
+ * Distance that fits a given half-width into the *actual* canvas aspect.
+ *
+ * A fixed camera z only ever frames one aspect ratio. Eight frames across is a
+ * wide subject, and at 4:3 a distance tuned for 16:10 sliced the outer two
+ * exhibits down their edges — the one thing a gallery hang cannot do. Vertical
+ * fov is the fixed quantity in a perspective camera, so the horizontal fit has
+ * to be solved for the distance instead.
+ */
+function galleryDistance(fov: number, aspect: number, halfWidth: number) {
+  const vertical = halfWidth / Math.max(aspect, 0.5);
+
+  return THREE.MathUtils.clamp(
+    vertical / Math.tan((fov * Math.PI) / 360),
+    4.4,
+    16,
+  );
+}
+
+/** Half-width of the framed hang, plus the margin a wall gives its outer works. */
+const GALLERY_FIT_HALF =
+  (FRAME_PITCH_X * (GALLERY_COLUMNS - 1)) / 2 + FRAME_OUTER_W / 2 + 0.55;
+/** Focused piece on the left, its wall label on the right. */
+const GALLERY_FOCUS_FIT_HALF = 2.3;
+
+function galleryFrameTarget(
+  index: number,
+  gallery: { open: boolean; piece: number },
+): Transform {
+  if (!gallery.open) {
+    const seat = GALLERY_SEATS[index];
+    return {
+      position: [seat.x, seat.y, FRAME_Z],
+      rotation: [0, 0, 0],
+      scale: GALLERY_STOWED_SCALE,
+    };
+  }
+
+  if (gallery.piece === index) {
+    return GALLERY_FOCUS;
+  }
+
+  const seat = GALLERY_SEATS[index];
+
+  /*
+   * The unfocused pieces do not merely stay put — they step back a third of a
+   * unit, so the focused plate reads as pulled out of a hang rather than
+   * pasted over one.
+   */
+  const recessed = gallery.piece >= 0;
+
+  return {
+    position: [seat.x, seat.y, recessed ? FRAME_Z - 0.34 : FRAME_Z],
+    rotation: [0, 0, 0],
+    scale: recessed ? 0.94 : 1,
+  };
+}
+
+function GalleryFrame({
+  index,
+  piece,
+  texture,
+  frameRef,
+}: {
+  index: number;
+  piece: SideProject;
+  texture: THREE.Texture;
+  frameRef: (node: THREE.Group | null) => void;
+}) {
+  const title = useMemo(() => getFrameTitleTexture(piece.title), [piece.title]);
+  const border = useMemo(
+    () =>
+      getBezelRing(
+        FRAME_OUTER_W,
+        FRAME_OUTER_H,
+        FRAME_INNER_W,
+        FRAME_INNER_H,
+        0.014,
+        0.006,
+        0.05,
+      ),
+    [],
+  );
+
+  return (
+    <group
+      onClick={(event) => {
+        event.stopPropagation();
+        setBenchGalleryPiece(index);
+      }}
+      position={[GALLERY_SEATS[index].x, GALLERY_SEATS[index].y, FRAME_Z]}
+      ref={frameRef}
+      scale={GALLERY_STOWED_SCALE}
+    >
+      {/* Two hairline wires up to the rail this row hangs from. */}
+      {[-FRAME_OUTER_W / 2 + 0.09, FRAME_OUTER_W / 2 - 0.09].map((x) => (
+        <mesh key={x} position={[x, FRAME_OUTER_H / 2 + WIRE_DROP / 2, -0.02]}>
+          <cylinderGeometry args={[0.007, 0.007, WIRE_DROP, 6]} />
+          <AluminumMaterial
+            color={ALUMINUM_DARK}
+            envMapIntensity={1.6}
+            roughness={0.22}
+          />
+        </mesh>
+      ))}
+
+      {/* Frame moulding. */}
+      <mesh castShadow geometry={border} position={[0, 0, -0.025]}>
+        <AluminumMaterial
+          color={ALUMINUM}
+          envMapIntensity={1.5}
+          roughness={0.24}
+        />
+      </mesh>
+      {/* Backing board, so the frame is a box and not a window. */}
+      <mesh position={[0, 0, -0.03]}>
+        <planeGeometry args={[FRAME_INNER_W, FRAME_INNER_H]} />
+        <meshStandardMaterial color="#2a2c2e" roughness={0.6} />
+      </mesh>
+
+      <Screen
+        gain={1.02}
+        height={FRAME_INNER_H}
+        position={[0, 0, 0.006]}
+        radius={0.004}
+        seed={index * 0.17}
+        texture={texture}
+        width={FRAME_INNER_W}
+      />
+      <GlassCover
+        height={FRAME_INNER_H}
+        position={[0, 0, 0.02]}
+        radius={0.004}
+        width={FRAME_INNER_W}
+      />
+
+      {/* Title strip cut into the moulding's bottom rail. */}
+      <EngravedDecal
+        alpha={title}
+        envMapIntensity={1.2}
+        floor={0.44}
+        height={FRAME_TITLE_W / FRAME_TITLE_ASPECT}
+        hostColor={ALUMINUM}
+        lipMix={0.46}
+        metalness={0.55}
+        offset={0.0022}
+        position={[0, -FRAME_OUTER_H / 2 + FRAME_BORDER / 2, 0.0262]}
+        roughness={0.3}
+        width={FRAME_TITLE_W}
+      />
+    </group>
+  );
+}
+
+/**
+ * The wall label. It stays mounted with a null map between selections so it can
+ * damp back out instead of vanishing the instant the focus clears.
+ */
+function GalleryPlacard({
+  placardRef,
+  piece,
+}: {
+  placardRef: (node: THREE.Group | null) => void;
+  piece: SideProject | null;
+}) {
+  const texture = useMemo(
+    () => (piece ? getPlacardTexture(piece) : null),
+    [piece],
+  );
+
+  return (
+    <group
+      position={PLACARD_SEAT}
+      ref={placardRef}
+      scale={GALLERY_STOWED_SCALE}
+    >
+      <RoundedBox
+        args={[PLACARD_W, PLACARD_H, 0.026]}
+        castShadow
+        radius={0.006}
+        smoothness={3}
+      >
+        <meshStandardMaterial
+          color="#c9cbcc"
+          envMapIntensity={1.2}
+          metalness={0.35}
+          roughness={0.42}
+        />
+      </RoundedBox>
+      {/*
+       * Keyed and conditional, both deliberately. A material whose `map` flips
+       * between null and a texture needs a shader recompile that three will not
+       * do on its own — the label rendered as a blank white plate. Mounting a
+       * fresh material per piece sidesteps it entirely.
+       */}
+      {texture && piece ? (
+        <mesh key={piece.title} position={[0, 0, 0.0141]}>
+          <planeGeometry args={[PLACARD_W, PLACARD_H]} />
+          <meshStandardMaterial
+            envMapIntensity={0.7}
+            map={texture}
+            metalness={0.08}
+            roughness={0.58}
+          />
+        </mesh>
+      ) : null}
+    </group>
+  );
+}
+
+/**
+ * The rack and its eight frames. Mounted only while `gallery.mounted` is true,
+ * which is what keeps an idle work shot from paying for eight screenshots, and
+ * suspended on its own so a texture decode never blanks the rest of the set.
+ */
+function GalleryHang({ reducedMotion }: { reducedMotion: boolean }) {
+  const gallery = useSyncExternalStore(
+    subscribeBenchGallery,
+    readBenchGallery,
+    readBenchGallery,
+  );
+  const images = useConfiguredTextures(GALLERY_IMAGES);
+  const frames = useRef<(THREE.Group | null)[]>([]);
+  const placard = useRef<THREE.Group | null>(null);
+  const rack = useRef<THREE.Group | null>(null);
+
+  const textures = useMemo(() => {
+    let cursor = 0;
+
+    return sideProjects.map((piece) =>
+      piece.image
+        ? images[cursor++]
+        : getPlaceholderTexture(piece.title, piece.tech),
+    );
+  }, [images]);
+
+  const focused = gallery.piece >= 0 ? sideProjects[gallery.piece] : null;
+
+  useFrame((_, rawDelta) => {
+    const delta = Math.min(rawDelta, 1 / 30);
+    const state = readBenchGallery();
+
+    frames.current.forEach((frame, index) => {
+      if (!frame) {
+        return;
+      }
+
+      const target = galleryFrameTarget(index, state);
+      dampTransform(frame, target, transitLambda(target, reducedMotion), delta);
+    });
+
+    if (rack.current) {
+      const target: Transform = state.open
+        ? { position: [0, 0, 0], rotation: [0, 0, 0], scale: 1 }
+        : {
+            position: [0, 0, 0],
+            rotation: [0, 0, 0],
+            scale: GALLERY_STOWED_SCALE,
+          };
+      dampTransform(
+        rack.current,
+        target,
+        transitLambda(target, reducedMotion),
+        delta,
+      );
+    }
+
+    if (placard.current) {
+      const target: Transform =
+        state.open && state.piece >= 0
+          ? { position: PLACARD_SEAT, rotation: [0, 0, 0], scale: 1 }
+          : {
+              position: [
+                PLACARD_SEAT[0],
+                PLACARD_SEAT[1] - 0.2,
+                PLACARD_SEAT[2],
+              ],
+              rotation: [0, 0, 0],
+              scale: GALLERY_STOWED_SCALE,
+            };
+      dampTransform(
+        placard.current,
+        target,
+        transitLambda(target, reducedMotion),
+        delta,
+      );
+    }
+  });
+
+  return (
+    <group>
+      {/*
+       * Standing rack: two posts on machined feet, one rail per row.
+       *
+       * No per-foot ContactCore, unlike every other object on this bench, and
+       * it is not an oversight. The core's ground planes are horizontal and
+       * depth-write-off; the gallery lens looks level rather than down at the
+       * bench, so at that grazing incidence each one smeared a translucent wash
+       * across the whole hang and greyed out all eight screenshots. The feet
+       * are below the DOM band in every gallery framing anyway, and the shared
+       * ContactShadows pass (far 0.5) already catches them.
+       */}
+      <group ref={rack} scale={GALLERY_STOWED_SCALE}>
+        {[-RAIL_HALF_SPAN, RAIL_HALF_SPAN].map((x) => (
+          <group key={x} position={[x, 0, FRAME_Z]}>
+            <RoundedBox
+              args={[0.34, 0.05, 0.62]}
+              castShadow
+              position={[0, 0.025, 0]}
+              radius={0.01}
+              receiveShadow
+              smoothness={3}
+            >
+              <AluminumMaterial
+                color={ALUMINUM_BRIGHT}
+                envMapIntensity={1.7}
+                metalness={0.8}
+                roughness={0.24}
+              />
+            </RoundedBox>
+            <mesh castShadow position={[0, (FRAME_TOP_Y + 0.72) / 2, 0]}>
+              <boxGeometry args={[0.07, FRAME_TOP_Y + 0.72, 0.07]} />
+              <AluminumMaterial envMapIntensity={1.4} roughness={0.3} />
+            </mesh>
+          </group>
+        ))}
+
+        {Array.from({ length: GALLERY_ROWS }, (_, row) => (
+          <mesh
+            castShadow
+            key={row}
+            position={[
+              0,
+              FRAME_TOP_Y - row * FRAME_PITCH_Y + FRAME_OUTER_H / 2 + WIRE_DROP,
+              FRAME_Z - 0.02,
+            ]}
+          >
+            <boxGeometry args={[RAIL_HALF_SPAN * 2, 0.05, 0.05]} />
+            <AluminumMaterial
+              color={ALUMINUM_BRIGHT}
+              envMapIntensity={1.9}
+              roughness={0.18}
+            />
+          </mesh>
+        ))}
+      </group>
+
+      {sideProjects.map((piece, index) => (
+        <GalleryFrame
+          frameRef={(node) => {
+            frames.current[index] = node;
+          }}
+          index={index}
+          key={piece.title}
+          piece={piece}
+          texture={textures[index]}
+        />
+      ))}
+
+      <GalleryPlacard
+        piece={focused}
+        placardRef={(node) => {
+          placard.current = node;
+        }}
+      />
+    </group>
+  );
+}
+
 type CameraShot = {
   position: [number, number, number];
   look: number;
@@ -3598,6 +4647,11 @@ function Scene({
   mobile: boolean;
 }) {
   const view = useConceptView(initialView);
+  const gallery = useSyncExternalStore(
+    subscribeBenchGallery,
+    readBenchGallery,
+    readBenchGallery,
+  );
   const projectTextures = useConfiguredTextures(
     featuredProjects.map((project) => project.image),
   );
@@ -3607,10 +4661,16 @@ function Scene({
   const artifacts = useRef<(THREE.Group | null)[]>([]);
   const badge = useRef<THREE.Group | null>(null);
   const nameplate = useRef<THREE.Group | null>(null);
+  const tablet = useRef<THREE.Group | null>(null);
   const cameraLook = useRef(new THREE.Vector3());
   const cameraRoll = useRef(0);
   const transit = useRef({
-    view: null as ConceptViewId | null,
+    /*
+     * A shot key, not a view id: the gallery and its focused state are extra
+     * setups inside `work`, and each one earns the same arc-and-settle transit
+     * a view change gets.
+     */
+    view: null as string | null,
     from: new THREE.Vector3(),
     control: new THREE.Vector3(),
     t: 1,
@@ -3619,6 +4679,18 @@ function Scene({
   useFrame(({ camera }, rawDelta) => {
     const delta = Math.min(rawDelta, 1 / 30);
     const lambda = reducedMotion ? 80 : 3.2;
+    const galleryState = readBenchGallery();
+    /*
+     * The gallery only ever exists inside the work view. Leaving that view by
+     * any route — nav, hash, browser history — closes it, so there is no way
+     * to strand the camera in a sub-view the chrome no longer offers an exit
+     * from.
+     */
+    if (view !== 'work' && galleryState.open) {
+      closeBenchGallery();
+    }
+
+    const inGallery = view === 'work' && galleryState.open;
     const workFocus = readBenchFocus('work');
     const signalFocus = readBenchFocus('signals');
     const historyFocus = readBenchFocus('history');
@@ -3631,7 +4703,10 @@ function Scene({
       }
 
       let target = HIDDEN;
-      if (view === 'work') {
+      if (inGallery) {
+        /* The hang is the whole shot; the bench clears for it. */
+        target = HIDDEN;
+      } else if (view === 'work') {
         const active =
           workFocus.hovered === index || workFocus.selected === index;
         const base = PROJECT_WORK[index];
@@ -3801,13 +4876,38 @@ function Scene({
     }
 
     if (nameplate.current) {
-      const markTarget = NAMEPLATE_SEATS[view];
+      const markTarget = inGallery ? SHOP_HIDDEN : NAMEPLATE_SEATS[view];
       motion = Math.max(
         motion,
         dampTransform(
           nameplate.current,
           markTarget,
           transitLambda(markTarget, reducedMotion),
+          delta,
+        ),
+      );
+    }
+
+    if (tablet.current) {
+      const active = workFocus.hovered === TABLET_INDEX;
+      const tabletTarget: Transform =
+        view === 'work' && !inGallery
+          ? {
+              position: [
+                TABLET_SEAT.position[0],
+                TABLET_SEAT.position[1] + (active ? 0.16 : 0),
+                TABLET_SEAT.position[2] + (active ? 0.14 : 0),
+              ],
+              rotation: TABLET_SEAT.rotation,
+              scale: TABLET_SEAT.scale * (active ? 1.05 : 1),
+            }
+          : HIDDEN;
+      motion = Math.max(
+        motion,
+        dampTransform(
+          tablet.current,
+          tabletTarget,
+          transitLambda(tabletTarget, reducedMotion),
           delta,
         ),
       );
@@ -3924,8 +5024,45 @@ function Scene({
             roll: -0.008,
           },
         };
-    const shot = shots[view];
-    const targetX = shot.position[0];
+    /*
+     * The gallery is its own lens, not a dolly of the work shot: a longer,
+     * squarer-on setup that reads the hang across rather than looking down a
+     * bench. Focusing a piece moves up and in a little — enough that the step
+     * forward is felt — while keeping the wall label clear of the DOM band.
+     */
+    const galleryAspect = (camera as THREE.PerspectiveCamera).aspect;
+    const galleryFov = galleryState.piece >= 0 ? 33 : 34;
+    const galleryShot: CameraShot =
+      galleryState.piece >= 0
+        ? {
+            position: [
+              0,
+              2.45,
+              GALLERY_FOCUS.position[2] +
+                galleryDistance(
+                  galleryFov,
+                  galleryAspect,
+                  GALLERY_FOCUS_FIT_HALF,
+                ),
+            ],
+            look: 2.45,
+            fov: galleryFov,
+            roll: 0,
+          }
+        : {
+            position: [
+              0,
+              2.18,
+              FRAME_Z +
+                galleryDistance(galleryFov, galleryAspect, GALLERY_FIT_HALF),
+            ],
+            look: 2.18,
+            fov: galleryFov,
+            roll: 0,
+          };
+
+    const shot = inGallery ? galleryShot : shots[view];
+    const targetX = shot.position[0] + (inGallery ? parallaxX * 0.4 : 0);
     const targetY = shot.position[1] - parallaxY;
     const targetZ = shot.position[2];
 
@@ -3935,8 +5072,11 @@ function Scene({
      * than sliding down a straight line. Departure is fast, arrival is slow.
      */
     const move = transit.current;
+    const shotKey = inGallery
+      ? `gallery:${galleryState.piece >= 0 ? 'piece' : 'hang'}`
+      : view;
 
-    if (move.view !== view) {
+    if (move.view !== shotKey) {
       if (move.view === null || reducedMotion) {
         move.t = 1;
       } else {
@@ -3948,7 +5088,7 @@ function Scene({
         );
         move.t = 0;
       }
-      move.view = view;
+      move.view = shotKey;
     }
 
     if (move.t < 1) {
@@ -3991,8 +5131,11 @@ function Scene({
      * the four-device silhouette into the right 60% of the frame and left a
      * dead third under the intro plate.
      */
-    const lookX =
-      view === 'history'
+    const lookX = inGallery
+      ? galleryState.piece >= 0
+        ? GALLERY_FOCUS.position[0] * 0.45
+        : 0
+      : view === 'history'
         ? historyX
         : view === 'profile'
           ? mobile
@@ -4015,6 +5158,21 @@ function Scene({
     camera.rotateZ(cameraRoll.current);
 
     setBenchSettled(motion < 0.004);
+
+    /*
+     * Drop the hang once the exit transit has landed — held until then so the
+     * frames get to animate out, released after so an idle work shot carries
+     * none of their meshes or textures.
+     *
+     * Gated on the transit rather than on total scene motion: pointer parallax
+     * keeps `motion` off zero for as long as the mouse is moving, and a
+     * threshold would have left the hang mounted the whole time someone was
+     * moving their cursor. `move.t` reaches 1 at the end of the arc regardless,
+     * and lands on the same frame under reduced motion.
+     */
+    if (!galleryState.open && galleryState.mounted && move.t >= 1) {
+      releaseBenchGallery();
+    }
   });
 
   return (
@@ -4088,7 +5246,7 @@ function Scene({
 
       <StudioCove />
       <BenchTop />
-      <ShopMarks
+      <ShopSignature
         plateRef={(node) => {
           nameplate.current = node;
         }}
@@ -4108,6 +5266,22 @@ function Scene({
           texture={projectTextures[index]}
         />
       ))}
+
+      <SideProjectsTablet
+        tabletRef={(node) => {
+          tablet.current = node;
+        }}
+      />
+
+      {/*
+       * Mounted only while the gallery is (or is leaving). Suspended on its own
+       * boundary so the eight screenshot decodes can never blank the bench.
+       */}
+      {gallery.mounted ? (
+        <Suspense fallback={null}>
+          <GalleryHang reducedMotion={reducedMotion} />
+        </Suspense>
+      ) : null}
 
       <ProfileBadge
         badgeRef={(node) => {
@@ -4138,6 +5312,27 @@ function Scene({
       <GroundShadows mobile={mobile} />
     </>
   );
+}
+
+/**
+ * Empty space unwinds one level at a time, the same order Escape does: a
+ * focused piece first, then the gallery, then any device selection. Clicking
+ * the set is always a way *out*, never a dead end.
+ */
+function handlePointerMissed() {
+  const gallery = readBenchGallery();
+
+  if (gallery.open) {
+    if (gallery.piece >= 0) {
+      clearBenchGalleryPiece();
+      return;
+    }
+
+    closeBenchGallery();
+    return;
+  }
+
+  clearBenchSelection();
 }
 
 export function BenchScene({
@@ -4184,7 +5379,7 @@ export function BenchScene({
            */
           gl.setClearAlpha(0);
         }}
-        onPointerMissed={clearBenchSelection}
+        onPointerMissed={handlePointerMissed}
         shadows
       >
         <Scene
