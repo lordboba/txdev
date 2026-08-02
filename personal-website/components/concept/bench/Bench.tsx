@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useCallback, useSyncExternalStore } from 'react';
 import {
   companyRun,
+  companyTags,
   conceptViews,
   experiments,
   featuredProjects,
@@ -17,13 +18,18 @@ import { setConceptView, useConceptView } from '../conceptViewStore';
 import { useMounted, usePrefersReducedMotion } from '../shared/runtime';
 import { BenchScene } from './BenchScene';
 import {
+  clearBenchTagSelection,
   closeBenchGallery,
   openBenchGallery,
   readBenchGallery,
+  readBenchTags,
   setBenchGalleryPiece,
   setBenchHover,
   setBenchSelection,
+  setBenchTagHover,
+  setBenchTagSelection,
   subscribeBenchGallery,
+  subscribeBenchTags,
 } from './benchStore';
 import styles from './Bench.module.css';
 
@@ -52,16 +58,8 @@ const logoMarks: Record<
   UCLA: { src: '/logos/ucla.svg', width: 49, height: 16 },
 };
 
-/**
- * The company run reads as one sentence here, not as a second logo row. The
- * employer marks are engraved on the signature fixture standing in the 3D work
- * shot, and rendering the same five SVGs again a hundred pixels below it made
- * the DOM the louder of the two — this line is the caption under that object.
- */
-const companyCaption = [
-  ...companyRun.map((entry) => entry.company),
-  'UCLA',
-].join(' · ');
+/** Mobile fallback for the tag rail: the same five names, as one line. */
+const companyCaption = companyTags.map((tag) => tag.mark).join(' · ');
 
 const noMobileSubscribe = () => () => {};
 let webGLSupport: boolean | undefined;
@@ -111,6 +109,10 @@ function useBenchGallery() {
     readBenchGallery,
     readBenchGallery,
   );
+}
+
+function useBenchTags() {
+  return useSyncExternalStore(subscribeBenchTags, readBenchTags, readBenchTags);
 }
 
 /**
@@ -171,11 +173,106 @@ function GalleryDetails({ piece }: { piece: number }) {
   );
 }
 
-function WorkDetails() {
+/**
+ * The tags' keyboard-reachable twin. Names only, no marks: the five logos are
+ * milled into the hanging plates in the 3D shot, and printing the same five
+ * SVGs again a hundred pixels below them is exactly what made the DOM the
+ * louder of the two surfaces last time. Hover here lights the same tag the
+ * raycast does, so the two agree about what is live.
+ */
+function TagIndex({ selected }: { selected: number }) {
+  return (
+    <ul className={styles.tagIndex}>
+      {companyTags.map((tag, index) => (
+        <li key={tag.mark}>
+          <button
+            aria-pressed={index === selected}
+            data-active={index === selected}
+            onBlur={() => setBenchTagHover(-1)}
+            onClick={() => setBenchTagSelection(index)}
+            onFocus={() => setBenchTagHover(index)}
+            onPointerEnter={() => setBenchTagHover(index)}
+            onPointerLeave={() => setBenchTagHover(-1)}
+            type="button"
+          >
+            {tag.mark}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * The opened tag. Everything here is a field off the joined record in
+ * `companyTags`, which is itself a join onto lib/siteData — the panel has no
+ * copy of its own to get wrong. Same exit contract as the gallery: a back
+ * control, Escape, or a click on empty bench.
+ */
+function TagDetails({ selected }: { selected: number }) {
+  const tag = companyTags[selected];
+
+  return (
+    <div className={`${styles.details} ${styles.tagDetails}`}>
+      <div className={styles.galleryBar}>
+        <button
+          className={styles.galleryBack}
+          onClick={clearBenchTagSelection}
+          type="button"
+        >
+          <span aria-hidden="true">←</span> Back to the bench
+        </button>
+        <TagIndex selected={selected} />
+        <span className={styles.galleryHint}>Esc to exit</span>
+      </div>
+
+      <div className={styles.tagRecord}>
+        <div className={styles.tagHeading}>
+          <FieldLabel>{tag.statusLabel}</FieldLabel>
+          <h2>{tag.org}</h2>
+          <p>{tag.summary}</p>
+        </div>
+
+        <dl className={styles.tagFields}>
+          <div>
+            <dt>Role</dt>
+            <dd>{tag.role}</dd>
+          </div>
+          <div>
+            <dt>Period</dt>
+            <dd>{tag.period}</dd>
+          </div>
+          <div>
+            <dt>Focus</dt>
+            <dd>{tag.focus.join(' · ')}</dd>
+          </div>
+          {tag.detail ? (
+            <div>
+              <dt>On the run</dt>
+              <dd>{tag.detail}</dd>
+            </div>
+          ) : null}
+        </dl>
+
+        <p className={styles.tagProof}>
+          <FieldLabel>Proof</FieldLabel>
+          {tag.proof}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function WorkDetails({ mobile }: { mobile: boolean }) {
   const gallery = useBenchGallery();
+  const tags = useBenchTags();
 
   if (gallery.open) {
     return <GalleryDetails piece={gallery.piece} />;
+  }
+
+  if (!mobile && tags.selected >= 0) {
+    return <TagDetails selected={tags.selected} />;
   }
 
   return (
@@ -223,10 +320,21 @@ function WorkDetails() {
             <span aria-hidden="true">→</span>
           </span>
         </button>
-        <p className={styles.credCaption}>
+        <div className={styles.signRail}>
           <FieldLabel>Signed</FieldLabel>
-          {companyCaption}
-        </p>
+          {/*
+           * The rack is not in the mobile scene, so its DOM twin stops being a
+           * control there and goes back to being a caption. A button whose
+           * only job is to focus a lens on an object that is not in the frame
+           * is a dead end, and the row's whole point is that the two surfaces
+           * agree.
+           */}
+          {mobile ? (
+            <p className={styles.signCaption}>{companyCaption}</p>
+          ) : (
+            <TagIndex selected={-1} />
+          )}
+        </div>
       </div>
     </div>
   );
@@ -343,6 +451,7 @@ type BenchProps = {
 export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
   const view = useConceptView(initialView);
   const gallery = useBenchGallery();
+  const tags = useBenchTags();
   const mounted = useMounted();
   const webGLSupported = useWebGLSupport();
   const reducedMotion = usePrefersReducedMotion();
@@ -350,9 +459,12 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
   const activeView =
     conceptViews.find((entry) => entry.id === view) ?? conceptViews[0];
   const inGallery = view === 'work' && gallery.open;
+  const inTagRecord = view === 'work' && !gallery.open && tags.selected >= 0;
 
   const selectView = useCallback((nextView: ConceptViewId) => {
     closeBenchGallery();
+    clearBenchTagSelection();
+    setBenchTagHover(-1);
     setConceptView(nextView);
     setBenchHover(nextView, -1);
   }, []);
@@ -402,18 +514,35 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
       <section
         aria-labelledby="bench-title"
         className={styles.intro}
-        data-compact={inGallery ? 'true' : undefined}
+        data-compact={inGallery || inTagRecord ? 'true' : undefined}
       >
+        {/*
+         * Both sub-views step the display heading down to a caption for the
+         * same reason: the 4.35rem type owns a 26rem block in the top-left, and
+         * that block is where the hang's first exhibit and the rail's first tag
+         * both land. It is still the page's h1, just no longer the loudest
+         * object in the frame.
+         */}
         <FieldLabel>
-          {inGallery ? 'Side projects' : activeView.label}
+          {inGallery
+            ? 'Side projects'
+            : inTagRecord
+              ? 'Signed'
+              : activeView.label}
         </FieldLabel>
         <h1 id="bench-title">
-          {inGallery ? 'The rest of the shelf.' : introHeadings[activeView.id]}
+          {inGallery
+            ? 'The rest of the shelf.'
+            : inTagRecord
+              ? 'Where the work was done.'
+              : introHeadings[activeView.id]}
         </h1>
         <p>
           {inGallery
             ? 'Everything I have built that is not one of the four shipped products — benchmarks, bots, games, and tools, each with its repo or live link.'
-            : activeView.description}
+            : inTagRecord
+              ? 'Five tags on one rail: the run in the order it happened, and the credential at the end. The record for each is underneath.'
+              : activeView.description}
         </p>
       </section>
 
@@ -428,7 +557,7 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
         ) : null}
       </div>
 
-      {view === 'work' ? <WorkDetails /> : null}
+      {view === 'work' ? <WorkDetails mobile={mobile} /> : null}
       {view === 'profile' ? <ProfileDetails /> : null}
       {view === 'signals' ? <SignalsDetails /> : null}
       {view === 'history' ? <HistoryDetails /> : null}

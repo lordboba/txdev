@@ -11,12 +11,13 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { Suspense, useMemo, useRef, useSyncExternalStore } from 'react';
 import * as THREE from 'three';
 import {
-  companyRun,
+  companyTags,
   experiments,
   featuredProjects,
   gitEras,
   personalNotes,
   sideProjects,
+  type CompanyTag,
   type ConceptViewId,
   type FeaturedProject,
   type SideProject,
@@ -31,18 +32,22 @@ import {
 import {
   clearBenchGalleryPiece,
   clearBenchSelection,
+  clearBenchTagSelection,
   closeBenchGallery,
   openBenchGallery,
   readBenchFocus,
   readBenchGallery,
   readBenchPointer,
   readBenchSettled,
+  readBenchTags,
   releaseBenchGallery,
   setBenchGalleryPiece,
   setBenchHover,
   setBenchPointer,
   setBenchSelection,
   setBenchSettled,
+  setBenchTagHover,
+  setBenchTagSelection,
   subscribeBenchGallery,
   subscribeBenchSettled,
 } from './benchStore';
@@ -426,86 +431,106 @@ const LOGO_SOURCES: Record<string, { file: string; aspect: number }> = {
 /**
  * The shop's signature: who the work was done between runs at.
  *
- * Two earlier attempts are worth stating, because this geometry is the answer
- * to both. First a freestanding trophy placard — a prize, not a marking, and
- * it sat dead centre restating the DOM COMPANY RUN row a hundred pixels below
- * it. Then five inserts laser-marked flush INTO the bench, which fixed the
- * trophy problem and created a worse one: the work lens rakes the bench at
- * about 18°, so a mark whose normal points straight up is read at 71° off
- * axis. cos(71°) is 0.32 — the marks were rendering at a third of their height
- * and were, correctly, called illegible.
+ * Three earlier attempts are worth stating, because this rack is the answer to
+ * all of them. First a freestanding trophy placard — a prize, not a marking.
+ * Then five inserts laser-marked flush INTO the bench, which read at 71° off
+ * axis under the work lens and were, correctly, called illegible. Then one
+ * canted plate carrying all five marks together: legible at last, and a single
+ * object where there are five distinct places.
  *
- * So the marks are back off the floor, but on a machinist's angle block rather
- * than a plinth: one satin plate canted 55° off the bench on a milled wedge,
- * yawed to face the work camera, with all five marks and one field label cut
- * into the single face. At that cant the plate normal lands within ~16° of the
- * view ray — cos 0.96, effectively face-on — while the object itself is still
- * unmistakably a shop fixture bolted to a bench.
+ * So the marks come apart into five hanging spec tags on one rail. They are
+ * still a group — one rail, one baseline, one plate size, the run's own order
+ * with the credential last — but each is now a discrete thing that can be
+ * pointed at, swung, and opened. A tag hanging vertically also solves the
+ * legibility problem outright: its face normal is horizontal, and the work lens
+ * rakes down only ~13°, so every mark is read within cos 0.97 of face-on.
  *
- * It is the only place the employer marks appear now. The DOM row that used to
- * duplicate it is a text caption.
+ * The rail hangs on two hairline drops that leave the top of the frame. That is
+ * deliberate rather than lazy: every seat on this bench that could carry a post
+ * is either a shipped product's or lands the post across a product's display,
+ * and the one clear band in the work frame — above the laptop lids, right of
+ * the intro veil — has no floor under it to stand on.
  */
-const SIGN_MARK_HEIGHT = 0.078;
-const SIGN_MARK_GAP = 0.085;
-const SIGN_ROW_GAP = 0.062;
-const SIGN_PLATE_WIDTH = 1.18;
-const SIGN_PLATE_HEIGHT = 0.45;
-const SIGN_PLATE_THICKNESS = 0.055;
-/** Cant off the bench, radians. 55° — see the note above for why. */
-const SIGN_TILT = 0.96;
-/** Plate stock: a machined face a clear step above the bench it stands on. */
-const SIGN_PLATE = '#cbcdcf';
-const SIGN_LABEL_HEIGHT = 0.05;
+const TAG_W = 0.62;
+const TAG_H = 0.31;
+const TAG_T = 0.03;
+/** Centre-to-centre across the rail. */
+const TAG_PITCH = 0.74;
+/** Punched hole, measured down from the plate's top edge. */
+const TAG_HOLE_INSET = 0.05;
+const TAG_HOLE_R = 0.017;
+/** Pivot depth below the rail: hairline drop, then the ring the plate hangs on. */
+const TAG_DROP = 0.17;
+const TAG_RING_R = 0.028;
+const TAG_RAIL_HALF = 1.95;
+const TAG_RAIL_R = 0.016;
+/** Drop wires, long enough to leave the top of the work frame (y 2.76 at z −1). */
+const TAG_WIRE_X = 1.85;
+const TAG_WIRE_LEN = 1.0;
 
-/** Chronological run, then the credential — split 2 / 3 so the rows balance. */
-const SIGN_ROWS: string[][] = (() => {
-  const companies = [...companyRun.map((entry) => entry.company), 'UCLA'];
-  return [companies.slice(0, 2), companies.slice(2)];
-})();
-
-type SignMark = {
-  company: string;
-  width: number;
-  x: number;
-  y: number;
-};
+/** Satin plate stock, and the value it lifts to when a tag is live. */
+const TAG_PLATE = '#c8cacc';
+const TAG_PLATE_LIVE = '#e0e2e4';
+const TAG_PLATE_COLOR = new THREE.Color(TAG_PLATE);
+const TAG_PLATE_LIVE_COLOR = new THREE.Color(TAG_PLATE_LIVE);
 
 /**
- * Row layout on the plate face, centred. The label takes the top band, then the
- * two mark rows, all measured down from the plate's top edge so the optical
- * margins stay equal however the aspect ratios shake out.
+ * Every mark is set to one width rather than one cap height — five plates of
+ * identical size want five marks of identical measure, and a shared height
+ * would have left the 5.3:1 Scale lockup twice as long as the 3.1:1 UCLA one.
+ * The height cap catches the squarest mark so nothing overruns the plate.
  */
-const SIGN_LABEL_Y = SIGN_PLATE_HEIGHT / 2 - 0.062 - SIGN_LABEL_HEIGHT / 2;
+const TAG_MARK_W = 0.48;
+const TAG_MARK_MAX_H = 0.14;
+const TAG_MARK_Y = -0.035;
 
-const SIGN_MARKS: SignMark[] = SIGN_ROWS.flatMap((row, rowIndex) => {
-  const entries = row.map((company) => {
-    const source = LOGO_SOURCES[company];
-    return {
-      company,
-      width: SIGN_MARK_HEIGHT * (source ? source.aspect : 3),
-    };
-  });
-  const total =
-    entries.reduce((sum, entry) => sum + entry.width, 0) +
-    SIGN_MARK_GAP * (entries.length - 1);
-  const y =
-    SIGN_LABEL_Y -
-    SIGN_LABEL_HEIGHT / 2 -
-    SIGN_ROW_GAP -
-    SIGN_MARK_HEIGHT / 2 -
-    rowIndex * (SIGN_MARK_HEIGHT + SIGN_ROW_GAP);
-  let cursor = -total / 2;
+function tagMarkHeight(mark: string) {
+  const source = LOGO_SOURCES[mark];
 
-  return entries.map((entry) => {
-    const x = cursor + entry.width / 2;
-    cursor += entry.width + SIGN_MARK_GAP;
-    return { company: entry.company, width: entry.width, x, y };
-  });
-});
+  return Math.min(TAG_MARK_MAX_H, TAG_MARK_W / (source ? source.aspect : 3));
+}
 
-/** Where the canted plate's back edge lands, measured from its bottom hinge. */
-const SIGN_RISE = SIGN_PLATE_HEIGHT * Math.sin(SIGN_TILT);
-const SIGN_REACH = SIGN_PLATE_HEIGHT * Math.cos(SIGN_TILT);
+/**
+ * Hover / focus response, all of it damped or sprung — there is no keyframe
+ * anywhere in the rack.
+ *
+ * The swing is an actual second-order spring rather than another exponential
+ * damp, because a tag on a ring is a pendulum and a pendulum overshoots. At
+ * stiffness 110 / damping 14 the ratio is ζ ≈ 0.67: one small overshoot, gone
+ * in about half a second, and dead still after. Anything lighter reads as a
+ * cartoon swing; anything heavier is just a rotation.
+ *
+ * It pivots at the RAIL, not at the ring, and that is the whole of the "lift".
+ * An earlier pass translated the plate up and forward on hover and left the
+ * ring behind, which at focus range opened a visible gap between a tag and the
+ * thing holding it. Swinging the entire hanger about the bar it hangs on gives
+ * the same read for free: the plate rises L(1 − cos θ) and travels L sin θ
+ * toward the lens, and the cord and ring come with it because they are the
+ * same object.
+ */
+const TAG_SWING_HOVER = -0.3;
+const TAG_SWING_SELECTED = -0.12;
+const TAG_SPRING_STIFFNESS = 110;
+const TAG_SPRING_DAMPING = 14;
+
+/**
+ * Value response. One signed channel: +1 is the live tag, −1 is a tag standing
+ * down while one of its neighbours is open. Nothing moves for the recede — a
+ * hanging plate that steps back leaves its own cord behind — so the row makes
+ * its hierarchy out of value alone, the way a lighting setup would.
+ */
+const TAG_PLATE_DIM = '#b0b2b4';
+const TAG_PLATE_DIM_COLOR = new THREE.Color(TAG_PLATE_DIM);
+
+/**
+ * Rest pose per tag. Five plates hung dead flat and dead parallel is the one
+ * arrangement no real rail ever produces: each ring seats a little differently
+ * and each plate finds its own face. A degree or two of yaw is enough to give
+ * every plate its own value off the same cubemap — which is what stops the row
+ * reading as one wide decal — and far too little to break the group.
+ */
+const TAG_REST_YAW = [0.05, -0.028, 0.018, -0.046, 0.034];
+const TAG_REST_ROLL = [-0.011, 0.007, -0.005, 0.013, -0.009];
 
 /** Badge fields, label above value, straight out of the real personal notes. */
 const BADGE_FIELDS = [
@@ -1015,76 +1040,6 @@ function getLogoAlpha(file: string, aspect: number) {
   }
 
   logoAlphaCache.set(file, texture);
-  return texture;
-}
-
-/**
- * The wedge under the signature plate: a right-triangle prism whose hypotenuse
- * lies exactly on the plate's underside, so the two parts touch along a full
- * line instead of intersecting. Authored in the (z, y) plane and rotated in,
- * because ExtrudeGeometry only ever extrudes an XY shape along +Z — the same
- * construction the Signals angle blocks use.
- */
-let signWedgeGeometry: THREE.ExtrudeGeometry | null = null;
-
-const SIGN_WEDGE_WIDTH = 0.62;
-
-function getSignWedge() {
-  if (signWedgeGeometry) {
-    return signWedgeGeometry;
-  }
-
-  const shape = new THREE.Shape();
-  shape.moveTo(0, 0);
-  shape.lineTo(-SIGN_REACH, 0);
-  shape.lineTo(-SIGN_REACH, SIGN_RISE);
-  shape.closePath();
-
-  const geometry = new THREE.ExtrudeGeometry(shape, {
-    bevelEnabled: false,
-    depth: SIGN_WEDGE_WIDTH,
-    steps: 1,
-  });
-  /* Shape x → world z, extrusion → world −x; recentre under the plate. */
-  geometry.rotateY(-Math.PI / 2);
-  geometry.translate(SIGN_WEDGE_WIDTH / 2, 0, 0);
-  geometry.computeVertexNormals();
-  signWedgeGeometry = geometry;
-  return geometry;
-}
-
-/**
- * The one field label on the signature plate, as a white-on-transparent alpha
- * mask. Same contract as every other engraving in the set: white is the mask,
- * the ink comes from the host metal.
- */
-let signLabelAlpha: THREE.Texture | null = null;
-
-const SIGN_LABEL_ASPECT = 1024 / 128;
-
-function getSignLabelAlpha() {
-  if (signLabelAlpha) {
-    return signLabelAlpha;
-  }
-
-  const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 128;
-  const context = canvas.getContext('2d') as SpacedContext | null;
-
-  if (context) {
-    context.fillStyle = '#ffffff';
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
-    context.letterSpacing = '26px';
-    context.font = '600 74px Helvetica Neue, Arial, sans-serif';
-    /* The trailing tracking space is what keeps a letterspaced run centred. */
-    context.fillText('WORKED AT', canvas.width / 2 + 13, canvas.height / 2);
-  }
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.anisotropy = 8;
-  signLabelAlpha = texture;
   return texture;
 }
 
@@ -2207,7 +2162,7 @@ function BenchTop() {
         <meshStandardMaterial color="#a9abad" roughness={0.6} />
       </mesh>
 
-      {/* Chamfered front rail. Bare — the shop marks live on the nameplate. */}
+      {/* Chamfered front rail. Bare — the shop marks hang on the tag rack. */}
       <group
         position={[0, -0.055, BENCH_FRONT_Z + 0.03]}
         rotation={[-0.62, 0, 0]}
@@ -2222,170 +2177,444 @@ function BenchTop() {
 }
 
 /**
- * Per-view seats, damped like every other subject in the set. The signature is
- * a standing fixture now, so a seat is a patch of bench plus the yaw that turns
- * the canted face toward that view's lens — the cant itself lives inside the
- * component and never changes.
+ * Parked pose, damped to like every other subject in the set. The rack's origin
+ * is the rail, not a patch of bench, because this object hangs.
+ *
+ * It belongs to `work` and only to `work`, and each of the other three views
+ * parks it for its own reason rather than by default. Profile already prints
+ * the whole company run as a DOM table carrying the same five marks, so hanging
+ * them over the badge as well would be the exact duplication this rack was
+ * built to end. Signals is a near-plan view of three blanks with no headroom
+ * above them. History tracks laterally across six era cards and has no still
+ * band at all.
  */
-const SHOP_HIDDEN: Transform = {
+const TAG_RACK_PARKED: Transform = {
   position: [0, -2.8, 3.5],
   rotation: [0, 0, 0],
   scale: HIDDEN.scale,
 };
 
-const NAMEPLATE_SEATS: Record<ConceptViewId, Transform> = {
-  /*
-   * The near foreground, slightly camera-right of the cluster axis — where a
-   * maker signs a photograph. The left gutter it used to hold belongs to the
-   * side-projects tablet now, and the two candidate patches on the right both
-   * failed: parked beside the Charades phone the phone body ate the Ramp mark,
-   * and pushed clear of it the plinth ran off the right edge of a 33° frame.
-   * The trough in front of the two phones is open bench in every work frame,
-   * and a fixture standing there is nearer the lens than anything else in the
-   * set, which is exactly the read a signature wants.
-   */
-  work: {
-    position: [0.52, 0, 0.68],
-    rotation: [0, -0.06, 0],
-    scale: 0.9,
-  },
-  /*
-   * Foreground strip, in front of the blank run rather than beside it. The
-   * fixture is only ~0.4 tall, so it clears the blanks' sight line even parked
-   * this far forward.
-   */
-  signals: {
-    position: [-1.85, 0, 1.45],
-    rotation: [0, 0.28, 0],
-    scale: 0.95,
-  },
-  /*
-   * History parks it. Six era cards on a 1.52 pitch fill the whole frame and
-   * the lens tracks laterally across them, so any patch of bench the signature
-   * could take is bench a card is standing on.
-   */
-  history: SHOP_HIDDEN,
-  /*
-   * Profile: camera-left of the badge and on its ground line, so the frame
-   * reads as one arrangement — the card holding the right two-thirds and the
-   * signature on the empty bench opposite it.
-   */
-  profile: {
-    position: [-1.62, 0, -2.35],
-    rotation: [0, 0.3, 0],
-    scale: 1.3,
-  },
-};
+/** How far the lens stands off a focused plate, at rack scale 1. */
+const TAG_FOCUS_DISTANCE = 3.2;
 
 /**
- * The signature fixture: a milled base plinth, a wedge, and the canted plate
- * with the field label and all five marks cut into its single face. Aspects
- * come off the manifest viewBox, so no mark is ever scaled non-uniformly.
+ * The work seat, fitted to the canvas aspect.
+ *
+ * The band it sits in is the one clear strip in the work frame: above the two
+ * laptop lids, right of the intro veil's falloff, under the header — about 0.9
+ * world units tall at this depth, which is what set the tag's own proportions.
+ * z −1.0 puts the rail in front of both lids rather than behind them, so no
+ * mark is ever occluded by a product, and the plates still stop ~0.25 above the
+ * nearer lid's top edge, so no product is ever occluded by a mark.
+ *
+ * A fixed seat only frames one shape of viewport, and this one has an obstacle
+ * a fixed seat cannot see: the intro veil is `min(26rem, 38vw)` wide, so it
+ * takes 38% of a 4:3 frame and only 22% of a 16:9 one. Holding the rack at a
+ * constant world x therefore parked the first two tags behind the headline at
+ * 1024 and left a dead quarter-frame at 1920. `fit` tracks the aspect for the
+ * rack's size, and the second term pushes it clear of the veil by however much
+ * the veil has grown — which is what keeps the same picture at every width.
+ *
+ * Mutated in place rather than rebuilt: this is read once per frame.
  */
-function ShopSignature({
+const WORK_RACK_ASPECT = 1.6;
+const workRackSeat: Transform = {
+  position: [0.85, 2.16, -1.0],
+  rotation: [0, 0, 0],
+  scale: 1,
+};
+
+function fitWorkRack(aspect: number) {
+  const fit = THREE.MathUtils.clamp(aspect / WORK_RACK_ASPECT, 0.6, 1.1);
+  workRackSeat.position[0] = WORK_CENTER_X + 0.63 * fit + (1 - fit) * 2;
+  workRackSeat.scale = fit;
+
+  return workRackSeat;
+}
+
+/** World centre of a tag's plate — what the focus lens aims at. */
+function tagFocusSeat(index: number, seat: Transform) {
+  const across = (index - (companyTags.length - 1) / 2) * TAG_PITCH;
+
+  return {
+    x: seat.position[0] + across * seat.scale,
+    y: seat.position[1] - (TAG_DROP + TAG_H / 2 - TAG_HOLE_INSET) * seat.scale,
+    z: seat.position[2],
+    scale: seat.scale,
+  };
+}
+
+/*
+ * One geometry per part, shared by all five tags. Five plates that differ only
+ * in the mark cut into them have no business owning five box geometries.
+ */
+let tagPlateGeometry: THREE.BoxGeometry | null = null;
+let tagRingGeometry: THREE.TorusGeometry | null = null;
+let tagHoleGeometry: THREE.CircleGeometry | null = null;
+let tagCordGeometry: THREE.CylinderGeometry | null = null;
+
+/** Hairline run from the rail down to the ring the plate hangs on. */
+const TAG_CORD_LEN = TAG_DROP - TAG_RING_R;
+
+/**
+ * The one thing that stops a small vertical plate reading as paper: a face
+ * gradient. A flat plane has a constant normal, so neither the key nor the
+ * cubemap can put any form on it — the value has to come from the map.
+ *
+ * The ramp runs bright at the top-left to dim at the bottom-right, which is the
+ * direction the studio key actually travels ([-6.5, 7, 3.2] aimed at origin).
+ * It is the same grade the bench and the cove already carry, applied to the one
+ * new surface in the set.
+ */
+let tagFalloff: THREE.Texture | null = null;
+
+function getTagFalloff() {
+  if (tagFalloff) {
+    return tagFalloff;
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 64;
+  const context = canvas.getContext('2d');
+
+  if (context) {
+    const gradient = context.createLinearGradient(0, 0, 64, 64);
+    gradient.addColorStop(0, '#ffffff');
+    gradient.addColorStop(0.55, '#dcdcdc');
+    gradient.addColorStop(1, '#b0b0b0');
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, 64, 64);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.generateMipmaps = false;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  tagFalloff = texture;
+  return texture;
+}
+
+function getTagPlateGeometry() {
+  if (!tagPlateGeometry) {
+    tagPlateGeometry = new THREE.BoxGeometry(TAG_W, TAG_H, TAG_T);
+  }
+
+  return tagPlateGeometry;
+}
+
+function getTagRingGeometry() {
+  if (!tagRingGeometry) {
+    tagRingGeometry = new THREE.TorusGeometry(TAG_RING_R, 0.0065, 6, 20);
+  }
+
+  return tagRingGeometry;
+}
+
+function getTagHoleGeometry() {
+  if (!tagHoleGeometry) {
+    tagHoleGeometry = new THREE.CircleGeometry(TAG_HOLE_R, 16);
+  }
+
+  return tagHoleGeometry;
+}
+
+function getTagCordGeometry() {
+  if (!tagCordGeometry) {
+    tagCordGeometry = new THREE.CylinderGeometry(0.005, 0.005, TAG_CORD_LEN, 6);
+  }
+
+  return tagCordGeometry;
+}
+
+/**
+ * One tag: a hairline drop off the rail, a split ring, and a punched satin
+ * plate with the employer's real mark milled into its face.
+ *
+ * The whole hanger is one swinging body pivoted at the rail. The plate keeps a
+ * static yaw and roll of its own inside it, so the five plates never render as
+ * one wide parallel decal, but nothing inside the hanger ever moves relative to
+ * anything else — a tag and the ring holding it can never come apart.
+ */
+function CompanyTagPlate({
+  index,
+  tag,
+  swingRef,
   plateRef,
 }: {
-  plateRef: (node: THREE.Group | null) => void;
+  index: number;
+  tag: CompanyTag;
+  swingRef: (node: THREE.Group | null) => void;
+  plateRef: (node: THREE.MeshStandardMaterial | null) => void;
 }) {
-  const wedge = useMemo(() => getSignWedge(), []);
-  const labelAlpha = useMemo(() => getSignLabelAlpha(), []);
+  const plate = useMemo(() => getTagPlateGeometry(), []);
+  const ring = useMemo(() => getTagRingGeometry(), []);
+  const hole = useMemo(() => getTagHoleGeometry(), []);
+  const cord = useMemo(() => getTagCordGeometry(), []);
+  const grain = useMemo(() => getBrushedRoughness(), []);
+  const falloff = useMemo(() => getTagFalloff(), []);
+  const holeY = TAG_H / 2 - TAG_HOLE_INSET;
 
   return (
     <group
-      position={NAMEPLATE_SEATS.work.position}
-      ref={plateRef}
-      rotation={NAMEPLATE_SEATS.work.rotation}
+      position={[(index - (companyTags.length - 1) / 2) * TAG_PITCH, 0, 0]}
+      ref={swingRef}
     >
-      <ContactCore depth={0.62} width={1.5} z={-0.09} />
-
-      {/* Base plinth: the machined foot the whole fixture stands on. */}
-      <RoundedBox
-        args={[SIGN_PLATE_WIDTH + 0.09, 0.034, SIGN_REACH + 0.13]}
-        castShadow
-        position={[0, 0.017, -SIGN_REACH / 2 + 0.05]}
-        radius={0.008}
-        receiveShadow
-        smoothness={3}
-      >
-        <AluminumMaterial
-          color={ALUMINUM_BRIGHT}
-          envMapIntensity={1.7}
-          metalness={0.8}
-          roughness={0.24}
-        />
-      </RoundedBox>
-
-      {/* Support wedge, narrower than the plate so the plate reads as stock. */}
-      <mesh castShadow geometry={wedge} position={[0, 0.034, 0.02]}>
+      <mesh geometry={cord} position={[0, -TAG_CORD_LEN / 2, 0]}>
         <AluminumMaterial
           color={ALUMINUM_DARK}
-          envMapIntensity={1.1}
-          metalness={0.9}
-          roughness={0.38}
+          envMapIntensity={1.5}
+          roughness={0.24}
         />
       </mesh>
 
-      {/*
-       * The plate itself, hinged on its bottom-front edge so the cant lifts it
-       * off the plinth instead of driving it through.
-       */}
-      <group
-        position={[0, 0.034, 0.02]}
-        rotation={[SIGN_TILT - Math.PI / 2, 0, 0]}
+      <mesh
+        geometry={ring}
+        position={[0, -TAG_DROP, 0]}
+        rotation={[0, Math.PI / 2, 0]}
       >
-        <group position={[0, SIGN_PLATE_HEIGHT / 2, 0]}>
-          <RoundedBox
-            args={[SIGN_PLATE_WIDTH, SIGN_PLATE_HEIGHT, SIGN_PLATE_THICKNESS]}
-            castShadow
-            radius={0.01}
-            receiveShadow
-            smoothness={3}
-          >
-            <AluminumMaterial
-              color={SIGN_PLATE}
-              envMapIntensity={1.5}
-              metalness={0.55}
-              roughness={0.26}
-            />
-          </RoundedBox>
-          <ChamferBand
-            args={[SIGN_PLATE_WIDTH, SIGN_PLATE_HEIGHT, SIGN_PLATE_THICKNESS]}
-            color={ALUMINUM_BRIGHT}
-            radius={0.01}
-            smoothness={3}
-          />
+        {/*
+         * Metalness well under 1. A torus standing edge-on to the lens has all
+         * its normals pointing sideways, and pure metal there can only return
+         * the dark front hemisphere of the studio cubemap — the ring rendered
+         * as a black bead. A diffuse term is what makes it steel.
+         */}
+        <AluminumMaterial
+          color={ALUMINUM_BRIGHT}
+          envMapIntensity={1.5}
+          metalness={0.5}
+          roughness={0.24}
+        />
+      </mesh>
 
-          <EngravedDecal
-            alpha={labelAlpha}
-            envMapIntensity={1.2}
-            floor={0.45}
-            height={SIGN_LABEL_HEIGHT}
-            hostColor={SIGN_PLATE}
-            lipMix={0.5}
-            metalness={0.55}
-            offset={0.0026}
-            position={[0, SIGN_LABEL_Y, SIGN_PLATE_THICKNESS / 2 + 0.001]}
-            roughness={0.3}
-            width={SIGN_LABEL_HEIGHT * SIGN_LABEL_ASPECT}
+      <group
+        onClick={(event) => {
+          event.stopPropagation();
+          setBenchTagSelection(index);
+        }}
+        onPointerEnter={(event) => {
+          event.stopPropagation();
+          setBenchTagHover(index);
+        }}
+        onPointerLeave={() => setBenchTagHover(-1)}
+        position={[0, -TAG_DROP - holeY, 0]}
+        rotation={[0, TAG_REST_YAW[index], TAG_REST_ROLL[index]]}
+      >
+        {/*
+         * No ChamferBand here, unlike every other machined body in the set.
+         * The tags are read very close to face-on, so the band adds no edge
+         * highlight at all — all it did was serrate the silhouette with its
+         * own low-segment outline standing 0.002 proud of the plate.
+         */}
+        <mesh castShadow geometry={plate}>
+          <meshStandardMaterial
+            color={TAG_PLATE}
+            envMapIntensity={1.25}
+            map={falloff}
+            metalness={0.45}
+            ref={plateRef}
+            roughness={0.32}
+            roughnessMap={grain}
           />
+        </mesh>
 
-          {SIGN_MARKS.map((mark) => (
-            <EtchedMark
-              company={mark.company}
-              envMapIntensity={1.2}
-              floor={0.4}
-              height={SIGN_MARK_HEIGHT}
-              hostColor={SIGN_PLATE}
-              key={mark.company}
-              lipMix={0.52}
-              metalness={0.55}
-              offset={0.003}
-              position={[mark.x, mark.y, SIGN_PLATE_THICKNESS / 2 + 0.001]}
-              roughness={0.32}
-            />
-          ))}
-        </group>
+        {/* The punched hole itself, as a recessed dark land. */}
+        <mesh geometry={hole} position={[0, holeY, TAG_T / 2 + 0.0009]}>
+          <meshStandardMaterial
+            color={SCREEN_WELL}
+            metalness={0.25}
+            roughness={0.5}
+          />
+        </mesh>
+
+        {/*
+         * Height, not width, is what varies between marks: `EtchedMark`
+         * derives width from the manifest aspect, so feeding it W / aspect
+         * sets every mark to the same measure without ever scaling one
+         * non-uniformly.
+         */}
+        <EtchedMark
+          company={tag.mark}
+          envMapIntensity={1.2}
+          floor={0.32}
+          height={tagMarkHeight(tag.mark)}
+          hostColor={TAG_PLATE}
+          lipMix={0.6}
+          metalness={0.5}
+          offset={0.0024}
+          position={[0, TAG_MARK_Y, TAG_T / 2 + 0.001]}
+          roughness={0.3}
+        />
       </group>
+    </group>
+  );
+}
+
+type TagMotion = {
+  angle: number;
+  velocity: number;
+  /** Signed value channel: +1 live, −1 standing down for a neighbour. */
+  glow: number;
+  resting: boolean;
+};
+
+/**
+ * The rack: one rail on two drops, five tags, and the only per-frame work in
+ * the object.
+ *
+ * The loop early-outs on any tag that is already sitting exactly on its
+ * targets, so an idle work shot integrates nothing at all and a hover
+ * integrates one tag — the neighbours are untouched, which is the whole point
+ * of hanging them separately.
+ */
+function CompanyTagRack({
+  rackRef,
+  reducedMotion,
+}: {
+  rackRef: (node: THREE.Group | null) => void;
+  reducedMotion: boolean;
+}) {
+  const swings = useRef<(THREE.Group | null)[]>([]);
+  const plates = useRef<(THREE.MeshStandardMaterial | null)[]>([]);
+  const motion = useRef<TagMotion[]>(
+    companyTags.map(() => ({
+      angle: 0,
+      velocity: 0,
+      glow: 0,
+      resting: true,
+    })),
+  );
+
+  useFrame((_, rawDelta) => {
+    const delta = Math.min(rawDelta, 1 / 30);
+    const focus = readBenchTags();
+
+    for (let index = 0; index < companyTags.length; index += 1) {
+      const swing = swings.current[index];
+      const state = motion.current[index];
+
+      if (!swing) {
+        continue;
+      }
+
+      const hovered = focus.hovered === index;
+      const selected = focus.selected === index;
+      /*
+       * Reduced motion keeps the highlight and drops the pendulum entirely —
+       * the tag brightens where it hangs and never moves.
+       */
+      const targetAngle = reducedMotion
+        ? 0
+        : hovered
+          ? TAG_SWING_HOVER
+          : selected
+            ? TAG_SWING_SELECTED
+            : 0;
+      const targetGlow = hovered || selected ? 1 : focus.selected >= 0 ? -1 : 0;
+
+      if (
+        state.resting &&
+        state.angle === targetAngle &&
+        state.glow === targetGlow
+      ) {
+        continue;
+      }
+
+      /* Semi-implicit Euler on a second-order spring; see TAG_SPRING_*. */
+      state.velocity +=
+        (targetAngle - state.angle) * TAG_SPRING_STIFFNESS * delta;
+      state.velocity -=
+        state.velocity * Math.min(1, TAG_SPRING_DAMPING * delta);
+      state.angle += state.velocity * delta;
+      state.glow = damp(state.glow, targetGlow, reducedMotion ? 80 : 9, delta);
+
+      if (
+        Math.abs(state.angle - targetAngle) < 0.0006 &&
+        Math.abs(state.velocity) < 0.002 &&
+        Math.abs(state.glow - targetGlow) < 0.002
+      ) {
+        state.angle = targetAngle;
+        state.velocity = 0;
+        state.glow = targetGlow;
+        state.resting = true;
+      } else {
+        state.resting = false;
+      }
+
+      swing.rotation.x = state.angle;
+
+      const material = plates.current[index];
+
+      if (material) {
+        material.color
+          .copy(TAG_PLATE_COLOR)
+          .lerp(
+            state.glow >= 0 ? TAG_PLATE_LIVE_COLOR : TAG_PLATE_DIM_COLOR,
+            Math.abs(state.glow),
+          );
+      }
+    }
+  });
+
+  return (
+    <group
+      position={TAG_RACK_PARKED.position}
+      ref={rackRef}
+      scale={TAG_RACK_PARKED.scale}
+    >
+      {/* The two drops. They run past the top of the work frame by ~0.35. */}
+      {[-TAG_WIRE_X, TAG_WIRE_X].map((x) => (
+        <mesh key={x} position={[x, TAG_WIRE_LEN / 2, 0]}>
+          <cylinderGeometry args={[0.006, 0.006, TAG_WIRE_LEN, 6]} />
+          <AluminumMaterial
+            color={ALUMINUM_DARK}
+            envMapIntensity={1.4}
+            roughness={0.26}
+          />
+        </mesh>
+      ))}
+
+      {/*
+       * The rail. Axial grain: it is a turned tube, so the brushing runs the
+       * length of it rather than across it the way a milled face does.
+       */}
+      <mesh castShadow rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry
+          args={[TAG_RAIL_R, TAG_RAIL_R, TAG_RAIL_HALF * 2, 14]}
+        />
+        <AluminumMaterial
+          envMapIntensity={1.2}
+          grain="axial"
+          roughness={0.28}
+        />
+      </mesh>
+
+      {[-TAG_RAIL_HALF, TAG_RAIL_HALF].map((x) => (
+        <mesh key={x} position={[x, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry
+            args={[TAG_RAIL_R + 0.011, TAG_RAIL_R + 0.011, 0.05, 14]}
+          />
+          <AluminumMaterial
+            color={ALUMINUM_DARK}
+            envMapIntensity={1.2}
+            roughness={0.34}
+          />
+        </mesh>
+      ))}
+
+      {companyTags.map((tag, index) => (
+        <CompanyTagPlate
+          index={index}
+          key={tag.mark}
+          plateRef={(node) => {
+            plates.current[index] = node;
+          }}
+          swingRef={(node) => {
+            swings.current[index] = node;
+          }}
+          tag={tag}
+        />
+      ))}
     </group>
   );
 }
@@ -3862,7 +4091,7 @@ function ExperimentBlank({
           />
         </mesh>
         {/*
-         * Same lip-highlight / darkened-floor pair the nameplate pocket uses.
+         * Same lip-highlight / darkened-floor pair the tag plates use.
          * At the default 0.34 lip and 0.6 floor the SHIPPING / MEASURING /
          * COLLECTING labels carried about 8% local contrast against the pocket
          * — invisible at the signals distance. At lipMix 0.5 / floor 0.3 each
@@ -4518,6 +4747,12 @@ function GalleryHang({ reducedMotion }: { reducedMotion: boolean }) {
 type CameraShot = {
   position: [number, number, number];
   look: number;
+  /**
+   * Depth of the look target. Every bench lens aims at the z 0 datum and so
+   * leaves this alone; a focused tag is the exception, because it hangs a unit
+   * behind that datum and a level shot aimed at z 0 would look past it.
+   */
+  lookZ?: number;
   fov: number;
   /**
    * Camera roll, radians. Under a degree and a half, and with opposing signs
@@ -4660,7 +4895,7 @@ function Scene({
   const blanks = useRef<(THREE.Group | null)[]>([]);
   const artifacts = useRef<(THREE.Group | null)[]>([]);
   const badge = useRef<THREE.Group | null>(null);
-  const nameplate = useRef<THREE.Group | null>(null);
+  const tagRack = useRef<THREE.Group | null>(null);
   const tablet = useRef<THREE.Group | null>(null);
   const cameraLook = useRef(new THREE.Vector3());
   const cameraRoll = useRef(0);
@@ -4690,8 +4925,20 @@ function Scene({
       closeBenchGallery();
     }
 
+    if (view !== 'work') {
+      clearBenchTagSelection();
+    }
+
     const inGallery = view === 'work' && galleryState.open;
     const workFocus = readBenchFocus('work');
+    /*
+     * Mobile never opens a tag: the rack is not mounted there at all (five
+     * marks at that camera distance render as five smudges, and an illegible
+     * mark is worse than no mark), so there is nothing for the lens to fly to.
+     * The DOM rail degrades to a caption to match.
+     */
+    const focusedTag =
+      view === 'work' && !inGallery && !mobile ? readBenchTags().selected : -1;
     const signalFocus = readBenchFocus('signals');
     const historyFocus = readBenchFocus('history');
     const pointer = readBenchPointer();
@@ -4768,8 +5015,7 @@ function Scene({
                 active ? 0.34 : 0,
                 /*
                  * Pushed back off the front lip so the whole run clears the
-                 * DOM detail band by ~200 CSS and leaves the foreground strip
-                 * for the nameplate.
+                 * DOM detail band by ~200 CSS.
                  */
                 index === 1 ? -1.85 : -1.15,
               ] as [number, number, number],
@@ -4875,14 +5121,17 @@ function Scene({
       );
     }
 
-    if (nameplate.current) {
-      const markTarget = inGallery ? SHOP_HIDDEN : NAMEPLATE_SEATS[view];
+    if (tagRack.current) {
+      const rackTarget =
+        inGallery || view !== 'work'
+          ? TAG_RACK_PARKED
+          : fitWorkRack((camera as THREE.PerspectiveCamera).aspect);
       motion = Math.max(
         motion,
         dampTransform(
-          nameplate.current,
-          markTarget,
-          transitLambda(markTarget, reducedMotion),
+          tagRack.current,
+          rackTarget,
+          transitLambda(rackTarget, reducedMotion),
           delta,
         ),
       );
@@ -4974,7 +5223,7 @@ function Scene({
            * Portrait lens. The axis now runs straight down the middle of the
            * arrangement rather than being yawed camera-left to fling a
            * centred badge onto the right third: the subjects are staged in
-           * world space instead — badge on the left third, nameplate on the
+           * world space instead — badge on the left third, signature on the
            * right third, both on the same ground line — so the frame is a
            * composition rather than one object plus a stray.
            */
@@ -4988,7 +5237,7 @@ function Scene({
            * two-thirds of the frame.
            */
           profile: {
-            position: [0.85 + parallaxX * 0.4, 2.05, 6.15],
+            position: [1.0 + parallaxX * 0.4, 2.05, 5.98],
             look: 0.95,
             fov: 34,
             roll: -0.014,
@@ -5061,7 +5310,37 @@ function Scene({
             roll: 0,
           };
 
-    const shot = inGallery ? galleryShot : shots[view];
+    /*
+     * A focused tag is a third setup inside `work`, on the same contract as the
+     * gallery: the hash never changes, Escape and empty space both unwind it,
+     * and it earns the same arc-and-settle transit a view change gets.
+     *
+     * The lens goes level with the plate and 2.1 out, which puts a 0.56-wide
+     * tag across ~31% of the frame with its two neighbours cut by the edges —
+     * read as one of a row rather than lifted out of it.
+     */
+    const tagSeat =
+      focusedTag >= 0
+        ? tagFocusSeat(
+            focusedTag,
+            fitWorkRack((camera as THREE.PerspectiveCamera).aspect),
+          )
+        : null;
+    const tagShot: CameraShot | null = tagSeat
+      ? {
+          position: [
+            tagSeat.x + parallaxX * 0.25,
+            tagSeat.y + 0.04 * tagSeat.scale,
+            tagSeat.z + TAG_FOCUS_DISTANCE * tagSeat.scale,
+          ],
+          look: tagSeat.y,
+          lookZ: tagSeat.z,
+          fov: 30,
+          roll: 0.008,
+        }
+      : null;
+
+    const shot = inGallery ? galleryShot : (tagShot ?? shots[view]);
     const targetX = shot.position[0] + (inGallery ? parallaxX * 0.4 : 0);
     const targetY = shot.position[1] - parallaxY;
     const targetZ = shot.position[2];
@@ -5074,7 +5353,9 @@ function Scene({
     const move = transit.current;
     const shotKey = inGallery
       ? `gallery:${galleryState.piece >= 0 ? 'piece' : 'hang'}`
-      : view;
+      : focusedTag >= 0
+        ? `tag:${focusedTag}`
+        : view;
 
     if (move.view !== shotKey) {
       if (move.view === null || reducedMotion) {
@@ -5135,18 +5416,25 @@ function Scene({
       ? galleryState.piece >= 0
         ? GALLERY_FOCUS.position[0] * 0.45
         : 0
-      : view === 'history'
-        ? historyX
-        : view === 'profile'
-          ? mobile
-            ? 0.15
-            : 0.1
-          : view === 'work'
-            ? (selectedProject?.position[0] ?? workCenterX)
-            : 0;
+      : tagSeat
+        ? tagSeat.x
+        : view === 'history'
+          ? historyX
+          : view === 'profile'
+            ? mobile
+              ? 0.15
+              : 0.34
+            : view === 'work'
+              ? (selectedProject?.position[0] ?? workCenterX)
+              : 0;
     cameraLook.current.x = damp(cameraLook.current.x, lookX, lambda, delta);
     cameraLook.current.y = damp(cameraLook.current.y, shot.look, lambda, delta);
-    cameraLook.current.z = damp(cameraLook.current.z, 0, lambda, delta);
+    cameraLook.current.z = damp(
+      cameraLook.current.z,
+      shot.lookZ ?? 0,
+      lambda,
+      delta,
+    );
     camera.lookAt(cameraLook.current);
 
     /*
@@ -5246,11 +5534,14 @@ function Scene({
 
       <StudioCove />
       <BenchTop />
-      <ShopSignature
-        plateRef={(node) => {
-          nameplate.current = node;
-        }}
-      />
+      {mobile ? null : (
+        <CompanyTagRack
+          rackRef={(node) => {
+            tagRack.current = node;
+          }}
+          reducedMotion={reducedMotion}
+        />
+      )}
 
       {featuredProjects.map((project, index) => (
         <ProjectDevice
@@ -5316,8 +5607,8 @@ function Scene({
 
 /**
  * Empty space unwinds one level at a time, the same order Escape does: a
- * focused piece first, then the gallery, then any device selection. Clicking
- * the set is always a way *out*, never a dead end.
+ * focused piece first, then the gallery, then an open tag record, then any
+ * device selection. Clicking the set is always a way *out*, never a dead end.
  */
 function handlePointerMissed() {
   const gallery = readBenchGallery();
@@ -5329,6 +5620,11 @@ function handlePointerMissed() {
     }
 
     closeBenchGallery();
+    return;
+  }
+
+  if (readBenchTags().selected >= 0) {
+    clearBenchTagSelection();
     return;
   }
 

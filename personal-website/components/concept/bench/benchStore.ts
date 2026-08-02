@@ -43,6 +43,13 @@ export function setBenchHover(view: ConceptViewId, index: number) {
 export function setBenchSelection(view: ConceptViewId, index: number) {
   enterFocusView(view);
   focus.selected = index;
+
+  /*
+   * Devices and company tags are two selection channels inside the same work
+   * view, and each one owns the camera while it is open. Picking a device has
+   * to release a tag, or the two shots fight over the lens every frame.
+   */
+  clearBenchTagSelection();
 }
 
 export function clearBenchSelection() {
@@ -117,6 +124,9 @@ function commitGallery(next: BenchGallery) {
 }
 
 export function openBenchGallery() {
+  /* The hang is the whole shot; a tag record cannot stay open behind it. */
+  clearBenchTagSelection();
+  setBenchTagHover(-1);
   commitGallery({ open: true, mounted: true, piece: -1 });
 }
 
@@ -154,22 +164,49 @@ export function clearBenchGalleryPiece() {
 }
 
 /**
- * Escape unwinds one level at a time — focused piece, then the gallery itself.
- * It is bound here rather than in a component so there is exactly one handler
- * no matter how many surfaces subscribe, and so it is torn down with the last
- * of them.
+ * Escape unwinds one level at a time — focused piece, then the gallery, then
+ * an open company-tag record. It is bound here rather than in a component so
+ * there is exactly one handler no matter how many surfaces subscribe, and so
+ * it is torn down with the last of them.
+ *
+ * One handler for both sub-views, refcounted across their two subscribe
+ * functions: two independent listeners would both fire on the same keystroke
+ * and there would be no defined order between them.
  */
-function handleGalleryKey(event: KeyboardEvent) {
-  if (event.key !== 'Escape' || !gallery.open) {
+function handleBenchEscape(event: KeyboardEvent) {
+  if (event.key !== 'Escape') {
     return;
   }
 
-  if (gallery.piece >= 0) {
-    clearBenchGalleryPiece();
+  if (gallery.open) {
+    if (gallery.piece >= 0) {
+      clearBenchGalleryPiece();
+      return;
+    }
+
+    closeBenchGallery();
     return;
   }
 
-  closeBenchGallery();
+  clearBenchTagSelection();
+}
+
+let escapeHolders = 0;
+
+function retainEscape() {
+  escapeHolders += 1;
+
+  if (escapeHolders === 1 && typeof window !== 'undefined') {
+    window.addEventListener('keydown', handleBenchEscape);
+  }
+}
+
+function releaseEscape() {
+  escapeHolders -= 1;
+
+  if (escapeHolders === 0 && typeof window !== 'undefined') {
+    window.removeEventListener('keydown', handleBenchEscape);
+  }
 }
 
 export function readBenchGallery() {
@@ -178,17 +215,74 @@ export function readBenchGallery() {
 
 export function subscribeBenchGallery(listener: () => void) {
   galleryListeners.add(listener);
-
-  if (galleryListeners.size === 1 && typeof window !== 'undefined') {
-    window.addEventListener('keydown', handleGalleryKey);
-  }
+  retainEscape();
 
   return () => {
     galleryListeners.delete(listener);
+    releaseEscape();
+  };
+}
 
-    if (galleryListeners.size === 0 && typeof window !== 'undefined') {
-      window.removeEventListener('keydown', handleGalleryKey);
-    }
+/* -------------------------------------------------------------------------- */
+/* Company tags                                                                 */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The five hanging employer tags. Like the gallery this is a sub-view of
+ * `work`, not a fifth view: the hash never changes, so browser back still
+ * leaves the page rather than unwinding an invented history entry.
+ *
+ * Hover and selection live in their own channel rather than in the shared
+ * `focus` record because the tags are lit by two surfaces at once — the 3D
+ * raycast and the DOM rail under the project plates — and both have to agree
+ * without either one stealing the device hover slot.
+ */
+export type BenchTags = {
+  hovered: number;
+  selected: number;
+};
+
+let tags: BenchTags = { hovered: -1, selected: -1 };
+const tagListeners = new Set<() => void>();
+
+function commitTags(next: BenchTags) {
+  if (tags.hovered === next.hovered && tags.selected === next.selected) {
+    return;
+  }
+
+  tags = next;
+  tagListeners.forEach((listener) => listener());
+}
+
+export function setBenchTagHover(index: number) {
+  commitTags({ ...tags, hovered: index });
+}
+
+export function setBenchTagSelection(index: number) {
+  if (gallery.open) {
+    return;
+  }
+
+  /* The tag shot owns the lens, so a device selection has to stand down. */
+  focus.selected = -1;
+  commitTags({ ...tags, selected: index });
+}
+
+export function clearBenchTagSelection() {
+  commitTags({ ...tags, selected: -1 });
+}
+
+export function readBenchTags() {
+  return tags;
+}
+
+export function subscribeBenchTags(listener: () => void) {
+  tagListeners.add(listener);
+  retainEscape();
+
+  return () => {
+    tagListeners.delete(listener);
+    releaseEscape();
   };
 }
 

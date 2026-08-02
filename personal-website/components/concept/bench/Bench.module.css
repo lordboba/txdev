@@ -386,9 +386,10 @@
 }
 
 /*
- * The work view's bottom rail. It used to be a second copy of the employer
- * logos, competing with the engraved ones on the bench; it is now the gallery
- * control plus a one-line caption under the 3D signature.
+ * The work view's bottom rail: the gallery control on the left, and on the
+ * right the five company tags as text. It used to be a second copy of the
+ * employer logos competing with the marks on the bench — the marks stay milled
+ * into the hanging plates, and this row is the words for them.
  */
 .credLine {
   display: flex;
@@ -403,17 +404,128 @@
 }
 
 .credLine .fieldLabel,
-.credCaption .fieldLabel {
+.signRail .fieldLabel,
+.tagProof .fieldLabel {
   display: inline-block;
   margin-right: 0.5rem;
 }
 
-.credCaption {
+.signRail {
+  display: flex;
+  gap: 0.1rem 0.55rem;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+
+.signCaption {
   margin: 0;
   color: var(--ink-body);
   font-size: 0.66rem;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.01em;
+}
+
+/*
+ * The tags as a row of words. Deliberately styled as a caption that happens to
+ * be pressable rather than as five buttons: hairline underline only, so the
+ * bottom rail stays a rule of type under the plates and does not become a
+ * second row of controls competing with the four project cards above it.
+ */
+.tagIndex {
+  display: flex;
+  gap: 0.15rem 0.85rem;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tagIndex button {
+  padding: 0 0 2px;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: none;
+  color: var(--ink-body);
+  font: inherit;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: color 160ms linear;
+}
+
+.tagIndex button:hover,
+.tagIndex button:focus-visible,
+.tagIndex button[data-active='true'] {
+  border-bottom-color: var(--ink);
+  color: var(--ink);
+}
+
+/* ---- Company tag record ---------------------------------------------- */
+
+.tagDetails {
+  display: grid;
+  gap: 1px;
+}
+
+.tagRecord {
+  display: grid;
+  gap: 0.9rem clamp(1rem, 2.6vw, 2.4rem);
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--hairline);
+  background: var(--paper);
+  backdrop-filter: blur(12px);
+}
+
+.tagHeading h2 {
+  margin: 0.35rem 0 0.4rem;
+  color: var(--ink);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.tagHeading p {
+  margin: 0;
+  max-width: 58ch;
+  color: var(--ink-body);
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.tagFields {
+  display: grid;
+  gap: 0.35rem 1.2rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  align-content: start;
+}
+
+.tagFields dt {
+  color: var(--muted);
+  font-size: 0.57rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.tagFields dd {
+  margin: 0.2rem 0 0;
+  color: var(--ink);
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+}
+
+.tagProof {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--hairline);
+  color: var(--ink-body);
+  font-size: 0.66rem;
+  line-height: 1.5;
 }
 
 .galleryCue {
@@ -726,6 +838,7 @@
 .galleryBack:focus-visible,
 .galleryIndex button:focus-visible,
 .galleryPlacard a:focus-visible,
+.tagIndex button:focus-visible,
 .wordmark:focus-visible {
   outline: 1px solid var(--ink);
   outline-offset: 3px;
@@ -734,6 +847,10 @@
 @media (max-width: 900px) {
   .workDetails {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tagRecord {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .projectPlate {

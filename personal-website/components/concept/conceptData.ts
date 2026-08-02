@@ -4,7 +4,13 @@
  * extension-guess. tsconfig sets `allowImportingTsExtensions`, and bundlers
  * resolve the literal path, so the same specifier works in all three.
  */
-import { projects, type Project } from '../../lib/siteData.ts';
+import {
+  experienceGroups,
+  experiences,
+  projects,
+  type Experience,
+  type Project,
+} from '../../lib/siteData.ts';
 
 export type ConceptViewId = 'profile' | 'work' | 'signals' | 'history';
 
@@ -92,6 +98,80 @@ export const companyRun = [
     detail: 'Data platforms and collaboration',
   },
 ];
+
+/**
+ * One hanging tag per place the work was done, in the order the run happened,
+ * with the credential last.
+ *
+ * Every field on a tag is a join, never a rewrite: `mark` and `logo` name the
+ * verified asset in public/logos, `run` is the short label the company run
+ * already carries, and everything else — the legal org name, the role title,
+ * the dated period, the summary and the proof line — is lifted verbatim from
+ * the matching record in lib/siteData `experiences`. A tag can therefore never
+ * claim anything the resume does not: if a record disappears, its tag does
+ * too, rather than falling back to invented copy.
+ */
+export type CompanyTag = {
+  /** Display name, and the key into the logo table on both surfaces. */
+  mark: string;
+  logo: string;
+  /** The org exactly as the experience record names it. */
+  org: string;
+  role: string;
+  /** Dated period from the record, e.g. "Nov 2024 to May 2025". */
+  period: string;
+  /** Short run label from `companyRun`, absent for the credential. */
+  run: string | null;
+  /** One-line focus from `companyRun`, absent for the credential. */
+  detail: string | null;
+  status: Experience['status'];
+  statusLabel: string;
+  summary: string;
+  proof: string;
+  focus: string[];
+};
+
+const TAG_SOURCES: { mark: string; logo: string; record: string }[] = [
+  { mark: 'Scale AI', logo: '/logos/scale-ai.svg', record: 'Scale AI' },
+  { mark: 'SafetyKit', logo: '/logos/safetykit.svg', record: 'SafetyKit' },
+  { mark: 'Ramp', logo: '/logos/ramp.svg', record: 'Ramp' },
+  { mark: 'Snowflake', logo: '/logos/snowflake.svg', record: 'Snowflake' },
+  {
+    mark: 'UCLA',
+    logo: '/logos/ucla.svg',
+    record: 'Upsilon Pi Epsilon @ UCLA',
+  },
+];
+
+export const companyTags: CompanyTag[] = TAG_SOURCES.flatMap((source) => {
+  const record = experiences.find((entry) => entry.company === source.record);
+
+  if (!record) {
+    return [];
+  }
+
+  const run = companyRun.find((entry) => entry.company === source.mark) ?? null;
+  const group = experienceGroups.find(
+    (entry) => entry.status === record.status,
+  );
+
+  return [
+    {
+      mark: source.mark,
+      logo: source.logo,
+      org: record.company,
+      role: record.role,
+      period: record.period,
+      run: run ? run.period : null,
+      detail: run ? run.detail : null,
+      status: record.status,
+      statusLabel: group ? group.label : record.status,
+      summary: record.summary,
+      proof: record.proof,
+      focus: record.focus,
+    },
+  ];
+});
 
 export const featuredProjects: FeaturedProject[] = [
   {
