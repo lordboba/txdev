@@ -115,9 +115,23 @@
   line-height: 1;
 }
 
+/*
+ * The rocket rests in the set's greyscale — at full Apple colour it was the
+ * only saturated object on the whole stage, louder than the product
+ * screenshots it sits above. Colour is the hover/focus reward and the launch
+ * state, i.e. it appears exactly when the rocket is about to matter.
+ */
 .rocket {
   display: inline-block;
   transform: translateY(-0.02em);
+  filter: grayscale(1);
+  transition: filter 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.dockLink:hover .rocket,
+.dockLink:focus-visible .rocket,
+.rocket.rocketLaunching {
+  filter: grayscale(0);
 }
 
 /* Idle character beat: a tiny pre-flight shudder on hover/focus only. */
@@ -195,25 +209,34 @@
   display: inline-block;
 }
 
-.terminalEmoji {
+.terminalMark {
   position: relative;
   z-index: 1;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.62em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 /*
- * The rain layer overshoots the emoji box so the digits read in the button's
- * margins around the screen instead of hiding behind the opaque glyph.
+ * The rain layer overshoots the glyph box so the digits read in the button's
+ * margins instead of hiding behind the prompt. It is invisible AND paused at
+ * rest: at the old 0.55 resting opacity the digits floated in the header
+ * chrome permanently — stray glyphs on every view, and meaningless on touch
+ * screens that never see the hover. The shimmer now exists only on intent
+ * (hover / keyboard focus), which is also when the animation runs.
  */
 .binaryRain {
   position: absolute;
   z-index: 0;
   inset: -0.28em -0.34em;
-  opacity: 0.55;
+  opacity: 0;
   transition: opacity 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
   pointer-events: none;
 }
 
-.dockLink:hover .binaryRain {
+.dockLink:hover .binaryRain,
+.dockLink:focus-visible .binaryRain {
   opacity: 1;
 }
 
@@ -226,6 +249,12 @@
   line-height: 1;
   opacity: 0;
   animation: binary-drift 3.2s linear infinite;
+  animation-play-state: paused;
+}
+
+.dockLink:hover .binaryRain span,
+.dockLink:focus-visible .binaryRain span {
+  animation-play-state: running;
 }
 
 .binaryRain span:nth-child(1) {
@@ -292,6 +321,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .dockLink,
+  .rocket,
   .binaryRain {
     transition-duration: 1ms;
   }

@@ -5,7 +5,27 @@
   --muted: rgba(20, 21, 23, 0.7);
   --ink-body: rgba(20, 21, 23, 0.84);
   --hairline: rgba(20, 21, 23, 0.18);
-  --paper: rgba(235, 236, 236, 0.84);
+
+  /*
+   * The plate fill sits at the bench's own value, not above it — and it is a
+   * plate, not a sheet of acetate.
+   *
+   * Two constraints, and only one fill satisfies both. At the original
+   * rgba(235,236,236,0.84) the plates composited to ~#eef0f1 against a bench
+   * around #d7dadb: the brightest surfaces in the frame, pulling the eye off
+   * the devices they describe. But alpha is the wrong instrument for that.
+   * Below about 0.9 the 3D subjects read straight through the copy — the
+   * MacBook lid behind the company record printed a hard vertical value step
+   * down the ROLE column, and the tab strip's hairline picked up a darker
+   * segment across the same span and read as a broken double rule. A panel
+   * you can see the set through is a smudged transparency, not a plate.
+   *
+   * So the value is set where the composite used to land and the fill is made
+   * opaque. #dee0e1 is within a point of what 0.6 over the bench resolved to,
+   * so the plates keep the value the art direction wants, and nothing behind
+   * them can print through the type.
+   */
+  --paper: #dee0e1;
 
   position: relative;
   display: grid;
@@ -103,31 +123,39 @@
 
 /*
  * Ground-tint veil so the intro stays legible when scene objects drift under
- * it. Left-anchored falloff rather than a hard rectangle: at a flat 0.55 fill
- * the panel terminated as a straight vertical edge across whatever device it
- * happened to overlap — a flat block laid over the left MacBook display in
- * /#work. The mask holds full strength under the type, then dissolves to
- * nothing before the panel's own right edge, so the veil never cuts a line
- * across the subject. The blur travels with the mask, so the defocus fades out
- * on the same ramp as the tint.
+ * it. The falloff is radial, anchored under the type: the previous 102deg
+ * linear mask feathered only the right edge, so the panel still terminated as
+ * a hard straight line along its bottom — the exact "veil's straight edge
+ * crossing objects" complaint, cutting the iPad bezel on /#work and the
+ * SHIPPING card on /#signals. One elliptical mask holds full strength under
+ * the copy and dissolves on a curve before every edge of its own box, so no
+ * straight boundary of any orientation can land on a subject. The bottom
+ * inset overshoots to give that curve room below the last line, and the blur
+ * travels with the mask so the defocus fades on the same ramp as the tint.
  */
 .intro::before {
   position: absolute;
   z-index: -1;
-  inset: -1rem -1.4rem;
+  inset: -1.25rem -1.4rem -3rem;
   background: rgba(223, 225, 227, 0.42);
   backdrop-filter: blur(14px);
-  -webkit-mask-image: linear-gradient(
-    102deg,
-    #000 0 46%,
-    rgba(0, 0, 0, 0.55) 74%,
-    transparent 96%
+  /*
+   * The radii must land the transparent stop INSIDE the box: the ellipse is
+   * centred at 16%/18%, so the far edges sit at ~84% of the width and ~82% of
+   * the height — radii of 88%/86% put those edges past the 95% transparent
+   * stop, and no edge of the element itself is ever visible.
+   */
+  -webkit-mask-image: radial-gradient(
+    88% 86% at 16% 18%,
+    #000 0 42%,
+    rgba(0, 0, 0, 0.45) 68%,
+    transparent 95%
   );
-  mask-image: linear-gradient(
-    102deg,
-    #000 0 46%,
-    rgba(0, 0, 0, 0.55) 74%,
-    transparent 96%
+  mask-image: radial-gradient(
+    88% 86% at 16% 18%,
+    #000 0 42%,
+    rgba(0, 0, 0, 0.45) 68%,
+    transparent 95%
   );
   content: '';
 }
@@ -328,13 +356,21 @@
   flex-direction: column;
   transition:
     background 180ms linear,
+    border-color 180ms linear,
     transform 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+/*
+ * Hover reads as definition, not brightness: the border firms up and the
+ * plate lifts, but the fill barely moves. The old rgba(245,245,244,0.96)
+ * hover made the already-brightest surface in the frame brighter still —
+ * interaction was widening the DOM/subject value gap it should close.
+ */
 .projectPlate:hover,
 .projectPlate:focus-visible {
   z-index: 1;
-  background: rgba(245, 245, 244, 0.96);
+  border-color: rgba(20, 21, 23, 0.45);
+  background: #e3e5e6;
   text-decoration: none;
   transform: translateY(-5px);
 }
@@ -402,14 +438,6 @@
   align-items: baseline;
 }
 
-.signCaption {
-  margin: 0;
-  color: var(--ink-body);
-  font-size: 0.66rem;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.01em;
-}
-
 /*
  * The tags as a row of words. Deliberately styled as a caption that happens to
  * be pressable rather than as five buttons: hairline underline only, so the
@@ -444,6 +472,36 @@
 .tagIndex button[data-active='true'] {
   border-bottom-color: var(--ink);
   color: var(--ink);
+}
+
+/*
+ * The 1px gutters between plates are hairlines, not windows.
+ *
+ * A grid gap with nothing painted behind it shows the 3D set through it, so
+ * the rule between an opened record's tab strip and its fields ran light over
+ * bench and dark over a laptop lid — one hairline that changed value halfway
+ * across, which reads as a broken double rule rather than as a rule. Painting
+ * the container in the hairline ink makes every gutter a drawn line at a
+ * single value, which is what the rest of the system is made of.
+ *
+ * Opaque, not `var(--hairline)`: an 18% ink wash still lets the set through,
+ * so the rule would go on changing value along its own length — just less.
+ * #b9bbbc is what that wash resolves to over the plate fill, so a gutter reads
+ * as the same hairline the plates' own borders draw.
+ *
+ * `.workDetails` is deliberately absent. Its last row is the signature rail —
+ * a rule-topped caption spanning the grid with no plate of its own — so
+ * painting that container would seat the caption on a dark bar instead of on
+ * the bench. Its gutters run between four full-bleed plates where a value
+ * change is not read as a broken rule.
+ */
+.tagDetails,
+.galleryDetails,
+.signalDetails,
+.signalRecord,
+.historyDetails,
+.eraRecord {
+  background: #b9bbbc;
 }
 
 /* ---- Company tag record ---------------------------------------------- */
@@ -593,7 +651,7 @@
 .galleryIndex button:hover,
 .galleryIndex button[data-active='true'] {
   border-color: var(--ink);
-  background: rgba(245, 245, 244, 0.9);
+  background: #e3e5e6;
   color: var(--ink);
 }
 
@@ -688,6 +746,57 @@
   text-underline-offset: 3px;
 }
 
+/*
+ * Mobile-only DOM twin of the engraved badge (rendered only when the layout
+ * is mobile — see ProfileDetails). Same plate language as everything else in
+ * the band: square, hairline, paper.
+ */
+.badgeCard {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.9rem;
+  align-items: start;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--hairline);
+  background: var(--paper);
+  backdrop-filter: blur(12px);
+  margin-bottom: 0.6rem;
+}
+
+.badgePortrait {
+  width: 72px;
+  height: 96px;
+  border: 1px solid var(--hairline);
+  object-fit: cover;
+}
+
+.badgeFields {
+  display: grid;
+  gap: 0.5rem 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.badgeFields div:last-child {
+  grid-column: 1 / -1;
+}
+
+.badgeFields dt {
+  color: var(--muted);
+  font-size: 0.57rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.badgeFields dd {
+  margin: 0.2rem 0 0;
+  color: var(--ink);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+}
+
 .signalDetails {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -720,13 +829,16 @@
   cursor: pointer;
   transition:
     background 180ms linear,
+    border-color 180ms linear,
     transform 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+/* Same contract as .projectPlate: hover firms the edge, not the fill. */
 .signalDetails button:hover,
 .signalDetails button:focus-visible {
   z-index: 1;
-  background: rgba(245, 245, 244, 0.96);
+  border-color: rgba(20, 21, 23, 0.45);
+  background: #e3e5e6;
   transform: translateY(-5px);
 }
 
@@ -1313,13 +1425,19 @@
     display: none;
   }
 
+  /*
+   * Bottom padding is load-bearing: the scene band below is an opaque grey
+   * surface painted over anything it overlaps, and at zero bottom padding
+   * (plus the band's old -0.5rem pull-up) it guillotined the dek's last line
+   * on all four views. The copy owns its own space; the band starts after it.
+   */
   .intro {
     position: relative;
     top: auto;
     left: auto;
     z-index: 2;
     width: auto;
-    padding: 1.25rem 1rem 0;
+    padding: 1.25rem 1rem 1rem;
   }
 
   .intro::before {
@@ -1345,7 +1463,6 @@
     position: relative;
     height: 42vh;
     min-height: 300px;
-    margin-top: -0.5rem;
   }
 
   .details {

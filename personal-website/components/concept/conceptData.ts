@@ -47,8 +47,14 @@ export const conceptViews: ConceptView[] = [
     index: '01',
     label: 'In motion',
     shortLabel: 'Profile',
+    /*
+     * Framing copy only. The biographical fields — home, study, rotation —
+     * are engraved on the badge in the scene (and printed by its DOM twin on
+     * mobile), so the dek must not recite them a second time on the same
+     * screen.
+     */
     description:
-      'Raised in San Diego, studying CS at UCLA, usually somewhere between LA, SF, New York, and home.',
+      'The whole record is engraved on one badge. Lean in and read it — the links below go the places an engraving cannot.',
   },
   {
     id: 'work',

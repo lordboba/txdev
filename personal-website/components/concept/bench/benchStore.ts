@@ -57,6 +57,24 @@ export function clearBenchSelection() {
 }
 
 /**
+ * Picking the object that is already picked puts it back.
+ *
+ * The raycast path uses this rather than `setBenchSelection`, because a device
+ * on the bench is a thing you look closer at, and looking closer has to have
+ * an obvious way back that is the same gesture. The DOM plates keep the plain
+ * setter: they are anchors that navigate, so a second press there is a visit,
+ * not an undo.
+ */
+export function toggleBenchSelection(view: ConceptViewId, index: number) {
+  if (focus.view === view && focus.selected === index) {
+    clearBenchSelection();
+    return;
+  }
+
+  setBenchSelection(view, index);
+}
+
+/**
  * Whether every damped transform (and the camera) has landed on its target.
  * The ground-shadow pass subscribes to this so its depth render can be gated
  * off once the scene stops moving — it is the single largest avoidable
@@ -71,6 +89,21 @@ export function setBenchSettled(next: boolean) {
   }
 
   settled = next;
+
+  /*
+   * Published to the document as well as to the subscribers, because one of
+   * the consumers is not a React tree: scripts/update-history.mjs photographs
+   * the running site for the history shelf, and a fixed sleep is not a settle
+   * test. On software GL a fourteen-second budget caught the bench mid-intro
+   * and the committed artifact showed the laptops hovering off the surface
+   * with no shadows under them — a permanent record of an unfinished frame.
+   * This is the same flag the shadow pass gates on, in a form a CDP probe can
+   * read.
+   */
+  if (typeof document !== 'undefined') {
+    document.documentElement.dataset.benchSettled = next ? 'true' : 'false';
+  }
+
   settledListeners.forEach((listener) => listener());
 }
 
@@ -209,6 +242,18 @@ function handleBenchEscape(event: KeyboardEvent) {
   }
 
   clearBenchSignalSelection();
+
+  /*
+   * Last rung: the device selection inside `work`.
+   *
+   * It was missing, and it was the one sub-state on the page that Escape did
+   * not unwind. Clicking a screen leans the work lens in and drops its fov,
+   * and the only way back out was a click on empty bench — undiscoverable, and
+   * with no DOM affordance offering it. Every other sub-state exits on Escape;
+   * this restores the resting pose on the same key rather than leaving the
+   * default composition quietly destroyed.
+   */
+  clearBenchSelection();
 }
 
 let escapeHolders = 0;

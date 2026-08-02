@@ -10,6 +10,7 @@ import {
   experiments,
   featuredProjects,
   notesLabel,
+  personalNotes,
   sideProjects,
   type ConceptViewId,
 } from '../conceptData';
@@ -52,8 +53,6 @@ const introHeadings: Record<ConceptViewId, string> = {
   signals: 'Here’s what I’m testing.',
   history: 'Here’s how this site grew.',
 };
-/** Mobile fallback for the tag rail: the same five names, as one line. */
-const companyCaption = companyTags.map((tag) => tag.mark).join(' · ');
 
 const noMobileSubscribe = () => () => {};
 let webGLSupport: boolean | undefined;
@@ -273,7 +272,7 @@ function TagDetails({ selected }: { selected: number }) {
   );
 }
 
-function WorkDetails({ mobile }: { mobile: boolean }) {
+function WorkDetails() {
   const gallery = useBenchGallery();
   const tags = useBenchTags();
 
@@ -281,7 +280,12 @@ function WorkDetails({ mobile }: { mobile: boolean }) {
     return <GalleryDetails piece={gallery.piece} />;
   }
 
-  if (!mobile && tags.selected >= 0) {
+  /*
+   * The record opens on every width. The rack is not in the mobile scene, so
+   * the camera stands down there, but the record itself is DOM — a phone
+   * visitor gets the same role/period/proof panel a pointer gets.
+   */
+  if (tags.selected >= 0) {
     return <TagDetails selected={tags.selected} />;
   }
 
@@ -333,17 +337,12 @@ function WorkDetails({ mobile }: { mobile: boolean }) {
         <div className={styles.signRail}>
           <FieldLabel>Signed</FieldLabel>
           {/*
-           * The rack is not in the mobile scene, so its DOM twin stops being a
-           * control there and goes back to being a caption. A button whose
-           * only job is to focus a lens on an object that is not in the frame
-           * is a dead end, and the row's whole point is that the two surfaces
-           * agree.
+           * The same five buttons on every width. On desktop a press also
+           * focuses the lens on the hanging tag; on mobile only the DOM
+           * record opens — the per-company role, period, and proof are one
+           * tap away instead of unreachable.
            */}
-          {mobile ? (
-            <p className={styles.signCaption}>{companyCaption}</p>
-          ) : (
-            <TagIndex selected={-1} />
-          )}
+          <TagIndex selected={-1} />
         </div>
       </div>
     </div>
@@ -369,9 +368,46 @@ const profileLinks: { label: string; href: string; external?: true }[] = [
   { label: 'Email', href: 'mailto:tylerxiao@ucla.edu' },
 ];
 
-function ProfileDetails() {
+function ProfileDetails({ mobile }: { mobile: boolean }) {
   return (
     <div className={`${styles.details} ${styles.profileDetails}`}>
+      {/*
+       * On a phone the badge in the scene renders about 90x150 CSS px and its
+       * engraving does not resolve, so the DOM prints the same record at
+       * reading size — the identical fields, from the identical source
+       * (`personalNotes`), never a second copy of the facts. Desktop keeps
+       * the badge as the sole identity carrier and renders nothing here.
+       */}
+      {mobile ? (
+        <div className={styles.badgeCard}>
+          <Image
+            alt="Portrait of Tyler Xiao"
+            className={styles.badgePortrait}
+            height={96}
+            sizes="72px"
+            src="/pfp.JPG"
+            width={144}
+          />
+          <dl className={styles.badgeFields}>
+            <div>
+              <dt>Name</dt>
+              <dd>Tyler Xiao</dd>
+            </div>
+            <div>
+              <dt>Home</dt>
+              <dd>{personalNotes[0]}</dd>
+            </div>
+            <div>
+              <dt>Study</dt>
+              <dd>{personalNotes[1]}</dd>
+            </div>
+            <div>
+              <dt>In rotation</dt>
+              <dd>{personalNotes[3]}</dd>
+            </div>
+          </dl>
+        </div>
+      ) : null}
       <nav aria-label="Profile links" className={styles.linkPlate}>
         <FieldLabel>Off the card</FieldLabel>
         <ul className={styles.linkRow}>
@@ -885,8 +921,8 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
         ) : null}
       </div>
 
-      {view === 'work' ? <WorkDetails mobile={mobile} /> : null}
-      {view === 'profile' ? <ProfileDetails /> : null}
+      {view === 'work' ? <WorkDetails /> : null}
+      {view === 'profile' ? <ProfileDetails mobile={mobile} /> : null}
       {view === 'signals' ? <SignalsDetails /> : null}
       {view === 'history' ? (
         <HistoryDetails selected={history.selected} />

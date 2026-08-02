@@ -100,7 +100,16 @@ export function BenchHome({ visitorCount }: { visitorCount: number | null }) {
                     <span>1</span>
                     <span>0</span>
                   </span>
-                  <span className={styles.terminalEmoji}>🖥️</span>
+                  {/*
+                   * A typographic prompt, not an emoji: 🖥 rendered as a
+                   * flat grey desktop monitor — the wrong object (the Macs
+                   * on the bench are the monitors here) in a different
+                   * rendering family from its neighbour. `>_` is the
+                   * terminal's own convention, set in the site mono and
+                   * inked with currentColor, so it lives in the same
+                   * grey/ink system as the rest of the studio.
+                   */}
+                  <span className={styles.terminalMark}>{'>_'}</span>
                 </span>
               </Link>
             </div>

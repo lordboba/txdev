@@ -49,7 +49,6 @@ import {
   setBenchHistorySelection,
   setBenchHover,
   setBenchPointer,
-  setBenchSelection,
   setBenchSettled,
   setBenchSignalHover,
   setBenchSignalSelection,
@@ -58,6 +57,7 @@ import {
   subscribeBenchGallery,
   subscribeBenchHistory,
   subscribeBenchSettled,
+  toggleBenchSelection,
 } from './benchStore';
 import { historyEras, historyShots } from './historyEras';
 
@@ -420,8 +420,24 @@ const SCREEN_GAINS = [1.05, 1.03, 0.9, 1.05];
 type SourceRect = { x: number; y: number; w: number; h: number };
 
 const SCREEN_CROPS: Record<string, SourceRect> = {
-  /* Right-hand Settings capture, from just under its own status bar. */
-  iCalarms: { x: 990 / 1600, y: 168 / 900, w: 335 / 1600, h: 670 / 900 },
+  /*
+   * The LEFT screen of the App Store composite — "Rules & Calendars" — not the
+   * right-hand Settings one.
+   *
+   * The front phone is at the visual centre of the work composition and it is
+   * one of only four shipped products, and it was displaying a near-empty
+   * settings list: Permissions, Notifications, Default Sound, Version 1.0.0.
+   * That is the least characteristic screen the app has, it carries no product
+   * story, and as a near-pure-white rectangle it was also the brightest 3D
+   * surface in the frame. The DOM card beside it promises "configurable alarm
+   * rules"; this screen is those rules — connected calendars, per-calendar
+   * alarm enables, lead time, snooze.
+   *
+   * The window stops at 678 because the middle screen of the composite
+   * overlaps this one from 680, and it is cut to the display's own 1:2 so the
+   * cover fit has nothing left to trim off the nav title.
+   */
+  iCalarms: { x: 372 / 1600, y: 168 / 900, w: 306 / 1600, h: 612 / 900 },
   /*
    * Charades ships a landscape capture inside a drawn black device frame. A
    * portrait display can only hold a column of it, so take the deck grid —
@@ -439,6 +455,21 @@ const SCREEN_CROPS: Record<string, SourceRect> = {
     w: 116 / 1600,
     h: 250 / 900,
   },
+  /*
+   * Left-anchored, and only in x — no crop in y.
+   *
+   * The capture is 16:9 and the modeled MacBook display is 16:10, so the cover
+   * fit takes a 1.6 slice out of a 1.78 source and has to drop a tenth of the
+   * width. Centred, that came off both edges: the headline starts at 2.8% and
+   * the crop started at 5.1%, so the largest colour surface in the work view
+   * read "gotiate medical / lls with clarity" — chopped words, at rest and at
+   * tag-zoom framing alike.
+   *
+   * Anchoring the window at the left edge spends the whole tenth on the right
+   * instead, where the sign-in form ends at 88% and everything past it is
+   * margin. Nothing is lost and the headline is whole.
+   */
+  'Med Negotiate': { x: 0, y: 0, w: 0.9, h: 1 },
 };
 
 const PALETTE_COLORS: Record<string, string> = {
@@ -526,6 +557,8 @@ const TAG_PLATE_LIVE_COLOR = new THREE.Color(TAG_PLATE_LIVE);
 const TAG_MARK_W = 0.48;
 const TAG_MARK_MAX_H = 0.14;
 const TAG_MARK_Y = -0.035;
+/** Pigment in the channel — the page's ink, so a mark can never read tinted. */
+const TAG_MARK_INK = '#26282a';
 
 function tagMarkHeight(mark: string) {
   const source = LOGO_SOURCES[mark];
@@ -561,8 +594,14 @@ const TAG_SPRING_DAMPING = 14;
  * down while one of its neighbours is open. Nothing moves for the recede — a
  * hanging plate that steps back leaves its own cord behind — so the row makes
  * its hierarchy out of value alone, the way a lighting setup would.
+ *
+ * The stand-down is held to about half a stop. At #b0b2b4 against a #c8cacc
+ * live plate the gap was wide enough that the row stopped reading as one set
+ * of five identical plates under one key and started reading as card stock
+ * next to acetate — siblings apparently made of different materials, which is
+ * the one thing a signature row may not do.
  */
-const TAG_PLATE_DIM = '#b0b2b4';
+const TAG_PLATE_DIM = '#bec0c2';
 const TAG_PLATE_DIM_COLOR = new THREE.Color(TAG_PLATE_DIM);
 
 /**
@@ -1061,24 +1100,19 @@ function getLogoAlpha(file: string, aspect: number) {
     const image = new Image();
     image.onload = () => {
       /*
-       * Letterboxed at a single uniform scale off the intrinsic size, so a file
-       * whose width/height attributes disagree with its viewBox can never
-       * stretch the mark.
+       * Drawn to fill, not letterboxed off `naturalWidth`.
+       *
+       * The canvas is already cut to the manifest's viewBox aspect, so filling
+       * it is the *only* transform that cannot stretch a mark — and it is the
+       * one that survives a file with no intrinsic size. safetykit.svg carries
+       * a viewBox and no width/height, so Chrome reports it as the SVG default
+       * 300x150 (aspect 2, against its real 4.45); the old letterbox fit then
+       * drew that mark at 45% of the plate's measure while the four files that
+       * do declare a size drew at 100%. That is what split the row into two
+       * apparent weights.
        */
-      const fit = Math.min(
-        width / image.naturalWidth,
-        height / image.naturalHeight,
-      );
-      const drawWidth = image.naturalWidth * fit;
-      const drawHeight = image.naturalHeight * fit;
       context.clearRect(0, 0, width, height);
-      context.drawImage(
-        image,
-        (width - drawWidth) / 2,
-        (height - drawHeight) / 2,
-        drawWidth,
-        drawHeight,
-      );
+      context.drawImage(image, 0, 0, width, height);
       context.globalCompositeOperation = 'source-in';
       context.fillStyle = '#ffffff';
       context.fillRect(0, 0, width, height);
@@ -1366,9 +1400,9 @@ function createNameTexture() {
  * in the same colour world as Tyler's four shipped screenshots without
  * pretending to be one of them.
  *
- * The eight hairline cells are not decoration — they are the eight side
- * projects, and the count under the title is read off the same array the hang
- * is built from.
+ * The eight cells are not decoration — they are the eight side projects, each
+ * showing its own capture, and the count under the title is read off the same
+ * array the hang is built from.
  */
 let tabletScreenTexture: THREE.Texture | null = null;
 
@@ -1383,6 +1417,13 @@ function getTabletScreenTexture() {
   canvas.width = 1024;
   canvas.height = 1400;
   const context = canvas.getContext('2d') as SpacedContext | null;
+  /*
+   * Built before the drawing rather than after it: the eight thumbnails paint
+   * asynchronously and each one has to re-upload the canvas as it lands.
+   */
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
 
   if (context) {
     context.fillStyle = '#f4f4f3';
@@ -1412,23 +1453,61 @@ function getTabletScreenTexture() {
       588,
     );
 
-    /* The hang, in miniature: four columns, two rows, hairline only. */
+    /*
+     * The hang, in miniature — the real captures, not an outline of where
+     * captures would go.
+     *
+     * Eight empty hairline rectangles on a foreground hero object is the
+     * universal drawing for a thumbnail grid that failed to load, and seven of
+     * these eight pieces have a real capture sitting in public/projects. Each
+     * cell is painted with its plate tone up front so the grid is never a set
+     * of empty boxes even for the frame or two before the images decode, then
+     * each capture is cover-fitted into its own cell as it arrives and the
+     * texture is re-uploaded. The eighth piece has no capture and keeps its
+     * plate, which reads as one quiet tile in a grid of pictures rather than
+     * as a row of broken ones.
+     */
     const cellWidth = 196;
     const cellHeight = 128;
     const gapX = 26;
     const gapY = 30;
-    context.strokeStyle = 'rgba(20,21,23,0.26)';
-    context.lineWidth = 3;
+    const cellX = (index: number) => 82 + (index % 4) * (cellWidth + gapX);
+    const cellY = (index: number) =>
+      676 + Math.floor(index / 4) * (cellHeight + gapY);
 
-    sideProjects.forEach((_, index) => {
-      const column = index % 4;
-      const row = Math.floor(index / 4);
-      context.strokeRect(
-        82 + column * (cellWidth + gapX),
-        676 + row * (cellHeight + gapY),
-        cellWidth,
-        cellHeight,
-      );
+    sideProjects.forEach((piece, index) => {
+      const x = cellX(index);
+      const y = cellY(index);
+      context.fillStyle = 'rgba(20,21,23,0.09)';
+      context.fillRect(x, y, cellWidth, cellHeight);
+
+      if (!piece.image) {
+        return;
+      }
+
+      const image = new Image();
+      image.onload = () => {
+        const scale = Math.max(
+          cellWidth / image.naturalWidth,
+          cellHeight / image.naturalHeight,
+        );
+        const drawWidth = image.naturalWidth * scale;
+        const drawHeight = image.naturalHeight * scale;
+        context.save();
+        context.beginPath();
+        context.rect(x, y, cellWidth, cellHeight);
+        context.clip();
+        context.drawImage(
+          image,
+          x + (cellWidth - drawWidth) / 2,
+          y + (cellHeight - drawHeight) / 2,
+          drawWidth,
+          drawHeight,
+        );
+        context.restore();
+        texture.needsUpdate = true;
+      };
+      image.src = piece.image;
     });
 
     context.fillStyle = 'rgba(20,21,23,0.18)';
@@ -1443,17 +1522,24 @@ function getTabletScreenTexture() {
     context.fillText('→', 322, 1196);
   }
 
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = 8;
+  texture.needsUpdate = true;
   tabletScreenTexture = texture;
   return texture;
 }
 
 /**
- * The stand-in a framed piece gets when there is no capture for it in
- * public/projects. Stating "no capture" is the only honest option — the one
- * thing a portfolio gallery may never do is invent a screenshot.
+ * The cover a framed piece gets when there is no capture for it in
+ * public/projects.
+ *
+ * It used to be a dashed-outline box with "NO CAPTURE" set inside it. Dashed
+ * borders are the wireframe idiom — the universal drawing for an asset that
+ * failed — and hung at the same size and elevation as seven real screenshots
+ * it read as a broken frame rather than as an honest gap. This is a typeset
+ * cover instead: the studio's own ground, its own hairline, the piece's title
+ * as the subject, and the fact that there is no capture stated as a footnote
+ * in the same micro-label voice every other field name uses. Still no invented
+ * screenshot — a portfolio gallery may never do that — but the wall now shows
+ * a designed plate where it has nothing to photograph.
  */
 const placeholderCache = new Map<string, THREE.Texture>();
 
@@ -1470,30 +1556,37 @@ function getPlaceholderTexture(title: string, tech: string[]) {
   const context = canvas.getContext('2d') as SpacedContext | null;
 
   if (context) {
-    context.fillStyle = '#e6e6e5';
+    /* The page's own studio ramp, raking the way the studio key does. */
+    const ground = context.createLinearGradient(
+      0,
+      0,
+      canvas.width,
+      canvas.height,
+    );
+    ground.addColorStop(0, '#e4e6e7');
+    ground.addColorStop(1, '#c3c6c8');
+    context.fillStyle = ground;
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.textBaseline = 'alphabetic';
 
-    context.strokeStyle = 'rgba(20,21,23,0.2)';
-    context.lineWidth = 3;
-    context.setLineDash([14, 12]);
-    context.strokeRect(56, 56, canvas.width - 112, canvas.height - 112);
-    context.setLineDash([]);
-
-    context.letterSpacing = '14px';
-    context.fillStyle = 'rgba(20,21,23,0.5)';
-    context.font = '600 34px Helvetica Neue, Arial, sans-serif';
-    context.fillText('NO CAPTURE', 110, 250);
+    context.letterSpacing = '0px';
+    context.fillStyle = 'rgba(20,21,23,0.18)';
+    context.fillRect(84, 300, canvas.width - 168, 2);
 
     context.letterSpacing = '-1px';
-    context.fillStyle = 'rgba(20,21,23,0.88)';
-    context.font = '600 62px Helvetica Neue, Arial, sans-serif';
-    context.fillText(title, 110, 330);
+    context.fillStyle = 'rgba(20,21,23,0.9)';
+    context.font = '600 74px Helvetica Neue, Arial, sans-serif';
+    context.fillText(title, 84, 268, canvas.width - 168);
 
-    context.letterSpacing = '0px';
-    context.fillStyle = 'rgba(20,21,23,0.55)';
+    context.letterSpacing = '2px';
+    context.fillStyle = 'rgba(20,21,23,0.6)';
     context.font = '500 36px Helvetica Neue, Arial, sans-serif';
-    context.fillText(tech.join('  ·  '), 110, 392);
+    context.fillText(tech.join('   ·   '), 84, 366, canvas.width - 168);
+
+    context.letterSpacing = '14px';
+    context.fillStyle = 'rgba(20,21,23,0.42)';
+    context.font = '600 28px Helvetica Neue, Arial, sans-serif';
+    context.fillText('SOURCE ONLY · NO CAPTURE', 84, 494);
   }
 
   const texture = new THREE.CanvasTexture(canvas);
@@ -1504,12 +1597,24 @@ function getPlaceholderTexture(title: string, tech: string[]) {
 }
 
 /**
- * The title strip cut into a frame's bottom rail, as an alpha mask on a canvas
- * whose aspect matches the strip exactly — a 4:1 canvas stretched across a 20:1
- * plane is how engraved type turns into a smear.
+ * The title strip on a frame's bottom rail: ink on the moulding, not a groove
+ * cut into it.
+ *
+ * It was an alpha-masked deboss — pure white engraved into mid-grey aluminum —
+ * and at the browse camera the strip is 13 CSS px tall, which left every piece
+ * in the hang effectively untitled at roughly 1.5:1 contrast. A groove needs
+ * both a lit lip and a shadowed wall to read, and neither survives at nine
+ * pixels of cap height. Museums do not engrave their labels for this reason:
+ * they print them. So this is a real map — ink glyphs on transparent — drawn
+ * over the rail, and it holds ~9:1 against the moulding at any distance the
+ * frame is legible at all.
+ *
+ * The canvas aspect matches the plane exactly; a 4:1 canvas stretched across a
+ * 20:1 plane is how set type turns into a smear.
  */
-const FRAME_TITLE_ASPECT = 1400 / 104;
-const FRAME_TITLE_W = 1.02;
+const FRAME_TITLE_ASPECT = 1400 / 100;
+const FRAME_TITLE_W = 1.22;
+const FRAME_TITLE_H = FRAME_TITLE_W / FRAME_TITLE_ASPECT;
 const frameTitleCache = new Map<string, THREE.Texture>();
 
 function getFrameTitleTexture(title: string) {
@@ -1521,30 +1626,30 @@ function getFrameTitleTexture(title: string) {
 
   const canvas = document.createElement('canvas');
   canvas.width = 1400;
-  canvas.height = 104;
+  canvas.height = 100;
   const context = canvas.getContext('2d') as SpacedContext | null;
 
   if (context) {
     /*
-     * A frame is ~200 CSS wide at the browse camera, so the cap height this
-     * strip can carry is about eleven pixels. Tracking is held to 6px: at this
-     * size the 16px the rest of the set's micro-labels use turns the word into
-     * a row of separate glyphs.
+     * Tracking is held to 5px. At this size the 16px the rest of the set's
+     * micro-labels use turns the word into a row of separate glyphs, and the
+     * measure runs out before the longest title in the hang.
      */
-    context.fillStyle = '#ffffff';
+    context.fillStyle = 'rgba(20,21,23,0.92)';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
-    context.letterSpacing = '6px';
-    context.font = '600 74px Helvetica Neue, Arial, sans-serif';
+    context.letterSpacing = '5px';
+    context.font = '700 62px Helvetica Neue, Arial, sans-serif';
     context.fillText(
       title.toUpperCase(),
-      canvas.width / 2 + 3,
-      canvas.height / 2 + 3,
-      canvas.width - 70,
+      canvas.width / 2,
+      canvas.height / 2 + 2,
+      canvas.width - 60,
     );
   }
 
   const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = 8;
   frameTitleCache.set(title, texture);
   return texture;
@@ -2088,6 +2193,8 @@ function EngravedDecal({
   floor = ENGRAVE_FLOOR,
   lipMix = ENGRAVE_LIP,
   opacity = 1,
+  cutColor,
+  cutMetalness,
 }: {
   alpha: THREE.Texture;
   width: number;
@@ -2102,14 +2209,25 @@ function EngravedDecal({
   floor?: number;
   lipMix?: number;
   opacity?: number;
+  /**
+   * Fills the channel with a stated pigment instead of a darkened copy of the
+   * host. A groove cut in bare metal reads by value alone, and value is
+   * exactly what a thin mark loses at browse distance: the lip is offset by a
+   * fixed amount, so on a hairline stroke it covers most of the channel and
+   * the mark flips from cut to embossed. Filled, every mark holds the same
+   * ink whatever its stroke weight — which is what a real filled engraving
+   * does, and why nameplates are made that way.
+   */
+  cutColor?: string;
+  cutMetalness?: number;
 }) {
   const [cut, lip] = useMemo(() => {
     const base = new THREE.Color(hostColor);
     return [
-      base.clone().multiplyScalar(floor),
+      cutColor ? new THREE.Color(cutColor) : base.clone().multiplyScalar(floor),
       base.clone().lerp(new THREE.Color('#ffffff'), lipMix),
     ];
-  }, [floor, hostColor, lipMix]);
+  }, [cutColor, floor, hostColor, lipMix]);
 
   return (
     <group position={position} rotation={rotation}>
@@ -2139,10 +2257,10 @@ function EngravedDecal({
           alphaMap={alpha}
           color={cut}
           depthWrite={false}
-          envMapIntensity={envMapIntensity}
-          metalness={metalness}
+          envMapIntensity={cutColor ? envMapIntensity * 0.3 : envMapIntensity}
+          metalness={cutMetalness ?? metalness}
           opacity={opacity}
-          roughness={roughness}
+          roughness={cutColor ? 0.7 : roughness}
           transparent
         />
       </mesh>
@@ -2163,6 +2281,8 @@ function EtchedMark({
   offset,
   floor,
   lipMix,
+  cutColor,
+  cutMetalness,
 }: {
   company: string;
   height: number;
@@ -2175,6 +2295,8 @@ function EtchedMark({
   offset?: number;
   floor?: number;
   lipMix?: number;
+  cutColor?: string;
+  cutMetalness?: number;
 }) {
   const source = LOGO_SOURCES[company];
   const alpha = useMemo(
@@ -2204,6 +2326,8 @@ function EtchedMark({
   return (
     <EngravedDecal
       alpha={alpha}
+      cutColor={cutColor}
+      cutMetalness={cutMetalness}
       envMapIntensity={envMapIntensity}
       floor={floor}
       height={height}
@@ -2555,15 +2679,26 @@ function CompanyTagPlate({
          * sets every mark to the same measure without ever scaling one
          * non-uniformly.
          */}
+        {/*
+         * Filled engraving, not bare groove. At the browse camera a tag is
+         * ~110x55 CSS px and a groove has only value to work with, so the two
+         * lightest lockups in the set — the 5.3:1 Scale wordmark and the
+         * Snowflake mark — lost their channels under their own lip and read as
+         * watermarks while UCLA held. The channel now carries the page's ink
+         * at metalness 0, so every mark lands at the same weight whatever its
+         * stroke, and the lip is pulled back to a hairline so it edges the
+         * pigment rather than competing with it.
+         */}
         <EtchedMark
           company={tag.mark}
+          cutColor={TAG_MARK_INK}
+          cutMetalness={0}
           envMapIntensity={1.2}
-          floor={0.32}
           height={tagMarkHeight(tag.mark)}
           hostColor={TAG_PLATE}
-          lipMix={0.6}
+          lipMix={0.42}
           metalness={0.5}
-          offset={0.0024}
+          offset={0.0015}
           position={[0, TAG_MARK_Y, TAG_T / 2 + 0.001]}
           roughness={0.3}
         />
@@ -3284,11 +3419,13 @@ function Laptop({
   texture,
   seed,
   gain,
+  crop,
   materialRef,
 }: {
   texture: THREE.Texture;
   seed: number;
   gain: number;
+  crop?: SourceRect;
   materialRef: (node: THREE.ShaderMaterial | null) => void;
 }) {
   const bezel = useMemo(
@@ -3484,6 +3621,7 @@ function Laptop({
             <meshStandardMaterial color={SCREEN_WELL} roughness={0.22} />
           </mesh>
           <Screen
+            crop={crop}
             gain={gain}
             height={2.03}
             materialRef={materialRef}
@@ -3535,7 +3673,7 @@ function ProjectDevice({
     <group
       onClick={(event) => {
         event.stopPropagation();
-        setBenchSelection('work', index);
+        toggleBenchSelection('work', index);
       }}
       onPointerEnter={(event) => {
         event.stopPropagation();
@@ -3558,6 +3696,7 @@ function ProjectDevice({
         />
       ) : (
         <Laptop
+          crop={crop}
           gain={gain}
           materialRef={materialRef}
           seed={seed}
@@ -4071,10 +4210,27 @@ type SignalSeat = {
  * DOM plates under the frame print them in — the two surfaces have to agree
  * about which object is which.
  */
+/*
+ * One setup in three seats, not three setups.
+ *
+ * The run used to hold three cants (0.70 / 0.80 / 0.72), three yaws
+ * (17° / 2° / −16°), three scales spanning a third, two depths a full 2.3
+ * apart, and a riser under exactly one of them — which is a set of accidents,
+ * not a staging. The consequences were readable on the render: A's 17° threw
+ * its engraved line onto a plane steep enough to shear the letterforms, and C
+ * at 0.70 scale two units further back was the smallest, dimmest, most
+ * foreshortened thing in the frame.
+ *
+ * This is the same fixture three times on a symmetric arc: one cant, mirrored
+ * ±7.5° of yaw so the outer two turn in without shearing, one plinth design
+ * with the hero simply raised higher on it, and the outer pair identical to
+ * each other. The hierarchy is now made of height and scale alone — the two
+ * things a bench actually uses to say which part is the subject.
+ */
 const SIGNAL_SEATS: SignalSeat[] = [
-  { x: -2.6, z: -0.42, yaw: 0.3, cant: 0.72, scale: 0.78, riser: 0 },
-  { x: -0.15, z: 0.45, yaw: 0.03, cant: 0.8, scale: 0.92, riser: 0.22 },
-  { x: 2.45, z: -1.85, yaw: -0.28, cant: 0.7, scale: 0.7, riser: 0 },
+  { x: -2.45, z: -0.05, yaw: 0.13, cant: 0.78, scale: 0.84, riser: 0.09 },
+  { x: 0, z: 0.42, yaw: 0, cant: 0.78, scale: 0.94, riser: 0.3 },
+  { x: 2.45, z: -0.05, yaw: -0.13, cant: 0.78, scale: 0.84, riser: 0.09 },
 ];
 
 const SIGNAL_HERO = 1;
@@ -4241,14 +4397,33 @@ const SIGNAL_FOCUS_FOV = 29;
  * depending on which of three near-identical objects had been clicked.
  *
  * `SIGNAL_FOCUS_FILL` is the fraction of frame height the plate is fitted to.
- * It is 0.56 rather than something tighter because the elaboration panel takes
- * the bottom ~27% of the page, and the plate has to live entirely above it.
- * The lens is longer than any other in the file (29° against 33–36) for the
- * same reason it would be on a real bench: a long lens flattens the fixture,
- * throws the neighbouring setups out of frame, and keeps the subject the only
- * thing with perspective in it.
+ * It is bounded below by the elaboration panel, which takes the bottom ~27% of
+ * the page and which the plate has to live entirely above. The lens is longer
+ * than any other in the file (29° against 33–36) for the same reason it would
+ * be on a real bench: a long lens flattens the fixture, throws the
+ * neighbouring setups out of frame, and keeps the subject the only thing with
+ * perspective in it.
+ *
+ * 0.66, up from 0.56. The plate is canted 45° and read from 26°, so it loses
+ * about 6% of its own height to foreshortening on top of whatever the fill
+ * leaves — at 0.56 that put roughly 145 CSS px of empty cove above the
+ * subject, which is dead frame directly over a subject the same shot was
+ * slicing at its left edge.
  */
-const SIGNAL_FOCUS_FILL = 0.56;
+const SIGNAL_FOCUS_FILL = 0.66;
+
+/**
+ * How far the two unopened fixtures slide down the run when one is opened.
+ *
+ * The alternative — holding them exactly where they sit — is what amputated
+ * the SHIPPING fixture at the frame edge: the focus lens is fitted to the
+ * subject, and at any fill tight enough to be a record shot a neighbour two
+ * and a half units away lands half in. A subject sliced by the frame edge is
+ * the one framing a bench photograph may not have, so the bench opens up
+ * around the part under inspection instead — which is what a machinist does
+ * with the setups either side of the one being measured.
+ */
+const SIGNAL_ASIDE = 2.85;
 
 function signalFocusDistance(scale: number) {
   const height = (BLANK_LENGTH * scale) / SIGNAL_FOCUS_FILL;
@@ -4308,10 +4483,14 @@ function ExperimentBlank({
       />
 
       {/*
-       * The hero's parallel riser: a plain machined block under the fixture,
-       * which is how a shop actually raises one part of a setup above the
-       * rest. It is the reason B reads as the subject rather than as the
-       * middle of three — a difference in height, not in decoration.
+       * The parallel riser: a plain machined block under the fixture, which is
+       * how a shop actually raises one part of a setup above the rest.
+       *
+       * All three carry one now, at two heights. Only the hero used to have a
+       * riser at all, which meant the run was two different plinth designs
+       * standing side by side with no shared baseline — the set read as
+       * assembled from spare parts. One plinth at 0.09 and 0.30 says the same
+       * thing about hierarchy with a difference in height, not in kind.
        */}
       {seat.riser > 0 ? (
         <RoundedBox
@@ -4452,14 +4631,22 @@ function ExperimentBlank({
            * quarter of the pocket's value, which is roughly 55% local
            * contrast.
            */}
+          {/*
+           * Filled, like the employer tags. A bare groove in a mid-grey pocket
+           * puts grey type on grey metal, which is what left the far fixture's
+           * line the least readable thing in the frame at the resting camera.
+           * The channel now carries ink at metalness 0, so the field reads at
+           * the same weight from the browse shot and the record shot alike.
+           */}
           <EngravedDecal
             alpha={plate}
+            cutColor="#1e1f21"
+            cutMetalness={0}
             envMapIntensity={0.85}
-            floor={0.26}
             height={POCKET_HEIGHT - 0.12}
             hostColor="#9fa1a3"
-            lipMix={0.54}
-            offset={0.0036}
+            lipMix={0.42}
+            offset={0.0026}
             position={[0, SIGNAL_POCKET_OFFSET + 0.01, 0.081]}
             roughness={0.55}
             width={1.86}
@@ -4483,19 +4670,46 @@ function ExperimentBlank({
 /* -------------------------------------------------------------------------- */
 
 /*
- * The card is 1.06 x 1.55 and its face is laid out top-down: a 16:9 capture
- * window under a 0.075 margin, a palette mat strip beneath it, and the printed
+ * The card is 1.18 x 1.5 and its face is laid out top-down: a 16:9 capture
+ * window under a 0.06 margin, a palette mat strip beneath it, and the printed
  * catalogue block filling the rest. Every number below is in the card group's
- * own space, where the card body is centred at y 0.78.
+ * own space, where the card body is centred at CARD_CENTER_Y.
+ *
+ * The capture used to be 0.92 wide inside a 1.06 card whose printed block was
+ * a third *taller* than the picture — at the browse camera that made each era
+ * a 130x90 CSS px thumbnail, and four of the seven eras are dark screens with
+ * one orange accent, so Scene, Orbital, Dusk and Proof all resolved to the
+ * same dark rectangle. The card is 8% wider and 3% shorter, the printed block
+ * gives up 0.1 of its height, and the capture takes all of it: ~150x84 px at
+ * the same lens against the old 130x73.
+ *
+ * The width is bounded by a hard number rather than by taste — the run's pitch
+ * floors at HISTORY_MIN_SPACING and a hovered card grows 1.232x, so any body
+ * past ~1.15 makes a hovered card overlap the one standing beside it.
  */
-const CARD_INNER_W = 0.92;
-const CARD_TOP_Y = 1.48;
+const CARD_BODY_W = 1.14;
+const CARD_BODY_H = 1.5;
+const CARD_CENTER_Y = 0.755;
+const CARD_INNER_W = 1.02;
+const CARD_TOP_Y = 1.44;
 const SHOT_H = (CARD_INNER_W * 9) / 16;
 const SHOT_CENTER_Y = CARD_TOP_Y - SHOT_H / 2;
 const PALETTE_H = 0.05;
-const PALETTE_CENTER_Y = CARD_TOP_Y - SHOT_H - 0.03 - PALETTE_H / 2;
-const CARD_TEXT_H = PALETTE_CENTER_Y - PALETTE_H / 2 - 0.05 - 0.08;
-const CARD_TEXT_CENTER_Y = 0.08 + CARD_TEXT_H / 2;
+const PALETTE_CENTER_Y = CARD_TOP_Y - SHOT_H - 0.028 - PALETTE_H / 2;
+const CARD_TEXT_H = PALETTE_CENTER_Y - PALETTE_H / 2 - 0.045 - 0.07;
+const CARD_TEXT_CENTER_Y = 0.07 + CARD_TEXT_H / 2;
+
+/** 1 at the key end of the run (camera-left), 0 at the far end. See below. */
+function historyKey(index: number) {
+  const span = Math.max(1, historyEras.length - 1) * HISTORY_SPACING;
+
+  return THREE.MathUtils.clamp(
+    0.5 -
+      ((index - (historyEras.length - 1) / 2) * HISTORY_SPACING) / (span * 1.5),
+    0,
+    1,
+  );
+}
 
 /**
  * Warms the era captures on the gesture that asks for them, and flips the
@@ -4557,6 +4771,28 @@ function HistoryArtifact({
   shot: string | null;
 }) {
   const era = historyEras[index];
+  /*
+   * This card's place on the run's value ramp.
+   *
+   * Seven identical white cards evenly spaced across 1300 CSS px, every one of
+   * them the same luminance from the first to the last, is the single clearest
+   * piece of evidence for the standing "no readable key-light direction"
+   * complaint — a real key at [-6.5, 7, 3.2] rakes a run this wide and puts a
+   * clear gradient down it. The renderer will not produce that on its own:
+   * a distant directional hitting seven coplanar cards returns seven identical
+   * values. So the falloff is authored, on the two surfaces that carry it —
+   * the card stock's diffuse value, and the plinth rail's specular, which is
+   * what makes the far end of the run read as further from the lamp rather
+   * than merely darker.
+   */
+  const key = historyKey(index);
+  const stock = useMemo(
+    () =>
+      `#${new THREE.Color('#e9eaea')
+        .multiplyScalar(0.9 + key * 0.18)
+        .getHexString()}`,
+    [key],
+  );
   const palette = useMemo(
     () => createPaletteTexture(era.palette),
     [era.palette],
@@ -4627,9 +4863,9 @@ function HistoryArtifact({
       >
         <AluminumMaterial
           color={ALUMINUM_BRIGHT}
-          envMapIntensity={1.7}
+          envMapIntensity={1.15 + key * 0.95}
           metalness={0.78}
-          roughness={0.24}
+          roughness={0.29 - key * 0.08}
         />
       </RoundedBox>
       {/*
@@ -4675,15 +4911,15 @@ function HistoryArtifact({
 
       <group position={[0, 0.06, 0]} rotation={[-0.14, 0, 0]}>
         <RoundedBox
-          args={[1.06, 1.55, 0.05]}
+          args={[CARD_BODY_W, CARD_BODY_H, 0.05]}
           castShadow
-          position={[0, 0.78, 0]}
+          position={[0, CARD_CENTER_Y, 0]}
           radius={0.02}
           smoothness={3}
         >
           <meshStandardMaterial
-            color="#e9eaea"
-            envMapIntensity={0.8}
+            color={stock}
+            envMapIntensity={0.68 + key * 0.28}
             metalness={0}
             roughness={0.55}
           />
@@ -4767,21 +5003,54 @@ function HistoryArtifact({
 const GALLERY_COLUMNS = 4;
 const FRAME_INNER_W = 1.16;
 const FRAME_INNER_H = FRAME_INNER_W * (9 / 16);
-const FRAME_BORDER = 0.09;
+/*
+ * 0.105, not 0.09. The bottom rail is the piece's label, and a printed label
+ * needs a margin above and below the type or it reads as crowded against the
+ * artwork with bare mount under it. At 0.105 the 0.087 title strip sits with
+ * an even 0.009 of moulding on both sides of it — optically centred in its own
+ * rail, which is what a hung label is.
+ */
+const FRAME_BORDER = 0.105;
 const FRAME_OUTER_W = FRAME_INNER_W + FRAME_BORDER * 2;
 const FRAME_OUTER_H = FRAME_INNER_H + FRAME_BORDER * 2;
-const FRAME_PITCH_X = FRAME_OUTER_W + 0.26;
+const FRAME_PITCH_X = FRAME_OUTER_W + 0.2;
 /*
  * Eight 16:9 frames in four columns is a 2.7-aspect subject inside a 1.6
  * viewport, which parks the whole hang in the top half and leaves a dead lower
  * third. The extra 0.28 of row pitch spends that slack on air between the rows
  * instead — the vertical proportions of an actual gallery wall.
  */
-const FRAME_PITCH_Y = FRAME_OUTER_H + 0.7;
+const FRAME_PITCH_Y = FRAME_OUTER_H + 0.62;
 const FRAME_TOP_Y = 3.15;
 const FRAME_Z = -0.7;
 /** Wire drop from a rail to the frame hanging off it. */
 const WIRE_DROP = 0.26;
+
+/**
+ * The wall's key, as a value ramp across the hang.
+ *
+ * The studio key stands at [-6.5, 7, 3.2] aimed at origin, so on a subject
+ * five units wide it is a raking light: the camera-left frames stand nearer
+ * the lamp and the camera-right ones fall away. None of that reached the hang,
+ * because eight frames lit by one distant directional at near-normal
+ * incidence all return the same value — the row read as a texture dump, flat
+ * from edge to edge. This is that falloff, applied where the renderer will not
+ * produce it: to each frame's moulding value and to its own display gain, so
+ * the wall has a lit side and a shadow side the way a hang always does.
+ *
+ * 1 at the key, 0 at the far edge.
+ */
+const GALLERY_KEY_SPAN = FRAME_PITCH_X * (GALLERY_COLUMNS - 1);
+
+function galleryKey(x: number) {
+  return THREE.MathUtils.clamp(0.5 - x / (GALLERY_KEY_SPAN * 1.4), 0, 1);
+}
+
+/** Display exposure at the shadow end of the ramp, and how far it climbs. */
+const GALLERY_GAIN_BASE = 0.9;
+const GALLERY_GAIN_RAMP = 0.26;
+/** What an unselected piece falls to while one of its neighbours is open. */
+const GALLERY_GAIN_STANDDOWN = 0.62;
 /** Posts stand clear of the outermost frame rather than through it. */
 const RAIL_HALF_SPAN =
   (FRAME_PITCH_X * (GALLERY_COLUMNS - 1)) / 2 + FRAME_OUTER_W / 2 + 0.3;
@@ -4812,15 +5081,25 @@ const GALLERY_SEATS: GallerySeat[] = sideProjects.map((_, index) => {
  * the DOM detail band owns the bottom 260 CSS of every view, and a label
  * hung under the piece lands inside it.
  */
+/*
+ * Raised from 2.58 and eased from 1.4x. A 1.4x plate at 2.58 hung its own
+ * printed label straight across the DocuPilot piece in the row below — the one
+ * thing a step-forward may not do is deface the work it steps in front of. At
+ * 2.86 and 1.3x, with the hang recessed further behind it, the focused piece's
+ * bottom rail clears the second row's top rail by about 40 CSS px at the
+ * focus camera, so the overlap that remains is depth rather than overprint.
+ */
 const GALLERY_FOCUS: Transform = {
-  position: [-0.62, 2.58, 1.35],
+  position: [-0.62, 2.86, 1.5],
   rotation: [0, 0, 0],
-  scale: 1.4,
+  scale: 1.3,
 };
+/** Camera height and look for the focused shot; the piece is staged around it. */
+const GALLERY_FOCUS_EYE = 2.62;
 
 const PLACARD_W = 1.36;
 const PLACARD_H = PLACARD_W * (560 / 1200);
-const PLACARD_SEAT: [number, number, number] = [1.12, 2.55, 1.35];
+const PLACARD_SEAT: [number, number, number] = [1.12, 2.72, 1.5];
 
 /** Collapsed pose, small enough that `dampTransform` culls the group. */
 const GALLERY_STOWED_SCALE = 0.05;
@@ -4846,7 +5125,7 @@ function galleryDistance(fov: number, aspect: number, halfWidth: number) {
 
 /** Half-width of the framed hang, plus the margin a wall gives its outer works. */
 const GALLERY_FIT_HALF =
-  (FRAME_PITCH_X * (GALLERY_COLUMNS - 1)) / 2 + FRAME_OUTER_W / 2 + 0.55;
+  (FRAME_PITCH_X * (GALLERY_COLUMNS - 1)) / 2 + FRAME_OUTER_W / 2 + 0.34;
 /** Focused piece on the left, its wall label on the right. */
 const GALLERY_FOCUS_FIT_HALF = 2.3;
 
@@ -4870,16 +5149,18 @@ function galleryFrameTarget(
   const seat = GALLERY_SEATS[index];
 
   /*
-   * The unfocused pieces do not merely stay put — they step back a third of a
-   * unit, so the focused plate reads as pulled out of a hang rather than
-   * pasted over one.
+   * The unfocused pieces do not merely stay put — they step back three
+   * quarters of a unit and shrink, so the focused plate reads as pulled out of
+   * a hang rather than pasted over one. The recede is deep enough to be a
+   * depth cue at the focus camera's 6.4-unit stand-off; at the old 0.34 the
+   * parallax was under two percent and the step forward read as scale alone.
    */
   const recessed = gallery.piece >= 0;
 
   return {
-    position: [seat.x, seat.y, recessed ? FRAME_Z - 0.34 : FRAME_Z],
+    position: [seat.x, seat.y, recessed ? FRAME_Z - 0.75 : FRAME_Z],
     rotation: [0, 0, 0],
-    scale: recessed ? 0.94 : 1,
+    scale: recessed ? 0.84 : 1,
   };
 }
 
@@ -4888,13 +5169,26 @@ function GalleryFrame({
   piece,
   texture,
   frameRef,
+  screenRef,
 }: {
   index: number;
   piece: SideProject;
   texture: THREE.Texture;
   frameRef: (node: THREE.Group | null) => void;
+  screenRef: (node: THREE.ShaderMaterial | null) => void;
 }) {
   const title = useMemo(() => getFrameTitleTexture(piece.title), [piece.title]);
+  /*
+   * This frame's place on the wall's value ramp. Everything the key touches
+   * comes off it: the moulding, the backing board, the wire, and the display's
+   * own gain.
+   */
+  const key = galleryKey(GALLERY_SEATS[index].x);
+  const moulding = useMemo(
+    () =>
+      new THREE.Color(ALUMINUM).multiplyScalar(0.84 + key * 0.3).getHexString(),
+    [key],
+  );
   const border = useMemo(
     () =>
       getBezelRing(
@@ -4931,11 +5225,11 @@ function GalleryFrame({
         </mesh>
       ))}
 
-      {/* Frame moulding. */}
+      {/* Frame moulding, at this frame's place on the wall's value ramp. */}
       <mesh castShadow geometry={border} position={[0, 0, -0.025]}>
         <AluminumMaterial
-          color={ALUMINUM}
-          envMapIntensity={1.5}
+          color={`#${moulding}`}
+          envMapIntensity={1.1 + key * 0.7}
           roughness={0.24}
         />
       </mesh>
@@ -4946,8 +5240,9 @@ function GalleryFrame({
       </mesh>
 
       <Screen
-        gain={1.02}
+        gain={GALLERY_GAIN_BASE + key * GALLERY_GAIN_RAMP}
         height={FRAME_INNER_H}
+        materialRef={screenRef}
         position={[0, 0, 0.006]}
         radius={0.004}
         seed={index * 0.17}
@@ -4961,20 +5256,22 @@ function GalleryFrame({
         width={FRAME_INNER_W}
       />
 
-      {/* Title strip cut into the moulding's bottom rail. */}
-      <EngravedDecal
-        alpha={title}
-        envMapIntensity={1.2}
-        floor={0.44}
-        height={FRAME_TITLE_W / FRAME_TITLE_ASPECT}
-        hostColor={ALUMINUM}
-        lipMix={0.46}
-        metalness={0.55}
-        offset={0.0022}
-        position={[0, -FRAME_OUTER_H / 2 + FRAME_BORDER / 2, 0.0262]}
-        roughness={0.3}
-        width={FRAME_TITLE_W}
-      />
+      {/*
+       * The printed label on the bottom rail. depthWrite off and lit flat:
+       * this is pigment lying on the moulding, so it must not take the
+       * moulding's specular and must never sort against it.
+       */}
+      <mesh position={[0, -FRAME_OUTER_H / 2 + FRAME_BORDER / 2, 0.0262]}>
+        <planeGeometry args={[FRAME_TITLE_W, FRAME_TITLE_H]} />
+        <meshStandardMaterial
+          depthWrite={false}
+          envMapIntensity={0.25}
+          map={title}
+          metalness={0}
+          roughness={0.75}
+          transparent
+        />
+      </mesh>
     </group>
   );
 }
@@ -5048,6 +5345,7 @@ function GalleryHang({ reducedMotion }: { reducedMotion: boolean }) {
   );
   const images = useConfiguredTextures(GALLERY_IMAGES);
   const frames = useRef<(THREE.Group | null)[]>([]);
+  const screens = useRef<(THREE.ShaderMaterial | null)[]>([]);
   const placard = useRef<THREE.Group | null>(null);
   const rack = useRef<THREE.Group | null>(null);
 
@@ -5074,6 +5372,36 @@ function GalleryHang({ reducedMotion }: { reducedMotion: boolean }) {
 
       const target = galleryFrameTarget(index, state);
       dampTransform(frame, target, transitLambda(target, reducedMotion), delta);
+    });
+
+    /*
+     * The stand-down. A hang with one piece pulled out of it does not stay
+     * evenly lit — the attention light goes to the piece and its neighbours
+     * fall away. Damped on the display's own gain rather than on a material
+     * colour so it costs one uniform write per frame and nothing at rest.
+     */
+    screens.current.forEach((material, index) => {
+      if (!material) {
+        return;
+      }
+
+      const base =
+        GALLERY_GAIN_BASE +
+        galleryKey(GALLERY_SEATS[index].x) * GALLERY_GAIN_RAMP;
+      const target =
+        state.piece < 0 || state.piece === index
+          ? base
+          : base * GALLERY_GAIN_STANDDOWN;
+      const uniform = material.uniforms.uGain;
+
+      if (Math.abs(uniform.value - target) > 0.0015) {
+        uniform.value = damp(
+          uniform.value,
+          target,
+          reducedMotion ? 60 : 6,
+          delta,
+        );
+      }
     });
 
     if (rack.current) {
@@ -5180,6 +5508,9 @@ function GalleryHang({ reducedMotion }: { reducedMotion: boolean }) {
           index={index}
           key={piece.title}
           piece={piece}
+          screenRef={(node) => {
+            screens.current[index] = node;
+          }}
           texture={textures[index]}
         />
       ))}
@@ -5511,18 +5842,29 @@ function Scene({
        * the object a little scale from perspective.
        */
       const step = active ? 0.14 : 0;
+      /*
+       * A neighbour of an opened fixture slides out along the run, away from
+       * the subject, and settles a little further back. See SIGNAL_ASIDE: the
+       * record lens has to hold the plate it was fitted to without cutting the
+       * one beside it in half, and at this stand-off there is no fill that
+       * does both with the run left as seated.
+       */
+      const aside =
+        focusedSignal >= 0 && !open
+          ? (index < focusedSignal ? -1 : 1) * SIGNAL_ASIDE
+          : 0;
       const target =
         view === 'signals'
           ? {
               position: [
-                seat.x + step * Math.sin(seat.yaw),
+                seat.x + step * Math.sin(seat.yaw) + aside,
                 /*
                  * Seated: the cant lift, the foot and the riser all live
                  * inside the blank, so the group itself rides at y 0 and the
                  * foot's underside is what touches the bench.
                  */
                 0,
-                seat.z + step * Math.cos(seat.yaw),
+                seat.z + step * Math.cos(seat.yaw) - (aside === 0 ? 0 : 0.8),
               ] as [number, number, number],
               rotation: [0, seat.yaw, 0] as [number, number, number],
               scale: seat.scale * (open ? 1.05 : active ? 1.03 : 1),
@@ -5797,7 +6139,7 @@ function Scene({
         ? {
             position: [
               0,
-              2.45,
+              GALLERY_FOCUS_EYE,
               GALLERY_FOCUS.position[2] +
                 galleryDistance(
                   galleryFov,
@@ -5805,7 +6147,7 @@ function Scene({
                   GALLERY_FOCUS_FIT_HALF,
                 ),
             ],
-            look: 2.45,
+            look: GALLERY_FOCUS_EYE,
             fov: galleryFov,
             roll: 0,
           }
@@ -5882,7 +6224,7 @@ function Scene({
              * the middle of the frame, which is where the elaboration panel
              * starts.
              */
-            look: signalCentre.y - 0.62 * seat.scale,
+            look: signalCentre.y - 0.48 * seat.scale,
             lookZ: signalCentre.z,
             fov: SIGNAL_FOCUS_FOV,
             roll: 0.004,
@@ -6164,9 +6506,17 @@ function Scene({
 
 /**
  * Empty space unwinds one level at a time, the same order Escape does: a
- * focused piece first, then the gallery, then an open tag record, then an open
- * signal, then any device selection. Clicking the set is always a way *out*,
- * never a dead end.
+ * focused piece first, then an open tag record, then an open signal, then any
+ * device selection. Clicking the set is always a way *out*, never a dead end.
+ *
+ * The gallery is the one sub-view a missed click may NOT close, and that is a
+ * correction rather than an inconsistency. Its pieces are separated by large
+ * gaps and keep moving for several seconds after entry, so a click aimed at a
+ * plate misses easily — and at the old behaviour a single miss between the two
+ * rows ejected the visitor to the bench mid-flight, with the iPad to find
+ * again before they could get back. Empty space inside the hang now defocuses
+ * and nothing more; leaving is Escape, or the Back control the DOM bar carries
+ * for exactly this purpose.
  */
 function handlePointerMissed() {
   const gallery = readBenchGallery();
@@ -6174,10 +6524,8 @@ function handlePointerMissed() {
   if (gallery.open) {
     if (gallery.piece >= 0) {
       clearBenchGalleryPiece();
-      return;
     }
 
-    closeBenchGallery();
     return;
   }
 

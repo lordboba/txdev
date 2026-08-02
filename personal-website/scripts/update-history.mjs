@@ -90,7 +90,23 @@ const MIN_SHOT_BYTES = 3_000;
  * an empty grey room.
  */
 const ARCHIVE_SETTLE_MS = 3_500;
-const LIVE_SETTLE_MS = 14_000;
+/*
+ * The live shot waits on the scene's own settle flag rather than on a stopwatch.
+ *
+ * A fixed budget is not a settle test, and the evidence is committed: at
+ * fourteen seconds on software GL the shutter caught the bench mid-intro and
+ * the archived era shows the laptops and the iPad hovering detached above the
+ * surface with no shadows under them. `benchStore.setBenchSettled` publishes
+ * the same flag the ground-shadow pass gates on to
+ * `document.documentElement.dataset.benchSettled`, so the camera can poll for
+ * the real thing. The budget below is now only the ceiling — the shutter fires
+ * as soon as the scene reports still, and the ceiling exists so a page that
+ * never settles (or an older build with no flag) still yields a frame.
+ */
+const LIVE_SETTLE_MS = 45_000;
+/** Polling period for the settle flag, and the hold after it goes true. */
+const SETTLE_POLL_MS = 400;
+const SETTLE_HOLD_MS = 1_200;
 
 const args = new Set(process.argv.slice(2));
 const dryRun = args.has('--dry-run');
@@ -451,7 +467,7 @@ function openCamera(browser) {
      * A capture only replaces the archived image once it is a real frame, so a
      * failed or blank shot can never blank out an era that already has one.
      */
-    async capture(url, destination, settleMs) {
+    async capture(url, destination, settleMs, waitForSettleFlag = false) {
       const created = await send('Target.createTarget', { url: 'about:blank' });
 
       if (!created?.targetId) {
@@ -487,7 +503,46 @@ function openCamera(browser) {
         session,
       );
       await send('Page.navigate', { url }, session);
-      await sleep(settleMs);
+
+      if (waitForSettleFlag) {
+        /*
+         * Poll the scene's own settle flag up to the ceiling, then hold a beat
+         * so the last damped frame is actually composited. A page that never
+         * raises the flag — the static archive harness, or a build older than
+         * the flag itself — simply spends the whole ceiling, which is exactly
+         * the old behaviour.
+         */
+        await send('Runtime.enable', {}, session);
+        const deadline = Date.now() + settleMs;
+        let settledNow = false;
+
+        while (Date.now() < deadline) {
+          await sleep(SETTLE_POLL_MS);
+          const probe = await send(
+            'Runtime.evaluate',
+            {
+              expression:
+                "document.documentElement.dataset.benchSettled === 'true'",
+              returnByValue: true,
+            },
+            session,
+          );
+
+          if (probe?.result?.value === true) {
+            settledNow = true;
+            break;
+          }
+        }
+
+        console.log(
+          settledNow
+            ? 'history: scene reported settled; firing the shutter'
+            : `note: scene never reported settled within ${settleMs}ms; shooting anyway`,
+        );
+        await sleep(SETTLE_HOLD_MS);
+      } else {
+        await sleep(settleMs);
+      }
 
       const shot = await send(
         'Page.captureScreenshot',
@@ -595,18 +650,36 @@ async function main() {
       palette: anchor.palette,
     };
 
-    if (drift < SPAN_DAYS && appendedEras.length === 0) {
+    /*
+     * At most one uncurated card, ever.
+     *
+     * The drift gate used to be consulted even when a provisional card already
+     * existed, and `anchor` measures drift from the last *curated* era — so
+     * once the repository was more than SPAN_DAYS past the newest hand-named
+     * era, every deploy fell through to the append branch and opened another
+     * "Current build" card. The shelf grew two same-day entries with
+     * interchangeable template descriptions, diluting six curated eras with
+     * near-duplicates. Promotion is the only thing that may add a card to the
+     * run; the head of an uncurated drift is one card, re-pointed.
+     */
+    if (appendedEras.length > 0) {
+      appendedEras.splice(0, appendedEras.length, entry);
+      console.log(`history: provisional era re-pointed at ${head.commit}`);
+    } else if (drift < SPAN_DAYS) {
       note(
         `head ${head.commit} is ${drift} day(s) past ${newest.commit}; under the ${SPAN_DAYS}-day span, nothing appended`,
       );
-    } else if (appendedEras.length > 0 && drift < SPAN_DAYS) {
-      appendedEras[appendedEras.length - 1] = entry;
-      console.log(`history: provisional era re-pointed at ${head.commit}`);
     } else {
       appendedEras.push(entry);
       console.log(`history: appended provisional era ${head.commit}`);
     }
   } else if (head) {
+    /* Head already IS the newest recorded era; collapse any older strays. */
+    if (appendedEras.length > 1) {
+      appendedEras.splice(0, appendedEras.length - 1);
+      console.log('history: collapsed stale provisional eras');
+    }
+
     console.log(`history: era run already current at ${head.commit}`);
   }
 
@@ -650,6 +723,7 @@ async function main() {
           `${origin}/`,
           join(SHOT_DIR, `${live.commit}.png`),
           LIVE_SETTLE_MS,
+          true,
         );
         console.log(
           ok
