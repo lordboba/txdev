@@ -14,7 +14,6 @@ import {
   companyTags,
   experiments,
   featuredProjects,
-  gitEras,
   personalNotes,
   sideProjects,
   type CompanyTag,
@@ -31,6 +30,7 @@ import {
 } from '../shared/runtime';
 import {
   clearBenchGalleryPiece,
+  clearBenchHistorySelection,
   clearBenchSelection,
   clearBenchSignalSelection,
   clearBenchTagSelection,
@@ -38,12 +38,15 @@ import {
   openBenchGallery,
   readBenchFocus,
   readBenchGallery,
+  markBenchHistoryLive,
+  readBenchHistory,
   readBenchPointer,
   readBenchSettled,
   readBenchSignals,
   readBenchTags,
   releaseBenchGallery,
   setBenchGalleryPiece,
+  setBenchHistorySelection,
   setBenchHover,
   setBenchPointer,
   setBenchSelection,
@@ -53,8 +56,10 @@ import {
   setBenchTagHover,
   setBenchTagSelection,
   subscribeBenchGallery,
+  subscribeBenchHistory,
   subscribeBenchSettled,
 } from './benchStore';
+import { historyEras, historyShots } from './historyEras';
 
 const INK = '#141517';
 const ALUMINUM = '#b4b6b8';
@@ -109,9 +114,35 @@ const COVE_HEIGHT = 16;
 const COVE_BACK = 12;
 const COVE_WIDTH = 46;
 
-const HISTORY_SPACING = 1.52;
+/** Pitch of the six-card run this shot was composed for. */
+const HISTORY_BASE_SPACING = 1.52;
+/** Never tighter than this: below it the cards' own edges start touching. */
+const HISTORY_MIN_SPACING = 1.34;
 /** Shallow arc radius the history chips are laid on so the outer chips toe in. */
 const HISTORY_ARC = 16;
+/**
+ * The run has to survive growing. scripts/update-history.mjs records a
+ * provisional era whenever the repository drifts past the newest recorded one,
+ * so the composition cannot be hard-tuned to six cards — a seventh at the
+ * original pitch hangs half of the outermost card off both edges of the frame.
+ *
+ * Two moves in order, and only as far as each is needed: close the pitch up to
+ * the floor above, then, if the run is still wider than the six-card shot
+ * framed, pull the lens back by exactly the overflow. Six cards land on the
+ * original numbers to the decimal.
+ */
+const HISTORY_SPACING = Math.max(
+  HISTORY_MIN_SPACING,
+  Math.min(
+    HISTORY_BASE_SPACING,
+    (5 * HISTORY_BASE_SPACING) / Math.max(1, historyEras.length - 1),
+  ),
+);
+/** Half the run's footprint, card body included. */
+const HISTORY_RUN_HALF = ((historyEras.length - 1) / 2) * HISTORY_SPACING + 0.6;
+/** What the composed history lens frames at its own stand-off. */
+const HISTORY_FIT_HALF = 2.5 * HISTORY_BASE_SPACING + 0.6;
+const HISTORY_CAMERA_Z = 9.2 * Math.max(1, HISTORY_RUN_HALF / HISTORY_FIT_HALF);
 /**
  * Where the work cluster sits. The camera *and* the look target both ride this
  * value, so moving it slides the whole cluster across the frame without ever
@@ -1673,6 +1704,66 @@ function createPaletteTexture(palette: string) {
       context.fillRect(0, index * band, canvas.width, band + 1);
     });
   }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
+  return texture;
+}
+
+/**
+ * The catalogue card printed under each era's capture: the date and short hash
+ * as one letterspaced micro-label, the era name at display size, then its
+ * visual language and palette as body. Transparent ground — this is ink on the
+ * card stock the mesh already is, not a second brighter plate laid over it.
+ *
+ * 1024px across 0.92 world units, the same ~1113 px/unit the rest of the
+ * bench's printed surfaces are drawn at.
+ */
+function createEraPlacardTexture(
+  era: { commit: string; date: string; label: string; palette: string },
+  visualLanguage: string,
+) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 880;
+  const context = canvas.getContext('2d') as SpacedContext | null;
+
+  if (!context) {
+    return new THREE.CanvasTexture(canvas);
+  }
+
+  context.textBaseline = 'alphabetic';
+
+  context.letterSpacing = '10px';
+  context.fillStyle = 'rgba(20,21,23,0.5)';
+  context.font = '600 40px Helvetica Neue, Arial, sans-serif';
+  context.fillText(era.date.toUpperCase(), 30, 62);
+
+  context.letterSpacing = '4px';
+  context.fillStyle = 'rgba(20,21,23,0.42)';
+  context.font = '500 38px IBM Plex Mono, Menlo, monospace';
+  context.fillText(era.commit, 30, 128);
+
+  context.fillStyle = 'rgba(20,21,23,0.16)';
+  context.fillRect(30, 170, 964, 2);
+
+  context.letterSpacing = '-2px';
+  context.fillStyle = 'rgba(20,21,23,0.92)';
+  context.font = '600 106px Helvetica Neue, Arial, sans-serif';
+  context.fillText(era.label, 26, 292, 968);
+
+  context.letterSpacing = '0px';
+  context.fillStyle = 'rgba(20,21,23,0.72)';
+  context.font = '500 50px Helvetica Neue, Arial, sans-serif';
+  wrapLines(context, visualLanguage, 964).forEach((line, index) => {
+    context.fillText(line, 30, 386 + index * 62);
+  });
+
+  context.letterSpacing = '8px';
+  context.fillStyle = 'rgba(20,21,23,0.45)';
+  context.font = '600 34px Helvetica Neue, Arial, sans-serif';
+  context.fillText(era.palette.toUpperCase(), 30, 540, 964);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -4391,28 +4482,101 @@ function ExperimentBlank({
 /* History chips                                                                */
 /* -------------------------------------------------------------------------- */
 
+/*
+ * The card is 1.06 x 1.55 and its face is laid out top-down: a 16:9 capture
+ * window under a 0.075 margin, a palette mat strip beneath it, and the printed
+ * catalogue block filling the rest. Every number below is in the card group's
+ * own space, where the card body is centred at y 0.78.
+ */
+const CARD_INNER_W = 0.92;
+const CARD_TOP_Y = 1.48;
+const SHOT_H = (CARD_INNER_W * 9) / 16;
+const SHOT_CENTER_Y = CARD_TOP_Y - SHOT_H / 2;
+const PALETTE_H = 0.05;
+const PALETTE_CENTER_Y = CARD_TOP_Y - SHOT_H - 0.03 - PALETTE_H / 2;
+const CARD_TEXT_H = PALETTE_CENTER_Y - PALETTE_H / 2 - 0.05 - 0.08;
+const CARD_TEXT_CENTER_Y = 0.08 + CARD_TEXT_H / 2;
+
+/**
+ * Warms the era captures on the gesture that asks for them, and flips the
+ * sticky flag that mounts them into the scene. Both halves belong to the same
+ * moment: the nav click is the first honest signal that this run is wanted.
+ */
+export function preloadHistoryShots() {
+  markBenchHistoryLive();
+
+  if (historyShots.length > 0) {
+    useTexture.preload(historyShots);
+  }
+}
+
+/**
+ * The capture, seated in the card's window. Its own component because it
+ * suspends: the six images are only ever fetched once someone has actually
+ * opened the history view, and an idle work shot pays nothing for them.
+ */
+function EraShot({ url }: { url: string }) {
+  const [texture] = useConfiguredTextures([url]);
+
+  return (
+    <mesh position={[0, SHOT_CENTER_Y, 0.0265]}>
+      <planeGeometry args={[CARD_INNER_W, SHOT_H]} />
+      <meshStandardMaterial
+        envMapIntensity={0.85}
+        map={texture}
+        metalness={0}
+        roughness={0.44}
+      />
+    </mesh>
+  );
+}
+
+/** What stands in the window while a capture loads, or when there is none. */
+function EraShotBlank({ palette }: { palette: THREE.Texture }) {
+  return (
+    <mesh position={[0, SHOT_CENTER_Y, 0.0265]}>
+      <planeGeometry args={[CARD_INNER_W, SHOT_H]} />
+      <meshStandardMaterial
+        envMapIntensity={0.9}
+        map={palette}
+        metalness={0}
+        roughness={0.42}
+      />
+    </mesh>
+  );
+}
+
 function HistoryArtifact({
   index,
   artifactRef,
+  shot,
 }: {
   index: number;
   artifactRef: (node: THREE.Group | null) => void;
+  /** Null until the history view has been opened at least once. */
+  shot: string | null;
 }) {
-  const era = gitEras[index];
+  const era = historyEras[index];
   const palette = useMemo(
     () => createPaletteTexture(era.palette),
     [era.palette],
   );
-  const label = useMemo(
-    () => createTextTexture([era.label, era.visualLanguage], { size: 44 }),
-    [era.label, era.visualLanguage],
+  const placard = useMemo(
+    () =>
+      createEraPlacardTexture(
+        era,
+        era.provisional
+          ? `${era.visualLanguage} · not yet named`
+          : era.visualLanguage,
+      ),
+    [era],
   );
 
   return (
     <group
       onClick={(event) => {
         event.stopPropagation();
-        setBenchSelection('history', index);
+        setBenchHistorySelection(index);
       }}
       onPointerEnter={(event) => {
         event.stopPropagation();
@@ -4525,12 +4689,14 @@ function HistoryArtifact({
           />
         </RoundedBox>
         {/*
-         * Printed card stock, lit like card stock — not an unlit Keynote fill.
-         * The 0.004 white lip around the swatch is what catches the overhead
-         * softbox and stops the block reading as vertex colour on a primitive.
+         * The mount: a 0.004 white lip around the capture window, printed the
+         * way card stock is printed — not an unlit Keynote fill. It is what
+         * catches the overhead softbox and stops the block reading as vertex
+         * colour on a primitive, and it is also the frame that tells you the
+         * image inside it is a photograph and not the card's own surface.
          */}
-        <mesh position={[0, 0.95, 0.0262]}>
-          <planeGeometry args={[0.928, 1.028]} />
+        <mesh position={[0, SHOT_CENTER_Y, 0.0262]}>
+          <planeGeometry args={[CARD_INNER_W + 0.016, SHOT_H + 0.016]} />
           <meshStandardMaterial
             color="#f4f4f3"
             envMapIntensity={1.3}
@@ -4538,8 +4704,27 @@ function HistoryArtifact({
             roughness={0.3}
           />
         </mesh>
-        <mesh position={[0, 0.95, 0.0265]}>
-          <planeGeometry args={[0.92, 1.02]} />
+        {/*
+         * The era itself: a real capture of this state of the site. The archive
+         * is photographed from the museum miniatures — DOM rebuilds of these
+         * exact commits — and the current build is photographed from the
+         * running site. When no capture exists the window falls back to the
+         * palette bands rather than inventing a screenshot.
+         */}
+        {shot ? (
+          <Suspense fallback={<EraShotBlank palette={palette} />}>
+            <EraShot url={shot} />
+          </Suspense>
+        ) : (
+          <EraShotBlank palette={palette} />
+        )}
+        {/*
+         * The palette survives as a mat strip under the window — five threads
+         * of the era's real colour, at a scale that reads as a swatch rather
+         * than as the subject. The capture is the subject now.
+         */}
+        <mesh position={[0, PALETTE_CENTER_Y, 0.0265]}>
+          <planeGeometry args={[CARD_INNER_W, PALETTE_H]} />
           <meshStandardMaterial
             envMapIntensity={0.9}
             map={palette}
@@ -4547,10 +4732,10 @@ function HistoryArtifact({
             roughness={0.42}
           />
         </mesh>
-        <mesh position={[0, 0.27, 0.0265]}>
-          <planeGeometry args={[0.92, 0.32]} />
+        <mesh position={[0, CARD_TEXT_CENTER_Y, 0.0265]}>
+          <planeGeometry args={[CARD_INNER_W, CARD_TEXT_H]} />
           <meshStandardMaterial
-            map={label}
+            map={placard}
             metalness={0}
             roughness={0.6}
             transparent
@@ -5159,6 +5344,18 @@ function Scene({
   const projectMaterials = useRef<(THREE.ShaderMaterial | null)[]>([]);
   const blanks = useRef<(THREE.Group | null)[]>([]);
   const artifacts = useRef<(THREE.Group | null)[]>([]);
+  /*
+   * Sticky, and held in the store rather than in this component: the era
+   * captures are seven full-frame PNGs, an idle work shot must not pay for
+   * them, and once they are in the scene they have to stay — dropping them on
+   * exit would blank the cards mid-transit. Set by the nav gesture, or by the
+   * frame loop below when someone lands on /#history directly.
+   */
+  const historyState = useSyncExternalStore(
+    subscribeBenchHistory,
+    readBenchHistory,
+    readBenchHistory,
+  );
   const badge = useRef<THREE.Group | null>(null);
   const tagRack = useRef<THREE.Group | null>(null);
   const tablet = useRef<THREE.Group | null>(null);
@@ -5223,6 +5420,16 @@ function Scene({
     const focusedSignal =
       view === 'signals' && !mobile ? signalState.selected : -1;
     const historyFocus = readBenchFocus('history');
+
+    /*
+     * Landing on /#history directly never passes through the nav, so the frame
+     * loop is the backstop that mounts the captures. `markBenchHistoryLive` is
+     * a no-op once set, so this costs one comparison a frame and nothing else.
+     */
+    if (view === 'history') {
+      markBenchHistoryLive();
+    }
+
     const pointer = readBenchPointer();
     let motion = 0;
 
@@ -5338,7 +5545,7 @@ function Scene({
       }
       const active =
         historyFocus.hovered === index || historyFocus.selected === index;
-      const offset = index - (gitEras.length - 1) / 2;
+      const offset = index - (historyEras.length - 1) / 2;
       const chipX = offset * HISTORY_SPACING;
       /*
        * One smooth arc, nothing else. The run used to carry a ±0.62 depth
@@ -5463,9 +5670,9 @@ function Scene({
         ? historyFocus.hovered
         : historyFocus.selected >= 0
           ? historyFocus.selected
-          : (gitEras.length - 1) / 2;
+          : (historyEras.length - 1) / 2;
     const historyX =
-      (historyIndex - (gitEras.length - 1) / 2) * HISTORY_SPACING * 0.7;
+      (historyIndex - (historyEras.length - 1) / 2) * HISTORY_SPACING * 0.7;
     const parallaxX = mobile || reducedMotion ? 0 : pointer.x * 0.34;
     const parallaxY = mobile || reducedMotion ? 0 : pointer.y * 0.18;
 
@@ -5571,7 +5778,7 @@ function Scene({
           },
           /* Same treatment: the era run climbs into the upper two-thirds. */
           history: {
-            position: [historyX + parallaxX * 0.25, 2.85, 9.2],
+            position: [historyX + parallaxX * 0.25, 2.85, HISTORY_CAMERA_Z],
             look: 0.8,
             fov: 36,
             roll: -0.008,
@@ -5939,13 +6146,14 @@ function Scene({
         />
       ))}
 
-      {gitEras.map((era, index) => (
+      {historyEras.map((era, index) => (
         <HistoryArtifact
           artifactRef={(node) => {
             artifacts.current[index] = node;
           }}
           index={index}
           key={era.commit}
+          shot={historyState.live ? era.shot : null}
         />
       ))}
 
@@ -5980,6 +6188,11 @@ function handlePointerMissed() {
 
   if (readBenchSignals().selected >= 0) {
     clearBenchSignalSelection();
+    return;
+  }
+
+  if (readBenchHistory().selected >= 0) {
+    clearBenchHistorySelection();
     return;
   }
 

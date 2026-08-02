@@ -165,7 +165,8 @@ export function clearBenchGalleryPiece() {
 
 /**
  * Escape unwinds one level at a time — focused piece, then the gallery, then
- * an open company-tag record, then an open signal. It is bound here rather
+ * an open company-tag record, then an opened era capture, then the era record
+ * behind it, then an open signal. It is bound here rather
  * than in a component so there is exactly one handler no matter how many
  * surfaces subscribe, and so it is torn down with the last of them.
  *
@@ -194,6 +195,16 @@ function handleBenchEscape(event: KeyboardEvent) {
 
   if (tags.selected >= 0) {
     clearBenchTagSelection();
+    return;
+  }
+
+  if (history.lightbox) {
+    closeBenchHistoryLightbox();
+    return;
+  }
+
+  if (history.selected >= 0) {
+    clearBenchHistorySelection();
     return;
   }
 
@@ -349,6 +360,98 @@ export function subscribeBenchSignals(listener: () => void) {
 
   return () => {
     signalListeners.delete(listener);
+    releaseEscape();
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* History                                                                      */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The era run. Its own channel for the same reason the signals have one: the
+ * DOM has to re-render when a card is picked, and `focus` is read once per
+ * frame by the renderer and notifies nobody.
+ *
+ * Selection is still mirrored into `focus` so the scene's per-frame layout
+ * keeps a single place to ask which card is the hero — this channel is the
+ * writer, `focus` is the renderer's read model, and nothing else writes to the
+ * history slot of `focus`.
+ *
+ * `lightbox` is one level deeper again: the record panel prints the capture at
+ * band height, and the lightbox is the same capture at full size over the
+ * page. Both are sub-views of `history`, so neither touches the hash and
+ * browser back still leaves the page.
+ */
+export type BenchHistory = {
+  selected: number;
+  lightbox: boolean;
+  /**
+   * Sticky. The era captures are seven full-frame PNGs, and an idle work shot
+   * must not pay for them — but once they are in the scene they stay, because
+   * dropping them on exit would blank the cards mid-transit. Set the first time
+   * the run is asked for, by the nav gesture or by the frame loop, and never
+   * cleared for the life of the page.
+   */
+  live: boolean;
+};
+
+let history: BenchHistory = { selected: -1, lightbox: false, live: false };
+const historyListeners = new Set<() => void>();
+
+function commitHistory(next: BenchHistory) {
+  if (
+    history.selected === next.selected &&
+    history.lightbox === next.lightbox &&
+    history.live === next.live
+  ) {
+    return;
+  }
+
+  history = next;
+  historyListeners.forEach((listener) => listener());
+}
+
+export function markBenchHistoryLive() {
+  commitHistory({ ...history, live: true });
+}
+
+export function setBenchHistorySelection(index: number) {
+  setBenchSelection('history', index);
+  /* Picking a different era closes the capture opened over the last one. */
+  commitHistory({ ...history, selected: index, lightbox: false });
+}
+
+export function clearBenchHistorySelection() {
+  if (focus.view === 'history') {
+    focus.selected = -1;
+  }
+
+  commitHistory({ ...history, selected: -1, lightbox: false });
+}
+
+export function openBenchHistoryLightbox() {
+  if (history.selected < 0) {
+    return;
+  }
+
+  commitHistory({ ...history, lightbox: true });
+}
+
+export function closeBenchHistoryLightbox() {
+  commitHistory({ ...history, lightbox: false });
+}
+
+export function readBenchHistory() {
+  return history;
+}
+
+export function subscribeBenchHistory(listener: () => void) {
+  historyListeners.add(listener);
+  retainEscape();
+
+  return () => {
+    historyListeners.delete(listener);
     releaseEscape();
   };
 }

@@ -1,18 +1,25 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  clearBenchHistorySelection,
   clearBenchSelection,
   clearBenchSignalSelection,
   clearBenchTagSelection,
+  closeBenchHistoryLightbox,
+  markBenchHistoryLive,
+  openBenchHistoryLightbox,
   readBenchFocus,
+  readBenchHistory,
   readBenchSignals,
   readBenchTags,
+  setBenchHistorySelection,
   setBenchHover,
   setBenchSelection,
   setBenchSignalHover,
   setBenchSignalSelection,
   setBenchTagHover,
   setBenchTagSelection,
+  subscribeBenchHistory,
   subscribeBenchSignals,
 } from './benchStore.ts';
 
@@ -104,4 +111,61 @@ test('signals and company tags are independent channels', () => {
 
   clearBenchSignalSelection();
   setBenchSignalHover(-1);
+});
+
+test("an opened era drives the renderer's focus record as well as the DOM", () => {
+  let notified = 0;
+  const stop = subscribeBenchHistory(() => {
+    notified += 1;
+  });
+
+  setBenchHistorySelection(2);
+
+  assert.equal(readBenchHistory().selected, 2);
+  /* The scene reads `focus`, so the two surfaces cannot disagree. */
+  assert.equal(readBenchFocus('history').selected, 2);
+  assert.equal(notified, 1);
+
+  clearBenchHistorySelection();
+
+  assert.equal(readBenchHistory().selected, -1);
+  assert.equal(readBenchFocus('history').selected, -1);
+
+  /* Idempotent: a second clear must not wake every subscriber again. */
+  const settled = notified;
+  clearBenchHistorySelection();
+  assert.equal(notified, settled);
+
+  stop();
+});
+
+test('the capture only opens over an era that is actually open', () => {
+  clearBenchHistorySelection();
+  openBenchHistoryLightbox();
+  assert.equal(readBenchHistory().lightbox, false);
+
+  setBenchHistorySelection(0);
+  openBenchHistoryLightbox();
+  assert.equal(readBenchHistory().lightbox, true);
+
+  /* Picking a different era closes the capture opened over the last one. */
+  setBenchHistorySelection(1);
+  assert.equal(readBenchHistory().lightbox, false);
+
+  openBenchHistoryLightbox();
+  closeBenchHistoryLightbox();
+  assert.equal(readBenchHistory().lightbox, false);
+
+  clearBenchHistorySelection();
+});
+
+test('the era captures mount once and never unmount', () => {
+  assert.equal(readBenchHistory().live, false);
+
+  markBenchHistoryLive();
+  assert.equal(readBenchHistory().live, true);
+
+  setBenchHistorySelection(3);
+  clearBenchHistorySelection();
+  assert.equal(readBenchHistory().live, true);
 });

@@ -876,9 +876,14 @@
   line-height: 1.5;
 }
 
+/*
+ * The column count is the length of the era run, not the literal six: the run
+ * grows by one when scripts/update-history.mjs records a provisional era, and a
+ * hard-coded six wraps the new card onto a second row inside a 200px band.
+ */
 .historyDetails {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--era-count, 6), minmax(0, 1fr));
   gap: 1px;
   margin: 0;
   padding: 0;
@@ -929,6 +934,249 @@
   line-height: 1.4;
 }
 
+.historyDetails button:hover .signalCue,
+.historyDetails button:focus-visible .signalCue {
+  border-bottom-color: var(--ink);
+}
+
+/* ---- Opened era ------------------------------------------------------- */
+
+.eraRecord {
+  display: grid;
+  gap: 1px;
+}
+
+/*
+ * Capture on the left, record to the right of it. The band cannot grow
+ * downwards — the card it belongs to is standing directly above — so the
+ * picture is sized to the band's own height and the reading runs across.
+ */
+.eraPanel {
+  display: grid;
+  gap: 0.85rem clamp(0.9rem, 2.2vw, 1.9rem);
+  grid-template-columns: auto minmax(0, 1.35fr) minmax(0, 1fr);
+  align-items: start;
+  padding: 0.8rem 0.95rem;
+  border: 1px solid var(--hairline);
+  background: var(--paper);
+  backdrop-filter: blur(12px);
+}
+
+/*
+ * The picture is a control, so it is a button — but it must not look like a
+ * chip with a screenshot in it. Hairline, square, no padding: the capture's own
+ * edge is the frame, and the affordance is the caption that slides in under it.
+ */
+.eraShot {
+  position: relative;
+  display: block;
+  width: 268px;
+  padding: 0;
+  border: 1px solid var(--hairline);
+  background: none;
+  font: inherit;
+  line-height: 0;
+  cursor: pointer;
+}
+
+.eraShot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.eraShot > span {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  padding: 0.2rem 0.4rem;
+  border-top: 1px solid var(--hairline);
+  border-left: 1px solid var(--hairline);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 0.56rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  line-height: 1.3;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity 180ms linear;
+}
+
+.eraShot:hover > span,
+.eraShot:focus-visible > span {
+  opacity: 1;
+}
+
+.eraShot:focus-visible {
+  outline: 1px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.eraNoShot {
+  width: 268px;
+  margin: 0;
+  padding: 0.7rem;
+  border: 1px dashed var(--hairline);
+  color: var(--ink-body);
+  font-size: 0.62rem;
+  line-height: 1.5;
+}
+
+.eraNoShot .fieldLabel {
+  display: block;
+  margin-bottom: 0.3rem;
+}
+
+.eraMarker {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+
+/*
+ * The provisional stamp, second in the row. Bracketed off the same way the
+ * signal panel marks draft copy: a generated era's name came off a commit
+ * subject, and the panel is required to say so.
+ */
+.eraMarker .fieldLabel:last-child {
+  color: var(--ink-body);
+  opacity: 0.75;
+}
+
+.eraHeading h2 {
+  margin: 0.5rem 0 0.4rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.eraHeading p {
+  margin: 0;
+  color: var(--ink-body);
+  font-size: 0.67rem;
+  line-height: 1.5;
+}
+
+.eraFields {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.eraFields dt {
+  color: var(--muted);
+  font-size: 0.54rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.eraFields dd {
+  margin: 0.15rem 0 0;
+  color: var(--ink);
+  font-size: 0.67rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.45;
+}
+
+.eraFields a {
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.eraFields a:hover,
+.eraFields a:focus-visible {
+  border-bottom-color: var(--ink);
+}
+
+/* ---- The capture at full size ----------------------------------------- */
+
+.lightbox {
+  /*
+   * Fixed, not absolute: below 700px the shell stops being a viewport-sized box
+   * and becomes a tall scrolling column, and an absolute overlay would cover
+   * the document rather than the screen.
+   */
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1.5rem, 5vw, 4rem);
+  background: rgba(20, 21, 23, 0.82);
+  backdrop-filter: blur(6px);
+  animation: benchLightboxIn 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.lightbox figure {
+  max-width: min(1280px, 100%);
+  margin: 0;
+}
+
+.lightbox img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 74vh;
+  object-fit: contain;
+  border: 1px solid rgba(235, 236, 236, 0.35);
+}
+
+.lightbox figcaption {
+  display: flex;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 0.7rem;
+  color: rgba(235, 236, 236, 0.92);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.lightbox figcaption .fieldLabel {
+  margin-right: 0.55rem;
+  color: rgba(235, 236, 236, 0.62);
+}
+
+.lightbox figcaption button {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid rgba(235, 236, 236, 0.4);
+  background: none;
+  color: rgba(235, 236, 236, 0.92);
+  font: inherit;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.lightbox figcaption button:hover,
+.lightbox figcaption button:focus-visible {
+  border-color: rgba(235, 236, 236, 0.9);
+}
+
+@keyframes benchLightboxIn {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lightbox {
+    animation: none;
+  }
+}
+
 .footer {
   position: absolute;
   z-index: 4;
@@ -975,6 +1223,9 @@
 .galleryIndex button:focus-visible,
 .galleryPlacard a:focus-visible,
 .signalDetails button:focus-visible,
+.historyDetails button:focus-visible,
+.eraFields a:focus-visible,
+.lightbox figcaption button:focus-visible,
 .tagIndex button:focus-visible,
 .wordmark:focus-visible {
   outline: 1px solid var(--ink);
@@ -989,6 +1240,15 @@
   .tagRecord,
   .signalNote {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .eraPanel {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .eraShot,
+  .eraNoShot {
+    width: 200px;
   }
 
   .signalFoot {
@@ -1102,6 +1362,15 @@
   .historyDetails {
     grid-template-columns: minmax(0, 1fr);
     gap: 0.6rem;
+  }
+
+  .eraPanel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .eraShot,
+  .eraNoShot {
+    width: 100%;
   }
 
   .profileDetails {

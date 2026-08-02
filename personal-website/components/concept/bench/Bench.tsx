@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useSyncExternalStore } from 'react';
 import {
@@ -8,23 +9,27 @@ import {
   experimentNotes,
   experiments,
   featuredProjects,
-  gitEras,
   notesLabel,
   sideProjects,
   type ConceptViewId,
 } from '../conceptData';
 import { setConceptView, useConceptView } from '../conceptViewStore';
 import { useMounted, usePrefersReducedMotion } from '../shared/runtime';
-import { BenchScene } from './BenchScene';
+import { BenchScene, preloadHistoryShots } from './BenchScene';
 import {
+  clearBenchHistorySelection,
   clearBenchSignalSelection,
   clearBenchTagSelection,
   closeBenchGallery,
+  closeBenchHistoryLightbox,
   openBenchGallery,
+  openBenchHistoryLightbox,
   readBenchGallery,
+  readBenchHistory,
   readBenchSignals,
   readBenchTags,
   setBenchGalleryPiece,
+  setBenchHistorySelection,
   setBenchHover,
   setBenchSelection,
   setBenchSignalHover,
@@ -32,9 +37,11 @@ import {
   setBenchTagHover,
   setBenchTagSelection,
   subscribeBenchGallery,
+  subscribeBenchHistory,
   subscribeBenchSignals,
   subscribeBenchTags,
 } from './benchStore';
+import { historyEras } from './historyEras';
 import styles from './Bench.module.css';
 
 const MOBILE_QUERY = '(max-width: 700px)';
@@ -100,6 +107,14 @@ function useBenchGallery() {
 
 function useBenchTags() {
   return useSyncExternalStore(subscribeBenchTags, readBenchTags, readBenchTags);
+}
+
+function useBenchHistory() {
+  return useSyncExternalStore(
+    subscribeBenchHistory,
+    readBenchHistory,
+    readBenchHistory,
+  );
 }
 
 function useBenchSignals() {
@@ -531,14 +546,175 @@ function SignalsDetails() {
   );
 }
 
-function HistoryDetails() {
+/** The era run's keyboard-reachable twin, same contract as SignalIndex. */
+function EraIndex({ selected }: { selected: number }) {
   return (
-    <ol className={`${styles.details} ${styles.historyDetails}`}>
-      {gitEras.map((era, index) => (
+    <ul className={styles.galleryIndex}>
+      {historyEras.map((era, index) => (
+        <li key={era.commit}>
+          <button
+            aria-pressed={index === selected}
+            data-active={index === selected}
+            onBlur={() => setBenchHover('history', -1)}
+            onClick={() => setBenchHistorySelection(index)}
+            onFocus={() => setBenchHover('history', index)}
+            onPointerEnter={() => setBenchHover('history', index)}
+            onPointerLeave={() => setBenchHover('history', -1)}
+            type="button"
+          >
+            {era.label}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * The opened era. The card on the bench carries the capture at card size; this
+ * is the record behind it — the commit it came from, what it was, and a link to
+ * that commit on the real remote when the repository has one. Nothing here is
+ * written by hand for the provisional entry, and the panel says so.
+ */
+function EraRecord({ selected }: { selected: number }) {
+  const era = historyEras[selected];
+
+  return (
+    <div className={`${styles.details} ${styles.eraRecord}`}>
+      <div className={styles.galleryBar}>
+        <button
+          className={styles.galleryBack}
+          onClick={clearBenchHistorySelection}
+          type="button"
+        >
+          <span aria-hidden="true">←</span> Back to the run
+        </button>
+        <EraIndex selected={selected} />
+        <span className={styles.galleryHint}>Esc to exit</span>
+      </div>
+
+      <div className={styles.eraPanel}>
+        {era.shot ? (
+          /*
+           * A real capture, and clickable: the band is 200px tall and a
+           * homepage does not read at 150px, so the full-size view is one
+           * gesture away rather than absent.
+           */
+          <button
+            className={styles.eraShot}
+            onClick={openBenchHistoryLightbox}
+            type="button"
+          >
+            <Image
+              alt={`The site at commit ${era.commit}`}
+              height={720}
+              sizes="(max-width: 900px) 90vw, 300px"
+              src={era.shot}
+              width={1280}
+            />
+            <span>
+              Full size <span aria-hidden="true">⤢</span>
+            </span>
+          </button>
+        ) : (
+          <p className={styles.eraNoShot}>
+            <FieldLabel>No capture</FieldLabel>
+            This state has not been photographed yet.
+          </p>
+        )}
+
+        <div className={styles.eraHeading}>
+          <span className={styles.eraMarker}>
+            <FieldLabel>{era.date}</FieldLabel>
+            {era.provisional ? <FieldLabel>Provisional</FieldLabel> : null}
+          </span>
+          <h2>{era.label}</h2>
+          <p>{era.description}</p>
+        </div>
+
+        <dl className={styles.eraFields}>
+          <div>
+            <dt>Commit</dt>
+            <dd>
+              {era.commitUrl ? (
+                <a href={era.commitUrl} rel="noreferrer" target="_blank">
+                  {era.commit} <span aria-hidden="true">↗</span>
+                </a>
+              ) : (
+                era.commit
+              )}
+            </dd>
+          </div>
+          <div>
+            <dt>Visual language</dt>
+            <dd>{era.visualLanguage}</dd>
+          </div>
+          <div>
+            <dt>Palette</dt>
+            <dd>{era.palette}</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The capture at full size. A plain overlay rather than a dialog element: it
+ * carries one image and one control, closes on Escape through the same store
+ * ladder every other sub-view uses, and closes on a click anywhere off the
+ * picture.
+ */
+function EraLightbox({ selected }: { selected: number }) {
+  const era = historyEras[selected];
+
+  if (!era.shot) {
+    return null;
+  }
+
+  return (
+    <div
+      className={styles.lightbox}
+      onClick={closeBenchHistoryLightbox}
+      role="presentation"
+    >
+      <figure>
+        <Image
+          alt={`The site at commit ${era.commit}, full size`}
+          height={720}
+          sizes="90vw"
+          src={era.shot}
+          width={1280}
+        />
+        <figcaption>
+          <span>
+            <FieldLabel>{era.date}</FieldLabel>
+            {era.label} · {era.commit}
+          </span>
+          <button onClick={closeBenchHistoryLightbox} type="button">
+            Close <span aria-hidden="true">✕</span>
+          </button>
+        </figcaption>
+      </figure>
+    </div>
+  );
+}
+
+function HistoryDetails({ selected }: { selected: number }) {
+  if (selected >= 0) {
+    return <EraRecord selected={selected} />;
+  }
+
+  return (
+    <ol
+      className={`${styles.details} ${styles.historyDetails}`}
+      style={{ '--era-count': historyEras.length } as React.CSSProperties}
+    >
+      {historyEras.map((era, index) => (
         <li key={era.commit}>
           <button
             onBlur={() => setBenchHover('history', -1)}
-            onClick={() => setBenchSelection('history', index)}
+            onClick={() => setBenchHistorySelection(index)}
             onFocus={() => setBenchHover('history', index)}
             onPointerEnter={() => setBenchHover('history', index)}
             onPointerLeave={() => setBenchHover('history', -1)}
@@ -550,7 +726,9 @@ function HistoryDetails() {
             </span>
             <strong>{era.label}</strong>
             <span>{era.visualLanguage}</span>
-            <span>{era.palette}</span>
+            <span className={styles.signalCue}>
+              Open the capture <span aria-hidden="true">→</span>
+            </span>
           </button>
         </li>
       ))}
@@ -570,6 +748,7 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
   const gallery = useBenchGallery();
   const tags = useBenchTags();
   const signals = useBenchSignals();
+  const history = useBenchHistory();
   const mounted = useMounted();
   const webGLSupported = useWebGLSupport();
   const reducedMotion = usePrefersReducedMotion();
@@ -579,13 +758,25 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
   const inGallery = view === 'work' && gallery.open;
   const inTagRecord = view === 'work' && !gallery.open && tags.selected >= 0;
   const inSignalRecord = view === 'signals' && signals.selected >= 0;
+  const inEraRecord = view === 'history' && history.selected >= 0;
 
   const selectView = useCallback((nextView: ConceptViewId) => {
     closeBenchGallery();
     clearBenchTagSelection();
     clearBenchSignalSelection();
+    clearBenchHistorySelection();
     setBenchTagHover(-1);
     setBenchSignalHover(-1);
+
+    /*
+     * Warm the era captures on the gesture that asks for them, the same way
+     * the tablet warms the hang: the camera transit across the run is ~600ms
+     * and the decodes land inside it, so the cards arrive already printed.
+     */
+    if (nextView === 'history') {
+      preloadHistoryShots();
+    }
+
     setConceptView(nextView);
     setBenchHover(nextView, -1);
   }, []);
@@ -636,7 +827,9 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
         aria-labelledby="bench-title"
         className={styles.intro}
         data-compact={
-          inGallery || inTagRecord || inSignalRecord ? 'true' : undefined
+          inGallery || inTagRecord || inSignalRecord || inEraRecord
+            ? 'true'
+            : undefined
         }
       >
         {/*
@@ -653,7 +846,9 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
               ? 'Signed'
               : inSignalRecord
                 ? `Experiment ${experiments[signals.selected].number}`
-                : activeView.label}
+                : inEraRecord
+                  ? historyEras[history.selected].date
+                  : activeView.label}
         </FieldLabel>
         <h1 id="bench-title">
           {inGallery
@@ -662,7 +857,9 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
               ? 'Where the work was done.'
               : inSignalRecord
                 ? 'Here are the working notes.'
-                : introHeadings[activeView.id]}
+                : inEraRecord
+                  ? 'Here is what it looked like.'
+                  : introHeadings[activeView.id]}
         </h1>
         <p>
           {inGallery
@@ -671,7 +868,9 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
               ? 'Five tags on one rail: the run in the order it happened, and the credential at the end. The record for each is underneath.'
               : inSignalRecord
                 ? 'One of the three open questions, opened up. These are drafts I am still editing, not conclusions.'
-                : activeView.description}
+                : inEraRecord
+                  ? 'A real capture of this site at that commit, and a link to the commit.'
+                  : activeView.description}
         </p>
       </section>
 
@@ -689,7 +888,12 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
       {view === 'work' ? <WorkDetails mobile={mobile} /> : null}
       {view === 'profile' ? <ProfileDetails /> : null}
       {view === 'signals' ? <SignalsDetails /> : null}
-      {view === 'history' ? <HistoryDetails /> : null}
+      {view === 'history' ? (
+        <HistoryDetails selected={history.selected} />
+      ) : null}
+      {inEraRecord && history.lightbox ? (
+        <EraLightbox selected={history.selected} />
+      ) : null}
 
       <footer className={styles.footer}>
         <span>My studio bench</span>
