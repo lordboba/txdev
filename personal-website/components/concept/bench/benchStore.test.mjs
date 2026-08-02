@@ -2,13 +2,18 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   clearBenchSelection,
+  clearBenchSignalSelection,
   clearBenchTagSelection,
   readBenchFocus,
+  readBenchSignals,
   readBenchTags,
   setBenchHover,
   setBenchSelection,
+  setBenchSignalHover,
+  setBenchSignalSelection,
   setBenchTagHover,
   setBenchTagSelection,
+  subscribeBenchSignals,
 } from './benchStore.ts';
 
 test('focus state is isolated by view', () => {
@@ -61,4 +66,42 @@ test('clearing a tag record leaves its hover alone', () => {
   clearBenchTagSelection();
 
   assert.deepEqual(readBenchTags(), { hovered: 4, selected: -1 });
+});
+
+test('an open signal notifies, and clearing it leaves its hover alone', () => {
+  let notified = 0;
+  const stop = subscribeBenchSignals(() => {
+    notified += 1;
+  });
+
+  setBenchSignalHover(2);
+  setBenchSignalSelection(2);
+
+  assert.deepEqual(readBenchSignals(), { hovered: 2, selected: 2 });
+  assert.equal(notified, 2);
+
+  clearBenchSignalSelection();
+
+  assert.deepEqual(readBenchSignals(), { hovered: 2, selected: -1 });
+
+  /* Idempotent: a second clear must not wake every subscriber again. */
+  const settled = notified;
+  clearBenchSignalSelection();
+  assert.equal(notified, settled);
+
+  stop();
+});
+
+test('signals and company tags are independent channels', () => {
+  setBenchSignalSelection(1);
+  setBenchTagSelection(3);
+
+  assert.equal(readBenchSignals().selected, 1);
+  assert.equal(readBenchTags().selected, 3);
+
+  clearBenchTagSelection();
+  assert.equal(readBenchSignals().selected, 1);
+
+  clearBenchSignalSelection();
+  setBenchSignalHover(-1);
 });

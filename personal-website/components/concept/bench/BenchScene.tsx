@@ -32,6 +32,7 @@ import {
 import {
   clearBenchGalleryPiece,
   clearBenchSelection,
+  clearBenchSignalSelection,
   clearBenchTagSelection,
   closeBenchGallery,
   openBenchGallery,
@@ -39,6 +40,7 @@ import {
   readBenchGallery,
   readBenchPointer,
   readBenchSettled,
+  readBenchSignals,
   readBenchTags,
   releaseBenchGallery,
   setBenchGalleryPiece,
@@ -46,6 +48,8 @@ import {
   setBenchPointer,
   setBenchSelection,
   setBenchSettled,
+  setBenchSignalHover,
+  setBenchSignalSelection,
   setBenchTagHover,
   setBenchTagSelection,
   subscribeBenchGallery,
@@ -341,12 +345,20 @@ const PROJECT_PROFILE: Transform[] = [
   { position: [7.6, 0, -2.4], rotation: [0, -0.55, 0], scale: 0.55 },
 ];
 
-/** Signals: the devices leave frame entirely rather than clipping mid-body. */
+/**
+ * Signals: the devices leave frame entirely rather than clipping mid-body.
+ *
+ * Out from ±6 to ±9.4, which is a consequence of the focus lens. Opening a
+ * signal swings the camera around that plate's own normal, and from the left
+ * plate's axis the ±6 park was 22° off centre — a stray iPhone floated into the
+ * top-left of the record shot. At ±9.4 every park is outside the widest of the
+ * four setups by a clear margin.
+ */
 const PROJECT_SIGNALS: Transform[] = [
-  { position: [-5.9, 0, -2.4], rotation: [0, 0.5, 0], scale: 0.4 },
-  { position: [-6.2, 0, 1.4], rotation: [0, 0.6, 0], scale: 0.4 },
-  { position: [6.2, 0, 1.4], rotation: [0, -0.6, 0], scale: 0.4 },
-  { position: [5.9, 0, -2.4], rotation: [0, -0.5, 0], scale: 0.4 },
+  { position: [-9.4, 0, -2.4], rotation: [0, 0.5, 0], scale: 0.4 },
+  { position: [-9.6, 0, 1.4], rotation: [0, 0.6, 0], scale: 0.4 },
+  { position: [9.6, 0, 1.4], rotation: [0, -0.6, 0], scale: 0.4 },
+  { position: [9.4, 0, -2.4], rotation: [0, -0.5, 0], scale: 0.4 },
 ];
 
 const HIDDEN: Transform = {
@@ -653,7 +665,13 @@ function getDatumGrid() {
   const texture = new THREE.CanvasTexture(canvas);
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(3, 4);
+  /*
+   * 7x8, not 3x4. The blank now meets the lens nearly square instead of at a
+   * 15° rake, and at the old pitch the crosshatch resolved into a coarse
+   * checkerboard the size of the type next to it — it read as a transparency
+   * grid, not as a datum etch.
+   */
+  texture.repeat.set(7, 8);
   datumGrid = texture;
   return texture;
 }
@@ -1577,7 +1595,8 @@ function getPlacardTexture(piece: SideProject) {
 function createExperimentPlateTexture(status: string, title: string) {
   const canvas = document.createElement('canvas');
   canvas.width = 1024;
-  canvas.height = 710;
+  /* 1024 x 782 is the decal's own 1.86 x 1.42 aspect; anything else stretches. */
+  canvas.height = 782;
   const context = canvas.getContext('2d') as SpacedContext | null;
 
   if (!context) {
@@ -1587,13 +1606,13 @@ function createExperimentPlateTexture(status: string, title: string) {
   context.fillStyle = '#ffffff';
   context.textBaseline = 'alphabetic';
 
-  context.letterSpacing = '13px';
-  context.font = '600 46px Helvetica Neue, Arial, sans-serif';
-  context.fillText(status.toUpperCase(), 40, 78);
-  context.fillRect(40, 116, 944, 3);
+  context.letterSpacing = '15px';
+  context.font = '600 50px Helvetica Neue, Arial, sans-serif';
+  context.fillText(status.toUpperCase(), 40, 84);
+  context.fillRect(40, 126, 944, 4);
 
   context.letterSpacing = '-1px';
-  context.font = '500 82px Helvetica Neue, Arial, sans-serif';
+  context.font = '500 92px Helvetica Neue, Arial, sans-serif';
   const words = title.split(' ');
   const lines: string[] = [];
   let current = '';
@@ -1613,8 +1632,20 @@ function createExperimentPlateTexture(status: string, title: string) {
     lines.push(current);
   }
 
-  lines.slice(0, 5).forEach((line, index) => {
-    context.fillText(line, 40, 218 + index * 96);
+  /*
+   * The title block is centred in the field under the rule rather than hung
+   * from a fixed baseline: the three titles wrap to two, three and three lines
+   * respectively, and a fixed start left the two-line plate top-heavy with a
+   * third of its pocket empty.
+   */
+  const kept = lines.slice(0, 4);
+  const leading = 104;
+  const top = 150;
+  const block = kept.length * leading;
+  const first = top + (canvas.height - top - block) / 2 + 74;
+
+  kept.forEach((line, index) => {
+    context.fillText(line, 40, first + index * leading);
   });
 
   const texture = new THREE.CanvasTexture(canvas);
@@ -3914,60 +3945,151 @@ function ProfileBadge({
 /**
  * Signals staging.
  *
- * Spacing is opened to 2.45 and the scale trimmed to 0.9 so the three plates
- * clear the frame edges by ~74 CSS and each other by ~60 CSS at 1440x900 —
- * previously the outer two were cropped by the left and right edges.
+ * The previous set was three identically-sized plates on identical angle
+ * blocks, evenly spaced along x at a shared 15° cant. Two things were wrong
+ * with it and they were the same thing twice: at a 15° cant under an 18° lens
+ * the engraved title met the camera 59° off its own normal, so every cap
+ * height was cut roughly in half and the type disappeared into the metal; and
+ * three equal objects on an even pitch is a specimen row, not a photograph.
  *
- * BLANK_TILT is the reason the low signals lens works at all. A plate lying
- * dead flat under a 18° camera foreshortens its engraved title to roughly 8
- * screen pixels of cap height. Seated on a machined angle block the plate
- * meets the lens at ~33° instead, which nearly doubles the type and lets the
- * groove read. BLANK_LIFT is not a free parameter: it is exactly the height
- * that puts the plate's front-bottom edge back on the bench after the tilt, so
- * the blank still *touches* the surface it is standing on.
+ * Both are fixed by the same move — treat them as coupons in an inspection
+ * fixture rather than blanks on a shelf. The cant goes up to 40–46°, which is
+ * within ~15° of the raised lens's axis (cos 15° ≈ 0.97 of full cap height),
+ * and each seat gets its own depth, scale, yaw and cant so the run composes
+ * front-to-back instead of left-to-right.
+ *
+ * The hero is B — the evaluation thread. It is the one the run at Scale AI,
+ * SafetyKit and Ramp all point at, so it gets the near seat, the largest
+ * scale, and a machined parallel riser that stands its engraved field a step
+ * above the other two.
  */
-const BLANK_SPACING = 2.45;
-const BLANK_SCALE = 0.9;
-const BLANK_TILT = 0.26;
-const BLANK_HALF_LENGTH = 3.15 / 2;
-const BLANK_HALF_THICKNESS = 0.16 / 2;
-const BLANK_LIFT =
-  BLANK_HALF_LENGTH * Math.sin(BLANK_TILT) +
-  BLANK_HALF_THICKNESS * Math.cos(BLANK_TILT);
+type SignalSeat = {
+  x: number;
+  z: number;
+  /** Yaw toward the lens. Positive turns a camera-left plate to face in. */
+  yaw: number;
+  /** Cant off the bench, in radians. Drives the block, the lift and the fixture. */
+  cant: number;
+  scale: number;
+  /** Height of the parallel riser under the angle block; 0 seats it on the bench. */
+  riser: number;
+};
 
 /**
- * The angle block the tilted plate is seated on: a right-trapezoid prism whose
+ * Seats, in data order (A, B, C), which is also the left-to-right order the
+ * DOM plates under the frame print them in — the two surfaces have to agree
+ * about which object is which.
+ */
+const SIGNAL_SEATS: SignalSeat[] = [
+  { x: -2.6, z: -0.42, yaw: 0.3, cant: 0.72, scale: 0.78, riser: 0 },
+  { x: -0.15, z: 0.45, yaw: 0.03, cant: 0.8, scale: 0.92, riser: 0.22 },
+  { x: 2.45, z: -1.85, yaw: -0.28, cant: 0.7, scale: 0.7, riser: 0 },
+];
+
+const SIGNAL_HERO = 1;
+
+/*
+ * The blank is shorter than it was — 2.55 rather than 3.15. At the old length
+ * a third of every plate was bare stock below the pocket, which at 15° read as
+ * a plinth and at 45° reads as a plate that has been cut too long. Losing the
+ * dead 0.6 also lets each seat carry a larger scale for the same silhouette
+ * height, which is texels on the engraving.
+ */
+const BLANK_WIDTH = 2.2;
+const BLANK_LENGTH = 2.25;
+const BLANK_THICKNESS = 0.16;
+const BLANK_HALF_LENGTH = BLANK_LENGTH / 2;
+const BLANK_HALF_THICKNESS = BLANK_THICKNESS / 2;
+const POCKET_HEIGHT = 1.54;
+
+/**
+ * The lift is not a free parameter: it is exactly the height that puts the
+ * canted plate's front-bottom edge back down on its seat, so the blank still
+ * *touches* the surface it is standing on.
+ */
+function blankLift(cant: number) {
+  return (
+    BLANK_HALF_LENGTH * Math.sin(cant) + BLANK_HALF_THICKNESS * Math.cos(cant)
+  );
+}
+
+/** Where the plate's front-bottom edge lands in z once it is canted. */
+function blankPivotZ(cant: number) {
+  return (
+    BLANK_HALF_LENGTH * Math.cos(cant) - BLANK_HALF_THICKNESS * Math.sin(cant)
+  );
+}
+
+/**
+ * The angle block's back wall. Follows the cant rather than being fixed: at a
+ * steep angle the plate stands up instead of reaching back, and a block cut to
+ * a constant depth would trail behind it as a bare wedge.
+ */
+function blockBackZ(cant: number) {
+  return (
+    blankPivotZ(cant) - Math.min(1.5, BLANK_LENGTH * Math.cos(cant) + 0.22)
+  );
+}
+
+/**
+ * The angle block the canted plate is seated on: a right-trapezoid prism whose
  * sloped top face lies exactly on the plate's underside, so the two parts touch
  * along a full-length line instead of intersecting. Profile is authored in the
  * (z, y) plane and rotated into place, because ExtrudeGeometry only ever
  * extrudes a XY shape along +Z.
+ *
+ * Cached per cant rather than once for the set: three seats now hold three
+ * different angles, and a block cut for 40° under a plate canted 45° is a
+ * plate floating on one edge.
  */
-const BLOCK_FRONT_Z = 1.35;
-const BLOCK_BACK_Z = -0.6;
 const BLOCK_WIDTH = 1.7;
 
-let angleBlockGeometry: THREE.ExtrudeGeometry | null = null;
+/**
+ * The fixture's base plate: the flat machined foot the angle block is bolted
+ * down to, and the part that actually touches the bench.
+ *
+ * It exists because of what the steep cant does to the silhouette. At 45° the
+ * angle block hides completely behind its own plate, so each blank rendered as
+ * a rectangle floating in grey with nothing under it — three cards, not three
+ * fixtures. The foot is wider than the plate and reaches past its bottom edge,
+ * so there is always a machined ledge in frame catching the key, and a hard
+ * contact line where it meets the bench.
+ */
+const FOOT_THICKNESS = 0.08;
+const FOOT_WIDTH = BLANK_WIDTH + 0.3;
+const FOOT_FRONT_REACH = 0.3;
+const FOOT_BACK_REACH = 0.12;
 
-function getAngleBlock() {
-  if (angleBlockGeometry) {
-    return angleBlockGeometry;
+const angleBlocks = new Map<number, THREE.ExtrudeGeometry>();
+
+function getAngleBlock(cant: number) {
+  const cached = angleBlocks.get(cant);
+
+  if (cached) {
+    return cached;
   }
 
   /*
-   * Height of the plate's underside above the bench as a function of z. The
-   * pivot is the plate's front-bottom corner, which the lift puts exactly on
-   * the bench, so the line passes through zero there and rises at tan(tilt).
+   * The block's own footprint has to follow the cant. At a steep angle the
+   * plate stands up rather than reaching back, so a fixed 1.95-deep block
+   * would stick out behind it as a bare wedge. Both walls are derived from
+   * where the plate actually is.
    */
-  const pivotZ =
-    BLANK_HALF_LENGTH * Math.cos(BLANK_TILT) -
-    BLANK_HALF_THICKNESS * Math.sin(BLANK_TILT);
-  const underside = (z: number) => (pivotZ - z) * Math.tan(BLANK_TILT);
+  const pivotZ = blankPivotZ(cant);
+  const frontZ = pivotZ - 0.02;
+  const backZ = blockBackZ(cant);
+  /*
+   * Height of the plate's underside above the seat as a function of z. The
+   * pivot is the plate's front-bottom corner, which the lift puts exactly on
+   * the seat, so the line passes through zero there and rises at tan(cant).
+   */
+  const underside = (z: number) => (pivotZ - z) * Math.tan(cant);
 
   const shape = new THREE.Shape();
-  shape.moveTo(BLOCK_BACK_Z, 0);
-  shape.lineTo(BLOCK_FRONT_Z, 0);
-  shape.lineTo(BLOCK_FRONT_Z, underside(BLOCK_FRONT_Z));
-  shape.lineTo(BLOCK_BACK_Z, underside(BLOCK_BACK_Z));
+  shape.moveTo(backZ, 0);
+  shape.lineTo(frontZ, 0);
+  shape.lineTo(frontZ, underside(frontZ));
+  shape.lineTo(backZ, underside(backZ));
   shape.closePath();
 
   const geometry = new THREE.ExtrudeGeometry(shape, {
@@ -3979,9 +4101,77 @@ function getAngleBlock() {
   geometry.rotateY(-Math.PI / 2);
   geometry.translate(BLOCK_WIDTH / 2, 0, 0);
   geometry.computeVertexNormals();
-  angleBlockGeometry = geometry;
+  angleBlocks.set(cant, geometry);
   return geometry;
 }
+
+/**
+ * Where the engraved field's centre sits in world space, and which way it
+ * looks. The focus lens aims at the first and stands off along the second, so
+ * an opened signal is read square-on instead of from wherever the resting
+ * three-quarter shot happened to leave the camera.
+ *
+ * The pocket is milled 0.28 up the plate from its centre, so this is not the
+ * plate's midpoint: aiming at the midpoint parks the type in the top half of
+ * the frame with a bare foot underneath it.
+ */
+const SIGNAL_POCKET_OFFSET = 0.16;
+
+function signalPlateCentre(index: number) {
+  const seat = SIGNAL_SEATS[index];
+  const lift = blankLift(seat.cant);
+  /* Local to the blank, before yaw: the plate's local +y runs up the cant. */
+  const localY = lift + SIGNAL_POCKET_OFFSET * Math.sin(seat.cant);
+  const localZ =
+    -SIGNAL_POCKET_OFFSET * Math.cos(seat.cant) +
+    (BLANK_HALF_THICKNESS + 0.08) * Math.sin(seat.cant);
+
+  return {
+    x: seat.x + seat.scale * localZ * Math.sin(seat.yaw),
+    y: seat.scale * (seat.riser + FOOT_THICKNESS + localY),
+    z: seat.z + seat.scale * localZ * Math.cos(seat.yaw),
+  };
+}
+
+/**
+ * How high the focus lens rides. Deliberately shallower than the plate's own
+ * cant: standing exactly on the face normal is a plan view of a bench, and the
+ * shot loses the set it is standing in. 26° is close enough that the type
+ * stays within ~18° of square (cos 18° ≈ 0.95) and far enough that the bench
+ * is still a bench.
+ */
+const SIGNAL_FOCUS_ELEVATION = 0.45;
+const SIGNAL_FOCUS_FOV = 29;
+
+/**
+ * The stand-off is fitted, not fixed. These three plates differ by a third in
+ * scale, so a constant distance would frame the hero at 1.2 frame-heights and
+ * the far one at two thirds of one — the shot would be a different picture
+ * depending on which of three near-identical objects had been clicked.
+ *
+ * `SIGNAL_FOCUS_FILL` is the fraction of frame height the plate is fitted to.
+ * It is 0.56 rather than something tighter because the elaboration panel takes
+ * the bottom ~27% of the page, and the plate has to live entirely above it.
+ * The lens is longer than any other in the file (29° against 33–36) for the
+ * same reason it would be on a real bench: a long lens flattens the fixture,
+ * throws the neighbouring setups out of frame, and keeps the subject the only
+ * thing with perspective in it.
+ */
+const SIGNAL_FOCUS_FILL = 0.56;
+
+function signalFocusDistance(scale: number) {
+  const height = (BLANK_LENGTH * scale) / SIGNAL_FOCUS_FILL;
+
+  return height / (2 * Math.tan((SIGNAL_FOCUS_FOV * Math.PI) / 360));
+}
+
+/**
+ * The resting lens aims at the hero's own engraved field, dropped a little so
+ * the run rides above the DOM band. Derived rather than typed in, so moving
+ * the hero seat moves the shot with it instead of leaving a stale magic
+ * number pointing at where B used to be.
+ */
+const SIGNAL_REST_LOOK = signalPlateCentre(SIGNAL_HERO).y - 0.52;
 
 function ExperimentBlank({
   index,
@@ -3991,132 +4181,207 @@ function ExperimentBlank({
   blankRef: (node: THREE.Group | null) => void;
 }) {
   const experiment = experiments[index];
+  const seat = SIGNAL_SEATS[index];
   const measuring = experiment.status.toLowerCase() === 'measuring';
   const plate = useMemo(
     () => createExperimentPlateTexture(experiment.status, experiment.title),
     [experiment.status, experiment.title],
   );
   const grid = useMemo(() => (measuring ? getDatumGrid() : null), [measuring]);
-  const block = useMemo(() => getAngleBlock(), []);
+  const block = useMemo(() => getAngleBlock(seat.cant), [seat.cant]);
+  const footFront = blankPivotZ(seat.cant) + FOOT_FRONT_REACH;
+  const footBack = blockBackZ(seat.cant) - FOOT_BACK_REACH;
+  const footDepth = footFront - footBack;
 
   return (
     <group
+      onClick={(event) => {
+        event.stopPropagation();
+        setBenchSignalSelection(index);
+      }}
       onPointerEnter={(event) => {
         event.stopPropagation();
-        setBenchHover('signals', index);
+        setBenchSignalHover(index);
       }}
-      onPointerLeave={() => setBenchHover('signals', -1)}
+      onPointerLeave={() => setBenchSignalHover(-1)}
       position={HIDDEN.position}
       ref={blankRef}
       scale={HIDDEN.scale}
     >
-      <ContactCore depth={3.1} opacity={0.9} width={2.4} y={0.009} />
+      <ContactCore
+        depth={footDepth + 0.3}
+        opacity={0.9}
+        width={FOOT_WIDTH + 0.3}
+        y={0.009}
+        z={(footFront + footBack) / 2}
+      />
 
-      {/* Machined angle block: the plate's seat, and the thing it touches. */}
-      <mesh castShadow geometry={block} receiveShadow>
-        <AluminumMaterial
-          color={ALUMINUM_DARK}
-          envMapIntensity={0.9}
-          roughness={0.42}
-        />
-      </mesh>
-
-      <group
-        position={[0, BLANK_LIFT, 0]}
-        rotation={[-Math.PI / 2 + BLANK_TILT, 0, 0]}
-      >
+      {/*
+       * The hero's parallel riser: a plain machined block under the fixture,
+       * which is how a shop actually raises one part of a setup above the
+       * rest. It is the reason B reads as the subject rather than as the
+       * middle of three — a difference in height, not in decoration.
+       */}
+      {seat.riser > 0 ? (
         <RoundedBox
-          args={[2.2, 3.15, 0.16]}
+          args={[FOOT_WIDTH - 0.24, seat.riser, footDepth - 0.3]}
           castShadow
-          radius={0.05}
+          position={[0, seat.riser / 2, (footFront + footBack) / 2 - 0.05]}
+          radius={0.02}
           receiveShadow
           smoothness={3}
         >
-          {/*
-           * Light brushed aluminum, in the BENCH_TOP value band. It used to
-           * render a full value step *under* the bench it was standing on —
-           * base ALUMINUM at envMapIntensity 0.6 — which is muddy grey slab,
-           * not stock. Now the plate is the brightest metal on the bench and
-           * the pocket cut into it is what carries the darkness.
-           */}
           <AluminumMaterial
-            color="#c4c6c8"
-            envMapIntensity={1.15}
-            roughness={0.36}
+            color={ALUMINUM_DARK}
+            envMapIntensity={0.7}
+            roughness={0.44}
           />
         </RoundedBox>
-        <ChamferBand args={[2.2, 3.15, 0.16]} radius={0.05} smoothness={3} />
+      ) : null}
 
-        {grid ? (
-          <mesh position={[0, 0, 0.0805]}>
-            <planeGeometry args={[2.02, 2.97]} />
+      {/* The fixture's base plate — the part that touches the bench. */}
+      <RoundedBox
+        args={[FOOT_WIDTH, FOOT_THICKNESS, footDepth]}
+        castShadow
+        position={[
+          0,
+          seat.riser + FOOT_THICKNESS / 2,
+          (footFront + footBack) / 2,
+        ]}
+        radius={0.014}
+        receiveShadow
+        smoothness={3}
+      >
+        <AluminumMaterial
+          color={ALUMINUM_BRIGHT}
+          envMapIntensity={0.95}
+          roughness={0.34}
+        />
+      </RoundedBox>
+
+      <group position={[0, seat.riser + FOOT_THICKNESS, 0]}>
+        {/* Machined angle block: the plate's seat, and the thing it touches. */}
+        <mesh castShadow geometry={block} receiveShadow>
+          <AluminumMaterial
+            color={ALUMINUM_DARK}
+            envMapIntensity={0.9}
+            roughness={0.42}
+          />
+        </mesh>
+
+        <group
+          position={[0, blankLift(seat.cant), 0]}
+          rotation={[-Math.PI / 2 + seat.cant, 0, 0]}
+        >
+          <RoundedBox
+            args={[BLANK_WIDTH, BLANK_LENGTH, BLANK_THICKNESS]}
+            castShadow
+            radius={0.05}
+            receiveShadow
+            smoothness={3}
+          >
+            {/*
+             * Light brushed aluminum, in the BENCH_TOP value band — the plate
+             * is the brightest metal on the bench and the pocket cut into it
+             * is what carries the darkness.
+             *
+             * envMapIntensity is down from 1.15 to 0.72 and roughness up from
+             * 0.36 to 0.46, and that is a consequence of the cant rather than
+             * a taste change. Lying at 15° the face sampled the cubemap near
+             * grazing and came back mid-grey; standing at 45° it points into
+             * the softbox and at 1.15 the whole plate clipped to paper white,
+             * taking the chamfer, the brushing and the pocket lip with it.
+             */}
+            <AluminumMaterial
+              color="#c4c6c8"
+              envMapIntensity={0.72}
+              roughness={0.46}
+            />
+          </RoundedBox>
+          <ChamferBand
+            args={[BLANK_WIDTH, BLANK_LENGTH, BLANK_THICKNESS]}
+            radius={0.05}
+            smoothness={3}
+          />
+
+          {grid ? (
+            <mesh position={[0, 0, 0.0805]}>
+              <planeGeometry args={[2.02, BLANK_LENGTH - 0.18]} />
+              <meshStandardMaterial
+                alphaMap={grid}
+                color="#5c5e60"
+                depthWrite={false}
+                metalness={1}
+                opacity={0.18}
+                roughness={0.5}
+                transparent
+              />
+            </mesh>
+          ) : null}
+
+          {/*
+           * The data plate: a pocket milled into the top face, its floor a step
+           * down from the blank, carrying the experiment's status and title as
+           * cut metal. A blank with nothing on it cannot be the subject of a
+           * view — this is the content, straight out of conceptData.
+           *
+           * The pocket grew from 2.02x1.40 to 2.02x1.54 and the type inside it
+           * from 82px to 92px on a taller canvas, which is the other half of
+           * the legibility fix: the cant buys back the foreshortening, and the
+           * bigger field buys back the texels the smaller seat scales cost.
+           */}
+          {/*
+           * Pocket: a bright machined lip ring around a floor held a step under
+           * the plate face, so the recess reads by value rather than by outline.
+           */}
+          <mesh position={[0, SIGNAL_POCKET_OFFSET, 0.0802]}>
+            <planeGeometry args={[2.06, POCKET_HEIGHT + 0.04]} />
             <meshStandardMaterial
-              alphaMap={grid}
-              color="#5c5e60"
-              depthWrite={false}
+              color="#d2d4d6"
+              envMapIntensity={1.3}
               metalness={1}
-              opacity={0.18}
-              roughness={0.5}
-              transparent
+              roughness={0.24}
             />
           </mesh>
-        ) : null}
-
-        {/*
-         * The data plate: a 2.02x1.4 pocket milled into the top face, its floor
-         * a step down from the blank, carrying the experiment's status and
-         * title as cut metal. A blank with nothing on it cannot be the subject
-         * of a view — this is the content, straight out of conceptData.
-         */}
-        {/*
-         * Pocket: a bright machined lip ring around a floor held a step under
-         * the plate face, so the recess reads by value rather than by outline.
-         */}
-        <mesh position={[0, 0.28, 0.0802]}>
-          <planeGeometry args={[2.06, 1.44]} />
-          <meshStandardMaterial
-            color="#d2d4d6"
-            envMapIntensity={1.3}
-            metalness={1}
-            roughness={0.24}
-          />
-        </mesh>
-        <mesh position={[0, 0.28, 0.0806]}>
-          <planeGeometry args={[2.02, 1.4]} />
-          <meshStandardMaterial
-            color="#9fa1a3"
+          <mesh position={[0, SIGNAL_POCKET_OFFSET, 0.0806]}>
+            <planeGeometry args={[2.02, POCKET_HEIGHT]} />
+            <meshStandardMaterial
+              color="#9fa1a3"
+              envMapIntensity={0.85}
+              metalness={1}
+              roughness={0.55}
+            />
+          </mesh>
+          {/*
+           * Same lip-highlight / darkened-floor pair the tag plates use.
+           * At the default 0.34 lip and 0.6 floor the SHIPPING / MEASURING /
+           * COLLECTING labels carried about 8% local contrast against the
+           * pocket — invisible at the signals distance. At lipMix 0.54 /
+           * floor 0.26 each glyph gets a bright machined edge over a cut a
+           * quarter of the pocket's value, which is roughly 55% local
+           * contrast.
+           */}
+          <EngravedDecal
+            alpha={plate}
             envMapIntensity={0.85}
-            metalness={1}
+            floor={0.26}
+            height={POCKET_HEIGHT - 0.12}
+            hostColor="#9fa1a3"
+            lipMix={0.54}
+            offset={0.0036}
+            position={[0, SIGNAL_POCKET_OFFSET + 0.01, 0.081]}
             roughness={0.55}
+            width={1.86}
           />
-        </mesh>
-        {/*
-         * Same lip-highlight / darkened-floor pair the tag plates use.
-         * At the default 0.34 lip and 0.6 floor the SHIPPING / MEASURING /
-         * COLLECTING labels carried about 8% local contrast against the pocket
-         * — invisible at the signals distance. At lipMix 0.5 / floor 0.3 each
-         * glyph gets a bright machined edge over a cut a third of the pocket's
-         * value, which is roughly 45% local contrast.
-         */}
-        <EngravedDecal
-          alpha={plate}
-          envMapIntensity={0.85}
-          floor={0.3}
-          height={1.28}
-          hostColor="#9fa1a3"
-          lipMix={0.5}
-          offset={0.0034}
-          position={[0, 0.29, 0.081]}
-          roughness={0.55}
-          width={1.84}
-        />
 
-        {/*
-         * The foot of the blank is left as bare stock. It used to carry a
-         * 0.92-unit embossed A / B / C — a single-character index badge, which
-         * is exactly the numbered-badge pattern this set is not allowed to use,
-         * and it was competing with the data plate for value besides.
-         */}
+          {/*
+           * The foot of the blank is left as bare stock. It used to carry a
+           * 0.92-unit embossed A / B / C — a single-character index badge,
+           * which is exactly the numbered-badge pattern this set is not
+           * allowed to use, and it was competing with the data plate for value
+           * besides.
+           */}
+        </group>
       </group>
     </group>
   );
@@ -4929,6 +5194,15 @@ function Scene({
       clearBenchTagSelection();
     }
 
+    /*
+     * Same contract the gallery has: leaving the view by any route — nav,
+     * hash, browser history — closes the sub-view, so there is no way to
+     * strand the camera on an object the chrome no longer offers an exit from.
+     */
+    if (view !== 'signals') {
+      clearBenchSignalSelection();
+    }
+
     const inGallery = view === 'work' && galleryState.open;
     const workFocus = readBenchFocus('work');
     /*
@@ -4939,7 +5213,15 @@ function Scene({
      */
     const focusedTag =
       view === 'work' && !inGallery && !mobile ? readBenchTags().selected : -1;
-    const signalFocus = readBenchFocus('signals');
+    /*
+     * Mobile keeps the resting three-quarter shot and never opens a signal,
+     * for the same reason it never opens a tag: at that camera distance the
+     * elaboration would be a full-height DOM panel over a plate the lens has
+     * no room to fly to. The DOM list stays a list there.
+     */
+    const signalState = readBenchSignals();
+    const focusedSignal =
+      view === 'signals' && !mobile ? signalState.selected : -1;
     const historyFocus = readBenchFocus('history');
     const pointer = readBenchPointer();
     let motion = 0;
@@ -5001,32 +5283,42 @@ function Scene({
       if (!blank) {
         return;
       }
-      const active = signalFocus.hovered === index;
+      const seat = SIGNAL_SEATS[index];
+      const open = focusedSignal === index;
+      const active = open || signalState.hovered === index;
+      /*
+       * An open signal does not fly out of the set — the lens goes to it. All
+       * the plate does is stand up by a hair, so the shot reads as one of
+       * three that has been stepped up to rather than as an object
+       * teleporting into a light box. Its yaw is held exactly as seated,
+       * because `signalPlateCentre` derives the focus camera's stand-off from
+       * that yaw: a plate that turned on selection would walk out from under
+       * its own lens.
+       */
+      /*
+       * Hover steps the fixture *forward along its own facing*, it does not
+       * lift it. The three other views raise a hovered subject off the bench,
+       * and that works for a phone on a stand; a 2.4-unit angle fixture with a
+       * machined foot floating 55 thou above the surface it is bolted to reads
+       * as a bug. Forward keeps every contact where it belongs and still gains
+       * the object a little scale from perspective.
+       */
+      const step = active ? 0.14 : 0;
       const target =
         view === 'signals'
           ? {
               position: [
-                (index - 1) * BLANK_SPACING,
+                seat.x + step * Math.sin(seat.yaw),
                 /*
-                 * Seated on the bench: the tilt lift lives inside the blank,
-                 * so the group itself rides at y 0 and the angle block's flat
-                 * underside is what touches.
+                 * Seated: the cant lift, the foot and the riser all live
+                 * inside the blank, so the group itself rides at y 0 and the
+                 * foot's underside is what touches the bench.
                  */
-                active ? 0.34 : 0,
-                /*
-                 * Pushed back off the front lip so the whole run clears the
-                 * DOM detail band by ~200 CSS.
-                 */
-                index === 1 ? -1.85 : -1.15,
+                0,
+                seat.z + step * Math.cos(seat.yaw),
               ] as [number, number, number],
-              /* Roll trimmed to 0.03: any more visibly lifts a corner of the
-                 angle block off the bench. */
-              rotation: [0, (index - 1) * -0.16, (index - 1) * 0.03] as [
-                number,
-                number,
-                number,
-              ],
-              scale: BLANK_SCALE * (active ? 1.09 : 1),
+              rotation: [0, seat.yaw, 0] as [number, number, number],
+              scale: seat.scale * (open ? 1.05 : active ? 1.03 : 1),
             }
           : HIDDEN;
       motion = Math.max(
@@ -5200,7 +5492,9 @@ function Scene({
             roll: 0,
           },
           profile: { position: [0.8, 2.9, 7.4], look: 1.3, fov: 34, roll: 0 },
-          signals: { position: [0, 5.2, 9.6], look: 0.2, fov: 38, roll: 0 },
+          /* Raised with the desktop lens for the same reason: the plates stand
+             up now, so the axis has to meet their faces rather than their tops. */
+          signals: { position: [0, 4.3, 8.9], look: 0.8, fov: 38, roll: 0 },
           history: {
             position: [historyX, 4.4, 13.4],
             look: 0.9,
@@ -5251,25 +5545,27 @@ function Scene({
             roll: -0.014,
           },
           /*
-           * Signals drops from a ~29° plan to ~18°, so the blanks are read
-           * across rather than looked down on. The engraved copy survives the
-           * lower angle because the plates are seated on angle blocks.
+           * Signals climbs back up, and this time the subject climbs with it.
+           * The old 18° lens was chosen to stop a nearly-flat plate reading as
+           * a sliver, and it worked as far as silhouette went — but a 15°
+           * plate under an 18° camera meets the lens 59° off its own normal,
+           * so the engraved title was always going to lose half its cap
+           * height. The plates now stand at 40–46°, which means the lens can
+           * be raised to ~27° and *gain* legibility instead of trading it: at
+           * that pairing the type is within 15–19° of square.
            *
-           * Down again to 2.15 and out to fov 36: at 2.6/33 the run's top edge
-           * landed near CSS y 270 and the top third of every frame was blank
-           * cove. The subject now starts around y 220 and fills the height it
-           * is given.
+           * z 6.15 rather than 6.9 because the hero seat moved 2.2 units
+           * forward onto the near half of the bench.
            */
           signals: {
-            position: [parallaxX, 2.15, 6.9],
+            position: [parallaxX * 0.6, 4.24, 7.35],
             /*
-             * The look target does the reclaiming, not the camera height. At
-             * 0.45 the horizon sat at CSS y 287 and the run's top edge landed
-             * right under it, so a third of the frame was blank cove no matter
-             * how wide the lens went. Aimed at 0.12 the whole set — horizon and
-             * subject together — rides ~70 CSS up the frame.
+             * Aimed just under the hero's own pocket. The subject is no longer
+             * a flat run near the bench plane, so aiming at 0.12 would have
+             * pointed the axis at the fixtures' feet and pushed all three
+             * engraved fields into the top quarter.
              */
-            look: 0.12,
+            look: SIGNAL_REST_LOOK,
             fov: 36,
             roll: 0.006,
           },
@@ -5348,7 +5644,48 @@ function Scene({
         }
       : null;
 
-    const shot = inGallery ? galleryShot : (tagShot ?? shots[view]);
+    /*
+     * An opened signal is the fourth sub-shot in the file, on the same
+     * contract as the gallery and the tag record: the hash never changes,
+     * Escape and empty space both unwind it, and it earns the same
+     * arc-and-settle transit a view change gets.
+     *
+     * The stand-off is computed off the plate's own yaw rather than from a
+     * fixed seat, so the lens always arrives square to the engraved field
+     * whichever of the three staggered seats it is flying to. The elevation is
+     * held below the plate's cant on purpose — see SIGNAL_FOCUS_ELEVATION.
+     */
+    const signalCentre =
+      focusedSignal >= 0 ? signalPlateCentre(focusedSignal) : null;
+    const signalShot: CameraShot | null = signalCentre
+      ? (() => {
+          const seat = SIGNAL_SEATS[focusedSignal];
+          const reach = signalFocusDistance(seat.scale);
+          const flat = reach * Math.cos(SIGNAL_FOCUS_ELEVATION);
+
+          return {
+            position: [
+              signalCentre.x + flat * Math.sin(seat.yaw) + parallaxX * 0.2,
+              signalCentre.y + reach * Math.sin(SIGNAL_FOCUS_ELEVATION),
+              signalCentre.z + flat * Math.cos(seat.yaw),
+            ],
+            /*
+             * Aimed well under the field's centre. The offset is what lifts the
+             * plate into the top two thirds: aimed at the centre it lands in
+             * the middle of the frame, which is where the elaboration panel
+             * starts.
+             */
+            look: signalCentre.y - 0.62 * seat.scale,
+            lookZ: signalCentre.z,
+            fov: SIGNAL_FOCUS_FOV,
+            roll: 0.004,
+          };
+        })()
+      : null;
+
+    const shot = inGallery
+      ? galleryShot
+      : (tagShot ?? signalShot ?? shots[view]);
     const targetX = shot.position[0] + (inGallery ? parallaxX * 0.4 : 0);
     const targetY = shot.position[1] - parallaxY;
     const targetZ = shot.position[2];
@@ -5363,7 +5700,9 @@ function Scene({
       ? `gallery:${galleryState.piece >= 0 ? 'piece' : 'hang'}`
       : focusedTag >= 0
         ? `tag:${focusedTag}`
-        : view;
+        : focusedSignal >= 0
+          ? `signal:${focusedSignal}`
+          : view;
 
     if (move.view !== shotKey) {
       if (move.view === null || reducedMotion) {
@@ -5426,15 +5765,17 @@ function Scene({
         : 0
       : tagSeat
         ? tagSeat.x
-        : view === 'history'
-          ? historyX
-          : view === 'profile'
-            ? mobile
-              ? 0.15
-              : 0.34
-            : view === 'work'
-              ? (selectedProject?.position[0] ?? workCenterX)
-              : 0;
+        : signalCentre
+          ? signalCentre.x
+          : view === 'history'
+            ? historyX
+            : view === 'profile'
+              ? mobile
+                ? 0.15
+                : 0.34
+              : view === 'work'
+                ? (selectedProject?.position[0] ?? workCenterX)
+                : 0;
     cameraLook.current.x = damp(cameraLook.current.x, lookX, lambda, delta);
     cameraLook.current.y = damp(cameraLook.current.y, shot.look, lambda, delta);
     cameraLook.current.z = damp(
@@ -5615,8 +5956,9 @@ function Scene({
 
 /**
  * Empty space unwinds one level at a time, the same order Escape does: a
- * focused piece first, then the gallery, then an open tag record, then any
- * device selection. Clicking the set is always a way *out*, never a dead end.
+ * focused piece first, then the gallery, then an open tag record, then an open
+ * signal, then any device selection. Clicking the set is always a way *out*,
+ * never a dead end.
  */
 function handlePointerMissed() {
   const gallery = readBenchGallery();
@@ -5633,6 +5975,11 @@ function handlePointerMissed() {
 
   if (readBenchTags().selected >= 0) {
     clearBenchTagSelection();
+    return;
+  }
+
+  if (readBenchSignals().selected >= 0) {
+    clearBenchSignalSelection();
     return;
   }
 

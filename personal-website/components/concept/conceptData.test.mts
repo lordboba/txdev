@@ -4,8 +4,11 @@ import {
   companyRun,
   companyTags,
   conceptViews,
+  experimentNotes,
+  experiments,
   featuredProjects,
   gitEras,
+  notesLabel,
 } from './conceptData.ts';
 import { conceptEntries } from './conceptRegistry.ts';
 import { experiences } from '../../lib/siteData.ts';
@@ -66,6 +69,31 @@ test('company tags carry a verified mark and no invented copy', () => {
     const run = companyRun.find((entry) => entry.company === tag.mark) ?? null;
     assert.equal(tag.run, run ? run.period : null);
     assert.equal(tag.detail, run ? run.detail : null);
+  }
+});
+
+test('every experiment has exactly one elaboration, and it is marked a draft', () => {
+  assert.equal(experimentNotes.length, experiments.length);
+  assert.ok(notesLabel.length > 0);
+
+  for (const experiment of experiments) {
+    const matches = experimentNotes.filter(
+      (note) => note.number === experiment.number,
+    );
+
+    /*
+     * One note per blank, keyed by the letter the blank is engraved with. The
+     * panel looks its note up by that key, so a duplicate or a missing entry
+     * silently drops a plate's elaboration.
+     */
+    assert.equal(matches.length, 1, `notes for ${experiment.number}`);
+
+    const [note] = matches;
+    assert.ok(note.question.length > 0);
+    assert.ok(note.readout.length > 0);
+    assert.ok(note.next.length > 0);
+    assert.ok(note.running.length >= 3);
+    assert.ok(note.evidence.length >= 2);
   }
 });
 

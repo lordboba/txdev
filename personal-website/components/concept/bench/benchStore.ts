@@ -165,13 +165,17 @@ export function clearBenchGalleryPiece() {
 
 /**
  * Escape unwinds one level at a time — focused piece, then the gallery, then
- * an open company-tag record. It is bound here rather than in a component so
- * there is exactly one handler no matter how many surfaces subscribe, and so
- * it is torn down with the last of them.
+ * an open company-tag record, then an open signal. It is bound here rather
+ * than in a component so there is exactly one handler no matter how many
+ * surfaces subscribe, and so it is torn down with the last of them.
  *
- * One handler for both sub-views, refcounted across their two subscribe
- * functions: two independent listeners would both fire on the same keystroke
- * and there would be no defined order between them.
+ * One handler for every sub-view, refcounted across their subscribe functions:
+ * independent listeners would all fire on the same keystroke and there would
+ * be no defined order between them.
+ *
+ * The tag and signal branches cannot both be live — tags belong to `work` and
+ * signals to `signals`, and leaving a view clears the other's record — so the
+ * order between those two is a formality rather than a precedence.
  */
 function handleBenchEscape(event: KeyboardEvent) {
   if (event.key !== 'Escape') {
@@ -188,7 +192,12 @@ function handleBenchEscape(event: KeyboardEvent) {
     return;
   }
 
-  clearBenchTagSelection();
+  if (tags.selected >= 0) {
+    clearBenchTagSelection();
+    return;
+  }
+
+  clearBenchSignalSelection();
 }
 
 let escapeHolders = 0;
@@ -282,6 +291,64 @@ export function subscribeBenchTags(listener: () => void) {
 
   return () => {
     tagListeners.delete(listener);
+    releaseEscape();
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Signals                                                                      */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The three experiment blanks. Their own channel rather than the shared
+ * `focus` record for the same reason the tags have one: both the raycast and
+ * the DOM plate under it drive the same state, and the DOM has to *re-render*
+ * when a blank is clicked — `focus` is read once per frame by the renderer and
+ * notifies nobody.
+ *
+ * An open signal is a sub-view of `signals`, not a fifth view: the hash never
+ * changes, so browser back still leaves the page rather than unwinding an
+ * invented history entry.
+ */
+export type BenchSignals = {
+  hovered: number;
+  selected: number;
+};
+
+let signals: BenchSignals = { hovered: -1, selected: -1 };
+const signalListeners = new Set<() => void>();
+
+function commitSignals(next: BenchSignals) {
+  if (signals.hovered === next.hovered && signals.selected === next.selected) {
+    return;
+  }
+
+  signals = next;
+  signalListeners.forEach((listener) => listener());
+}
+
+export function setBenchSignalHover(index: number) {
+  commitSignals({ ...signals, hovered: index });
+}
+
+export function setBenchSignalSelection(index: number) {
+  commitSignals({ ...signals, selected: index });
+}
+
+export function clearBenchSignalSelection() {
+  commitSignals({ ...signals, selected: -1 });
+}
+
+export function readBenchSignals() {
+  return signals;
+}
+
+export function subscribeBenchSignals(listener: () => void) {
+  signalListeners.add(listener);
+  retainEscape();
+
+  return () => {
+    signalListeners.delete(listener);
     releaseEscape();
   };
 }

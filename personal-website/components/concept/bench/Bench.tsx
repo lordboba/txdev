@@ -5,9 +5,11 @@ import { useCallback, useSyncExternalStore } from 'react';
 import {
   companyTags,
   conceptViews,
+  experimentNotes,
   experiments,
   featuredProjects,
   gitEras,
+  notesLabel,
   sideProjects,
   type ConceptViewId,
 } from '../conceptData';
@@ -15,17 +17,22 @@ import { setConceptView, useConceptView } from '../conceptViewStore';
 import { useMounted, usePrefersReducedMotion } from '../shared/runtime';
 import { BenchScene } from './BenchScene';
 import {
+  clearBenchSignalSelection,
   clearBenchTagSelection,
   closeBenchGallery,
   openBenchGallery,
   readBenchGallery,
+  readBenchSignals,
   readBenchTags,
   setBenchGalleryPiece,
   setBenchHover,
   setBenchSelection,
+  setBenchSignalHover,
+  setBenchSignalSelection,
   setBenchTagHover,
   setBenchTagSelection,
   subscribeBenchGallery,
+  subscribeBenchSignals,
   subscribeBenchTags,
 } from './benchStore';
 import styles from './Bench.module.css';
@@ -93,6 +100,14 @@ function useBenchGallery() {
 
 function useBenchTags() {
   return useSyncExternalStore(subscribeBenchTags, readBenchTags, readBenchTags);
+}
+
+function useBenchSignals() {
+  return useSyncExternalStore(
+    subscribeBenchSignals,
+    readBenchSignals,
+    readBenchSignals,
+  );
 }
 
 /**
@@ -366,21 +381,150 @@ function ProfileDetails() {
   );
 }
 
+/**
+ * The blanks' keyboard-reachable twin, and the surface that has to agree with
+ * the raycast: hovering a plate here lights the same fixture on the bench, and
+ * clicking either one opens the same record.
+ */
+function SignalIndex({ selected }: { selected: number }) {
+  return (
+    <ul className={styles.galleryIndex}>
+      {experiments.map((experiment, index) => (
+        <li key={experiment.number}>
+          <button
+            aria-pressed={index === selected}
+            data-active={index === selected}
+            onBlur={() => setBenchSignalHover(-1)}
+            onClick={() => setBenchSignalSelection(index)}
+            onFocus={() => setBenchSignalHover(index)}
+            onPointerEnter={() => setBenchSignalHover(index)}
+            onPointerLeave={() => setBenchSignalHover(-1)}
+            type="button"
+          >
+            {experiment.status}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * The opened signal. Every word in here comes out of the TEMPLATE COPY block
+ * in conceptData, and the panel says so: `notesLabel` is printed beside the
+ * heading in the same micro-label style the field names use, because this copy
+ * is a draft and the page is not allowed to imply otherwise.
+ *
+ * Same exit contract as the gallery and the tag record: a back control,
+ * Escape, or a click on empty bench.
+ */
+function SignalRecord({ selected }: { selected: number }) {
+  const experiment = experiments[selected];
+  const note =
+    experimentNotes.find((entry) => entry.number === experiment.number) ?? null;
+
+  return (
+    <div className={`${styles.details} ${styles.signalRecord}`}>
+      <div className={styles.galleryBar}>
+        <button
+          className={styles.galleryBack}
+          onClick={clearBenchSignalSelection}
+          type="button"
+        >
+          <span aria-hidden="true">←</span> Back to the bench
+        </button>
+        <SignalIndex selected={selected} />
+        <span className={styles.galleryHint}>Esc to exit</span>
+      </div>
+
+      <div className={styles.signalNote}>
+        <div className={styles.signalHeading}>
+          <span className={styles.signalMarker}>
+            <FieldLabel>Experiment {experiment.number}</FieldLabel>
+            <FieldLabel>{notesLabel}</FieldLabel>
+          </span>
+          <h2>{experiment.title}</h2>
+          {note ? <p>{note.question}</p> : <p>{experiment.description}</p>}
+        </div>
+
+        {note ? (
+          <>
+            <div className={styles.signalColumn}>
+              <FieldLabel>In rotation</FieldLabel>
+              <ul>
+                {note.running.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            </div>
+
+            <div className={styles.signalColumn}>
+              <FieldLabel>Already on the bench</FieldLabel>
+              <ul>
+                {note.evidence.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            </div>
+
+            <dl className={styles.signalFoot}>
+              <div>
+                <dt>Reading for</dt>
+                <dd>{note.readout}</dd>
+              </div>
+              <div>
+                <dt>Next</dt>
+                <dd>{note.next}</dd>
+              </div>
+            </dl>
+          </>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+/*
+ * The record opens on every width, unlike the tag record. The tags degrade on
+ * mobile because the rack is not in the mobile scene at all, so its DOM twin
+ * would be a control pointing at nothing; the three fixtures *are* mounted on
+ * mobile. Only the camera stands down there — see the scene's `focusedSignal`.
+ */
 function SignalsDetails() {
+  const signals = useBenchSignals();
+
+  if (signals.selected >= 0) {
+    return <SignalRecord selected={signals.selected} />;
+  }
+
   return (
     <ol className={`${styles.details} ${styles.signalDetails}`}>
       {experiments.map((experiment, index) => (
-        <li
-          key={experiment.number}
-          onPointerEnter={() => setBenchHover('signals', index)}
-          onPointerLeave={() => setBenchHover('signals', -1)}
-        >
-          <div className={styles.plateHeading}>
-            <FieldLabel>Experiment {experiment.number}</FieldLabel>
-            <strong>{experiment.status}</strong>
-          </div>
-          <h2>{experiment.title}</h2>
-          <p>{experiment.description}</p>
+        <li key={experiment.number}>
+          {/*
+           * A button, not a plate with a hover handler. The fixture on the
+           * bench is clickable, so its twin down here has to be reachable
+           * without a pointer — and it opens the same record the raycast does.
+           */}
+          <button
+            aria-pressed={index === signals.selected}
+            onBlur={() => setBenchSignalHover(-1)}
+            onClick={() => setBenchSignalSelection(index)}
+            onFocus={() => setBenchSignalHover(index)}
+            onPointerEnter={() => setBenchSignalHover(index)}
+            onPointerLeave={() => setBenchSignalHover(-1)}
+            type="button"
+          >
+            <span className={styles.plateHeading}>
+              <FieldLabel>Experiment {experiment.number}</FieldLabel>
+              <strong>{experiment.status}</strong>
+            </span>
+            <h2>{experiment.title}</h2>
+            <p>{experiment.description}</p>
+            <span className={styles.signalCue}>
+              Read the notes <span aria-hidden="true">→</span>
+            </span>
+          </button>
         </li>
       ))}
     </ol>
@@ -425,6 +569,7 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
   const view = useConceptView(initialView);
   const gallery = useBenchGallery();
   const tags = useBenchTags();
+  const signals = useBenchSignals();
   const mounted = useMounted();
   const webGLSupported = useWebGLSupport();
   const reducedMotion = usePrefersReducedMotion();
@@ -433,11 +578,14 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
     conceptViews.find((entry) => entry.id === view) ?? conceptViews[0];
   const inGallery = view === 'work' && gallery.open;
   const inTagRecord = view === 'work' && !gallery.open && tags.selected >= 0;
+  const inSignalRecord = view === 'signals' && signals.selected >= 0;
 
   const selectView = useCallback((nextView: ConceptViewId) => {
     closeBenchGallery();
     clearBenchTagSelection();
+    clearBenchSignalSelection();
     setBenchTagHover(-1);
+    setBenchSignalHover(-1);
     setConceptView(nextView);
     setBenchHover(nextView, -1);
   }, []);
@@ -487,7 +635,9 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
       <section
         aria-labelledby="bench-title"
         className={styles.intro}
-        data-compact={inGallery || inTagRecord ? 'true' : undefined}
+        data-compact={
+          inGallery || inTagRecord || inSignalRecord ? 'true' : undefined
+        }
       >
         {/*
          * Both sub-views step the display heading down to a caption for the
@@ -501,21 +651,27 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
             ? 'Side projects'
             : inTagRecord
               ? 'Signed'
-              : activeView.label}
+              : inSignalRecord
+                ? `Experiment ${experiments[signals.selected].number}`
+                : activeView.label}
         </FieldLabel>
         <h1 id="bench-title">
           {inGallery
             ? 'The rest of the shelf.'
             : inTagRecord
               ? 'Where the work was done.'
-              : introHeadings[activeView.id]}
+              : inSignalRecord
+                ? 'Here are the working notes.'
+                : introHeadings[activeView.id]}
         </h1>
         <p>
           {inGallery
             ? 'Everything I have built that is not one of the four shipped products — benchmarks, bots, games, and tools, each with its repo or live link.'
             : inTagRecord
               ? 'Five tags on one rail: the run in the order it happened, and the credential at the end. The record for each is underneath.'
-              : activeView.description}
+              : inSignalRecord
+                ? 'One of the three open questions, opened up. These are drafts I am still editing, not conclusions.'
+                : activeView.description}
         </p>
       </section>
 

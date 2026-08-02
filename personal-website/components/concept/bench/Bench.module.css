@@ -313,7 +313,7 @@
 
 .projectPlate,
 .linkPlate,
-.signalDetails li,
+.signalDetails button,
 .historyDetails li {
   border: 1px solid var(--hairline);
   background: var(--paper);
@@ -698,17 +698,182 @@
 }
 
 .signalDetails li {
-  min-height: 145px;
-  padding: 1rem;
+  display: grid;
 }
 
-.signalDetails li:focus-visible {
-  outline: 1px solid var(--ink);
-  outline-offset: 2px;
+/*
+ * The whole plate is the control. It used to be a list item with a hover
+ * handler, which lit the fixture on the bench but could not open it and could
+ * not be reached from the keyboard — the 3D object was clickable and its DOM
+ * twin was not, so the two surfaces disagreed about what the set does.
+ */
+.signalDetails button {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 165px;
+  padding: 1rem;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  flex-direction: column;
+  cursor: pointer;
+  transition:
+    background 180ms linear,
+    transform 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.signalDetails button:hover,
+.signalDetails button:focus-visible {
+  z-index: 1;
+  background: rgba(245, 245, 244, 0.96);
+  transform: translateY(-5px);
+}
+
+.signalDetails .plateHeading {
+  width: 100%;
 }
 
 .signalDetails .plateHeading strong {
   font-size: 0.63rem;
+}
+
+.signalCue {
+  margin-top: auto;
+  color: var(--ink);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border-bottom: 1px solid var(--hairline);
+  padding-bottom: 2px;
+  align-self: flex-start;
+}
+
+.signalDetails button:hover .signalCue,
+.signalDetails button:focus-visible .signalCue {
+  border-bottom-color: var(--ink);
+}
+
+/* ---- Opened signal ---------------------------------------------------- */
+
+.signalRecord {
+  display: grid;
+  gap: 1px;
+}
+
+/*
+ * Four columns, no full-width foot. The panel is not free to grow downwards:
+ * the plate it belongs to is standing right above it, and every row this band
+ * gains is a row of the subject the lens has to give up. Reading across —
+ * question, what is running, what already exists, what it is being read for —
+ * keeps the whole record inside ~200px.
+ *
+ * Same plate language as the tag record — square, hairline, paper — because an
+ * opened signal and an opened tag are the same kind of object.
+ */
+.signalNote {
+  display: grid;
+  gap: 0.85rem clamp(0.9rem, 2.2vw, 1.9rem);
+  grid-template-columns:
+    minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1.15fr)
+    minmax(0, 0.95fr);
+  padding: 0.8rem 0.95rem;
+  border: 1px solid var(--hairline);
+  background: var(--paper);
+  backdrop-filter: blur(12px);
+}
+
+.signalMarker {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+
+/*
+ * The draft marker, second in the row. Bracketed and dimmed so it reads as a
+ * stamp on the page rather than as another field name — the copy in this panel
+ * is not final, and the panel is required to say so.
+ */
+.signalMarker .fieldLabel:last-child {
+  color: var(--ink-body);
+  opacity: 0.75;
+}
+
+.signalMarker .fieldLabel:last-child::before {
+  content: '(';
+}
+
+.signalMarker .fieldLabel:last-child::after {
+  content: ')';
+}
+
+.signalHeading h2 {
+  margin: 0.35rem 0 0.4rem;
+  color: var(--ink);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.signalHeading p {
+  margin: 0;
+  max-width: 42ch;
+  color: var(--ink-body);
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.signalColumn ul {
+  margin: 0.45rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.signalColumn li {
+  padding-left: 0.7rem;
+  position: relative;
+  color: var(--ink-body);
+  font-size: 0.635rem;
+  line-height: 1.42;
+}
+
+.signalColumn li::before {
+  content: '';
+  position: absolute;
+  top: 0.42em;
+  left: 0;
+  width: 4px;
+  height: 1px;
+  background: var(--ink);
+  opacity: 0.55;
+}
+
+.signalFoot {
+  display: grid;
+  gap: 0.55rem;
+  align-content: start;
+  margin: 0;
+  padding-left: clamp(0.9rem, 2.2vw, 1.9rem);
+  border-left: 1px solid var(--hairline);
+}
+
+.signalFoot dt {
+  color: var(--muted);
+  font-size: 0.57rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.signalFoot dd {
+  margin: 0.24rem 0 0;
+  max-width: 62ch;
+  color: var(--ink-body);
+  font-size: 0.66rem;
+  line-height: 1.5;
 }
 
 .historyDetails {
@@ -809,6 +974,7 @@
 .galleryBack:focus-visible,
 .galleryIndex button:focus-visible,
 .galleryPlacard a:focus-visible,
+.signalDetails button:focus-visible,
 .tagIndex button:focus-visible,
 .wordmark:focus-visible {
   outline: 1px solid var(--ink);
@@ -820,8 +986,16 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .tagRecord {
+  .tagRecord,
+  .signalNote {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .signalFoot {
+    padding-left: 0;
+    padding-top: 0.7rem;
+    border-top: 1px solid var(--hairline);
+    border-left: 0;
   }
 
   .projectPlate {
@@ -935,7 +1109,7 @@
   }
 
   .projectPlate,
-  .signalDetails li,
+  .signalDetails button,
   .historyDetails li {
     min-height: auto;
   }
@@ -965,6 +1139,7 @@
 @media (prefers-reduced-motion: reduce) {
   .nav button::after,
   .projectPlate,
+  .signalDetails button,
   .galleryBack,
   .galleryIndex button {
     transition-duration: 1ms;
