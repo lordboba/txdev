@@ -5,7 +5,7 @@ import { getInitialVisitorCount } from '@/lib/userCount';
 export const metadata: Metadata = {
   title: 'Tyler Xiao',
   description:
-    'Tyler Xiao’s studio bench: iCalarms, Personal Env, Med Negotiate, and Charades 2026, alongside work at Scale AI, SafetyKit, Ramp, and Snowflake.',
+    'Hi, I’m Tyler Xiao. I build and ship my own software — iCalarms, Personal Env, Med Negotiate, and Charades 2026 — between runs at Scale AI, SafetyKit, Ramp, and Snowflake.',
 };
 
 export default async function Home() {

@@ -1,0 +1,57 @@
+[
+  {
+    "company": "Snowflake",
+    "file": "snowflake.svg",
+    "format": "svg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/ff/Snowflake_Logo.svg",
+    "status": "ok",
+    "dark_on_light_safe": true,
+    "viewBox": "0 0 184 44",
+    "colors": ["#29B5E8"],
+    "notes": "Official mark + lowercase wordmark, single brand-blue fill. Recolorable by overriding fill."
+  },
+  {
+    "company": "Ramp",
+    "file": "ramp.svg",
+    "format": "svg",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Ramp_Business_Corporation_Logo.svg",
+    "status": "ok",
+    "dark_on_light_safe": true,
+    "viewBox": "0 0 96 26",
+    "colors": ["#3d3d3d"],
+    "notes": "Wordmark + ramp glyph, near-ink grey fill. Uses a clipPath; keep <defs> intact if inlining."
+  },
+  {
+    "company": "Scale AI",
+    "file": "scale-ai.svg",
+    "format": "svg",
+    "source_url": "https://scale.com",
+    "status": "ok",
+    "dark_on_light_safe": true,
+    "viewBox": "0 0 1377 261",
+    "colors": ["currentColor"],
+    "notes": "Extracted from scale.com header (inline nav logo). Paths use fill=currentColor: renders black via <img>, inherits CSS color if inlined. Triangle mark + 'scale' wordmark."
+  },
+  {
+    "company": "SafetyKit",
+    "file": "safetykit.svg",
+    "format": "svg",
+    "source_url": "https://www.safetykit.com",
+    "status": "ok",
+    "dark_on_light_safe": true,
+    "viewBox": "0 0 178 40",
+    "colors": ["#FB4F2F", "#141414"],
+    "notes": "Extracted from safetykit.com header (inline nav logo). Orange pinwheel mark + near-ink wordmark; fills hardcoded, not currentColor."
+  },
+  {
+    "company": "UCLA",
+    "file": "ucla.svg",
+    "format": "svg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/6c/University_of_California%2C_Los_Angeles_logo.svg",
+    "status": "ok",
+    "dark_on_light_safe": true,
+    "viewBox": "0 0 250 81.851547",
+    "colors": ["#2774ae"],
+    "notes": "Official UCLA wordmark in UCLA Blue, single path fill. For Upsilon Pi Epsilon @ UCLA. University trademark: use at small credential scale only."
+  }
+]

@@ -2,7 +2,8 @@
   --ground-light: #dfe1e3;
   --ground-dark: #b8bbbe;
   --ink: #141517;
-  --muted: rgba(20, 21, 23, 0.58);
+  --muted: rgba(20, 21, 23, 0.7);
+  --ink-body: rgba(20, 21, 23, 0.84);
   --hairline: rgba(20, 21, 23, 0.18);
   --paper: rgba(235, 236, 236, 0.84);
 
@@ -94,10 +95,41 @@
 .intro {
   position: absolute;
   z-index: 3;
-  top: 92px;
+  top: 88px;
   left: clamp(1rem, 2.8vw, 2.75rem);
-  width: min(23rem, 34vw);
+  width: min(26rem, 38vw);
   pointer-events: none;
+}
+
+/*
+ * Ground-tint veil so the intro stays legible when scene objects drift under
+ * it. Left-anchored falloff rather than a hard rectangle: at a flat 0.55 fill
+ * the panel terminated as a straight vertical edge across whatever device it
+ * happened to overlap — a flat block laid over the left MacBook display in
+ * /#work. The mask holds full strength under the type, then dissolves to
+ * nothing before the panel's own right edge, so the veil never cuts a line
+ * across the subject. The blur travels with the mask, so the defocus fades out
+ * on the same ramp as the tint.
+ */
+.intro::before {
+  position: absolute;
+  z-index: -1;
+  inset: -1rem -1.4rem;
+  background: rgba(223, 225, 227, 0.42);
+  backdrop-filter: blur(14px);
+  -webkit-mask-image: linear-gradient(
+    102deg,
+    #000 0 46%,
+    rgba(0, 0, 0, 0.55) 74%,
+    transparent 96%
+  );
+  mask-image: linear-gradient(
+    102deg,
+    #000 0 46%,
+    rgba(0, 0, 0, 0.55) 74%,
+    transparent 96%
+  );
+  content: '';
 }
 
 .fieldLabel,
@@ -111,19 +143,115 @@
 }
 
 .intro h1 {
-  margin: 0.55rem 0 0.65rem;
-  font-size: clamp(1.55rem, 2.35vw, 2.65rem);
-  font-weight: 500;
-  letter-spacing: -0.055em;
-  line-height: 0.98;
+  margin: 0.5rem 0 0.8rem;
+  color: var(--ink);
+  font-family: var(--font-display), 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(2.6rem, 4.4vw, 4.35rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 0.94;
+  text-wrap: balance;
 }
 
 .intro p {
-  max-width: 42ch;
+  max-width: 40ch;
   margin: 0;
-  color: var(--muted);
-  font-size: 0.75rem;
-  line-height: 1.55;
+  color: var(--ink-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+/*
+ * Staged view transition, DOM half.
+ *
+ * The scene now leaves at lambda 4.6 and arrives at 2.6, so the outgoing set is
+ * gone in ~250ms while the incoming one takes ~600ms to seat. The copy used to
+ * hard-swap on the same frame the click landed, which put the new heading in
+ * front of the old arrangement — the one moment in the transition where the
+ * words and the picture disagree.
+ *
+ * `data-view` on the shell is written by the same store that drives the scene,
+ * so the swap is store-driven with no effect and no timer: changing the
+ * attribute changes which animation-name applies, which is what restarts the
+ * animation. Four names, one per view, because two alternating names would fail
+ * to restart on a work → signals jump.
+ *
+ * The copy holds at a quarter value for ~175ms rather than going to zero: this
+ * is the page's LCP text and it must never be invisible, only recessive.
+ */
+@keyframes benchIntroWork {
+  0%,
+  22% {
+    opacity: 0.25;
+    transform: translate3d(-7px, 0, 0);
+  }
+
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes benchIntroProfile {
+  0%,
+  22% {
+    opacity: 0.25;
+    transform: translate3d(-7px, 0, 0);
+  }
+
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes benchIntroSignals {
+  0%,
+  22% {
+    opacity: 0.25;
+    transform: translate3d(-7px, 0, 0);
+  }
+
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes benchIntroHistory {
+  0%,
+  22% {
+    opacity: 0.25;
+    transform: translate3d(-7px, 0, 0);
+  }
+
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.shell[data-view='work'] .intro > * {
+  animation: benchIntroWork 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.shell[data-view='profile'] .intro > * {
+  animation: benchIntroProfile 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.shell[data-view='signals'] .intro > * {
+  animation: benchIntroSignals 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.shell[data-view='history'] .intro > * {
+  animation: benchIntroHistory 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell[data-view] .intro > * {
+    animation: none;
+  }
 }
 
 .sceneStage,
@@ -207,7 +335,7 @@
 .projectPlate p,
 .signalDetails p {
   margin: 0 0 0.85rem;
-  color: var(--muted);
+  color: var(--ink-body);
   font-size: 0.67rem;
   line-height: 1.45;
 }
@@ -217,6 +345,58 @@
   font-size: 0.6rem;
   font-weight: 600;
   letter-spacing: 0.03em;
+}
+
+/*
+ * Employer marks render as ink via grayscale + brightness so the project
+ * screenshots stay the only color on the page. Widths stay auto so each
+ * mark keeps its native aspect ratio at a fixed cap height.
+ */
+.tableMark,
+.credMark {
+  display: block;
+  width: auto;
+  filter: grayscale(1) brightness(0);
+}
+
+.tableMark {
+  height: 13px;
+  opacity: 0.82;
+}
+
+.credMark {
+  height: 15px;
+  opacity: 0.62;
+}
+
+.credLine {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  gap: 0.9rem clamp(1.1rem, 2.6vw, 2.4rem);
+  align-items: center;
+  margin-top: 0.95rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--hairline);
+}
+
+.credLine .fieldLabel {
+  display: inline-block;
+  margin-right: 0.35rem;
+}
+
+.credWordmark {
+  color: var(--ink-body);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.companyCell {
+  display: inline-flex;
+  gap: 0.55rem;
+  align-items: center;
 }
 
 .profileDetails {
@@ -235,8 +415,8 @@
   gap: 0.55rem;
   margin: 0.9rem 0 0;
   padding: 0;
-  color: var(--muted);
-  font-size: 0.68rem;
+  color: var(--ink-body);
+  font-size: 0.7rem;
   list-style: none;
 }
 
@@ -256,7 +436,7 @@
 .companyPlate td {
   padding: 0.5rem 0.65rem 0.5rem 0;
   border-bottom: 1px solid var(--hairline);
-  color: var(--muted);
+  color: var(--ink-body);
   vertical-align: top;
 }
 
@@ -319,10 +499,14 @@
   outline-offset: 2px;
 }
 
-.historyDetails .plateHeading,
-.historyDetails button > span {
+.historyDetails .plateHeading {
   color: var(--muted);
   font-size: 0.54rem;
+}
+
+.historyDetails button > span:not(.plateHeading) {
+  color: var(--ink-body);
+  font-size: 0.56rem;
 }
 
 .historyDetails strong {
@@ -452,9 +636,13 @@
     padding: 1.25rem 1rem 0;
   }
 
+  .intro::before {
+    content: none;
+  }
+
   .intro h1 {
     margin-top: 0.4rem;
-    font-size: 2rem;
+    font-size: 2.6rem;
   }
 
   .sceneStage {

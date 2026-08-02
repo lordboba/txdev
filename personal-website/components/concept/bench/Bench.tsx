@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useSyncExternalStore } from 'react';
 import {
@@ -18,6 +19,33 @@ import { setBenchHover, setBenchSelection } from './benchStore';
 import styles from './Bench.module.css';
 
 const MOBILE_QUERY = '(max-width: 700px)';
+
+const introHeadings: Record<ConceptViewId, string> = {
+  work: 'Hi, I’m Tyler Xiao.',
+  profile: 'Here’s me, up close.',
+  signals: 'Here’s what I’m testing.',
+  history: 'Here’s how this site grew.',
+};
+/**
+ * Employer / school marks from public/logos (see public/logos/manifest.json).
+ * Intrinsic sizes derive from each SVG viewBox at a 16px cap height; CSS
+ * rescales them, and a grayscale+brightness filter renders them as ink so the
+ * project screenshots stay the only color on the page.
+ */
+const logoMarks: Record<
+  string,
+  { src: string; width: number; height: number }
+> = {
+  Snowflake: { src: '/logos/snowflake.svg', width: 67, height: 16 },
+  Ramp: { src: '/logos/ramp.svg', width: 59, height: 16 },
+  'Scale AI': { src: '/logos/scale-ai.svg', width: 84, height: 16 },
+  SafetyKit: { src: '/logos/safetykit.svg', width: 71, height: 16 },
+  UCLA: { src: '/logos/ucla.svg', width: 49, height: 16 },
+};
+
+/** Company run order, plus the UCLA credential mark, for the work view. */
+const credibilityMarks = [...companyRun.map((entry) => entry.company), 'UCLA'];
+
 const noMobileSubscribe = () => () => {};
 let webGLSupport: boolean | undefined;
 
@@ -85,6 +113,26 @@ function WorkDetails() {
           <strong>{project.accent}</strong>
         </a>
       ))}
+      <div className={styles.credLine}>
+        <FieldLabel>Company run</FieldLabel>
+        {credibilityMarks.map((company) => {
+          const mark = logoMarks[company];
+          return mark ? (
+            <Image
+              alt={company}
+              className={styles.credMark}
+              height={mark.height}
+              key={company}
+              src={mark.src}
+              width={mark.width}
+            />
+          ) : (
+            <span className={styles.credWordmark} key={company}>
+              {company}
+            </span>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -112,13 +160,29 @@ function ProfileDetails() {
             </tr>
           </thead>
           <tbody>
-            {companyRun.map((entry) => (
-              <tr key={entry.company}>
-                <td>{entry.company}</td>
-                <td>{entry.period}</td>
-                <td>{entry.detail}</td>
-              </tr>
-            ))}
+            {companyRun.map((entry) => {
+              const mark = logoMarks[entry.company];
+              return (
+                <tr key={entry.company}>
+                  <td>
+                    <span className={styles.companyCell}>
+                      {mark ? (
+                        <Image
+                          alt={entry.company}
+                          className={styles.tableMark}
+                          height={mark.height}
+                          src={mark.src}
+                          width={mark.width}
+                        />
+                      ) : null}
+                      {entry.company}
+                    </span>
+                  </td>
+                  <td>{entry.period}</td>
+                  <td>{entry.detail}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </section>
@@ -239,7 +303,7 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
 
       <section className={styles.intro} aria-labelledby="bench-title">
         <FieldLabel>{activeView.label}</FieldLabel>
-        <h1 id="bench-title">The work, on the bench.</h1>
+        <h1 id="bench-title">{introHeadings[activeView.id]}</h1>
         <p>{activeView.description}</p>
       </section>
 
@@ -260,7 +324,7 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
       {view === 'history' ? <HistoryDetails /> : null}
 
       <footer className={styles.footer}>
-        <span>Studio bench</span>
+        <span>My studio bench</span>
         <div className={styles.footerMeta}>
           {typeof visitorCount === 'number' ? (
             <span className={styles.visitorMetric}>

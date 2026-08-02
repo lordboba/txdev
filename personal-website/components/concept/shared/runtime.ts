@@ -15,6 +15,22 @@ export function damp(
   return current + (target - current) * (1 - Math.exp(-lambda * delta));
 }
 
+/**
+ * Quadratic Bezier on one axis. Used to give a camera transit a shape: with the
+ * control point pushed outward from the midpoint the move arcs back and around
+ * instead of sliding down the straight line three independent damps produce.
+ */
+export function quadraticBezier(
+  from: number,
+  control: number,
+  to: number,
+  t: number,
+) {
+  const inverse = 1 - t;
+
+  return inverse * inverse * from + 2 * inverse * t * control + t * t * to;
+}
+
 /** Damp across the shortest arc so a transit never takes the long way round. */
 export function dampAngle(
   current: number,

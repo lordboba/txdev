@@ -49,6 +49,36 @@ export function clearBenchSelection() {
   focus.selected = -1;
 }
 
+/**
+ * Whether every damped transform (and the camera) has landed on its target.
+ * The ground-shadow pass subscribes to this so its depth render can be gated
+ * off once the scene stops moving — it is the single largest avoidable
+ * per-frame cost in the bench.
+ */
+let settled = false;
+const settledListeners = new Set<() => void>();
+
+export function setBenchSettled(next: boolean) {
+  if (settled === next) {
+    return;
+  }
+
+  settled = next;
+  settledListeners.forEach((listener) => listener());
+}
+
+export function readBenchSettled() {
+  return settled;
+}
+
+export function subscribeBenchSettled(listener: () => void) {
+  settledListeners.add(listener);
+
+  return () => {
+    settledListeners.delete(listener);
+  };
+}
+
 export function readBenchFocus(view: ConceptViewId) {
   if (focus.view !== view) {
     return { hovered: -1, selected: -1 };

@@ -33,28 +33,32 @@ export const conceptViews: ConceptView[] = [
     index: '01',
     label: 'In motion',
     shortLabel: 'Profile',
-    description: 'The person, places, and momentum behind the work.',
+    description:
+      'Raised in San Diego, studying CS at UCLA, usually somewhere between LA, SF, New York, and home.',
   },
   {
     id: 'work',
     index: '02',
     label: 'Things shipped',
     shortLabel: 'Work',
-    description: 'A visual cut through products, systems, and responsibility.',
+    description:
+      'I build and ship my own software — all four products below are live — between runs at Scale AI, SafetyKit, Ramp, and Snowflake.',
   },
   {
     id: 'signals',
     index: '03',
     label: 'Open tabs',
     shortLabel: 'Signals',
-    description: 'Experiments in progress, questions, and what is in rotation.',
+    description:
+      'What I have in rotation right now: personal tools, agent evaluation, and this profile itself.',
   },
   {
     id: 'history',
     index: '04',
     label: 'Version history',
     shortLabel: 'History',
-    description: 'A curated walk through the website’s distinct visual eras.',
+    description:
+      'Every visual era this site has lived through, pulled straight from my commit history.',
   },
 ];
 
