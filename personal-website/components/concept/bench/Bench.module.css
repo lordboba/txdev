@@ -132,8 +132,7 @@
   content: '';
 }
 
-.fieldLabel,
-.companyPlate th {
+.fieldLabel {
   display: block;
   color: var(--muted);
   font-size: 0.57rem;
@@ -313,8 +312,7 @@
 }
 
 .projectPlate,
-.notePlate,
-.companyPlate,
+.linkPlate,
 .signalDetails li,
 .historyDetails li {
   border: 1px solid var(--hairline);
@@ -370,19 +368,6 @@
   font-size: 0.6rem;
   font-weight: 600;
   letter-spacing: 0.03em;
-}
-
-/*
- * Employer marks render as ink via grayscale + brightness so the project
- * screenshots stay the only color on the page. Widths stay auto so each
- * mark keeps its native aspect ratio at a fixed cap height.
- */
-.tableMark {
-  display: block;
-  width: auto;
-  height: 13px;
-  opacity: 0.82;
-  filter: grayscale(1) brightness(0);
 }
 
 /*
@@ -665,56 +650,42 @@
   font-size: 0.68rem;
 }
 
-.companyCell {
-  display: inline-flex;
-  gap: 0.55rem;
-  align-items: center;
-}
-
+/*
+ * Profile keeps a single quiet plate in the lower band: the badge in the
+ * scene is the identity record, so the DOM only offers the destinations the
+ * engraving cannot follow. Width hugs the content instead of running the
+ * full band so the studio floor stays part of the frame.
+ */
 .profileDetails {
-  display: grid;
-  grid-template-columns: minmax(250px, 0.72fr) minmax(580px, 1.5fr);
-  gap: 1px;
+  display: flex;
+  justify-content: flex-start;
 }
 
-.notePlate,
-.companyPlate {
-  padding: 1rem;
+.linkPlate {
+  padding: 0.85rem 1rem 0.95rem;
 }
 
-.notes {
-  display: grid;
-  gap: 0.55rem;
-  margin: 0.9rem 0 0;
+.linkRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 1.35rem;
+  margin: 0.7rem 0 0;
   padding: 0;
-  color: var(--ink-body);
-  font-size: 0.7rem;
   list-style: none;
 }
 
-.companyPlate table {
-  width: 100%;
-  margin-top: 0.65rem;
-  border-collapse: collapse;
-  font-size: 0.66rem;
-}
-
-.companyPlate th {
-  padding: 0.35rem 0.65rem 0.35rem 0;
-  border-bottom: 1px solid var(--hairline);
-  text-align: left;
-}
-
-.companyPlate td {
-  padding: 0.5rem 0.65rem 0.5rem 0;
-  border-bottom: 1px solid var(--hairline);
-  color: var(--ink-body);
-  vertical-align: top;
-}
-
-.companyPlate td:first-child {
+.linkRow a {
   color: var(--ink);
+  font-size: 0.7rem;
   font-weight: 600;
+  letter-spacing: 0.03em;
+  text-decoration: none;
+}
+
+.linkRow a:hover,
+.linkRow a:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .signalDetails {
@@ -954,24 +925,19 @@
 
   .workDetails,
   .signalDetails,
-  .historyDetails,
-  .profileDetails {
+  .historyDetails {
     grid-template-columns: minmax(0, 1fr);
     gap: 0.6rem;
+  }
+
+  .profileDetails {
+    flex-direction: column;
   }
 
   .projectPlate,
   .signalDetails li,
   .historyDetails li {
     min-height: auto;
-  }
-
-  .companyPlate {
-    overflow-x: auto;
-  }
-
-  .companyPlate table {
-    min-width: 570px;
   }
 
   .footer {

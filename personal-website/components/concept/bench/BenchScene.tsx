@@ -5236,9 +5236,17 @@ function Scene({
            * swivel and all — clears the header and the card runs the right
            * two-thirds of the frame.
            */
+          /*
+           * The DOM band under this shot shrank from a two-plate table run to
+           * one small links plate in the corner, so the lower third of the
+           * frame is floor again. Aimed 0.15 higher and pulled 0.24 closer:
+           * the badge drops into the reclaimed band (its base was parked at
+           * mid-frame over dead floor) and gains ~4% height, while the clip
+           * keeps clear of the header because the whole prop rides down.
+           */
           profile: {
-            position: [1.0 + parallaxX * 0.4, 2.05, 5.98],
-            look: 0.95,
+            position: [1.0 + parallaxX * 0.4, 2.05, 5.74],
+            look: 1.1,
             fov: 34,
             roll: -0.014,
           },

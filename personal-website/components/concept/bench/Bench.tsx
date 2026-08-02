@@ -1,16 +1,13 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useSyncExternalStore } from 'react';
 import {
-  companyRun,
   companyTags,
   conceptViews,
   experiments,
   featuredProjects,
   gitEras,
-  personalNotes,
   sideProjects,
   type ConceptViewId,
 } from '../conceptData';
@@ -41,23 +38,6 @@ const introHeadings: Record<ConceptViewId, string> = {
   signals: 'Here’s what I’m testing.',
   history: 'Here’s how this site grew.',
 };
-/**
- * Employer / school marks from public/logos (see public/logos/manifest.json).
- * Intrinsic sizes derive from each SVG viewBox at a 16px cap height; CSS
- * rescales them, and a grayscale+brightness filter renders them as ink so the
- * project screenshots stay the only color on the page.
- */
-const logoMarks: Record<
-  string,
-  { src: string; width: number; height: number }
-> = {
-  Snowflake: { src: '/logos/snowflake.svg', width: 67, height: 16 },
-  Ramp: { src: '/logos/ramp.svg', width: 59, height: 16 },
-  'Scale AI': { src: '/logos/scale-ai.svg', width: 84, height: 16 },
-  SafetyKit: { src: '/logos/safetykit.svg', width: 71, height: 16 },
-  UCLA: { src: '/logos/ucla.svg', width: 49, height: 16 },
-};
-
 /** Mobile fallback for the tag rail: the same five names, as one line. */
 const companyCaption = companyTags.map((tag) => tag.mark).join(' · ');
 
@@ -340,55 +320,48 @@ function WorkDetails({ mobile }: { mobile: boolean }) {
   );
 }
 
+/**
+ * The one thing the engraved badge cannot do: go somewhere. Every field the
+ * profile view used to repeat down here — card fields, the company run — is
+ * already on the badge or on the work view's signature plate, so the DOM
+ * keeps only real destinations. All five are live routes or profiles, from
+ * `app/` and `lib/siteData.ts` — nothing invented.
+ */
+const profileLinks: { label: string; href: string; external?: true }[] = [
+  { label: 'Resume', href: '/resume/resume.pdf', external: true },
+  { label: 'GitHub', href: 'https://github.com/lordboba', external: true },
+  {
+    label: 'LinkedIn',
+    href: 'https://www.linkedin.com/in/tyler-xiao',
+    external: true,
+  },
+  { label: 'Schedule a call', href: '/schedule-a-call' },
+  { label: 'Email', href: 'mailto:tylerxiao@ucla.edu' },
+];
+
 function ProfileDetails() {
   return (
     <div className={`${styles.details} ${styles.profileDetails}`}>
-      <section className={styles.notePlate}>
-        <FieldLabel>Card fields</FieldLabel>
-        <ul className={styles.notes}>
-          {personalNotes.map((note) => (
-            <li key={note}>{note}</li>
+      <nav aria-label="Profile links" className={styles.linkPlate}>
+        <FieldLabel>Off the card</FieldLabel>
+        <ul className={styles.linkRow}>
+          {profileLinks.map((entry) => (
+            <li key={entry.label}>
+              {entry.href.startsWith('/') && !entry.external ? (
+                <Link href={entry.href}>{entry.label}</Link>
+              ) : (
+                <a
+                  href={entry.href}
+                  rel={entry.external ? 'noreferrer' : undefined}
+                  target={entry.external ? '_blank' : undefined}
+                >
+                  {entry.label}
+                </a>
+              )}
+            </li>
           ))}
         </ul>
-      </section>
-
-      <section className={styles.companyPlate}>
-        <FieldLabel>Company run</FieldLabel>
-        <table>
-          <thead>
-            <tr>
-              <th>Company</th>
-              <th>Period</th>
-              <th>Detail</th>
-            </tr>
-          </thead>
-          <tbody>
-            {companyRun.map((entry) => {
-              const mark = logoMarks[entry.company];
-              return (
-                <tr key={entry.company}>
-                  <td>
-                    <span className={styles.companyCell}>
-                      {mark ? (
-                        <Image
-                          alt={entry.company}
-                          className={styles.tableMark}
-                          height={mark.height}
-                          src={mark.src}
-                          width={mark.width}
-                        />
-                      ) : null}
-                      {entry.company}
-                    </span>
-                  </td>
-                  <td>{entry.period}</td>
-                  <td>{entry.detail}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </section>
+      </nav>
     </div>
   );
 }
