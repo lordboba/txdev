@@ -1,6 +1,6 @@
 .shell {
-  --ground-light: #dfe1e3;
-  --ground-dark: #b8bbbe;
+  --ground-light: #cfd2d5;
+  --ground-dark: #a6aaae;
   --ink: #141517;
   --muted: rgba(20, 21, 23, 0.7);
   --ink-body: rgba(20, 21, 23, 0.84);
@@ -25,7 +25,7 @@
    * so the plates keep the value the art direction wants, and nothing behind
    * them can print through the type.
    */
-  --paper: #dee0e1;
+  --paper: #d1d4d6;
 
   position: relative;
   display: grid;
@@ -53,7 +53,7 @@
   min-height: 64px;
   padding: 0 clamp(1rem, 2.8vw, 2.75rem);
   border-bottom: 1px solid rgba(20, 21, 23, 0.3);
-  background: rgba(214, 217, 219, 0.72);
+  background: rgba(196, 200, 203, 0.76);
   backdrop-filter: blur(16px) saturate(0.82);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.3) inset;
 }
@@ -146,7 +146,7 @@
   position: absolute;
   z-index: -1;
   inset: -1.25rem -1.4rem -3rem;
-  background: rgba(223, 225, 227, 0.42);
+  background: rgba(207, 210, 213, 0.46);
   backdrop-filter: blur(14px);
   /*
    * The radii must land the transparent stop INSIDE the box: the ellipse is

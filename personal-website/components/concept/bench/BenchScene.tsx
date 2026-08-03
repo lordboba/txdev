@@ -79,19 +79,18 @@ const SCREEN_WELL = '#0a0b0c';
  * brightest object in a portrait was the furniture. The subject gets the top of
  * the range now and the bench sits under it.
  */
-const BENCH_TOP = '#c7c9cb';
-const BENCH_FLOOR = '#c4c7ca';
+const BENCH_TOP = '#babdc0';
+const BENCH_FLOOR = '#b6b9bd';
 /* Tracks BENCH_TOP down: a front chamfer brighter than the surface it turns
    off reads as a lit stripe across the bottom of the frame, not as an edge. */
-const BENCH_RAIL = '#babcbe';
+const BENCH_RAIL = '#adb0b4';
 /**
- * The set is deliberately a full value step under the bench top now. At
- * #c6c9cc the sky sat 14 levels under BENCH_TOP, which is inside the noise of
- * a JPEG and read as one flat field; #b7babd is 29 levels down, so the bench
- * separates from the backdrop before any fog or falloff is applied.
+ * The set stays a full visual step under the bench top. #a7aaae sits roughly
+ * 19 code values below #babdc0, so the bench separates from the backdrop
+ * before fog or directional falloff does any work.
  */
-const SET_GREY = '#b7babd';
-const COVE_GREY = '#b4b7ba';
+const SET_GREY = '#a7aaae';
+const COVE_GREY = '#a2a6aa';
 const PHONE_TITLES = new Set(['iCalarms', 'Charades 2026']);
 
 /**
@@ -2884,7 +2883,7 @@ function StudioEnvironment() {
        * metalness-1 aluminum has nothing to reflect but the lightformers, which
        * is what turns real metal into painted MDF.
        */}
-      <color args={['#bfc2c5']} attach="background" />
+      <color args={['#aeb2b6']} attach="background" />
       {/*
        * Overhead-front softbox, the key. Tightened from an 18x9 slab hung at
        * z 4.5 — at that size it lit the bench as one uniform field from frame
@@ -2896,7 +2895,7 @@ function StudioEnvironment() {
       <Lightformer
         color="#ffffff"
         form="rect"
-        intensity={2.4}
+        intensity={2}
         position={[0.5, 7.2, 2.2]}
         rotation={[-Math.PI / 3, 0, 0]}
         scale={[9.5, 6, 1]}
@@ -2945,7 +2944,7 @@ function StudioEnvironment() {
       <Lightformer
         color="#e6eaee"
         form="rect"
-        intensity={0.55}
+        intensity={0.42}
         position={[6, 3, 2]}
         rotation={[0, -Math.PI / 2, 0]}
         scale={[8, 5, 1]}
@@ -6373,11 +6372,11 @@ function Scene({
       <fog attach="fog" args={[SET_GREY, 13, 42]} />
       <StudioEnvironment />
       {/*
-       * Ambient and key are both trimmed for the NoToneMapping response: with
-       * no ACES shoulder the previous 0.12 / 1.5 pair drove BENCH_TOP straight
-       * into clip and the whole set rendered as white paper.
+       * Ambient and key are trimmed for the NoToneMapping response. The lower
+       * room fill keeps the studio in late-afternoon territory while the hard
+       * environment strips still resolve on the aluminum.
        */}
-      <ambientLight intensity={0.07} />
+      <ambientLight intensity={0.045} />
       {/*
        * Frustum tightened to the working area actually in frame. The old
        * ±14 / +12..-12 box spread a 2048 map over 28 world units — 0.014 per
@@ -6407,7 +6406,7 @@ function Scene({
        */}
       <directionalLight
         castShadow
-        intensity={1.3}
+        intensity={1.1}
         position={[-6.5, 7, 3.2]}
         shadow-bias={-0.0002}
         shadow-camera-bottom={-3}
@@ -6428,7 +6427,7 @@ function Scene({
        * gives the camera-right faces of every chassis, stand and blank a second
        * value to fall to.
        */}
-      <directionalLight intensity={0.3} position={[5.5, 2.4, 4.5]} />
+      <directionalLight intensity={0.22} position={[5.5, 2.4, 4.5]} />
 
       <StudioCove />
       <BenchTop />
