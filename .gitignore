@@ -12,3 +12,4 @@ personal-website/content/blog/drafts/*
 /**/*.synctex.gz
 
 .superpowers
+.playwright-mcp/
