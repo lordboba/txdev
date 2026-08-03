@@ -55,13 +55,6 @@ import styles from './Bench.module.css';
 
 const MOBILE_QUERY = '(max-width: 700px)';
 
-const introHeadings: Record<ConceptViewId, string> = {
-  work: 'Hi, I’m Tyler Xiao.',
-  profile: 'Here’s me, up close.',
-  signals: 'Here’s what I’m testing.',
-  history: 'Here’s how this site grew.',
-};
-
 const noMobileSubscribe = () => () => {};
 let webGLSupport: boolean | undefined;
 
@@ -949,7 +942,7 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
                 ? 'Here are the working notes.'
                 : inEraRecord
                   ? 'Here is what it looked like.'
-                  : introHeadings[activeView.id]}
+                  : activeView.heading}
         </h1>
         <p>
           {inGallery

@@ -4447,7 +4447,7 @@ function ExperimentBlank({
 }) {
   const experiment = experiments[index];
   const seat = SIGNAL_SEATS[index];
-  const measuring = experiment.status.toLowerCase() === 'measuring';
+  const measuring = index === 1;
   const plate = useMemo(
     () => createExperimentPlateTexture(experiment.status, experiment.title),
     [experiment.status, experiment.title],

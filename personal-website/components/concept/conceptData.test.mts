@@ -21,6 +21,51 @@ test('concept view identifiers are unique and cover the four profile angles', ()
   );
 });
 
+test('signature view copy uses Tyler’s approved release wording', () => {
+  const views = Object.fromEntries(conceptViews.map((view) => [view.id, view]));
+
+  assert.equal(views.profile.heading, 'Welcome to my site! :)');
+  assert.equal(
+    views.profile.description,
+    'Sharing my dev work, experiments, and personal thoughts here :)',
+  );
+  assert.equal(
+    views.work.description,
+    "I've worked at Scale AI, SafetyKit, and Ramp. Incoming Fall 2026 at Snowflake",
+  );
+  assert.equal(
+    views.signals.description,
+    'Right now, I’m building tools for myself, evaluating agents, and finishing this site.',
+  );
+  assert.equal(views.history.description, 'Previous site history :)');
+});
+
+test('focus areas use direct labels and descriptions', () => {
+  assert.deepEqual(experiments, [
+    {
+      number: 'A',
+      status: 'Building',
+      title: 'Tools I wanted enough to make',
+      description:
+        'Small, local-first products built around problems I kept running into.',
+    },
+    {
+      number: 'B',
+      status: 'Testing',
+      title: 'Finding where agents break',
+      description:
+        'Evals that preserve failures, resume interrupted runs, and show what actually went wrong.',
+    },
+    {
+      number: 'C',
+      status: 'Editing',
+      title: 'One profile, a few different views',
+      description:
+        'The site changes depending on what you came to learn: who I am, what I’ve built, or what I’m testing.',
+    },
+  ]);
+});
+
 test('featured projects are visual and link to real work', () => {
   assert.ok(featuredProjects.length >= 3);
 

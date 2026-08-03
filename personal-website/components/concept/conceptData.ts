@@ -19,6 +19,7 @@ export type ConceptView = {
   index: string;
   label: string;
   shortLabel: string;
+  heading: string;
   description: string;
 };
 
@@ -47,6 +48,7 @@ export const conceptViews: ConceptView[] = [
     index: '01',
     label: 'In motion',
     shortLabel: 'Profile',
+    heading: 'Welcome to my site! :)',
     /*
      * Framing copy only. The biographical fields — home, study, rotation —
      * are engraved on the badge in the scene (and printed by its DOM twin on
@@ -54,31 +56,33 @@ export const conceptViews: ConceptView[] = [
      * screen.
      */
     description:
-      'The whole record is engraved on one badge. Lean in and read it — the links below go the places an engraving cannot.',
+      'Sharing my dev work, experiments, and personal thoughts here :)',
   },
   {
     id: 'work',
     index: '02',
     label: 'Things shipped',
     shortLabel: 'Work',
+    heading: 'Hi, I’m Tyler Xiao.',
     description:
-      'I build and ship my own software — all four products below are live — between runs at Scale AI, SafetyKit, Ramp, and Snowflake.',
+      "I've worked at Scale AI, SafetyKit, and Ramp. Incoming Fall 2026 at Snowflake",
   },
   {
     id: 'signals',
     index: '03',
     label: 'Open tabs',
     shortLabel: 'Signals',
+    heading: 'Here’s what I’m testing.',
     description:
-      'What I have in rotation right now: personal tools, agent evaluation, and this profile itself.',
+      'Right now, I’m building tools for myself, evaluating agents, and finishing this site.',
   },
   {
     id: 'history',
     index: '04',
     label: 'Version history',
     shortLabel: 'History',
-    description:
-      'Every visual era this site has lived through, pulled straight from my commit history.',
+    heading: 'Here’s how this site grew.',
+    description: 'Previous site history :)',
   },
 ];
 
@@ -254,24 +258,24 @@ export const sideProjects: SideProject[] = projects
 export const experiments = [
   {
     number: 'A',
-    status: 'Shipping',
-    title: 'Personal software that earns a permanent place',
+    status: 'Building',
+    title: 'Tools I wanted enough to make',
     description:
-      'Testing whether focused, local-first tools can replace small recurring frictions in my own life.',
+      'Small, local-first products built around problems I kept running into.',
   },
   {
     number: 'B',
-    status: 'Measuring',
-    title: 'Agent reliability through explicit evaluation',
+    status: 'Testing',
+    title: 'Finding where agents break',
     description:
-      'Benchmark runners, resume-safe workflows, and visible failure accounting instead of a polished demo alone.',
+      'Evals that preserve failures, resume interrupted runs, and show what actually went wrong.',
   },
   {
     number: 'C',
-    status: 'Collecting',
-    title: 'A profile that changes with the question',
+    status: 'Editing',
+    title: 'One profile, a few different views',
     description:
-      'This interface itself: one identity, several useful cuts, and no single canonical homepage.',
+      'The site changes depending on what you came to learn: who I am, what I’ve built, or what I’m testing.',
   },
 ];
 
