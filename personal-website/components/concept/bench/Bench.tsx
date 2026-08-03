@@ -2,6 +2,14 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import {
+  EnvelopeSimple,
+  FileText,
+  GithubLogo,
+  LinkedinLogo,
+  PhoneCall,
+  type Icon,
+} from '@phosphor-icons/react';
 import { useCallback, useSyncExternalStore } from 'react';
 import {
   companyTags,
@@ -356,16 +364,36 @@ function WorkDetails() {
  * keeps only real destinations. All five are live routes or profiles, from
  * `app/` and `lib/siteData.ts` — nothing invented.
  */
-const profileLinks: { label: string; href: string; external?: true }[] = [
-  { label: 'Resume', href: '/resume/resume.pdf', external: true },
-  { label: 'GitHub', href: 'https://github.com/lordboba', external: true },
+const profileLinks: {
+  label: string;
+  href: string;
+  icon: Icon;
+  external?: true;
+}[] = [
+  {
+    label: 'Resume',
+    href: '/resume/resume.pdf',
+    icon: FileText,
+    external: true,
+  },
   {
     label: 'LinkedIn',
     href: 'https://www.linkedin.com/in/tyler-xiao',
+    icon: LinkedinLogo,
     external: true,
   },
-  { label: 'Schedule a call', href: '/schedule-a-call' },
-  { label: 'Email', href: 'mailto:tylerxiao@ucla.edu' },
+  {
+    label: 'GitHub',
+    href: 'https://github.com/lordboba',
+    icon: GithubLogo,
+    external: true,
+  },
+  { label: 'Schedule a call', href: '/schedule-a-call', icon: PhoneCall },
+  {
+    label: 'Email',
+    href: 'mailto:tylerxiao@ucla.edu',
+    icon: EnvelopeSimple,
+  },
 ];
 
 function ProfileDetails({ mobile }: { mobile: boolean }) {
@@ -411,21 +439,47 @@ function ProfileDetails({ mobile }: { mobile: boolean }) {
       <nav aria-label="Profile links" className={styles.linkPlate}>
         <FieldLabel>Off the card</FieldLabel>
         <ul className={styles.linkRow}>
-          {profileLinks.map((entry) => (
-            <li key={entry.label}>
-              {entry.href.startsWith('/') && !entry.external ? (
-                <Link href={entry.href}>{entry.label}</Link>
-              ) : (
-                <a
-                  href={entry.href}
-                  rel={entry.external ? 'noreferrer' : undefined}
-                  target={entry.external ? '_blank' : undefined}
-                >
-                  {entry.label}
-                </a>
-              )}
-            </li>
-          ))}
+          {profileLinks.map((entry) => {
+            const ProfileIcon = entry.icon;
+
+            return (
+              <li key={entry.label}>
+                {entry.href.startsWith('/') && !entry.external ? (
+                  <Link
+                    aria-label={entry.label}
+                    className={styles.profileLinkCard}
+                    href={entry.href}
+                  >
+                    <ProfileIcon
+                      aria-hidden="true"
+                      size={24}
+                      weight="regular"
+                    />
+                    <span className={styles.profileLinkLabel}>
+                      {entry.label}
+                    </span>
+                  </Link>
+                ) : (
+                  <a
+                    aria-label={entry.label}
+                    className={styles.profileLinkCard}
+                    href={entry.href}
+                    rel={entry.external ? 'noreferrer' : undefined}
+                    target={entry.external ? '_blank' : undefined}
+                  >
+                    <ProfileIcon
+                      aria-hidden="true"
+                      size={24}
+                      weight="regular"
+                    />
+                    <span className={styles.profileLinkLabel}>
+                      {entry.label}
+                    </span>
+                  </a>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </nav>
     </div>
