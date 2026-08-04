@@ -164,6 +164,13 @@ const COVE_RADIUS = 4;
 const COVE_HEIGHT = 16;
 const COVE_BACK = 12;
 const COVE_WIDTH = 46;
+/**
+ * How far the cyc's floor carries on past the tangent, forward under the bench
+ * top. Buried — the bench plane runs 13.3 further forward than this — and its
+ * only job is to give the tangent ring an up-facing neighbour on both sides so
+ * the smoothed normals there stay vertical.
+ */
+const COVE_FOOT = 0.9;
 
 /** Pitch of the six-card run this shot was composed for. */
 const HISTORY_BASE_SPACING = 1.52;
@@ -278,8 +285,96 @@ const GLASS_FRAGMENT_SHADER = `
     /* A hairline mullion, so the shape reads as a window and not as a card. */
     window *= 1.0 - 0.55 * (1.0 - smoothstep(0.0, 0.006, abs(p.x - 0.02)));
 
-    float alpha = fresnel * 0.34 + window * 0.16;
+    /*
+     * The sheet itself.
+     *
+     * Fresnel and one window are enough to say "there is glass here" at the
+     * edges and in one corner, and nothing at all across the middle four-fifths
+     * of a display — which is where a viewer actually looks, and why the panels
+     * still read as decals printed on the bezel. Real cover glass always
+     * carries a low, broad wipe of the room across it. This is that wipe: one
+     * soft diagonal band raked with the key, peaking at under 3% so it lands as
+     * a property of the surface and never as a mark on the content. Every value
+     * under it survives — 3% of white on the darkest UI in the set lifts it by
+     * about seven codes.
+     */
+    float diagonal = vUv.x * 0.58 + vUv.y * 0.81;
+    float wipe =
+      smoothstep(0.05, 0.55, diagonal) * (1.0 - smoothstep(0.62, 1.25, diagonal));
+
+    float alpha = fresnel * 0.34 + window * 0.16 + wipe * 0.028;
     gl_FragColor = vec4(vec3(1.0), clamp(alpha, 0.0, 0.6));
+  }
+`;
+/**
+ * The bench's own return, faked as a card lying on it.
+ *
+ * A bead-blasted work top is not a mirror, but it is not a sheet of paper
+ * either: stand anything on one under a studio rig and the last centimetre in
+ * front of it carries a smeared, mostly unreadable ghost of whatever is
+ * standing there. The set had none — every object met the surface with a
+ * contact shadow and nothing else, which is what made the bench read as a
+ * printed backdrop the props were pasted onto.
+ *
+ * A real reflection pass is a second render of the whole set and is not worth
+ * one frame of this budget. This is the card version: a plane on the bench
+ * immediately in front of the object, reading the source mirrored in v, blurred
+ * harder the further the ray has travelled, and faded out inside a short
+ * distance of the contact line. Additive, so it can only ever lift the surface
+ * — a reflection that darkens is a shadow, and the shadows are already drawn.
+ */
+const REFLECTION_VERTEX_SHADER = `
+  varying vec2 vUv;
+
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+const REFLECTION_FRAGMENT_SHADER = `
+  uniform sampler2D uTexture;
+  uniform vec2 uRepeat;
+  uniform vec2 uOffset;
+  uniform vec3 uTint;
+  uniform float uOpacity;
+  uniform float uMapped;
+
+  varying vec2 vUv;
+
+  void main() {
+    /* v = 1 at the contact line, 0 at the far end of the smear. */
+    float run = clamp(vUv.y, 0.0, 1.0);
+    vec3 tone = uTint;
+
+    if (uMapped > 0.5) {
+      /*
+       * Mirrored: the bench sees the foot of the object at the contact and
+       * progressively more of its face further out. Five taps, and the kernel
+       * widens with distance because a rough surface scatters a reflected ray
+       * more the longer it travels — which is also why the far end of the smear
+       * has to be unreadable, not just faint.
+       */
+      float spread = 0.015 + 0.2 * (1.0 - run);
+      vec3 sum = vec3(0.0);
+
+      for (int tap = -2; tap <= 2; tap += 1) {
+        float step = float(tap) * spread * 0.5;
+        vec2 source = clamp(
+          vec2(vUv.x + step * 0.35, (1.0 - run) + step),
+          0.0,
+          1.0
+        );
+        sum += texture2D(uTexture, source * uRepeat + uOffset).rgb;
+      }
+
+      tone = sum * 0.2;
+    }
+
+    /* Short: gone within about a third of the card's own run. */
+    float fade = pow(run, 2.6);
+    float feather =
+      smoothstep(0.0, 0.14, vUv.x) * smoothstep(0.0, 0.14, 1.0 - vUv.x);
+    gl_FragColor = vec4(tone * uOpacity * fade * feather, 1.0);
   }
 `;
 const SCREEN_VERTEX_SHADER = `
@@ -475,11 +570,30 @@ type Transform = {
  * had a dead corridor straight down the middle of the frame, which is where
  * the eye went instead of to the products on either side of it.
  */
+/*
+ * Two tangencies closed, both of them the same defect at different scales: a
+ * silhouette edge landing within a few pixels of another one, which reads as a
+ * merge rather than as either an overlap or a gap.
+ *
+ * The centre phone's top edge was arriving 9px under the left MacBook's lid
+ * line — two near-horizontal edges of similar value, so the eye could not tell
+ * whether the phone stood in front of the deck or grew out of the hinge. It
+ * comes down a size and forward, which drops its crown clear onto the black
+ * keyboard well: the separation is now a value contrast rather than a hairline,
+ * and it triples the gap.
+ *
+ * The Charades phone had the mirror problem on both sides at once. Its left
+ * edge sat 4px off the right MacBook's chassis edge, and its right edge stood
+ * ~95px from the frame — an accent pressed against the border of the picture
+ * with a tangency behind it. Bringing it inboard fixes both: the frame margin
+ * roughly doubles, and the 4px kiss becomes a decisive overlap the depth
+ * stagger (z 0.86 against the laptop's −1.82) reads unambiguously.
+ */
 const PROJECT_WORK: Transform[] = [
-  { position: [-0.32, 0, 0.56], rotation: [0, 0.3, 0], scale: 0.6 },
+  { position: [-0.3, 0, 0.9], rotation: [0, 0.3, 0], scale: 0.55 },
   { position: [-1.06, 0, -2.55], rotation: [0, 0.32, 0], scale: 0.68 },
   { position: [2.0, 0, -1.82], rotation: [0, -0.3, 0], scale: 0.66 },
-  { position: [2.72, 0, 0.7], rotation: [0, -0.5, 0], scale: 0.58 },
+  { position: [2.46, 0, 0.86], rotation: [0, -0.5, 0], scale: 0.57 },
 ];
 
 /**
@@ -670,7 +784,21 @@ const TAG_HOLE_R = 0.017;
 /** Pivot depth below the rail: hairline drop, then the ring the plate hangs on. */
 const TAG_DROP = 0.17;
 const TAG_RING_R = 0.028;
-const TAG_RAIL_HALF = 1.95;
+/**
+ * Half the rail's run, and it is a set-dressing number rather than a fit.
+ *
+ * At 1.95 the bar stopped just inside the right edge of the work frame and
+ * showed its end cap floating in mid-air over the bench — a rail that
+ * terminates inside the picture is a prop lying on a table, not a fixture bolted
+ * to a room. It has to leave the frame at both ends at every aspect the desktop
+ * lens runs, and the rack scales down as the viewport narrows (see fitWorkRack),
+ * so the length is set for the worst case: at fit 0.6 this still puts both ends
+ * a comfortable margin outside the widest frame the shot can produce.
+ *
+ * The end caps ride out with it and are never seen; they stay because they are
+ * what makes the object a length of stock with ends rather than an infinite bar.
+ */
+const TAG_RAIL_HALF = 7.6;
 const TAG_RAIL_R = 0.016;
 /** Drop wires, long enough to leave the top of the work frame (y 2.76 at z −1). */
 const TAG_WIRE_X = 1.85;
@@ -753,7 +881,15 @@ const TAG_PLATE_DIM_COLOR = new THREE.Color(TAG_PLATE_DIM);
  * every plate its own value off the same cubemap — which is what stops the row
  * reading as one wide decal — and far too little to break the group.
  */
-const TAG_REST_YAW = [0.05, -0.028, 0.018, -0.046, 0.034];
+/*
+ * The spread is capped at ±0.035 rather than ±0.05. Measured off the rendered
+ * plates the row was running a 9-value spread face to face — Scale at L196 and
+ * Snowflake at L205 — and at that width the jitter has stopped being "each ring
+ * seats a little differently" and started reading as plates of different stock.
+ * Tightened, the same five angles still give every plate its own value off the
+ * cubemap, inside about a 4-value band.
+ */
+const TAG_REST_YAW = [0.032, -0.026, 0.017, -0.03, 0.028];
 const TAG_REST_ROLL = [-0.011, 0.007, -0.005, 0.013, -0.009];
 
 /** Badge fields, label above value, straight out of the real personal notes. */
@@ -841,10 +977,19 @@ function getBrushedRoughness() {
     for (let score = 0; score < 34; score += 1) {
       const y = Math.floor(Math.random() * height) + 0.5;
       const deep = Math.random() > 0.45;
+      /*
+       * Halved. At 0.34/0.55 with a 3px pen these scores were wide enough and
+       * dark enough to survive minification as individual bars, so any face
+       * that turned toward the lens showed them as stripes — corrugation, not
+       * a finish. The brushing is meant to live in the anisotropic lobe the
+       * material stretches along the grain; the map only has to give that lobe
+       * something to break on. At this contrast it does that and resolves to an
+       * even sheen the moment the face is more than a hand's width away.
+       */
       context.strokeStyle = deep
-        ? 'rgba(0,0,0,0.34)'
-        : 'rgba(255,255,255,0.55)';
-      context.lineWidth = 1.6 + Math.random() * 1.4;
+        ? 'rgba(0,0,0,0.17)'
+        : 'rgba(255,255,255,0.28)';
+      context.lineWidth = 1.2 + Math.random() * 0.9;
       context.beginPath();
       context.moveTo(0, y);
       context.lineTo(width, y);
@@ -1003,6 +1148,18 @@ const BENCH_EDGE_SIGMA_X = 6.5;
 const BENCH_EDGE_SIGMA_Z = 6;
 const BENCH_EDGE_DEPTH = 0.26;
 /**
+ * The baked joint in the bench top: how deep the darkening goes at its centre,
+ * and how far it feathers out either side of BENCH_SEAM_Z.
+ *
+ * 3.5% over ±0.09 world units. Two shop plates butted together do leave a line,
+ * but the line is a shadow a hair wide, not a value break — the whole point of
+ * replacing the modeled seam was to get its contrast down inside the 1-2% step
+ * the rest of the sweep holds to, and at this sigma the steepest adjacent texel
+ * pair across it comes in under that.
+ */
+const BENCH_SEAM_DEPTH = 0.035;
+const BENCH_SEAM_SIGMA = 0.09;
+/**
  * The foreground ramp — the third band of the gallery sweep.
  *
  * Bright cove, mid bench, dark foreground. The pool alone cannot deliver that:
@@ -1144,6 +1301,26 @@ function getBenchFalloff() {
         1 - (1 - BENCH_NEAR_FLOOR) * nearT * nearT * (3 - 2 * nearT),
         1 / 2.2,
       );
+      /*
+       * The joint in the top, baked here rather than modeled.
+       *
+       * It used to be a 0.002-tall box laid across the bench at BENCH_SEAM_Z.
+       * That box carried no falloff map, so while the plane around it was being
+       * multiplied down to ~0.78 by the pool and edge terms, the seam rendered
+       * at its own flat colour — and a strip that ignores the grade the whole
+       * surface is under does not read as a joint, it reads as a lit wire. It
+       * measured a 20-value spike at the left of frame and a 22-value one at
+       * the right: the crisp full-width horizon the cove work had otherwise
+       * closed. Baked into the falloff it is in the same value space as
+       * everything around it by construction, and it can be feathered, so the
+       * largest step across it is under 1%.
+       */
+      const seam = Math.pow(
+        1 -
+          BENCH_SEAM_DEPTH *
+            Math.exp(-(((worldZ - BENCH_SEAM_Z) / BENCH_SEAM_SIGMA) ** 2)),
+        1 / 2.2,
+      );
 
       for (let px = 0; px < size; px += 1) {
         const u = (px + 0.5) / size;
@@ -1166,7 +1343,8 @@ function getBenchFalloff() {
           255 *
             (BENCH_POOL_FLOOR + (BENCH_POOL_PEAK - BENCH_POOL_FLOOR) * pool) *
             edge *
-            near,
+            near *
+            seam,
         );
         const index = (py * size + px) * 4;
         image.data[index] = value;
@@ -1389,18 +1567,40 @@ function getCoveGeometry() {
     return coveGeometry;
   }
 
+  /*
+   * The foot runs on past the tangent before it drops.
+   *
+   * The profile used to turn the corner and fall straight to −2 from the same
+   * vertex the arc ends on, which means that vertex was shared between a
+   * face pointing up and a face pointing at the lens. computeVertexNormals
+   * averages at a shared vertex, so the very last ring of the sweep came back
+   * with a normal tipped forward and rendered a ~12-value trough — a soft dark
+   * line across the whole frame exactly where the cyc is supposed to become
+   * invisible. Continuing the floor 0.9 forward, under the bench top where
+   * nothing can see it, gives the tangent ring two up-facing neighbours and the
+   * trough closes.
+   */
   const shape = new THREE.Shape();
-  shape.moveTo(0, -2);
+  shape.moveTo(-COVE_FOOT, -2);
   shape.lineTo(COVE_BACK, -2);
   shape.lineTo(COVE_BACK, COVE_HEIGHT);
   shape.lineTo(COVE_RADIUS, COVE_HEIGHT);
   shape.lineTo(COVE_RADIUS, COVE_RADIUS);
   shape.absarc(0, COVE_RADIUS, COVE_RADIUS, 0, -Math.PI / 2, true);
-  shape.lineTo(0, -2);
+  shape.lineTo(-COVE_FOOT, 0);
+  shape.lineTo(-COVE_FOOT, -2);
 
   const geometry = new THREE.ExtrudeGeometry(shape, {
     bevelEnabled: false,
-    curveSegments: 18,
+    /*
+     * 30, not 18. The sweep's whole job is that the eye cannot find the join
+     * between the floor and the wall, and eighteen segments across a quarter
+     * circle put a facet boundary every 5° — enough that the first two facets
+     * off the tangent returned measurably different values and the junction
+     * still drew a soft band across the frame. At 30 the largest step across
+     * the tangent is inside the 1-2% the rest of the sweep holds to.
+     */
+    curveSegments: 30,
     depth: COVE_WIDTH,
     steps: 1,
   });
@@ -2235,6 +2435,18 @@ function AluminumMaterial({
    * cuts turn it off.
    */
   anisotropy = 0.9,
+  /**
+   * Which geometry group this material dresses. drei's RoundedBox is an
+   * ExtrudeGeometry, so it ships two groups: 0 is the pair of flat caps at the
+   * ends of the extrusion axis, 1 is the bevel fillets plus the perimeter
+   * walls. That split happens to be exactly the split a machinist would make —
+   * on a lid extruded through its thin axis the caps ARE the broad brushed
+   * faces and group 1 is the rim; on a base extruded front-to-back the caps are
+   * the thin front and back edges and group 1 is the deck. Passing `material-0`
+   * / `material-1` is what lets one body carry brushing on its broad faces and
+   * a smooth anodised finish on its edges.
+   */
+  attach,
   color = ALUMINUM,
   /*
    * Up with the shell's drop. A metalness-1 surface has *only* the environment
@@ -2258,6 +2470,8 @@ function AluminumMaterial({
 }: {
   /** 0 disables the directional lobe; 1 is a fully drawn-out brush streak. */
   anisotropy?: number;
+  /** R3F attach path — `material-0` / `material-1` for a per-group dress. */
+  attach?: string;
   color?: string;
   envMapIntensity?: number;
   /**
@@ -2307,11 +2521,58 @@ function AluminumMaterial({
     <meshPhysicalMaterial
       anisotropy={anisotropy}
       anisotropyRotation={grain === 'axial' ? Math.PI / 2 : 0}
+      attach={attach}
       color={color}
       envMapIntensity={envMapIntensity}
       metalness={metalness}
       roughness={roughness}
       roughnessMap={map}
+    />
+  );
+}
+
+/**
+ * The edge dress: smooth anodised aluminum with no grain and no directional
+ * lobe, for the narrow faces of a machined body.
+ *
+ * A brushed roughnessMap on a face two hundredths of a unit tall is not a
+ * finish, it is an aliasing pattern: the whole 512-line canvas gets crushed
+ * into a handful of screen pixels and resolves as corrugation running the
+ * length of every base and lid rim at close range. Real anodised edge faces are
+ * bead-blasted and near-featureless anyway — the read comes from the single
+ * bright chamfer highlight along the top edge, which is its own geometry.
+ * Roughness is held a step above the broad faces so the edge answers the raking
+ * slit with a satin band rather than a mirror line.
+ */
+function AnodisedEdge({
+  attach,
+  color = ALUMINUM,
+  /*
+   * Held well under the broad faces, and this is a value decision rather than a
+   * physical one. A metal wall standing near-vertical returns whatever the
+   * cubemap holds in front of it, and blurring that return over a 0.3 lobe
+   * pulls in the overhead run — at parity with the deck's gain the front edge of
+   * every base came back a step BRIGHTER than the bench it stands on, which
+   * flattens the chassis into the surface. A machined body needs its edge faces
+   * to sit under both the deck above them and the bench in front of them; that
+   * value step is the whole of the read.
+   */
+  envMapIntensity = 1.0,
+  roughness = 0.26,
+}: {
+  attach?: string;
+  color?: string;
+  envMapIntensity?: number;
+  roughness?: number;
+}) {
+  return (
+    <meshPhysicalMaterial
+      anisotropy={0}
+      attach={attach}
+      color={color}
+      envMapIntensity={envMapIntensity}
+      metalness={1}
+      roughness={roughness}
     />
   );
 }
@@ -2333,7 +2594,14 @@ function ChamferBand({
   args,
   color = ALUMINUM,
   radius,
-  smoothness = 4,
+  /*
+   * Eight, not four. A fillet resolved in four segments shows its facets the
+   * moment the band is more than a couple of pixels wide, and each facet
+   * catches the raking slit at its own angle — the cut line beads instead of
+   * running. Eight is the point where the highlight reads continuous at the
+   * closest lens in the set.
+   */
+  smoothness = 8,
   position = [0, 0, 0],
 }: {
   args: [number, number, number];
@@ -2353,17 +2621,21 @@ function ChamferBand({
        * Anisotropy off. A chamfer is a polished diamond cut, not a brushed
        * face, and a directional lobe here smears the one hard edge highlight
        * in the set back into the same broad sheen the band exists to replace.
-       * Roughness stays a hair off mirror rather than at it — 0.03 chrome
-       * clipped the front lip of every deck to white against the new room;
-       * 0.055 is machined aluminum that still resolves the raking slit as a
-       * line and still travels with the lens.
+       *
+       * 0.085 / 2.05, up from 0.055 / 2.4. At the glancing poses in the
+       * parallax sweep this band is the widest thing the accent slit can find,
+       * and it was returning past the screen whites standing right behind it —
+       * a chassis rim brighter than a powered display reads as chrome trim, not
+       * as the same aluminum as the body. Held here it still resolves the slit
+       * as a line and still travels with the lens, and it stays a value under
+       * the panels it wraps.
        */}
       <AluminumMaterial
         anisotropy={0}
         color={color}
-        envMapIntensity={2.4}
+        envMapIntensity={2.05}
         grain="none"
-        roughness={0.055}
+        roughness={0.085}
       />
     </RoundedBox>
   );
@@ -2475,6 +2747,94 @@ function ContactCore({
         />
       </mesh>
     </group>
+  );
+}
+
+/**
+ * One reflection card. `texture` is optional: a device whose display faces the
+ * lens above the bench gets its screen read back mirrored, and a body that meets
+ * the bench with a machined wall — a laptop base — gets a flat tint instead,
+ * because what the bench can actually see of it is a strip of aluminum and a
+ * chamfer, not an image.
+ *
+ * renderOrder is load-bearing. The contact darkening and the ContactShadows pass
+ * both live a couple of thousandths above this card and both write no depth, so
+ * without an explicit order the sort could put a reflection over the shadow that
+ * grounds the same object. −2 draws it first, under everything.
+ */
+function BenchReflection({
+  width,
+  run,
+  texture,
+  crop,
+  sourceAspect,
+  tint = ALUMINUM,
+  opacity = 0.06,
+  z,
+}: {
+  /** Width of the card, normally the object's own footprint width. */
+  width: number;
+  /** How far the smear reaches out from the contact line toward the lens. */
+  run: number;
+  texture?: THREE.Texture;
+  crop?: SourceRect;
+  /**
+   * The display's own aspect, so the cover-crop resolves to the identical
+   * texture `Screen` already built and the reflection costs no second clone.
+   * The card then squashes that whole image into its run, which is what a
+   * reflection foreshortened almost to the surface does anyway.
+   */
+  sourceAspect?: number;
+  tint?: string;
+  opacity?: number;
+  /** World z of the contact line the smear runs forward from. */
+  z: number;
+}) {
+  const cropped = useMemo(
+    () =>
+      texture && sourceAspect
+        ? coverTexture(texture, sourceAspect, crop)
+        : null,
+    [texture, sourceAspect, crop],
+  );
+  const uniforms = useMemo(
+    () => ({
+      uTexture: { value: cropped },
+      uRepeat: {
+        value: new THREE.Vector2(
+          cropped?.repeat.x ?? 1,
+          cropped?.repeat.y ?? 1,
+        ),
+      },
+      uOffset: {
+        value: new THREE.Vector2(
+          cropped?.offset.x ?? 0,
+          cropped?.offset.y ?? 0,
+        ),
+      },
+      uTint: { value: new THREE.Color(tint) },
+      uOpacity: { value: opacity },
+      uMapped: { value: cropped ? 1 : 0 },
+    }),
+    [cropped, tint, opacity],
+  );
+
+  return (
+    <mesh
+      position={[0, 0.0035, z + run / 2]}
+      renderOrder={-2}
+      rotation={[-Math.PI / 2, 0, 0]}
+    >
+      <planeGeometry args={[width, run]} />
+      <shaderMaterial
+        blending={THREE.AdditiveBlending}
+        depthWrite={false}
+        fragmentShader={REFLECTION_FRAGMENT_SHADER}
+        transparent
+        uniforms={uniforms}
+        vertexShader={REFLECTION_VERTEX_SHADER}
+      />
+    </mesh>
   );
 }
 
@@ -2912,15 +3272,13 @@ function BenchTop() {
         />
       </mesh>
 
-      {/* One hairline seam running the length of the top. */}
-      <mesh position={[0, 0.0016, BENCH_SEAM_Z]}>
-        <boxGeometry args={[BENCH_WIDTH, 0.002, 0.016]} />
-        <meshStandardMaterial
-          color="#8f9294"
-          envMapIntensity={SET_ENV}
-          roughness={0.6}
-        />
-      </mesh>
+      {/*
+       * The seam that used to stand here as a 0.002 box is now baked into the
+       * bench falloff — see BENCH_SEAM_DEPTH. A strip of raised geometry could
+       * not see the grade the surface under it was being held to, so it lit
+       * independently of the bench and printed the one crisp full-width line
+       * left in the frame.
+       */}
 
       {/*
        * Chamfered front rail, and the one edge the bench front is allowed to
@@ -3440,7 +3798,15 @@ function CompanyTagRack({
        * The rail. Axial grain: it is a turned tube, so the brushing runs the
        * length of it rather than across it the way a milled face does.
        */}
-      <mesh castShadow rotation={[0, 0, Math.PI / 2]}>
+      {/*
+       * No castShadow. The bar now runs the full width of the set, and a
+       * 15-unit tube hanging 2.4 above the bench under a soft directional laid
+       * one long horizontal smear straight across the working surface — a
+       * second horizon, exactly the artefact the seam work upstream just
+       * removed. The plates it carries still cast; the bar itself is thin
+       * enough that its own shadow was never part of the read.
+       */}
+      <mesh rotation={[0, 0, Math.PI / 2]}>
         <cylinderGeometry
           args={[TAG_RAIL_R, TAG_RAIL_R, TAG_RAIL_HALF * 2, 14]}
         />
@@ -3867,6 +4233,21 @@ function Phone({
 
   return (
     <group scale={PHONE_MODEL_SCALE}>
+      {/*
+       * A phone stands upright with its whole display above the bench, so the
+       * surface in front of it genuinely does see the screen — this is the one
+       * device in the set whose reflection is the image rather than the
+       * chassis. Run 1.1 at phone-model scale is about half a unit of bench.
+       */}
+      <BenchReflection
+        crop={crop}
+        opacity={0.075}
+        run={1.1}
+        sourceAspect={1.455 / 3.24}
+        texture={texture}
+        width={1.9}
+        z={0.36}
+      />
       <ContactCore depth={1.35} width={2.6} z={-0.12} />
       <PhoneStand />
       <group position={[0, 0.1, 0.12]} rotation={[-PHONE_LEAN, 0, 0]}>
@@ -3908,13 +4289,20 @@ function Phone({
            * read as a finish at all; it resolves as a row of hard stripes
            * marching down the phone's silhouette.
            */}
+          {/*
+           * Pulled off mirror with the rest of the set's cuts. These two rings
+           * wrap the phone's whole silhouette and meet the lens at a glancing
+           * angle through most of the parallax sweep, which is exactly where a
+           * near-mirror dielectric-free metal clips — the rail was outshining
+           * the display it frames. Satin machined aluminum instead.
+           */}
           <mesh geometry={railProud} position={[0, 0, -0.103]}>
             <AluminumMaterial
               anisotropy={0}
               color={ALUMINUM_BRIGHT}
-              envMapIntensity={2.4}
+              envMapIntensity={2.05}
               grain="none"
-              roughness={0.05}
+              roughness={0.08}
             />
           </mesh>
           {/* Front and back edge loops of the rail. */}
@@ -3922,9 +4310,9 @@ function Phone({
             <AluminumMaterial
               anisotropy={0}
               color={ALUMINUM_BRIGHT}
-              envMapIntensity={2.6}
+              envMapIntensity={2.2}
               grain="none"
-              roughness={0.05}
+              roughness={0.08}
             />
           </mesh>
           <mesh geometry={railEdge} position={[0, 0, -0.1035]}>
@@ -4160,13 +4548,50 @@ function attachKeyGrid(mesh: THREE.InstancedMesh | null) {
   mesh.instanceMatrix.needsUpdate = true;
 }
 
+/**
+ * A moulded keycap, not an extruded rectangle.
+ *
+ * At 0.013 tall a box has nothing for a light to find: all four walls are
+ * vertical, so under a single overhead key every cap returns one value and the
+ * well renders as a flat black panel with a grid ruled on it. Two cheap changes
+ * fix it and neither costs a draw call. The cap is a square frustum — four
+ * segments of a cylinder turned 45° so its flats face the deck axes, with the
+ * top ring drawn in 20% — so the walls tilt up into the source and catch it.
+ * And the shade gradient is baked into vertex colour: the moulded top edge sits
+ * at the top of the recess where the room reaches it, and the base sits down in
+ * the gutter's own shadow, which is the read the recess geometry alone could
+ * never give a body this shallow.
+ */
+const KEY_CAP_GEOMETRY = (() => {
+  /* Four radial segments put the square's corners at r, so its flats sit at
+     r/√2 — the half-width the cap has to end up at once it is scaled. */
+  const corner = Math.SQRT2 / 2;
+  const geometry = new THREE.CylinderGeometry(corner * 0.8, corner, 1, 4, 1);
+  geometry.rotateY(Math.PI / 4);
+  geometry.scale(KEY_CAP_WIDTH, KEY_CAP_HEIGHT, KEY_CAP_DEPTH);
+
+  const position = geometry.attributes.position;
+  const colors = new Float32Array(position.count * 3);
+
+  for (let index = 0; index < position.count; index += 1) {
+    /* 0 at the cap's foot in the gutter, 1 at its moulded top edge. */
+    const height = position.getY(index) / KEY_CAP_HEIGHT + 0.5;
+    const shade = 0.66 + 0.62 * height;
+    colors[index * 3] = shade;
+    colors[index * 3 + 1] = shade;
+    colors[index * 3 + 2] = shade;
+  }
+
+  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  return geometry;
+})();
+
 function KeyGrid() {
   return (
     <instancedMesh
-      args={[undefined, undefined, KEY_MATRICES.length]}
+      args={[KEY_CAP_GEOMETRY, undefined, KEY_MATRICES.length]}
       ref={attachKeyGrid}
     >
-      <boxGeometry args={[KEY_CAP_WIDTH, KEY_CAP_HEIGHT, KEY_CAP_DEPTH]} />
       {/*
        * envMapIntensity is the whole fight here. The studio cubemap is baked
        * from a stack of intensity-2.4-to-10 Lightformers, so at the default 1.0
@@ -4182,11 +4607,19 @@ function KeyGrid() {
        * the range. At #3c3e40 over a #2a2c2e plate the well was two greys a
        * few codes apart and the whole keyboard averaged back into the deck.
        */}
+      {/*
+       * Colour up a step to pay for the gradient. The baked shade runs 0.66 to
+       * 1.28 about the cap, so a flat #343638 would have dropped the average
+       * value of the well; #3b3d3f lands the mid-cap back where the tuned
+       * silver / lip / well / cap order put it, with the top edge now a step
+       * above it and the foot a step below.
+       */}
       <meshStandardMaterial
-        color="#343638"
+        color="#3b3d3f"
         envMapIntensity={0.3}
         metalness={0}
         roughness={0.62}
+        vertexColors
       />
     </instancedMesh>
   );
@@ -4221,6 +4654,20 @@ function Laptop({
 
   return (
     <group>
+      {/*
+       * A laptop meets the bench with a chassis wall, not a screen — the lid is
+       * behind its own base, so the surface in front of the machine can only
+       * see the front edge and the chamfer standing on it. Flat bright-aluminum
+       * tint, and a short run: this is the last centimetre of bench answering
+       * the lip, not a mirror image of the product.
+       */}
+      <BenchReflection
+        opacity={0.075}
+        run={0.62}
+        tint={ALUMINUM_BRIGHT}
+        width={3.3}
+        z={1.15}
+      />
       <ContactCore depth={3.0} width={4.35} />
 
       {/* Rubber feet, and the 0.02 lift they give the body off the bench. */}
@@ -4253,6 +4700,16 @@ function Laptop({
          * lobe along the brushing, the same strips resolve as a bar that
          * travels across the deck through the parallax sweep.
          */}
+        {/*
+         * Two dresses, one body. The base is extruded front-to-back, so group 0
+         * is the pair of thin faces the lens meets square — the front edge that
+         * runs the full width of the shot — and group 1 is the deck plus the
+         * two ends. The front edge used to carry the same 512-line brushing map
+         * as the deck, crushed into ten screen pixels, and read as corrugation
+         * at close range. It is smooth anodised now; the machined cut line
+         * along its top is the chamfer loop below, which is where an edge
+         * highlight belongs.
+         */}
         <RoundedBox
           args={[3.35, 0.1, 2.3]}
           castShadow
@@ -4261,7 +4718,22 @@ function Laptop({
           receiveShadow
           smoothness={4}
         >
+          <AnodisedEdge attach="material-0" envMapIntensity={0.45} />
+          {/*
+           * Left where the regrade put it.
+           *
+           * The palmrest carries a blown highlight across its front third, and
+           * it is not the cubemap: dropping envMapIntensity moved it by nothing
+           * measurable, because what clips there is the key's own specular on a
+           * metalness-1 surface. The two levers that would actually pull it
+           * down are the rig and the lobe, and both were tried and rejected —
+           * the rig is settled, and widening the lobe to 0.17 spread the same
+           * saturated energy over MORE of the deck (clipped pixels went up
+           * 23%), which is the opposite of the ask. The rim speculars, which
+           * are what P5 names, are clamped at the chamfers and rails instead.
+           */}
           <AluminumMaterial
+            attach="material-1"
             envMapIntensity={2.3}
             grain="lateral"
             roughness={0.13}
@@ -4292,17 +4764,27 @@ function Laptop({
          * a machined cut in the same metal as the deck rather than a different
          * material.
          */}
+        {/*
+         * smoothness 3 put three segments across a fillet whose radius is
+         * nearly half the loop's total height, so at close range each facet
+         * caught the slit on its own and the cut line beaded down the front
+         * edge like a row of drops. Eight segments resolve it as one line.
+         *
+         * Roughness up with it. This band faces the lens square-on across the
+         * full width of both decks, and at 0.1 its glancing return was clipping
+         * past the screen whites standing right above it — satin, not chrome.
+         */}
         <RoundedBox
           args={[3.354, 0.011, 2.304]}
           position={[0, 0.092, 0]}
           radius={0.005}
-          smoothness={3}
+          smoothness={8}
         >
           <AluminumMaterial
             anisotropy={0}
-            envMapIntensity={1.9}
+            envMapIntensity={1.55}
             grain="none"
-            roughness={0.1}
+            roughness={0.15}
           />
         </RoundedBox>
 
@@ -4382,7 +4864,16 @@ function Laptop({
         </mesh>
 
         <group position={[0, 0.09, -1.09]} rotation={[LID_ANGLE, 0, 0]}>
-          {/* Lid back: grain runs front-to-back, across the palmrest's. */}
+          {/*
+           * Lid back: grain runs front-to-back, across the palmrest's — and
+           * only on the broad faces. The lid is extruded through its thin axis,
+           * so group 0 is the two big plates and group 1 is the rim wrapping
+           * them. The rim is a couple of screen pixels wide at this lens, which
+           * is narrower than a single tool score on the grain map, so every
+           * score landed on it as its own tick and the lid silhouette read as
+           * ribbing. Smooth anodised there instead; the machined line comes
+           * from the ChamferBand standing over it.
+           */}
           <RoundedBox
             args={[3.35, 2.14, 0.055]}
             castShadow
@@ -4391,9 +4882,15 @@ function Laptop({
             smoothness={4}
           >
             <AluminumMaterial
+              attach="material-0"
               envMapIntensity={2.0}
               grain="axial"
               roughness={0.24}
+            />
+            <AnodisedEdge
+              attach="material-1"
+              envMapIntensity={1.25}
+              roughness={0.28}
             />
           </RoundedBox>
           {/* Bright chamfer edge loop, the full lid outer perimeter. */}
@@ -4655,6 +5152,19 @@ function SideProjectsTablet({
       ref={tabletRef}
       scale={HIDDEN.scale}
     >
+      {/*
+       * The tablet stands the way the phones do, so the bench in front of it
+       * sees the display. Held a shade under the phones: the gallery screen is
+       * a near-white sheet and the same opacity off it was a visible pool.
+       */}
+      <BenchReflection
+        opacity={0.055}
+        run={0.62}
+        sourceAspect={TABLET_SCREEN_ASPECT}
+        texture={screen}
+        width={1.15}
+        z={0.19}
+      />
       <ContactCore depth={1.05} width={1.85} z={-0.08} />
       <TabletEasel />
 
@@ -6841,7 +7351,26 @@ function Scene({
           : (historyEras.length - 1) / 2;
     const historyX =
       (historyIndex - (historyEras.length - 1) / 2) * HISTORY_SPACING * 0.7;
-    const parallaxX = mobile || reducedMotion ? 0 : pointer.x * 0.34;
+    /*
+     * Asymmetric, and deliberately so.
+     *
+     * A camera move to the left slides every subject to the right, and the one
+     * thing sitting on the right of the intro plate is the hero subhead. At the
+     * full −0.34 the left MacBook's lid corner arrived on top of the last word
+     * of "I've worked at Scale AI, SafetyKit, and Ramp." — the page's second
+     * line of copy, crossed by a hard chassis edge. Floored at −0.16 the lid
+     * stops a clear margin short of the text box and the sweep to camera-right,
+     * where there is nothing to hit, keeps its full travel. Nobody can measure
+     * a parallax range; everybody can see a headline with a laptop through it.
+     *
+     * −0.10 is measured, not chosen. The lid's near edge travels 22px across
+     * the full −0.245 sweep this viewport produces, and the subhead's last
+     * glyph ends 17px inside where the lid sits at rest — so the floor has to
+     * hold the travel to well under that. At −0.10 it moves nine, leaving eight
+     * clear, and the camera-right half of the sweep is untouched.
+     */
+    const parallaxX =
+      mobile || reducedMotion ? 0 : Math.max(pointer.x * 0.34, -0.1);
     const parallaxY = mobile || reducedMotion ? 0 : pointer.y * 0.18;
 
     /**

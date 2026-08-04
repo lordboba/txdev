@@ -1,4 +1,11 @@
 .shell {
+  /*
+   * The page's one horizontal inset, named because three things now have to
+   * agree about it: the header padding, the details row, and the full-bleed
+   * card band that has to cancel it exactly.
+   */
+  --page-gutter: clamp(1rem, 2.8vw, 2.75rem);
+
   --ground-light: #cfd2d5;
   --ground-dark: #a6aaae;
   --ink: #141517;
@@ -195,6 +202,18 @@
   text-transform: uppercase;
 }
 
+/*
+ * The escape hatch for a label that is already set. `text-transform` is all or
+ * nothing per element, so a mark whose lowercase prefix is part of the mark —
+ * iOS, macOS — cannot survive it. Those labels arrive at their final casing from
+ * the component and this switches the transform off for them; everything else
+ * about the eyebrow, size, weight, tracking, colour, is unchanged, so the row
+ * still reads as one set of five labels.
+ */
+.fieldLabel[data-cased='true'] {
+  text-transform: none;
+}
+
 .intro h1 {
   margin: 0.5rem 0 0.8rem;
   color: var(--ink);
@@ -207,6 +226,7 @@
 }
 
 .intro p {
+  position: relative;
   max-width: 40ch;
   margin: 0;
   color: var(--ink-body);
@@ -214,6 +234,19 @@
   font-weight: 500;
   line-height: 1.6;
 }
+
+/*
+ * There is deliberately no second scrim under the subhead.
+ *
+ * The collision this paragraph had with the left MacBook's lid at the far end
+ * of the parallax sweep is fixed upstream, by flooring the camera's travel to
+ * camera-left so the lid never reaches the text box (see parallaxX). A local
+ * tint was tried first and rejected in pixels: at any opacity strong enough to
+ * mute a chassis edge, an extra veil over two lines of copy reads as a
+ * rectangle of lighter ground floating in the middle of the set — masked or
+ * gradient-faded, the blob is still a blob. Trading a solved collision for a
+ * visible patch is not a trade. The travel floor is the whole fix.
+ */
 
 /*
  * Gallery sub-view. The 4.35rem display heading owns a 26rem x 260px block in
@@ -349,9 +382,9 @@
 .details {
   position: absolute;
   z-index: 3;
-  right: clamp(1rem, 2.8vw, 2.75rem);
+  right: var(--page-gutter);
   bottom: 48px;
-  left: clamp(1rem, 2.8vw, 2.75rem);
+  left: var(--page-gutter);
   pointer-events: none;
 }
 
@@ -380,25 +413,79 @@
   padding: 0.95rem;
   color: var(--ink);
   flex-direction: column;
+  /*
+   * The one tie-in to the set behind them.
+   *
+   * These plates were the only objects in the frame with no relationship to the
+   * light: four slabs standing over a lit bench, casting nothing, while every
+   * device beside them carried a contact shadow. This is the smallest thing
+   * that fixes it — a wide, low, very soft cast offset the way the key throws
+   * on the bench (the rig's ground vector runs camera-right, so the shadow
+   * leaves to the right), at an opacity where you can only see it if you go
+   * looking for its absence. No blur on the plate, no gloss, no gradient: they
+   * stay flat editorial cards that happen to be in the room.
+   */
+  box-shadow: 7px 9px 26px -18px rgba(20, 21, 23, 0.62);
   transition:
     background 180ms linear,
     border-color 180ms linear,
-    transform 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 /*
  * Hover reads as definition, not brightness: the border firms up and the
- * plate lifts, but the fill barely moves. The old rgba(245,245,244,0.96)
- * hover made the already-brightest surface in the frame brighter still —
- * interaction was widening the DOM/subject value gap it should close.
+ * plate's shadow deepens, but the fill barely moves. The old
+ * rgba(245,245,244,0.96) hover made the already-brightest surface in the frame
+ * brighter still — interaction was widening the DOM/subject value gap it should
+ * close.
+ *
+ * And it no longer moves. A 5px lift on one plate of a four-up row is a break
+ * in the row: the pointer parks over the fourth card at the right end of the
+ * parallax sweep, and what that reads as in a still frame is not "this card is
+ * hovered", it is "this card is misregistered". The row is a single rigid band
+ * of the layout and it holds still; the response is carried entirely by the
+ * shadow opening and the border firming, which is a lift without a jump.
  */
 .projectPlate:hover,
 .projectPlate:focus-visible {
   z-index: 1;
   border-color: rgba(20, 21, 23, 0.45);
   background: #e3e5e6;
+  box-shadow: 10px 14px 34px -16px rgba(20, 21, 23, 0.72);
   text-decoration: none;
-  transform: translateY(-5px);
+}
+
+/*
+ * The card band runs off both edges of the frame.
+ *
+ * The row is inset by the page gutter, so at the left and right margins a
+ * 40px-wide column of scene showed between the outer card and the frame edge —
+ * and what shows there is the bench's front lip and the fascia under it, a
+ * near-black step against a near-white plate. Two orphan dark verticals
+ * flanking the row, both of them seams the composition never asked for. The
+ * outer plates now bleed past the gutter and off the frame, with their padding
+ * compensating so the type inside them stays on the same margin as the rest of
+ * the page: the band terminates at the edge of the picture instead of a few
+ * pixels short of it.
+ */
+/*
+ * Only while the row is actually one row. Under 900px the grid folds to two
+ * columns, and then "first" and "last" are the top-left and bottom-right cards
+ * — bleeding those two would put a step in each of the row's four corners
+ * instead of closing the two it was built to close.
+ */
+@media (min-width: 901px) {
+  .projectPlate:first-child {
+    margin-left: calc(-1 * var(--page-gutter));
+    padding-left: calc(0.95rem + var(--page-gutter));
+    border-left: 0;
+  }
+
+  .projectPlate:last-of-type {
+    margin-right: calc(-1 * var(--page-gutter));
+    padding-right: calc(0.95rem + var(--page-gutter));
+    border-right: 0;
+  }
 }
 
 .plateHeading {

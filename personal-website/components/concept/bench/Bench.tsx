@@ -93,8 +93,42 @@ function useWebGLSupport() {
   return useSyncExternalStore(noMobileSubscribe, getWebGLSupport, () => false);
 }
 
-function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <span className={styles.fieldLabel}>{children}</span>;
+function FieldLabel({
+  cased,
+  children,
+}: {
+  /**
+   * Opts this label out of the class's `text-transform: uppercase` because the
+   * string is already set in the casing it has to keep.
+   */
+  cased?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <span className={styles.fieldLabel} data-cased={cased ? 'true' : undefined}>
+      {children}
+    </span>
+  );
+}
+
+/**
+ * Trademark casing, hand-set.
+ *
+ * `.fieldLabel` uppercases its contents, which is right for every eyebrow on
+ * this page and wrong for exactly two of them: Apple writes iOS and macOS, and
+ * a CSS transform renders those IOS and MACOS. There is no way to except two
+ * letters from `text-transform`, so the labels that carry a mark are written
+ * out at their final casing and the transform is switched off for them. The
+ * words are the data's own — only the letterforms are set here.
+ */
+const ROLE_LABELS: Record<string, string> = {
+  'iOS game': 'iOS GAME',
+  'iOS product': 'iOS PRODUCT',
+  'macOS product': 'macOS PRODUCT',
+};
+
+function roleLabel(role: string) {
+  return ROLE_LABELS[role] ?? role.toUpperCase();
 }
 
 function useBenchGallery() {
@@ -306,7 +340,7 @@ function WorkDetails() {
           target="_blank"
         >
           <div className={styles.plateHeading}>
-            <FieldLabel>{project.role}</FieldLabel>
+            <FieldLabel cased>{roleLabel(project.role)}</FieldLabel>
             <span aria-hidden="true">↗</span>
           </div>
           <h2>{project.title}</h2>
