@@ -781,8 +781,21 @@ const TAG_PITCH = 0.74;
 /** Punched hole, measured down from the plate's top edge. */
 const TAG_HOLE_INSET = 0.05;
 const TAG_HOLE_R = 0.017;
-/** Pivot depth below the rail: hairline drop, then the ring the plate hangs on. */
-const TAG_DROP = 0.17;
+/**
+ * Pivot depth below the rail: hairline drop, then the ring the plate hangs on.
+ *
+ * 0.125, down from 0.17, and the 0.045 is bought for the plate's *lower* edge.
+ * At the resting work pose the Scale plate's bottom measured 18 CSS px above
+ * the centre MacBook's lid line — the round-1 move closed an actual overlap
+ * here, and what it left behind was a near-miss, which is the same defect one
+ * step down: two near-horizontal edges of similar value close enough to read as
+ * one band, so the depth between the row and the machine collapsed. Shortening
+ * the drop lifts the plates ~8.5 px and takes the gap to ~27 without touching
+ * the seat, so the rail stays where it is and nothing new arrives at the top of
+ * the frame. Both parallax extremes were already far looser than the resting
+ * pose (64 and 74 px); this is the tight case getting the room.
+ */
+const TAG_DROP = 0.125;
 const TAG_RING_R = 0.028;
 /**
  * Half the rail's run, and it is a set-dressing number rather than a fit.
@@ -829,11 +842,33 @@ const TAG_MARK_MAX_H = 0.14;
 const TAG_MARK_Y = -0.035;
 /** Pigment in the channel — the page's ink, so a mark can never read tinted. */
 const TAG_MARK_INK = '#26282a';
+/**
+ * Optical trim, applied on top of the geometric fit.
+ *
+ * Setting five marks to one measure is the right *construction* rule and the
+ * wrong *optical* one, because a mark's weight on the plate is the ink it
+ * covers, not the box it fits in. Measured over the plate faces in the work
+ * shot, four of the five cover 8.8–14.6% of the card and the UCLA block covers
+ * 16.0% at the darkest average ink in the set — it is also the squarest lockup
+ * in the row, so it is the only one that hits `TAG_MARK_MAX_H` and gets the
+ * full height as well. The result was a row of five employers with the school
+ * shouting at the end of it.
+ *
+ * 0.87 uniform, which is a scale and never a squash: `EtchedMark` still derives
+ * width from the manifest aspect, so the mark keeps its own proportions and
+ * only its area comes down — to ~12%, which is the ramp lockup, the mid-weight
+ * of the row and the one this was judged against.
+ */
+const TAG_MARK_TRIM: Record<string, number> = { UCLA: 0.84 };
 
 function tagMarkHeight(mark: string) {
   const source = LOGO_SOURCES[mark];
+  const fitted = Math.min(
+    TAG_MARK_MAX_H,
+    TAG_MARK_W / (source ? source.aspect : 3),
+  );
 
-  return Math.min(TAG_MARK_MAX_H, TAG_MARK_W / (source ? source.aspect : 3));
+  return fitted * (TAG_MARK_TRIM[mark] ?? 1);
 }
 
 /**
@@ -1408,6 +1443,18 @@ function getCoveFalloff() {
      * the frame, the exact hard horizon this stop exists to prevent, just
      * inverted from the old one. #b6b9bc lands the junction within a few
      * values of the bench edge under the same fog, so the sweep closes.
+     *
+     * Re-measured, and it no longer does — deliberately left. Across the whole
+     * frame the junction now reads cove 174–181 over bench 141–154, a step of
+     * 30–33 values landing in two pixels (largest adjacent step 9.0–9.9%), and
+     * it is the same magnitude at the left of frame as at the right. It is a
+     * step, not a trough: the cove ramp above it is monotonic to within 1.3
+     * values over 190 px and the bench below it is flat to within 2 over 20,
+     * so there is nothing local to feather. Closing it means moving one of the
+     * two whole surfaces by 30 values — lifting the far bench puts the top
+     * third back to blank paper, and dropping this stop makes a cyc that gets
+     * darker where it meets the lit bench. What the step actually reads as is
+     * the far edge of a table against a lit backdrop, which is what it is.
      */
     gradient.addColorStop(1, '#989b9e');
     context.fillStyle = gradient;
@@ -2710,6 +2757,25 @@ function ContactCore({
   const core = useMemo(() => getContactCore(), []);
   /* Drift scales with the footprint, which stands in for the object's height. */
   const drift = Math.min(0.22, width * 0.055);
+  /*
+   * One asymmetry that gets measured rather than fixed, because measuring it
+   * says there is nothing to fix.
+   *
+   * Every host in the set drifts its pool through this one component, so the
+   * sign is shared by construction — a laptop and a phone stand cannot be
+   * throwing opposite ways. What they *can* differ by is the yaw of the group
+   * this sits inside, since the offset below is stated in the host's local
+   * frame: the right MacBook is yawed −0.3 and the Charades phone −0.5, which
+   * turns the shared vector by 17° and 29° respectively. Worked through, the
+   * right laptop lands its pool at world (0.143, −0.023) and the phone at
+   * (0.037, +0.002) — both firmly camera-right, and the z terms that differ in
+   * sign differ by 0.025 of a world unit, which is a tenth of a pixel at the
+   * work lens. What actually reads as "one spreads left" is the radial ambient
+   * smear under a stand whose own footprint is narrow: the pool is symmetric
+   * and the object standing in it is not. Counter-rotating the offset into
+   * world space would need the host's animated world yaw read every frame, for
+   * a correction two orders of magnitude under a pixel.
+   */
 
   return (
     <group name="contact-core" position={[x, y, z]}>
@@ -3383,6 +3449,15 @@ const WORK_RACK_ASPECT = 1.6;
  * the worst kind: two flat objects of near-identical value overlapping by a
  * few pixels, so the eye could not tell which was in front. The row now clears
  * the taller of the two lids at both parallax extremes with margin left over.
+ */
+/*
+ * The seat itself does NOT move again, and that is the point of the shorter
+ * drop above. The rack's own rail sits four pixels under the header rule at
+ * this seat: raising the seat by the 0.05 the plates needed was measured, and
+ * it put the rail behind the header band entirely — five plates hanging from
+ * wires that vanish into a UI bar, with the fixture that holds them out of the
+ * picture. The clearance comes out of the drop instead, which moves the plates
+ * and leaves the rail exactly where it reads.
  */
 const workRackSeat: Transform = {
   position: [0.85, 2.44, -1.0],
@@ -4562,11 +4637,94 @@ function attachKeyGrid(mesh: THREE.InstancedMesh | null) {
  * the gutter's own shadow, which is the read the recess geometry alone could
  * never give a body this shallow.
  */
+/**
+ * The moulded break at the top of the cap, in cap-local units.
+ *
+ * A frustum still meets its top face at a hard 90°-ish corner, and at closeup
+ * range that corner is one pixel of nothing: the wall returns its wall value,
+ * the top returns its top value, and the edge between them is where a real
+ * moulded cap carries the only highlight on it. `CHAMFER_H` is a fifth of the
+ * cap's 0.013 height, so the break is 0.0026 tall, and the inset is set so the
+ * band's run across the cap's width lands at about the same — a face at very
+ * close to 45°, which is the one angle that turns the overhead key back at the
+ * lens off a facet this small.
+ */
+const KEY_CAP_CHAMFER_H = 0.2;
+const KEY_CAP_CHAMFER_INSET = 0.035;
 const KEY_CAP_GEOMETRY = (() => {
   /* Four radial segments put the square's corners at r, so its flats sit at
      r/√2 — the half-width the cap has to end up at once it is scaled. */
   const corner = Math.SQRT2 / 2;
-  const geometry = new THREE.CylinderGeometry(corner * 0.8, corner, 1, 4, 1);
+  /*
+   * Two height segments, not one, and the middle ring is moved rather than
+   * left where the cylinder put it: ring 1 goes up to the start of the break
+   * and takes the frustum's own top radius, so the long wall below it is
+   * unchanged from the single-segment version and everything new lives in the
+   * short band above. Costs four quads per cap on a geometry that is instanced
+   * once — no extra draw call, no per-key work.
+   */
+  const geometry = new THREE.CylinderGeometry(corner * 0.8, corner, 1, 4, 2);
+  const ring = geometry.attributes.position;
+  const facing = geometry.attributes.normal;
+
+  for (let index = 0; index < ring.count; index += 1) {
+    const y = ring.getY(index);
+
+    if (Math.abs(y) < 1e-6) {
+      /* Middle torso ring: lift it to the break line at the frustum's radius. */
+      const scale = (corner * 0.8) / (corner * 0.9);
+      ring.setXYZ(
+        index,
+        ring.getX(index) * scale,
+        0.5 - KEY_CAP_CHAMFER_H,
+        ring.getZ(index) * scale,
+      );
+    } else if (y > 0) {
+      /* Top ring and the cap face that shares its radius: pull it in. */
+      ring.setXYZ(
+        index,
+        ring.getX(index) * (1 - KEY_CAP_CHAMFER_INSET),
+        y,
+        ring.getZ(index) * (1 - KEY_CAP_CHAMFER_INSET),
+      );
+    }
+  }
+
+  /*
+   * Normals are re-derived, NOT recomputed.
+   *
+   * `computeVertexNormals` was the obvious call and it is wrong here, measured:
+   * a cylinder duplicates its seam column so the two halves can carry different
+   * uvs, and averaging face normals gives those duplicates only the faces on
+   * their own side. On a body with four radial segments that is a quarter of the
+   * ring getting a normal that points 20° off where its neighbours point — the
+   * key grid rendered with a sawtooth running down one edge of every column and
+   * the row gutters filled in. A surface of revolution has an analytic normal at
+   * every vertex: the radial direction, which the position itself carries and
+   * which is identical on both seam copies, against the slope of the band the
+   * vertex belongs to. Caps keep the axis normal the cylinder already gave them.
+   */
+  const wallSlope = (corner - corner * 0.8) / (1 - KEY_CAP_CHAMFER_H);
+  const breakSlope = (corner * 0.8 * KEY_CAP_CHAMFER_INSET) / KEY_CAP_CHAMFER_H;
+  const facingAt = new THREE.Vector3();
+
+  for (let index = 0; index < ring.count; index += 1) {
+    if (Math.abs(facing.getY(index)) > 0.99) {
+      continue;
+    }
+
+    const y = ring.getY(index);
+    /* Top ring rides the break; the ring at the break line splits the two. */
+    const slope =
+      y > 0.4 ? breakSlope : y > 0.2 ? (wallSlope + breakSlope) / 2 : wallSlope;
+    const x = ring.getX(index);
+    const z = ring.getZ(index);
+    const radius = Math.hypot(x, z) || 1;
+
+    facingAt.set(x / radius, slope, z / radius).normalize();
+    facing.setXYZ(index, facingAt.x, facingAt.y, facingAt.z);
+  }
+
   geometry.rotateY(Math.PI / 4);
   geometry.scale(KEY_CAP_WIDTH, KEY_CAP_HEIGHT, KEY_CAP_DEPTH);
 
@@ -4668,6 +4826,35 @@ function Laptop({
         width={3.3}
         z={1.15}
       />
+      {/*
+       * Screen spill, under the chassis return and much fainter than it.
+       *
+       * A lit display is a light source, and the one thing the bench in front
+       * of an open laptop cannot look like is untouched. It did: the Med
+       * Negotiate panel is the largest emitting surface in the frame and the
+       * bench a centimetre in front of it measured within a value of open
+       * bench three feet away, which is what made both screens read as decals
+       * printed on the lids. This is a second reflection card carrying the
+       * display's own image, run long and held at 5.5% so what lands is a
+       * direction and a whisper of the screen's colour rather than a bounce —
+       * the fade term concentrates it at the contact line and the widening tap
+       * kernel has it unreadable well before the far end. Monochrome discipline
+       * survives it, and that is measured rather than hoped: the five taps
+       * average the whole display — green panel and white sign-in sheet
+       * together — so what lands is achromatic. At the peak of the smear the
+       * bench's channel spread reads 7.7 against 7.9 without the card, i.e. the
+       * lift is neutral to within a fifth of a value, and it is a soft
+       * 6.8-value gradient dying out inside 30 px rather than a bounce.
+       */}
+      <BenchReflection
+        crop={crop}
+        opacity={0.055}
+        run={1.5}
+        sourceAspect={3.24 / 2.03}
+        texture={texture}
+        width={3.6}
+        z={1.15}
+      />
       <ContactCore depth={3.0} width={4.35} />
 
       {/* Rubber feet, and the 0.02 lift they give the body off the bench. */}
@@ -4731,6 +4918,18 @@ function Laptop({
            * saturated energy over MORE of the deck (clipped pixels went up
            * 23%), which is the opposite of the ask. The rim speculars, which
            * are what P5 names, are clamped at the chamfers and rails instead.
+           *
+           * The base colour is the third lever and it is now measured too, and
+           * it does not work either. Rendered with this colour cut 47% to
+           * #6a6c6e, the blown core (hero x 410–458, y 414–421) read 255.0
+           * before and 254.9 after — it does not move at all, because a
+           * metalness-1 surface raked at this angle returns Fresnel toward 1.0
+           * whatever its F0 is. What DOES move is everything that is not
+           * clipped: the deck around the band went 127.1 → 97.4 and its
+           * shoulder 140.5 → 110.3, i.e. the only thing a colour step buys is
+           * a fifth of a stop off the largest metal surface in the frame for
+           * zero change in the defect. The clip is a property of the key's
+           * angle to a horizontal deck and it stays.
            */}
           <AluminumMaterial
             attach="material-1"
