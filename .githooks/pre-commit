@@ -1,10 +1,16 @@
 #!/bin/sh
 set -e
 
-echo "Running pre-commit hook: Formatting code..."
+echo "Running pre-commit hook: Formatting staged files..."
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "$REPO_ROOT/personal-website"
+
+# Nothing staged under personal-website means nothing to format.
+if git diff --cached --quiet --diff-filter=ACMR -- .; then
+  echo "No staged files under personal-website. Skipping formatting."
+  exit 0
+fi
 
 # Install only Prettier if it is not already available locally.
 if [ ! -x "./node_modules/.bin/prettier" ]; then
@@ -19,10 +25,13 @@ if [ ! -x "./node_modules/.bin/prettier" ]; then
   npm install --no-save --ignore-scripts "prettier@$PRETTIER_VERSION"
 fi
 
-# Run Prettier directly so the hook only depends on the formatter package.
-./node_modules/.bin/prettier --write .
+# Format only the files staged for this commit (added/copied/modified/renamed).
+# --ignore-unknown skips files Prettier cannot parse; .prettierignore still applies.
+git diff --cached --name-only --diff-filter=ACMR --relative -z -- . \
+  | xargs -0 ./node_modules/.bin/prettier --ignore-unknown --write --
 
-# Automatically stage any changes made by the formatter.
-git add .
+# Re-stage only those same files, never the rest of the working tree.
+git diff --cached --name-only --diff-filter=ACMR --relative -z -- . \
+  | xargs -0 git add --
 
 echo "Pre-commit hook finished successfully."
