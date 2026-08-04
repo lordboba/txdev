@@ -1046,32 +1046,72 @@
 .historyDetails {
   display: grid;
   grid-template-columns: repeat(var(--era-count, 6), minmax(0, 1fr));
-  gap: 1px;
+  gap: 2px;
   margin: 0;
   padding: 0;
+  background: rgba(20, 21, 23, 0.42);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.52) inset,
+    0 14px 30px rgba(60, 64, 68, 0.16),
+    0 3px 8px rgba(60, 64, 68, 0.12);
   list-style: none;
 }
 
 .historyDetails li {
+  position: relative;
+  z-index: 0;
   min-height: 102px;
+  border-color: rgba(20, 21, 23, 0.28);
+  background: #e2e4e5;
 }
 
 .historyDetails button {
+  position: relative;
   display: flex;
   width: 100%;
   min-height: 102px;
   padding: 0.85rem;
   border: 0;
-  background: transparent;
+  background: #e2e4e5;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 -1px 0 rgba(20, 21, 23, 0.08) inset;
   color: inherit;
   font: inherit;
   text-align: left;
   flex-direction: column;
+  transition:
+    background 180ms linear,
+    box-shadow 180ms linear,
+    color 180ms linear,
+    transform 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.historyDetails li:nth-child(even),
+.historyDetails li:nth-child(even) button {
+  background: #dde0e1;
+}
+
+.historyDetails li:has(button:hover),
+.historyDetails li:has(button:focus-visible) {
+  z-index: 2;
+}
+
+.historyDetails button:hover,
+.historyDetails button:focus-visible {
+  background: #c9cdd0;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.72) inset,
+    0 -1px 0 rgba(20, 21, 23, 0.14) inset,
+    0 14px 24px rgba(54, 59, 63, 0.2),
+    0 3px 7px rgba(54, 59, 63, 0.14);
+  color: var(--ink);
+  transform: translateY(-6px);
 }
 
 .historyDetails button:focus-visible {
-  outline: 1px solid var(--ink);
-  outline-offset: 2px;
+  outline: 2px solid var(--ink);
+  outline-offset: -4px;
 }
 
 .historyDetails .plateHeading {
@@ -1587,6 +1627,7 @@
   .profileLinkLabel,
   .projectPlate,
   .signalDetails button,
+  .historyDetails button,
   .galleryBack,
   .galleryIndex button {
     transition-duration: 1ms;
