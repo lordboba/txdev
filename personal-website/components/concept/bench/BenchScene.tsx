@@ -62,9 +62,16 @@ import {
 import { historyEras, historyShots } from './historyEras';
 
 const INK = '#141517';
-const ALUMINUM = '#b4b6b8';
-const ALUMINUM_DARK = '#9a9c9e';
-const ALUMINUM_BRIGHT = '#d3d5d7';
+/*
+ * Aluminum stock, lifted with the shell's drop. A metalness-1 surface has no
+ * albedo — its colour is a tint on whatever the room hands it — so taking the
+ * room down two stops without taking these up would have turned every chassis
+ * into gunmetal. The three steps between them are what carry the machined
+ * hierarchy now that the room no longer flattens them.
+ */
+const ALUMINUM = '#c9cbcd';
+const ALUMINUM_DARK = '#a4a6a8';
+const ALUMINUM_BRIGHT = '#e8eaec';
 const PHONE_INK = '#1b1c1e';
 const SCREEN_WELL = '#0a0b0c';
 /**
@@ -79,18 +86,33 @@ const SCREEN_WELL = '#0a0b0c';
  * brightest object in a portrait was the furniture. The subject gets the top of
  * the range now and the bench sits under it.
  */
-const BENCH_TOP = '#babdc0';
-const BENCH_FLOOR = '#b6b9bd';
-/* Tracks BENCH_TOP down: a front chamfer brighter than the surface it turns
-   off reads as a lit stripe across the bottom of the frame, not as an edge. */
-const BENCH_RAIL = '#adb0b4';
-/**
- * The set stays a full visual step under the bench top. #a7aaae sits roughly
- * 19 code values below #babdc0, so the bench separates from the backdrop
- * before fog or directional falloff does any work.
+/*
+ * Gallery high-key grade. The set is bright, but it is a *sweep*, not a field:
+ * cove brightest at the horizon, bench a step under it, foreground darkest.
+ * Every value below is the top of its own ramp — the painted falloffs and the
+ * hemisphere gradient carry it down from there.
  */
-const SET_GREY = '#a7aaae';
-const COVE_GREY = '#a2a6aa';
+const BENCH_TOP = '#a8abae';
+const BENCH_FLOOR = '#63666a';
+/*
+ * The bench front is now the darkest band in the frame, not a lighter strip
+ * stacked on a darker one. Fascia, rail and understructure all resolve into a
+ * single shadowed edge instead of three horizontal bars leaking at the corners.
+ */
+const BENCH_RAIL = '#6e7175';
+/**
+ * The set falls a full value step under the bench top rather than the ~19 codes
+ * it used to, so a lid silhouette separates from the backdrop on value alone.
+ * The cove *map* then lifts the horizon back up to near-paper — that lift is
+ * what makes the sweep read as a lit cyclorama instead of a painted wall.
+ */
+const SET_GREY = '#9da1a5';
+/*
+ * The cove *stock* is near-paper; its map carries it from a deep upper wall to
+ * a bright horizon. Base and map used to both be mid, which is how the backdrop
+ * ended up living inside the same 20-code band as the bench and the chassis.
+ */
+const COVE_GREY = '#cfd3d7';
 const PHONE_TITLES = new Set(['iCalarms', 'Charades 2026']);
 
 /**
@@ -176,6 +198,60 @@ const WORK_CAMERA_Z = 7.35;
  * swings the camera is the loudest tell that a render is not a photograph.
  * `cameraMatrix`-free — three supplies `cameraPosition` to every ShaderMaterial.
  */
+/**
+ * Cover glass. Two terms and nothing else: a Schlick Fresnel that decides how
+ * much room the surface returns at this angle, and one window-shaped highlight
+ * the studio's overhead softbox stands in for.
+ *
+ * The window is deliberately hard-ish edged and rectangular — a soft round
+ * blob is what a screen-space "sheen" gives you, and it reads as haze. A shape
+ * with corners reads as a reflection of a thing, which is what makes the panel
+ * sit under glass instead of behind gauze.
+ */
+const GLASS_VERTEX_SHADER = `
+  varying vec2 vUv;
+  varying vec3 vView;
+  varying vec3 vNorm;
+
+  void main() {
+    vUv = uv;
+    vec4 world = modelMatrix * vec4(position, 1.0);
+    vView = normalize(cameraPosition - world.xyz);
+    vNorm = normalize(mat3(modelMatrix) * vec3(0.0, 0.0, 1.0));
+    gl_Position = projectionMatrix * viewMatrix * world;
+  }
+`;
+const GLASS_FRAGMENT_SHADER = `
+  uniform float uSeed;
+
+  varying vec2 vUv;
+  varying vec3 vView;
+  varying vec3 vNorm;
+
+  void main() {
+    float facing = clamp(dot(normalize(vNorm), normalize(vView)), 0.0, 1.0);
+    /* Schlick, F0 ~0.04 for glass. Near zero face-on, near one at the edge. */
+    float fresnel = 0.035 + 0.965 * pow(1.0 - facing, 5.0);
+
+    /*
+     * The window. Sheared in x by y so it rakes with the key rather than
+     * hanging square, and slid by the caller's seed so no two displays in the
+     * cluster carry the same reflection.
+     */
+    vec2 p = vUv - vec2(0.30 + uSeed * 0.12, 0.74);
+    p.x += p.y * 0.55;
+    /* Not \`half\` — that is a reserved word in GLSL ES and fails to compile. */
+    vec2 extent = vec2(0.16, 0.085);
+    vec2 d = abs(p) - extent;
+    float edge = max(d.x, d.y);
+    float window = 1.0 - smoothstep(-0.02, 0.045, edge);
+    /* A hairline mullion, so the shape reads as a window and not as a card. */
+    window *= 1.0 - 0.55 * (1.0 - smoothstep(0.0, 0.006, abs(p.x - 0.02)));
+
+    float alpha = fresnel * 0.34 + window * 0.16;
+    gl_FragColor = vec4(vec3(1.0), clamp(alpha, 0.0, 0.6));
+  }
+`;
 const SCREEN_VERTEX_SHADER = `
   varying vec2 vUv;
   varying vec3 vWorld;
@@ -355,11 +431,25 @@ type Transform = {
  * 3.12 apart — 0.43 of clear bench between the silhouettes — and are staggered
  * 0.80 in depth so the near chassis reads as crossing in front of the far one.
  */
+/*
+ * Restaged. Two products were being read through each other.
+ *
+ * The Charades phone stood at x 1.6 with the Med Negotiate laptop behind it at
+ * x 2.12 — 0.5 of lateral offset against a phone half a unit wide, so at every
+ * pose in the parallax range the phone bisected the laptop's display and
+ * neither product could be read. It moves out to 2.98 and forward, which puts
+ * it in the gap *beside* the laptop rather than in front of it, and yaws
+ * further inboard so it still addresses the lens.
+ *
+ * With that seat vacated the near-left phone comes inboard to 0.32 — the shot
+ * had a dead corridor straight down the middle of the frame, which is where
+ * the eye went instead of to the products on either side of it.
+ */
 const PROJECT_WORK: Transform[] = [
-  { position: [-0.66, 0, 0.5], rotation: [0, 0.26, 0], scale: 0.6 },
-  { position: [-1.0, 0, -2.55], rotation: [0, 0.32, 0], scale: 0.68 },
-  { position: [2.12, 0, -1.75], rotation: [0, -0.3, 0], scale: 0.66 },
-  { position: [1.6, 0, 0.42], rotation: [0, -0.32, 0], scale: 0.58 },
+  { position: [-0.32, 0, 0.56], rotation: [0, 0.3, 0], scale: 0.6 },
+  { position: [-1.06, 0, -2.55], rotation: [0, 0.32, 0], scale: 0.68 },
+  { position: [2.0, 0, -1.82], rotation: [0, -0.3, 0], scale: 0.66 },
+  { position: [2.72, 0, 0.7], rotation: [0, -0.5, 0], scale: 0.58 },
 ];
 
 /**
@@ -406,7 +496,14 @@ const SCREEN_SEEDS = [0, 0.19, -0.14, 0.33];
  * the shared 1.05 gain and lost the whole form. Index 2 comes down a third of a
  * stop so its panel keeps its type and card edges.
  */
-const SCREEN_GAINS = [1.05, 1.03, 0.9, 1.05];
+/*
+ * Charades is the one saturated object on a monochrome bench, and it was also
+ * the brightest — a full-bleed magenta/cyan card deck running at the same gain
+ * as the grey UI around it, which made it the subject of a shot it is meant to
+ * accent. Half a stop off (1.05 → 0.74) leaves it unmistakably the colour note
+ * and stops it out-shouting four other products.
+ */
+const SCREEN_GAINS = [1.05, 1.03, 0.92, 0.74];
 
 /**
  * Source rectangles, in normalised image space measured from the top-left, for
@@ -526,7 +623,15 @@ const LOGO_SOURCES: Record<string, { file: string; aspect: number }> = {
  */
 const TAG_W = 0.62;
 const TAG_H = 0.31;
-const TAG_T = 0.03;
+/*
+ * 0.052, not 0.03. The plates were reading as UI decals pinned to the wall
+ * rather than as machined stock hanging in front of it, and the largest single
+ * cause was that they had no measurable thickness — at 0.03 the top and bottom
+ * edges resolved to well under a pixel at the work lens, so the object had a
+ * face and no body. Thick enough now that the lit top edge and the shaded
+ * bottom edge are both visible bands.
+ */
+const TAG_T = 0.052;
 /** Centre-to-centre across the rail. */
 const TAG_PITCH = 0.74;
 /** Punched hole, measured down from the plate's top edge. */
@@ -541,9 +646,17 @@ const TAG_RAIL_R = 0.016;
 const TAG_WIRE_X = 1.85;
 const TAG_WIRE_LEN = 1.0;
 
-/** Satin plate stock, and the value it lifts to when a tag is live. */
-const TAG_PLATE = '#c8cacc';
-const TAG_PLATE_LIVE = '#e0e2e4';
+/**
+ * Satin plate stock, and the value it lifts to when a tag is live.
+ *
+ * #c8cacc sat within a couple of codes of the cove behind it, so the row had no
+ * silhouette at all — five marks floating on the wall, which is exactly the
+ * decal read. The stock goes up to near-paper and the cove has come down, so
+ * the plates now clear the backdrop by a full value step in the direction a
+ * bright metal object should: brighter than what is behind it.
+ */
+const TAG_PLATE = '#f2f4f6';
+const TAG_PLATE_LIVE = '#ffffff';
 const TAG_PLATE_COLOR = new THREE.Color(TAG_PLATE);
 const TAG_PLATE_LIVE_COLOR = new THREE.Color(TAG_PLATE_LIVE);
 
@@ -643,9 +756,10 @@ function getBrushedRoughness() {
     return brushedRoughness;
   }
 
+  const size = 512;
   const canvas = document.createElement('canvas');
-  canvas.width = 256;
-  canvas.height = 256;
+  canvas.width = size;
+  canvas.height = size;
   const context = canvas.getContext('2d');
 
   if (context) {
@@ -654,20 +768,44 @@ function getBrushedRoughness() {
      * a mid-grey fill would silently halve every roughness value in the file
      * and turn satin aluminum into chrome. The grain lives in the streaks.
      */
-    context.fillStyle = '#f0f0f0';
-    context.fillRect(0, 0, 256, 256);
+    context.fillStyle = '#f2f2f2';
+    context.fillRect(0, 0, size, size);
 
-    for (let line = 0; line < 400; line += 1) {
-      const y = Math.floor(Math.random() * 256) + 0.5;
-      const alpha = 0.02 + Math.random() * 0.04;
+    /*
+     * Tripled contrast, on twice the resolution.
+     *
+     * At 256px with per-line alpha of 0.02–0.06 the grain was, arithmetically,
+     * a ±1.5% modulation of a roughness that was itself 0.2 — below the point
+     * where a GGX lobe changes shape at all, let alone visibly. It was a
+     * texture that cost a canvas and rendered as nothing.
+     *
+     * Two changes make it read. The alpha range goes to 0.07–0.25, and the
+     * lines are drawn in *bands* rather than uniformly: a real brushed finish
+     * has a coarse structure of a dozen visible passes with fine scratches
+     * inside them, and it is the coarse structure — not the scratches — that
+     * catches a raking slit as a travelling streak.
+     */
+    for (let band = 0; band < 26; band += 1) {
+      const y = Math.floor(Math.random() * size) + 0.5;
+      const height = 2 + Math.random() * 5;
+      const dark = Math.random() > 0.45;
+      context.fillStyle = dark
+        ? `rgba(0,0,0,${0.1 + Math.random() * 0.15})`
+        : `rgba(255,255,255,${0.14 + Math.random() * 0.2})`;
+      context.fillRect(0, y, size, height);
+    }
+
+    for (let line = 0; line < 900; line += 1) {
+      const y = Math.floor(Math.random() * size) + 0.5;
+      const alpha = 0.07 + Math.random() * 0.18;
       context.strokeStyle =
         Math.random() > 0.5
-          ? `rgba(255,255,255,${alpha * 2})`
+          ? `rgba(255,255,255,${Math.min(1, alpha * 1.6)})`
           : `rgba(0,0,0,${alpha})`;
       context.lineWidth = 1;
       context.beginPath();
       context.moveTo(0, y);
-      context.lineTo(256, y);
+      context.lineTo(size, y);
       context.stroke();
     }
   }
@@ -770,8 +908,16 @@ const BENCH_POOL_X = 0.5;
 const BENCH_POOL_Z = -0.9;
 const BENCH_POOL_SIGMA_X = 2.9;
 const BENCH_POOL_SIGMA_Z = 3.7;
-/** Deepest the pool goes, as a fraction of peak, out at the far corners. */
-const BENCH_POOL_FLOOR = 0.62;
+/**
+ * Deepest the pool goes, as a fraction of peak, out at the far corners.
+ *
+ * Raised with the foreground ramp's arrival. The pool used to be the only
+ * shaping term, so it had to be deep enough to carry the whole falloff on its
+ * own — and it paid for that by dropping the bench's *far* edge to L159 under
+ * a cove junction at L238. The near ramp now owns the near end, which frees
+ * this to sit high enough that the far edge meets the cyc without a step.
+ */
+const BENCH_POOL_FLOOR = 0.72;
 /**
  * A second, much wider and much shallower falloff laid under the key pool.
  *
@@ -782,9 +928,122 @@ const BENCH_POOL_FLOOR = 0.62;
  * falling long after the pool has: 14% over ~9 units, far too gradual to read
  * as a vignette, but enough that the frame edges never out-value the subject.
  */
-const BENCH_EDGE_SIGMA_X = 8.5;
-const BENCH_EDGE_SIGMA_Z = 7;
-const BENCH_EDGE_DEPTH = 0.14;
+/*
+ * Deepened and tightened for the wider lenses. The work shot sees ~7 units of
+ * bench and the pool shapes all of it, but profile and history stand further
+ * off and show 14 — out there the pool has long since bottomed out and the
+ * frame was 60% one flat plateau, which is exactly the wash this direction has
+ * to beat. 24% over ~6 units keeps falling where the pool has stopped.
+ */
+const BENCH_EDGE_SIGMA_X = 6;
+const BENCH_EDGE_SIGMA_Z = 6;
+const BENCH_EDGE_DEPTH = 0.19;
+/**
+ * The foreground ramp — the third band of the gallery sweep.
+ *
+ * Bright cove, mid bench, dark foreground. The pool alone cannot deliver that:
+ * it is radially symmetric, so the near lip and the far lip come back at the
+ * same value and the frame reads as one plateau with a soft vignette. This term
+ * is one-sided in z, running from untouched at the pool centre to a hard 0.55
+ * of reflectance by the bench's front lip. It also does the corner-banding work
+ * from the other direction: with the near bench already the darkest band in the
+ * frame, the fascia and the rail have nothing lighter to stack against.
+ */
+const BENCH_NEAR_START = -0.6;
+const BENCH_NEAR_FLOOR = 0.55;
+
+/**
+ * Roughness variation for the bench top.
+ *
+ * The working surface is ~40% of every frame and it was one constant roughness
+ * across all of it, which is the definition of a fill: no raking light can find
+ * a surface that has nothing to find. This is a handful of superposed sine
+ * lobes at very long wavelengths — deliberately too broad to resolve as a
+ * texture, wide enough that a hand-finished top reads as *finished* rather than
+ * as a value. Multiplied against material.roughness, so it is ±0.06 either way.
+ */
+let benchSheen: THREE.Texture | null = null;
+
+function getBenchSheen() {
+  if (benchSheen) {
+    return benchSheen;
+  }
+
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext('2d');
+
+  if (context) {
+    const image = context.createImageData(size, size);
+
+    for (let py = 0; py < size; py += 1) {
+      const v = (py + 0.5) / size;
+
+      for (let px = 0; px < size; px += 1) {
+        const u = (px + 0.5) / size;
+        const wave =
+          Math.sin(u * 5.1 + 0.7) * 0.5 +
+          Math.sin(v * 3.3 - 1.2) * 0.32 +
+          Math.sin((u + v) * 8.4) * 0.18;
+        const value = Math.round(230 + wave * 22);
+        const index = (py * size + px) * 4;
+        image.data[index] = value;
+        image.data[index + 1] = value;
+        image.data[index + 2] = value;
+        image.data[index + 3] = 255;
+      }
+    }
+
+    context.putImageData(image, 0, 0);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  benchSheen = texture;
+  return texture;
+}
+
+/**
+ * Fascia falloff — the last few values of the sweep, below the bench lip.
+ *
+ * Without it the front reads as banding rather than as an edge. The rail's own
+ * underside is the darkest line in the frame at L76, which is correct — it is
+ * the shadowed undercut, and it is the single edge M6 asks the bench front to
+ * resolve into. But a *flat* fascia under it at L125 makes that line a stripe:
+ * dark bar, light bar, dark bar. Starting the fascia just under the undercut
+ * and letting it keep falling turns the same three values into one continuous
+ * shadow side running off the bottom of the frame.
+ */
+let fasciaFalloff: THREE.Texture | null = null;
+
+function getFasciaFalloff() {
+  if (fasciaFalloff) {
+    return fasciaFalloff;
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 4;
+  canvas.height = 64;
+  const context = canvas.getContext('2d');
+
+  if (context) {
+    /* Canvas y=0 is uv v=1 — the top of the fascia, up against the rail. */
+    const gradient = context.createLinearGradient(0, 0, 0, 64);
+    gradient.addColorStop(0, '#ffffff');
+    gradient.addColorStop(0.35, '#e0e0e0');
+    gradient.addColorStop(1, '#b2b2b2');
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, 4, 64);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  fasciaFalloff = texture;
+  return texture;
+}
 
 function getBenchFalloff() {
   if (benchFalloff) {
@@ -806,6 +1065,21 @@ function getBenchFalloff() {
       const worldZ = BENCH_FRONT_Z - v * BENCH_DEPTH;
       const dz = (worldZ - BENCH_POOL_Z) / BENCH_POOL_SIGMA_Z;
       const ez = (worldZ - BENCH_POOL_Z) / BENCH_EDGE_SIGMA_Z;
+      /*
+       * One-sided, and smoothstepped rather than linear so the ramp has no
+       * visible start line where it leaves the pool. Encoded through the sRGB
+       * gamma for the same reason the edge term is: this canvas is sampled as
+       * an sRGB map, so a raw multiply here would land ~2x deeper than asked.
+       */
+      const nearT = THREE.MathUtils.clamp(
+        (worldZ - BENCH_NEAR_START) / (BENCH_FRONT_Z - BENCH_NEAR_START),
+        0,
+        1,
+      );
+      const near = Math.pow(
+        1 - (1 - BENCH_NEAR_FLOOR) * nearT * nearT * (3 - 2 * nearT),
+        1 / 2.2,
+      );
 
       for (let px = 0; px < size; px += 1) {
         const u = (px + 0.5) / size;
@@ -825,7 +1099,10 @@ function getBenchFalloff() {
           1 / 2.2,
         );
         const value = Math.round(
-          255 * (BENCH_POOL_FLOOR + (1 - BENCH_POOL_FLOOR) * pool) * edge,
+          255 *
+            (BENCH_POOL_FLOOR + (1 - BENCH_POOL_FLOOR) * pool) *
+            edge *
+            near,
         );
         const index = (py * size + px) * 4;
         image.data[index] = value;
@@ -870,11 +1147,11 @@ function getCoveFalloff() {
      * profile/history lenses show the falloff. One studio, four lenses.
      */
     const gradient = context.createLinearGradient(0, 0, 0, 256);
-    gradient.addColorStop(0, '#3a3d40');
-    gradient.addColorStop(0.5, '#636669');
-    gradient.addColorStop(0.78, '#7c7f82');
-    gradient.addColorStop(0.9, '#8a8d8f');
-    gradient.addColorStop(0.97, '#8d8f91');
+    gradient.addColorStop(0, '#34373a');
+    gradient.addColorStop(0.45, '#55585c');
+    gradient.addColorStop(0.72, '#74777b');
+    gradient.addColorStop(0.88, '#8b8e92');
+    gradient.addColorStop(0.96, '#8f9295');
     /*
      * The junction value is not a free choice: it has to land on the value the
      * bench top renders at its far edge under the same fog, or the horizon
@@ -883,8 +1160,14 @@ function getCoveFalloff() {
      * bench's far edge now renders a value step darker than BENCH_TOP, so the
      * junction stop came down with it — and again with the ~14% the bench top
      * lost to put the subject back on top of the value range.
+     *
+     * Measured, not guessed. At a full-white junction stop the cove rendered
+     * L238 against a bench far edge of L159 — a 79-value cliff straight across
+     * the frame, the exact hard horizon this stop exists to prevent, just
+     * inverted from the old one. #b6b9bc lands the junction within a few
+     * values of the bench edge under the same fog, so the sweep closes.
      */
-    gradient.addColorStop(1, '#a4a6a8');
+    gradient.addColorStop(1, '#989b9e');
     context.fillStyle = gradient;
     context.fillRect(0, 0, 4, 256);
   }
@@ -1881,10 +2164,25 @@ function createEraPlacardTexture(
 
 function AluminumMaterial({
   color = ALUMINUM,
-  envMapIntensity = 1.4,
+  /*
+   * Up with the shell's drop. A metalness-1 surface has *only* the environment
+   * — take two stops out of the room without putting any back here and every
+   * chassis in a high-key gallery renders gunmetal. The gain restores the
+   * aluminum's overall level while keeping the room's new contrast, which is
+   * the entire trade this grade is built on.
+   */
+  envMapIntensity = 2.1,
   grain = 'lateral',
   metalness = 1,
-  roughness = 0.2,
+  /*
+   * 0.13, not 0.20. A brushed unibody is a *tight* lobe smeared along one
+   * axis, not a broad satin one: at 0.2 the specular from the raking slit was
+   * already a foot wide by the time it reached the surface, so it read as an
+   * even sheen and never travelled as the lens moved. Tightening the lobe is
+   * what turns the grain from a texture nobody can see into a streak that
+   * crosses the deck under parallax.
+   */
+  roughness = 0.13,
 }: {
   color?: string;
   envMapIntensity?: number;
@@ -1906,8 +2204,25 @@ function AluminumMaterial({
     [grain],
   );
 
+  /*
+   * meshPhysicalMaterial, for one property: `anisotropy`.
+   *
+   * A roughnessMap of horizontal streaks does not make brushed metal — it
+   * makes metal with stripes painted on it. Every texel still returns a
+   * circular GGX lobe, so the highlight is round wherever it lands and the
+   * grain only modulates its brightness. Real brushed aluminum stretches the
+   * lobe *along* the grain: one bright bar that slides across the face as the
+   * lens moves, and stays a bar rather than becoming a disc.
+   *
+   * That is the difference between a specular streak and a smudge, and it is
+   * the whole reason this material exists. The roughnessMap stays — it is what
+   * gives the stretched bar its structure — but the shape now comes from the
+   * BRDF instead of from a canvas.
+   */
   return (
-    <meshStandardMaterial
+    <meshPhysicalMaterial
+      anisotropy={0.9}
+      anisotropyRotation={grain === 'axial' ? Math.PI / 2 : 0}
       color={color}
       envMapIntensity={envMapIntensity}
       metalness={metalness}
@@ -1955,11 +2270,26 @@ function ChamferBand({
   );
 }
 
+/**
+ * Anodised black, not painted black.
+ *
+ * A metalness-1 body at #1b1c1e in a dark room returns almost nothing, and
+ * "almost nothing, evenly" is what plastic looks like. The tell of a real
+ * anodised part is the clearcoat: a thin dielectric film over the metal whose
+ * own Fresnel goes to ~1 at grazing angles, so the body stays near-black
+ * face-on and picks up a bright hard rim exactly where it turns away from the
+ * lens. That rim is the entire read, and it costs one extra lobe.
+ *
+ * The coat is held much smoother than the body under it — a mirror film over a
+ * fine-blasted substrate, which is what an anodised phone rail actually is.
+ */
 function InkMetalMaterial({ roughness = 0.3 }: { roughness?: number }) {
   return (
-    <meshStandardMaterial
+    <meshPhysicalMaterial
+      clearcoat={1}
+      clearcoatRoughness={0.09}
       color={PHONE_INK}
-      envMapIntensity={1.1}
+      envMapIntensity={1.4}
       metalness={1}
       roughness={roughness}
     />
@@ -2017,11 +2347,19 @@ function ContactCore({
         rotation={[-Math.PI / 2, 0, 0]}
       >
         <planeGeometry args={[width, depth]} />
+        {/*
+         * Backed off with the arrival of PCSS. These two planes used to be the
+         * only thing grounding the near cluster and they were carrying far more
+         * weight than the directional's hard edge did on the far cluster —
+         * which is precisely why the two halves of the bench looked lit by
+         * different rigs. The soft directional is the grounding authority now;
+         * what is left here is contact darkening in the last millimetre.
+         */}
         <meshBasicMaterial
           alphaMap={smear}
-          color="#4c4f52"
+          color="#54585c"
           depthWrite={false}
-          opacity={0.52 * opacity}
+          opacity={0.3 * opacity}
           toneMapped={false}
           transparent
         />
@@ -2030,9 +2368,9 @@ function ContactCore({
         <planeGeometry args={[width * 0.75, depth * 0.75]} />
         <meshBasicMaterial
           alphaMap={core}
-          color="#3a3d40"
+          color="#3f4347"
           depthWrite={false}
-          opacity={0.3 * opacity}
+          opacity={0.26 * opacity}
           toneMapped={false}
           transparent
         />
@@ -2135,6 +2473,13 @@ function GlassCover({
     [width, height, radius],
   );
 
+  const uniforms = useMemo(
+    () => ({
+      uSeed: { value: (width * 7.3 + height * 3.1) % 1 },
+    }),
+    [width, height],
+  );
+
   return (
     <group position={position}>
       <mesh geometry={groove} position={[0, 0, -0.0006]}>
@@ -2145,15 +2490,28 @@ function GlassCover({
           roughness={0.55}
         />
       </mesh>
+      {/*
+       * Fresnel-driven, not a flat veil.
+       *
+       * `opacity 0.15` over the whole panel is a milky film: it lifts the black
+       * of the UI evenly, which is the one thing real cover glass never does.
+       * Glass is almost perfectly clear where you look through it square and
+       * almost perfectly reflective at a grazing angle, and it carries *shaped*
+       * reflections — the softbox, an edge of the room — not an even wash.
+       *
+       * So: a Schlick term for the falloff, plus one discrete window-shaped
+       * highlight raked across the upper-left in the key's direction. One
+       * plane, one cheap fragment, and the screens stop looking laminated in
+       * fog.
+       */}
       <mesh>
         <planeGeometry args={[width, height]} />
-        <meshStandardMaterial
+        <shaderMaterial
           depthWrite={false}
-          envMapIntensity={1.7}
-          metalness={0}
-          opacity={0.15}
-          roughness={0.05}
+          fragmentShader={GLASS_FRAGMENT_SHADER}
           transparent
+          uniforms={uniforms}
+          vertexShader={GLASS_VERTEX_SHADER}
         />
       </mesh>
     </group>
@@ -2368,10 +2726,28 @@ function StudioCove() {
 
 function BenchTop() {
   const falloff = useMemo(() => getBenchFalloff(), []);
+  const sheen = useMemo(() => getBenchSheen(), []);
+  const fascia = useMemo(() => getFasciaFalloff(), []);
 
   return (
     <group>
-      <mesh position={[0, -0.42, BENCH_CENTER_Z]}>
+      {/*
+       * The understructure. It used to render at #b6b9bd — within four codes of
+       * the bench top above it and the rail in front of it, so the bottom of
+       * every frame was three near-identical horizontal strips whose seams read
+       * as banding rather than as an edge. It is a full step down now: the
+       * whole bench front resolves into one shadowed mass.
+       */}
+      {/*
+       * Pinned so its front face lands exactly on the bench's front lip. It
+       * used to be centred on the bench and 30 deep, which pushed 7.5 units of
+       * it out *past* the front edge — and that overhang's up-facing top
+       * caught the full skylight and printed a light horizontal band across
+       * the bottom of every frame, immediately under the shadowed rail. That
+       * band was half of the corner banding; the other half was the raw
+       * background showing under it.
+       */}
+      <mesh position={[0, -0.42, BENCH_FRONT_Z - 15]}>
         <boxGeometry args={[56, 0.4, 30]} />
         <meshStandardMaterial color={BENCH_FLOOR} roughness={0.95} />
       </mesh>
@@ -2380,13 +2756,28 @@ function BenchTop() {
        * No castShadow on the slab: its own top face sits 0.0006 under the
        * graded surface plane, and at shadow-map precision that reads as a
        * coplanar occluder — the whole bench falls into its own shadow.
+       *
+       * Carries BENCH_FLOOR rather than BENCH_TOP: the only faces of it a lens
+       * ever sees are the near side wall and the ends, and those belong to the
+       * shadowed front mass, not to the lit working surface.
        */}
       <mesh position={[0, -BENCH_THICKNESS / 2, BENCH_CENTER_Z]}>
         <boxGeometry args={[BENCH_WIDTH, BENCH_THICKNESS, BENCH_DEPTH]} />
-        <meshStandardMaterial color={BENCH_TOP} roughness={0.68} />
+        <meshStandardMaterial color={BENCH_FLOOR} roughness={0.8} />
       </mesh>
 
-      {/* Graded working surface: full value at the lip, falling off to the cove. */}
+      {/*
+       * Graded working surface: brightest under the cluster, falling off to the
+       * cove behind and — new — falling off harder toward the lens, so the shot
+       * reads bright backdrop / mid bench / dark foreground rather than one
+       * plateau with a vignette.
+       *
+       * The sheen map is the other half of M7: a very low-frequency roughness
+       * variation, ±0.06 around the base. It is invisible as a texture and it
+       * is the entire difference between a surface and a fill — the raking key
+       * now finds something to break on across the 40% of frame this plane
+       * occupies instead of returning one flat Lambert value.
+       */}
       <mesh
         position={[0, 0.0006, BENCH_CENTER_Z]}
         receiveShadow
@@ -2396,18 +2787,22 @@ function BenchTop() {
         <meshStandardMaterial
           color={BENCH_TOP}
           map={falloff}
-          metalness={0}
-          roughness={0.68}
+          metalness={0.04}
+          roughness={0.72}
+          roughnessMap={sheen}
         />
       </mesh>
 
       {/* One hairline seam running the length of the top. */}
       <mesh position={[0, 0.0016, BENCH_SEAM_Z]}>
         <boxGeometry args={[BENCH_WIDTH, 0.002, 0.016]} />
-        <meshStandardMaterial color="#a9abad" roughness={0.6} />
+        <meshStandardMaterial color="#8f9294" roughness={0.6} />
       </mesh>
 
-      {/* Chamfered front rail. Bare — the shop marks hang on the tag rack. */}
+      {/*
+       * Chamfered front rail, and the one edge the bench front is allowed to
+       * show. Bare — the shop marks hang on the tag rack.
+       */}
       <group
         position={[0, -0.055, BENCH_FRONT_Z + 0.03]}
         rotation={[-0.62, 0, 0]}
@@ -2417,6 +2812,28 @@ function BenchTop() {
           <meshStandardMaterial color={BENCH_RAIL} roughness={0.74} />
         </mesh>
       </group>
+
+      {/*
+       * The fascia — one continuous shadowed mass running off the bottom of
+       * every frame.
+       *
+       * What used to be down here was a leak, not a surface: the rail ended,
+       * the understructure ended, and below them the raw scene background
+       * showed through at L174 while the strips above it sat at L184 and L183.
+       * Three near-identical horizontal bars and a hole, which is exactly the
+       * banding the lower frame corners were showing.
+       *
+       * One tall plane at a genuinely dark value replaces all of it, so the
+       * bench front resolves into a single edge with a graded top-to-bottom
+       * sweep — bench L~183, rail L~150, fascia L~120 — and there is no seam
+       * for a viewport to find at any aspect. Front-facing, so a lens that
+       * ever ends up *behind* it (a focused tag stands off to z 2.2) sees
+       * straight through rather than into a wall.
+       */}
+      <mesh position={[0, -3.1, BENCH_FRONT_Z + 0.06]}>
+        <planeGeometry args={[56, 6]} />
+        <meshStandardMaterial color="#63666a" map={fascia} roughness={0.9} />
+      </mesh>
     </group>
   );
 }
@@ -2463,8 +2880,15 @@ const TAG_FOCUS_DISTANCE = 3.2;
  * Mutated in place rather than rebuilt: this is read once per frame.
  */
 const WORK_RACK_ASPECT = 1.6;
+/*
+ * y 2.44, not 2.16. At the old seat the Scale plate's lower edge crossed the
+ * left MacBook's lid at the near end of the parallax sweep — a tangency, and
+ * the worst kind: two flat objects of near-identical value overlapping by a
+ * few pixels, so the eye could not tell which was in front. The row now clears
+ * the taller of the two lids at both parallax extremes with margin left over.
+ */
 const workRackSeat: Transform = {
-  position: [0.85, 2.16, -1.0],
+  position: [0.85, 2.44, -1.0],
   rotation: [0, 0, 0],
   scale: 1,
 };
@@ -2524,10 +2948,18 @@ function getTagFalloff() {
   const context = canvas.getContext('2d');
 
   if (context) {
-    const gradient = context.createLinearGradient(0, 0, 64, 64);
+    /*
+     * Steepened, and turned to run top-left → bottom-right rather than corner
+     * to corner. A standing plane lit from above and camera-left has to *read*
+     * as a standing plane, and the only cue a 0.62 x 0.31 rectangle can give
+     * for that is a legible gradient down its own face. At 255 → 176 there was
+     * a 30% ramp spread over the diagonal — real, and below the threshold at
+     * which an eye calls it a plane rather than a flat swatch.
+     */
+    const gradient = context.createLinearGradient(4, 0, 60, 64);
     gradient.addColorStop(0, '#ffffff');
-    gradient.addColorStop(0.55, '#dcdcdc');
-    gradient.addColorStop(1, '#b0b0b0');
+    gradient.addColorStop(0.42, '#f0f0f0');
+    gradient.addColorStop(1, '#a4a4a4');
     context.fillStyle = gradient;
     context.fillRect(0, 0, 64, 64);
   }
@@ -2651,14 +3083,49 @@ function CompanyTagPlate({
          * highlight at all — all it did was serrate the silhouette with its
          * own low-segment outline standing 0.002 proud of the plate.
          */}
+        {/*
+         * The plate's own thickness, made visible. Two hairline bars standing
+         * a hair proud of the top and bottom edges — the top in near-mirror
+         * bright stock, the bottom in dark. This is the cheapest and most
+         * reliable cue there is that an object is stock with a body rather
+         * than a rectangle printed on the backdrop, and at this lens it is
+         * doing more work than the face gradient.
+         */}
+        <mesh position={[0, TAG_H / 2 - 0.004, 0]}>
+          <boxGeometry args={[TAG_W - 0.008, 0.008, TAG_T + 0.002]} />
+          <meshStandardMaterial
+            color="#f4f6f8"
+            envMapIntensity={2.4}
+            metalness={0.7}
+            roughness={0.1}
+          />
+        </mesh>
+        <mesh position={[0, -TAG_H / 2 + 0.005, 0]}>
+          <boxGeometry args={[TAG_W - 0.008, 0.01, TAG_T + 0.002]} />
+          <meshStandardMaterial
+            color="#6f7275"
+            envMapIntensity={0.7}
+            metalness={0.5}
+            roughness={0.45}
+          />
+        </mesh>
+        {/*
+         * Metalness down, environment gain up. Measured at the old 0.45/1.25
+         * the plate face rendered L143 against a cove at L169 — DARKER than
+         * the wall behind it, which is the whole reason the row read as five
+         * decals printed on the backdrop rather than five objects hanging in
+         * front of it. A satin plate is mostly a diffuse surface with a sheen
+         * on top; letting the diffuse term through is what puts it back above
+         * the wall, and the gain keeps the sheen a plate's rather than paper's.
+         */}
         <mesh castShadow geometry={plate}>
           <meshStandardMaterial
             color={TAG_PLATE}
-            envMapIntensity={1.25}
+            envMapIntensity={3.2}
             map={falloff}
-            metalness={0.45}
+            metalness={0.22}
             ref={plateRef}
-            roughness={0.32}
+            roughness={0.3}
             roughnessMap={grain}
           />
         </mesh>
@@ -2879,11 +3346,21 @@ function StudioEnvironment() {
   return (
     <Environment frames={1} resolution={512}>
       {/*
-       * The light-grey studio shell. Without it the baked cubemap is black and
-       * metalness-1 aluminum has nothing to reflect but the lightformers, which
-       * is what turns real metal into painted MDF.
+       * The studio shell — the single most consequential value in the file.
+       *
+       * At #aeb2b6 it flooded every normal in the scene with the same mid-grey
+       * irradiance: a cubemap is sampled by normal alone, so a shell that
+       * bright *is* an ambient term no lightformer can out-shout, and chassis,
+       * bench, wall and plates all landed inside one 20-code band. Dropped a
+       * full two stops. Metal now has a dark room to fall to and the rig above
+       * is the only thing lighting it, which is what makes a face turn.
+       *
+       * The set does not go dark with it: the diffuse half of the studio is
+       * carried by a hemisphere gradient and the key, neither of which a
+       * metalness-1 surface can see. That split is the whole grade — a bright
+       * gallery for the matte set, a contrasty room for the aluminum.
        */}
-      <color args={['#aeb2b6']} attach="background" />
+      <color args={['#6a6e73']} attach="background" />
       {/*
        * Overhead-front softbox, the key. Tightened from an 18x9 slab hung at
        * z 4.5 — at that size it lit the bench as one uniform field from frame
@@ -2892,13 +3369,19 @@ function StudioEnvironment() {
        * sits under the devices and the bench falls a full value step toward
        * the corners. Falloff shaping, not a relight: same colour, same palette.
        */}
+      {/*
+       * Slid a unit and a half camera-left of the cluster centroid and opened
+       * up. The softbox is the single largest area source in the cubemap, so
+       * hanging it on the centreline is what guaranteed a symmetric room and a
+       * 1:1 lateral ratio no amount of edge lighting could break.
+       */}
       <Lightformer
         color="#ffffff"
         form="rect"
-        intensity={2}
-        position={[0.5, 7.2, 2.2]}
+        intensity={3.1}
+        position={[-1.9, 7.2, 2.4]}
         rotation={[-Math.PI / 3, 0, 0]}
-        scale={[9.5, 6, 1]}
+        scale={[8.5, 6, 1]}
       />
       {/*
        * Narrow high-intensity strip, camera-left. A broad dim room gives
@@ -2908,17 +3391,24 @@ function StudioEnvironment() {
       <Lightformer
         color="#ffffff"
         form="rect"
-        intensity={4}
+        intensity={7}
         position={[-3.6, 8.6, 2.6]}
         rotation={[-Math.PI / 2.55, 0, 0.07]}
         scale={[14, 0.5, 1]}
       />
+      {/*
+       * Camera-left wall, the source the left half of every lid and deck
+       * sweeps into. It is the direct counterpart of the dark bar hung on the
+       * right: between them a face that turns from -x to +x runs bright to
+       * dark, which is the ~2:1 lateral step the shot was missing.
+       */}
       <Lightformer
+        color="#ffffff"
         form="rect"
-        intensity={1.5}
-        position={[-6, 4.6, 0]}
+        intensity={3.4}
+        position={[-6, 4.6, 0.6]}
         rotation={[0, Math.PI / 2, 0]}
-        scale={[14, 1.2, 1]}
+        scale={[14, 3.4, 1]}
       />
       {/*
        * Chamfer specular. A single very narrow, very bright vertical slit
@@ -2936,15 +3426,40 @@ function StudioEnvironment() {
       <Lightformer
         color="#ffffff"
         form="rect"
-        intensity={10}
+        intensity={16}
         position={[-4.2, 2.5, 5.2]}
         rotation={[0, 2.46, 0]}
         scale={[0.55, 9, 1]}
       />
+      {/*
+       * Front bounce, hung hard camera-left.
+       *
+       * A lid or a bezel standing square to the lens reflects the *front*
+       * hemisphere, and with the shell two stops down that hemisphere is a
+       * dark room — the near lid frames were rendering at L58, black plastic
+       * in a gallery. This is the white flat a photographer would stand off
+       * the left of the camera to open them up. Deliberately off-axis: a
+       * frontal bounce on the lens axis would lift both flanks equally and
+       * cost the lateral ratio the rest of the rig was built to produce.
+       */}
       <Lightformer
-        color="#e6eaee"
+        color="#e4e8ec"
         form="rect"
-        intensity={0.42}
+        intensity={1.5}
+        position={[-4.6, 2.8, 6.6]}
+        rotation={[0, 0.42, 0]}
+        scale={[6, 5, 1]}
+      />
+      {/*
+       * Camera-right wall, now a *negative*. It used to be a light source at
+       * #e6eaee — a fill on the shadow side is what flattened the lateral ratio
+       * to nothing. Held just above the shell value so the right flank of a
+       * chassis still separates from the background instead of going to black.
+       */}
+      <Lightformer
+        color="#585c60"
+        form="rect"
+        intensity={0.9}
         position={[6, 3, 2]}
         rotation={[0, -Math.PI / 2, 0]}
         scale={[8, 5, 1]}
@@ -2958,43 +3473,113 @@ function StudioEnvironment() {
        * normal turns — the MacBook top deck now runs light at the front lip to
        * dark at the hinge instead of holding a single tone across 2.3 units.
        */}
+      {/*
+       * Narrowed 0.35 → 0.2 and driven harder. These two are what an up-facing
+       * deck actually reflects, and a strip's *width* is the width of the bar
+       * it puts on that deck: at 0.35 over a 0.24-rough palmrest the two of
+       * them merged into a single wash covering the whole plate, which cannot
+       * travel because it already covers everywhere it could travel to. Narrow
+       * and bright is a highlight; broad and dim is a value.
+       */}
       <Lightformer
         color="#ffffff"
         form="rect"
-        intensity={6}
+        intensity={11}
         position={[2.8, 6.4, 1.4]}
         rotation={[-Math.PI / 2.9, 0, -0.42]}
-        scale={[10, 0.35, 1]}
+        scale={[10, 0.2, 1]}
       />
       <Lightformer
         color="#ffffff"
         form="rect"
-        intensity={5}
+        intensity={9}
         position={[-1.4, 5.2, -2.6]}
         rotation={[-Math.PI / 2.2, 0, 0.86]}
-        scale={[10, 0.35, 1]}
+        scale={[10, 0.2, 1]}
+      />
+      {/*
+       * The travelling slit, and the geometry that decides where it has to
+       * hang.
+       *
+       * A palmrest faces straight up and the lens rakes it at about 18°, so its
+       * mirror direction does NOT point at the ceiling — it points 18° above
+       * the horizon, deep into -z. Every overhead strip in this rig therefore
+       * misses the decks entirely; what a deck reflects is the *far wall*, and
+       * the far wall here was one broad even panel. That is the real reason the
+       * decks held a single tone: not the roughness, not the grain map, but a
+       * reflection target with nothing in it.
+       *
+       * So the source goes where the deck is actually looking: a narrow
+       * vertical slit standing on the back wall. Narrow in x is what matters —
+       * as the lens swings its ±0.34 of parallax the mirror point slides along
+       * the wall, and a slit is the only thing whose edge is sharp enough for
+       * that slide to be legible. The material's anisotropy then stretches the
+       * reflection along the brushing, which is what turns a moving dot into a
+       * moving streak.
+       */}
+      <Lightformer
+        color="#ffffff"
+        form="rect"
+        intensity={16}
+        position={[-1.5, 3.3, -9.4]}
+        rotation={[0, 0, 0.14]}
+        scale={[0.45, 6, 1]}
       />
       <Lightformer
-        color="#f4f7fa"
+        color="#ffffff"
         form="rect"
-        intensity={7}
+        intensity={9}
+        position={[2.9, 2.7, -9.4]}
+        rotation={[0, 0, -0.2]}
+        scale={[0.3, 5, 1]}
+      />
+      {/*
+       * The one bright accent left on the camera-right side, and it is a slit,
+       * not a wall: a specular that clips near-white on an edge is exactly what
+       * a high-key grade needs to keep from going chalky, but at intensity 7
+       * over 8 units of height it was lighting the whole right flank and
+       * cancelling the key.
+       */}
+      <Lightformer
+        color="#ffffff"
+        form="rect"
+        intensity={9}
         position={[4.6, 2.6, 3.4]}
         rotation={[0, -1.02, 0.24]}
-        scale={[0.4, 8, 1]}
+        scale={[0.18, 8, 1]}
       />
       {/*
        * The dark bar. Without something in the cubemap that is *below* the room
        * average, a metal plane can only ever sweep bright-to-less-bright; this
        * gives the sweep somewhere to land, which is what makes the gradient
        * read as a reflection rather than a shading ramp.
+       *
+       * Deepened from #6e7174 to near-black and doubled in height. At the old
+       * value it sat *above* half the set's rendered greys, so it was not a
+       * dark end at all — it was a second fill, and the sweep it was supposed
+       * to terminate ran bright-to-slightly-less-bright across every deck.
        */}
       <Lightformer
-        color="#6e7174"
+        color="#17191b"
         form="rect"
-        intensity={0.4}
-        position={[-2.2, 3.2, 4.2]}
+        intensity={0.9}
+        position={[-2.2, 3.0, 4.2]}
         rotation={[0, 0.34, 0.18]}
-        scale={[9, 1.6, 1]}
+        scale={[11, 3.2, 1]}
+      />
+      {/*
+       * Its partner on the camera-right front quadrant, hung at a different
+       * angle so a face turning across the frame reaches a dark end no matter
+       * which way it is yawed. This is the half of the pair the right-hand
+       * MacBook lid sweeps into.
+       */}
+      <Lightformer
+        color="#1d1f22"
+        form="rect"
+        intensity={0.9}
+        position={[3.6, 1.9, 4.6]}
+        rotation={[0, -0.5, -0.2]}
+        scale={[7, 3.6, 1]}
       />
       {/*
        * Set wall. Up-facing metal — the Signals blanks lying flat on the bench —
@@ -3002,20 +3587,22 @@ function StudioEnvironment() {
        * them read as light brushed aluminum instead of muddy grey plastic.
        */}
       <Lightformer
-        color="#c9ccd0"
+        color="#d6d9dd"
         form="rect"
-        intensity={0.55}
+        intensity={0.95}
         position={[0, 5, -11]}
         scale={[26, 12, 1]}
       />
       {/*
        * Negative fill, kept low and shallow so it only darkens grazing edges
-       * rather than swallowing every horizontal reflection.
+       * rather than swallowing every horizontal reflection. Taken down with the
+       * shell — at #8e9194 it was lifting exactly the grazing edges it exists
+       * to sink.
        */}
       <Lightformer
-        color="#8e9194"
+        color="#2a2c2f"
         form="rect"
-        intensity={0.34}
+        intensity={0.7}
         position={[0, 0.9, -7.4]}
         scale={[16, 2.2, 1]}
       />
@@ -3464,10 +4051,16 @@ function Laptop({
 
       <group position={[0, 0.022, 0]}>
         {/*
-         * Palmrest. Brushed across the deck, camera-left to camera-right, at
-         * the 0.24 satin a bead-blasted-then-brushed unibody actually holds —
-         * at 0.16 it was closer to a polished plate and the grain map had
-         * nothing to modulate.
+         * Palmrest. Brushed across the deck, camera-left to camera-right.
+         *
+         * Down from 0.24 to 0.14. The deck is the largest flat metal surface a
+         * lens ever sees on this bench and it is the surface the whole "does it
+         * read as aluminum" question is settled on — at a 0.24 satin the
+         * overhead strips reflected as a wash the width of the whole plate,
+         * which is a value, not a highlight, and it did not move when the
+         * camera did. At 0.14 with the material's anisotropy stretching the
+         * lobe along the brushing, the same strips resolve as a bar that
+         * travels across the deck through the parallax sweep.
          */}
         <RoundedBox
           args={[3.35, 0.1, 2.3]}
@@ -3478,9 +4071,9 @@ function Laptop({
           smoothness={4}
         >
           <AluminumMaterial
-            envMapIntensity={2.0}
+            envMapIntensity={2.3}
             grain="lateral"
-            roughness={0.24}
+            roughness={0.13}
           />
         </RoundedBox>
         {/*
@@ -3745,14 +4338,20 @@ const TABLET_INDEX = featuredProjects.length;
  * it rather than restaging it.
  */
 const TABLET_SEAT: Transform = {
-  position: [-1.9, 0, 0.78],
+  position: [-2.02, 0, 0.24],
   /*
-   * 0.88, not 1. At true scale an 11-inch portrait tablet is taller in frame
-   * than a 14-inch laptop lid — correct, and wrong for this shot, because the
-   * one object here that is not a shipped product would be the largest thing
-   * in it. Backed off until it reads as the door it is.
+   * 0.74, not 0.88 and not 1. At true scale an 11-inch portrait tablet is
+   * taller in frame than a 14-inch laptop lid — correct, and wrong for this
+   * shot, because the one object here that is not a shipped product would be
+   * the largest thing in it. 0.88 did not go far enough: standing front-most
+   * and nearest the lens it still read as the dominant mass of the frame, and
+   * a viewer's first fixation landed on the *unshipped* work.
+   *
+   * Backed off another notch and pushed half a unit back into the cluster, so
+   * it now reads as the door it is: present, clearly openable, and secondary
+   * to the four products it stands beside.
    */
-  scale: 0.88,
+  scale: 0.74,
   rotation: [0, 0.24, 0],
 };
 
@@ -5638,12 +6237,25 @@ function GroundShadows({ mobile }: { mobile: boolean }) {
   const frames = settled ? 1 : Infinity;
 
   return (
+    /*
+     * Re-weighted against the PCSS directional rather than tuned in isolation.
+     * The two passes were disagreeing about how hard an object touches: the
+     * right cluster sat in a heavy dark smear while the left floated on faint
+     * ellipses, because this pass and the per-object cores were carrying most
+     * of the grounding on one side and the directional most of it on the other.
+     *
+     * `far` opened 0.5 → 0.85 so the pass sees a phone's whole stand rather
+     * than the last half-unit of it, `blur` up with it, and the colour warmed
+     * off pure grey toward the set's own shadow tone. Opacity stays modest —
+     * the soft directional is the grounding authority now, this is the ambient
+     * darkening that lives under it.
+     */
     <ContactShadows
-      blur={1.8}
-      color="#6b6e71"
-      far={0.5}
+      blur={2.6}
+      color="#5c6064"
+      far={0.85}
       frames={frames}
-      opacity={0.22}
+      opacity={0.26}
       /* Offset along the key's ground vector so it agrees with the directional. */
       position={[0.22, 0.005, -0.1]}
       resolution={mobile ? 512 : 1024}
@@ -6372,11 +6984,21 @@ function Scene({
       <fog attach="fog" args={[SET_GREY, 13, 42]} />
       <StudioEnvironment />
       {/*
-       * Ambient and key are trimmed for the NoToneMapping response. The lower
-       * room fill keeps the studio in late-afternoon territory while the hard
-       * environment strips still resolve on the aluminum.
+       * The diffuse half of the studio, and the reason the shell could be taken
+       * down two stops without the set going with it.
+       *
+       * A hemisphere is a *gradient* where an ambient is a flood: up-facing
+       * normals get the skylight, down-facing normals get the bounce off the
+       * bench, and everything between turns through it. That is the museum
+       * overcast this direction is after — a bright room that still lets a
+       * cylinder or a chamfer round. Metalness-1 aluminum has no diffuse term
+       * and cannot see any of it, so the chassis keep the contrasty dark room.
        */}
-      <ambientLight intensity={0.045} />
+      <hemisphereLight
+        args={['#e9ecef', '#6a6e72', 1.45]}
+        position={[0, 8, 0]}
+      />
+      <ambientLight intensity={0.03} />
       {/*
        * Frustum tightened to the working area actually in frame. The old
        * ±14 / +12..-12 box spread a 2048 map over 28 world units — 0.014 per
@@ -6404,11 +7026,22 @@ function Scene({
        * ratio at all, only an average. This is a ratio change, not a relight:
        * same position, same light-grey studio palette.
        */}
+      {/*
+       * Under VSM the bias story changes completely: the depth comparison is a
+       * Chebyshev bound on stored moments rather than a direct depth test, so
+       * the old -0.0002 / 0.09 pair — tuned to keep PCF acne off the laptop
+       * gap and the history stand tops — has nothing to correct and only ever
+       * peter-pans the contact. `radius` and `blurSamples` are the softness
+       * dials that replace them: 5.5 over a 2048 map is a penumbra a little
+       * under the apparent size of the overhead softbox, which is the whole
+       * point of the change.
+       */}
       <directionalLight
         castShadow
-        intensity={1.1}
+        intensity={1.55}
         position={[-6.5, 7, 3.2]}
-        shadow-bias={-0.0002}
+        shadow-bias={0}
+        shadow-blurSamples={12}
         shadow-camera-bottom={-3}
         shadow-camera-far={22}
         shadow-camera-left={-7}
@@ -6416,7 +7049,8 @@ function Scene({
         shadow-camera-right={7}
         shadow-camera-top={6}
         shadow-mapSize={mobile ? [1024, 1024] : [2048, 2048]}
-        shadow-normalBias={0.09}
+        shadow-normalBias={0.02}
+        shadow-radius={5.5}
       />
       {/*
        * Fill, camera-right and slightly below the key's elevation, at roughly a
@@ -6427,7 +7061,16 @@ function Scene({
        * gives the camera-right faces of every chassis, stand and blank a second
        * value to fall to.
        */}
-      <directionalLight intensity={0.22} position={[5.5, 2.4, 4.5]} />
+      {/*
+       * Held down to a 6:1 ratio against the key rather than 4:1. In the
+       * high-key grade the hemisphere already carries the shadow side, and a
+       * second broad directional on top of it was the last thing keeping the
+       * two flanks of a chassis at the same value.
+       *
+       * It shares the key's +x ground direction rather than opposing it, so
+       * nothing in the set gets a second, contradictory terminator.
+       */}
+      <directionalLight intensity={0.26} position={[5.5, 2.4, 4.5]} />
 
       <StudioCove />
       <BenchTop />
@@ -6591,7 +7234,23 @@ export function BenchScene({
           gl.setClearAlpha(0);
         }}
         onPointerMissed={handlePointerMissed}
-        shadows
+        /*
+         * Variance shadow maps, not the default PCF.
+         *
+         * The set was telling two stories at once: a softbox rig overhead and
+         * bare-bulb shadow edges under every phone and tablet — a silhouette
+         * that stayed razor-crisp a foot away from the object throwing it. VSM
+         * stores depth moments and blurs the *map*, so the penumbra is a real
+         * filtered footprint rather than a jittered hard edge, and it widens
+         * with the caster's standoff the way an area source does.
+         *
+         * drei's SoftShadows (PCSS) is the other way to get this and it does
+         * not compile against three 0.182 — its injected chunk still calls the
+         * old `unpackRGBAToDepth` signature, which takes every material in the
+         * scene down with it. VSM is core, costs one blur pass on a 2048 map
+         * that only runs while the scene is unsettled, and needs no patching.
+         */
+        shadows={{ type: THREE.VSMShadowMap }}
       >
         <Scene
           initialView={initialView}

@@ -24,8 +24,16 @@
    * opaque. #dee0e1 is within a point of what 0.6 over the bench resolved to,
    * so the plates keep the value the art direction wants, and nothing behind
    * them can print through the type.
+   *
+   * Lifted to #e3e5e7 with the scene regrade. The card row used to be told
+   * apart from the bench behind it by a 1px hairline and nothing else, which is
+   * a UI boundary rather than a physical one — and now that the near bench is
+   * the darkest band in the frame, the same row can be separated the way the
+   * rest of the set is: by value. Roughly 30 codes of daylight between the
+   * plate and the ground under it, so the hairline is confirmation rather than
+   * the whole edge.
    */
-  --paper: #d1d4d6;
+  --paper: #e3e5e7;
 
   position: relative;
   display: grid;
@@ -146,8 +154,17 @@
   position: absolute;
   z-index: -1;
   inset: -1.25rem -1.4rem -3rem;
-  background: rgba(207, 210, 213, 0.46);
-  backdrop-filter: blur(14px);
+  /*
+   * The veil is a legibility device, and it was sized for a set that had no
+   * tonal contrast of its own: at 14px of blur it defocused a third of the
+   * frame — the tablet, the near phone and half the left MacBook — to buy
+   * headline contrast the scene could not supply. With the regrade the bench
+   * behind the headline sits a full value step under the type, so the veil can
+   * come down to a whisper: it still lifts the copy off whatever passes behind
+   * it, and the set is no longer soft where it should be sharp.
+   */
+  background: rgba(210, 213, 216, 0.4);
+  backdrop-filter: blur(5px);
   /*
    * The radii must land the transparent stop INSIDE the box: the ellipse is
    * centred at 16%/18%, so the far edges sit at ~84% of the width and ~82% of
@@ -391,20 +408,43 @@
   justify-content: space-between;
 }
 
+/*
+ * The serif, echoed once below the fold.
+ *
+ * The page had exactly one voice above the fold and a different one everywhere
+ * else: a 4.35rem Cormorant headline, then nothing but Helvetica for the rest
+ * of the document. That is not restraint, it is two designs stacked. Setting
+ * the product titles — and only the product titles — in the display face gives
+ * the type system a second beat and ties the card row back to the masthead
+ * without the serif ever becoming the page's body voice.
+ *
+ * The size goes up with it: a serif at 0.96rem next to a 0.67rem sans reads as
+ * a caption, not as a title, so it needs the extra tenth of a rem to hold the
+ * hierarchy it is claiming. Letter-spacing comes back off — the tight negative
+ * tracking was compensation for Helvetica's wide default fit and it closes a
+ * Cormorant lockup up too far.
+ */
 .projectPlate h2,
 .signalDetails h2,
 .historyDetails h2 {
-  margin: 0.65rem 0 0.45rem;
-  font-size: 0.96rem;
+  margin: 0.6rem 0 0.5rem;
+  font-family: var(--font-display), 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.12rem;
   font-weight: 600;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.008em;
+  line-height: 1.15;
 }
 
 .projectPlate p,
 .signalDetails p {
   margin: 0 0 0.85rem;
   color: var(--ink-body);
-  font-size: 0.67rem;
+  /*
+   * 0.735rem. At 0.67 the card body was set two full steps under the eyebrow
+   * it sat below and read as legal small print — the copy describing four
+   * shipped products should not be the smallest type on the page.
+   */
+  font-size: 0.735rem;
   line-height: 1.45;
 }
 
