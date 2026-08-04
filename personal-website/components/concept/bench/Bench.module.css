@@ -388,6 +388,28 @@
   pointer-events: none;
 }
 
+/*
+ * bottom 40px in the work shot only, and it is a set note rather than a layout
+ * one.
+ *
+ * The row is bottom-anchored, so its height and its offset are the only two
+ * things that decide where its top edge lands on the bench behind it — and its
+ * top edge was landing within a pixel of the two foreground phone stands' front
+ * feet. A contact shadow that a UI panel cuts off before it finishes is the one
+ * kind of shadow that cannot ground anything: the eye reads the panel edge as
+ * the end of the floor. Eight pixels here plus the plate's own vertical trim
+ * below give the pools ~13 px of bench to resolve in.
+ *
+ * Scoped to `work` on purpose. Nothing stands that far downstage in the other
+ * three setups, so they have no shadow to make room for — and the same eight
+ * pixels there only take their panel from 17 px clear of the footer rule to
+ * nine. Measured across all four views before scoping, which is how that got
+ * caught.
+ */
+.shell[data-view='work'] .details {
+  bottom: 40px;
+}
+
 .details > * {
   pointer-events: auto;
 }
@@ -407,10 +429,17 @@
   backdrop-filter: blur(12px);
 }
 
+/*
+ * Vertical padding down to 0.8rem while the horizontal stays at 0.95rem — the
+ * gutter-cancelling overrides below are written against that 0.95rem and the
+ * type has to stay on the page's margin. Five pixels off the band's height,
+ * spent on bench under the phone stands (see `.details`), and the plate is
+ * still taller than its 150px floor so the row's rhythm does not move.
+ */
 .projectPlate {
   display: flex;
   min-height: 150px;
-  padding: 0.95rem;
+  padding: 0.8rem 0.95rem;
   color: var(--ink);
   flex-direction: column;
   /*
