@@ -480,6 +480,19 @@
   margin-right: 0.5rem;
 }
 
+/*
+ * The credit rail is the other row of copy with no plate under it — it reads
+ * straight off the near bench, so it carries the same regrade cost the footer
+ * does and gets the same correction. Scoped to this rail on purpose: every
+ * other `.fieldLabel` on the page sits on an opaque plate whose value did not
+ * move, and lifting those would only make the small caps shout.
+ */
+.credLine,
+.credLine .fieldLabel,
+.signRail .fieldLabel {
+  color: rgba(20, 21, 23, 0.82);
+}
+
 .signRail {
   display: flex;
   gap: 0.1rem 0.55rem;
@@ -1431,7 +1444,16 @@
   min-height: 32px;
   padding: 0 clamp(1rem, 2.8vw, 2.75rem);
   border-top: 1px solid var(--hairline);
-  color: var(--muted);
+  /*
+   * Not `var(--muted)`. This is the one row of copy on the page that sits
+   * directly on the bench's shadowed front mass rather than on a plate, so it
+   * is the only one whose contrast moves when the set is regraded — and the
+   * set just came down a third of a stop. Measured against the new fascia it
+   * was the lowest-contrast text on the page; four points of ink put it back
+   * where it read before the regrade without making a decorative caption
+   * shout.
+   */
+  color: rgba(20, 21, 23, 0.82);
   font-size: 0.56rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;

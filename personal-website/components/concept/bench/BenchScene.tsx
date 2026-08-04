@@ -92,7 +92,16 @@ const SCREEN_WELL = '#0a0b0c';
  * Every value below is the top of its own ramp — the painted falloffs and the
  * hemisphere gradient carry it down from there.
  */
-const BENCH_TOP = '#a8abae';
+/*
+ * Down one more notch, and this half of the deepening is albedo rather than
+ * light. Pulling the set's env share was the right first move — it takes the
+ * flat ambient wash out and leaves the key's shaping intact — but measurement
+ * says the cubemap is under a third of this surface's budget, so env alone
+ * cannot move the bench far enough to stop being the least-transformed thing
+ * in the frame. A ~6% cut in stock takes the rest without touching a single
+ * light, so the sweep the falloffs paint arrives unchanged, one step lower.
+ */
+const BENCH_TOP = '#9fa2a5';
 const BENCH_FLOOR = '#63666a';
 /*
  * The bench front is now the darkest band in the frame, not a lighter strip
@@ -113,6 +122,27 @@ const SET_GREY = '#9da1a5';
  * ended up living inside the same 20-code band as the bench and the chassis.
  */
 const COVE_GREY = '#cfd3d7';
+/**
+ * How much of the studio cubemap the *set* is allowed to see, as opposed to
+ * the machined bodies standing on it.
+ *
+ * This is the one dial that lets a bright gallery and a contrasty room coexist
+ * in the same frame. A cubemap is sampled by normal alone, so the shell is an
+ * ambient term: drop it far enough for aluminum to have somewhere to fall and
+ * the bench, cove and fascia fall with it; keep it high enough for the set and
+ * every chassis is flooded flat. Splitting the two is what buys real value
+ * structure without a relight.
+ *
+ * The set keeps its own light — the hemisphere gradient and the key, neither of
+ * which a metalness-1 surface can see — so what comes off here is the flat
+ * ambient half of its budget, not its shape. Held at 0.55 rather than the
+ * quarter a dark-editorial grade would take: measured, the cubemap is only
+ * about 29% of the bench's total budget, so even zero here cannot take the set
+ * a full half-stop down — and everything under ~0.35 buys almost no further
+ * depth while flattening the cove's horizon lift, which is the one thing
+ * holding the gallery sweep together.
+ */
+const SET_ENV = 0.42;
 const PHONE_TITLES = new Set(['iCalarms', 'Charades 2026']);
 
 /**
@@ -756,10 +786,20 @@ function getBrushedRoughness() {
     return brushedRoughness;
   }
 
-  const size = 512;
+  /*
+   * Non-square, and wide in the direction the brushing runs. The grain is a
+   * stack of 1px horizontal lines, so every texel of vertical resolution buys
+   * a distinct scratch while every texel of horizontal resolution buys
+   * nothing but memory. 1024x512 at repeat (2,1) puts roughly twice as many
+   * resolvable passes across a deck as the old 512² at repeat (3,1) did, and
+   * anisotropy 16 is what keeps them from averaging into a flat grey the
+   * moment the surface tips away from the lens.
+   */
+  const width = 1024;
+  const height = 512;
   const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
+  canvas.width = width;
+  canvas.height = height;
   const context = canvas.getContext('2d');
 
   if (context) {
@@ -769,43 +809,45 @@ function getBrushedRoughness() {
      * and turn satin aluminum into chrome. The grain lives in the streaks.
      */
     context.fillStyle = '#f2f2f2';
-    context.fillRect(0, 0, size, size);
+    context.fillRect(0, 0, width, height);
 
     /*
-     * Tripled contrast, on twice the resolution.
-     *
-     * At 256px with per-line alpha of 0.02–0.06 the grain was, arithmetically,
-     * a ±1.5% modulation of a roughness that was itself 0.2 — below the point
-     * where a GGX lobe changes shape at all, let alone visibly. It was a
-     * texture that cost a canvas and rendered as nothing.
-     *
-     * Two changes make it read. The alpha range goes to 0.07–0.25, and the
-     * lines are drawn in *bands* rather than uniformly: a real brushed finish
-     * has a coarse structure of a dozen visible passes with fine scratches
-     * inside them, and it is the coarse structure — not the scratches — that
-     * catches a raking slit as a travelling streak.
+     * The fine pass: dense, low-contrast hairlines. On their own these are
+     * film grain — they modulate the lobe everywhere by a little and read as
+     * noise rather than as a finish. They are the substrate the coarse pass
+     * below is cut into.
      */
-    for (let band = 0; band < 26; band += 1) {
-      const y = Math.floor(Math.random() * size) + 0.5;
-      const height = 2 + Math.random() * 5;
-      const dark = Math.random() > 0.45;
-      context.fillStyle = dark
-        ? `rgba(0,0,0,${0.1 + Math.random() * 0.15})`
-        : `rgba(255,255,255,${0.14 + Math.random() * 0.2})`;
-      context.fillRect(0, y, size, height);
-    }
-
-    for (let line = 0; line < 900; line += 1) {
-      const y = Math.floor(Math.random() * size) + 0.5;
-      const alpha = 0.07 + Math.random() * 0.18;
-      context.strokeStyle =
-        Math.random() > 0.5
-          ? `rgba(255,255,255,${Math.min(1, alpha * 1.6)})`
-          : `rgba(0,0,0,${alpha})`;
+    for (let line = 0; line < 1400; line += 1) {
+      const y = Math.floor(Math.random() * height) + 0.5;
+      const alpha = 0.06 + Math.random() * 0.14;
+      const polish = Math.random() > 0.5;
+      context.strokeStyle = polish
+        ? `rgba(255,255,255,${Math.min(1, alpha * 1.9)})`
+        : `rgba(0,0,0,${alpha})`;
       context.lineWidth = 1;
       context.beginPath();
       context.moveTo(0, y);
-      context.lineTo(size, y);
+      context.lineTo(width, y);
+      context.stroke();
+    }
+
+    /*
+     * Coarse tool scores: the marks that read as machining rather than as
+     * grain. A real brushed unibody has a dozen or so passes wide enough and
+     * deep enough to catch a raking source individually — and it is those,
+     * not the hairlines, that a viewer resolves as "brushed" when the lens
+     * sweeps and a bright bar walks across the deck one score at a time.
+     */
+    for (let score = 0; score < 34; score += 1) {
+      const y = Math.floor(Math.random() * height) + 0.5;
+      const deep = Math.random() > 0.45;
+      context.strokeStyle = deep
+        ? 'rgba(0,0,0,0.34)'
+        : 'rgba(255,255,255,0.55)';
+      context.lineWidth = 1.6 + Math.random() * 1.4;
+      context.beginPath();
+      context.moveTo(0, y);
+      context.lineTo(width, y);
       context.stroke();
     }
   }
@@ -813,8 +855,8 @@ function getBrushedRoughness() {
   const texture = new THREE.CanvasTexture(canvas);
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(3, 1);
-  texture.anisotropy = 8;
+  texture.repeat.set(2, 1);
+  texture.anisotropy = 16;
   brushedRoughness = texture;
   return texture;
 }
@@ -836,7 +878,7 @@ function getBrushedRoughnessCross() {
   const texture = getBrushedRoughness().clone();
   texture.center.set(0.5, 0.5);
   texture.rotation = Math.PI / 2;
-  texture.repeat.set(1, 3);
+  texture.repeat.set(1, 2);
   texture.needsUpdate = true;
   brushedRoughnessCross = texture;
   return texture;
@@ -917,7 +959,20 @@ const BENCH_POOL_SIGMA_Z = 3.7;
  * a cove junction at L238. The near ramp now owns the near end, which frees
  * this to sit high enough that the far edge meets the cyc without a step.
  */
-const BENCH_POOL_FLOOR = 0.72;
+const BENCH_POOL_FLOOR = 0.68;
+/**
+ * Ceiling on the pool, and the fix for the one thing this grade still had
+ * inverted.
+ *
+ * The map's peak used to be pure white, which made the patch of empty bench
+ * directly under the device cluster the single brightest large region in the
+ * frame — measured at L233, above the laptop chassis standing on it and level
+ * with the screens. A key pool is allowed to be the brightest part of the
+ * *set*; it is not allowed to out-value the subject. Capping the peak at 0.9
+ * and dropping the floor with it keeps the same ~25% sweep from cluster to
+ * frame edge while putting the whole ramp a step under the hardware.
+ */
+const BENCH_POOL_PEAK = 0.9;
 /**
  * A second, much wider and much shallower falloff laid under the key pool.
  *
@@ -935,9 +990,18 @@ const BENCH_POOL_FLOOR = 0.72;
  * frame was 60% one flat plateau, which is exactly the wash this direction has
  * to beat. 24% over ~6 units keeps falling where the pool has stopped.
  */
-const BENCH_EDGE_SIGMA_X = 6;
+/*
+ * Deepened again, 0.19 → 0.26, for the profile lens specifically. Profile is
+ * the flattest of the four views — it stands furthest off, sees the widest
+ * span of bench and holds the smallest subject, so it is the one frame where
+ * the pool has bottomed out across almost everything visible and the only
+ * shaping left is this term. A third more depth is a visible corner falloff
+ * out there and still under a code value per unit in the work shot, where the
+ * pool is doing the work.
+ */
+const BENCH_EDGE_SIGMA_X = 6.5;
 const BENCH_EDGE_SIGMA_Z = 6;
-const BENCH_EDGE_DEPTH = 0.19;
+const BENCH_EDGE_DEPTH = 0.26;
 /**
  * The foreground ramp — the third band of the gallery sweep.
  *
@@ -1100,7 +1164,7 @@ function getBenchFalloff() {
         );
         const value = Math.round(
           255 *
-            (BENCH_POOL_FLOOR + (1 - BENCH_POOL_FLOOR) * pool) *
+            (BENCH_POOL_FLOOR + (BENCH_POOL_PEAK - BENCH_POOL_FLOOR) * pool) *
             edge *
             near,
         );
@@ -2163,6 +2227,14 @@ function createEraPlacardTexture(
 /* -------------------------------------------------------------------------- */
 
 function AluminumMaterial({
+  /*
+   * Exposed, because not every aluminum face in the set is brushed. A machined
+   * chamfer is a *polished* cut — a single pass of a diamond tool, not a belt —
+   * and stretching its lobe along the brushing is what turned the one hard edge
+   * highlight in the frame back into a broad sheen. Bodies keep the streak;
+   * cuts turn it off.
+   */
+  anisotropy = 0.9,
   color = ALUMINUM,
   /*
    * Up with the shell's drop. A metalness-1 surface has *only* the environment
@@ -2184,10 +2256,18 @@ function AluminumMaterial({
    */
   roughness = 0.13,
 }: {
+  /** 0 disables the directional lobe; 1 is a fully drawn-out brush streak. */
+  anisotropy?: number;
   color?: string;
   envMapIntensity?: number;
-  /** Which way the brushing runs across the face: across it, or along it. */
-  grain?: 'lateral' | 'axial';
+  /**
+   * Which way the brushing runs across the face: across it, along it, or not
+   * at all. `none` drops the roughnessMap entirely and is for polished cuts —
+   * a chamfer is one pass of a diamond tool, so it has no brushing to carry,
+   * and forcing the grain onto it at near-mirror roughness resolves every
+   * individual tool score as its own hard stripe down the edge.
+   */
+  grain?: 'lateral' | 'axial' | 'none';
   /**
    * Full metal by default. Anything below 1 is a deliberate cheat for a part
    * whose visible faces are near-vertical: pure metal has no diffuse term, so
@@ -2198,11 +2278,15 @@ function AluminumMaterial({
   metalness?: number;
   roughness?: number;
 }) {
-  const map = useMemo(
-    () =>
-      grain === 'axial' ? getBrushedRoughnessCross() : getBrushedRoughness(),
-    [grain],
-  );
+  const map = useMemo(() => {
+    if (grain === 'none') {
+      return null;
+    }
+
+    return grain === 'axial'
+      ? getBrushedRoughnessCross()
+      : getBrushedRoughness();
+  }, [grain]);
 
   /*
    * meshPhysicalMaterial, for one property: `anisotropy`.
@@ -2221,7 +2305,7 @@ function AluminumMaterial({
    */
   return (
     <meshPhysicalMaterial
-      anisotropy={0.9}
+      anisotropy={anisotropy}
       anisotropyRotation={grain === 'axial' ? Math.PI / 2 : 0}
       color={color}
       envMapIntensity={envMapIntensity}
@@ -2265,7 +2349,22 @@ function ChamferBand({
       radius={radius}
       smoothness={smoothness}
     >
-      <AluminumMaterial color={color} envMapIntensity={2.2} roughness={0.06} />
+      {/*
+       * Anisotropy off. A chamfer is a polished diamond cut, not a brushed
+       * face, and a directional lobe here smears the one hard edge highlight
+       * in the set back into the same broad sheen the band exists to replace.
+       * Roughness stays a hair off mirror rather than at it — 0.03 chrome
+       * clipped the front lip of every deck to white against the new room;
+       * 0.055 is machined aluminum that still resolves the raking slit as a
+       * line and still travels with the lens.
+       */}
+      <AluminumMaterial
+        anisotropy={0}
+        color={color}
+        envMapIntensity={2.4}
+        grain="none"
+        roughness={0.055}
+      />
     </RoundedBox>
   );
 }
@@ -2716,6 +2815,7 @@ function StudioCove() {
     >
       <meshStandardMaterial
         color={COVE_GREY}
+        envMapIntensity={SET_ENV}
         map={falloff}
         metalness={0}
         roughness={0.98}
@@ -2749,7 +2849,11 @@ function BenchTop() {
        */}
       <mesh position={[0, -0.42, BENCH_FRONT_Z - 15]}>
         <boxGeometry args={[56, 0.4, 30]} />
-        <meshStandardMaterial color={BENCH_FLOOR} roughness={0.95} />
+        <meshStandardMaterial
+          color={BENCH_FLOOR}
+          envMapIntensity={SET_ENV}
+          roughness={0.95}
+        />
       </mesh>
 
       {/*
@@ -2763,7 +2867,11 @@ function BenchTop() {
        */}
       <mesh position={[0, -BENCH_THICKNESS / 2, BENCH_CENTER_Z]}>
         <boxGeometry args={[BENCH_WIDTH, BENCH_THICKNESS, BENCH_DEPTH]} />
-        <meshStandardMaterial color={BENCH_FLOOR} roughness={0.8} />
+        <meshStandardMaterial
+          color={BENCH_FLOOR}
+          envMapIntensity={SET_ENV}
+          roughness={0.8}
+        />
       </mesh>
 
       {/*
@@ -2784,10 +2892,21 @@ function BenchTop() {
         rotation={[-Math.PI / 2, 0, 0]}
       >
         <planeGeometry args={[BENCH_WIDTH, BENCH_DEPTH]} />
+        {/*
+         * Metalness down from 0.04 to 0. It was a rounding error as a material
+         * property and a real defect as a photograph: a 4% metallic term on a
+         * plane this large is enough IBL specular that the camera-right accent
+         * slit printed a hard white bloom onto the bench in front of the right
+         * laptop, brighter than the screens it stood next to. The surface is
+         * bead-blasted work top — it has no metallic term at all, and what
+         * little sheen it should hold comes from the dielectric lobe the
+         * roughness map already shapes.
+         */}
         <meshStandardMaterial
           color={BENCH_TOP}
+          envMapIntensity={SET_ENV}
           map={falloff}
-          metalness={0.04}
+          metalness={0}
           roughness={0.72}
           roughnessMap={sheen}
         />
@@ -2796,7 +2915,11 @@ function BenchTop() {
       {/* One hairline seam running the length of the top. */}
       <mesh position={[0, 0.0016, BENCH_SEAM_Z]}>
         <boxGeometry args={[BENCH_WIDTH, 0.002, 0.016]} />
-        <meshStandardMaterial color="#8f9294" roughness={0.6} />
+        <meshStandardMaterial
+          color="#8f9294"
+          envMapIntensity={SET_ENV}
+          roughness={0.6}
+        />
       </mesh>
 
       {/*
@@ -2809,7 +2932,18 @@ function BenchTop() {
       >
         <mesh castShadow receiveShadow>
           <boxGeometry args={[BENCH_WIDTH, 0.26, 0.5]} />
-          <meshStandardMaterial color={BENCH_RAIL} roughness={0.74} />
+          {/*
+           * The rail sits under the lip, facing the lens and away from the
+           * key, so the ambient half of its budget is *all* it has — which is
+           * exactly why it needs to see less of the room than the top does.
+           * Half the set's share keeps the bench front the darkest band in the
+           * frame instead of a lighter strip stacked on a darker one.
+           */}
+          <meshStandardMaterial
+            color={BENCH_RAIL}
+            envMapIntensity={SET_ENV * 0.5}
+            roughness={0.74}
+          />
         </mesh>
       </group>
 
@@ -2832,7 +2966,12 @@ function BenchTop() {
        */}
       <mesh position={[0, -3.1, BENCH_FRONT_Z + 0.06]}>
         <planeGeometry args={[56, 6]} />
-        <meshStandardMaterial color="#63666a" map={fascia} roughness={0.9} />
+        <meshStandardMaterial
+          color="#63666a"
+          envMapIntensity={SET_ENV * 0.5}
+          map={fascia}
+          roughness={0.9}
+        />
       </mesh>
     </group>
   );
@@ -3360,7 +3499,20 @@ function StudioEnvironment() {
        * metalness-1 surface can see. That split is the whole grade — a bright
        * gallery for the matte set, a contrasty room for the aluminum.
        */}
-      <color args={['#6a6e73']} attach="background" />
+      {/*
+       * Down another two thirds of a stop, to the metal-only floor.
+       *
+       * The shell is no longer a shared term. With SET_ENV holding the bench,
+       * cove and fascia off the cubemap, this value now lights exactly one
+       * class of surface — the machined bodies — so it can be set to what
+       * aluminum needs rather than to what the room can survive. At #6a6e73 it
+       * was still a fill: every chamfer, rail and deck lip had a mid-grey floor
+       * under its specular, which is why the front lips clipped to chrome and
+       * the highlights never travelled. At #4f5357 the sources in this cubemap
+       * are the only bright things in it, and a metal face that turns away from
+       * them actually goes somewhere.
+       */}
+      <color args={['#4f5357']} attach="background" />
       {/*
        * Overhead-front softbox, the key. Tightened from an 18x9 slab hung at
        * z 4.5 — at that size it lit the bench as one uniform field from frame
@@ -3375,12 +3527,24 @@ function StudioEnvironment() {
        * hanging it on the centreline is what guaranteed a symmetric room and a
        * 1:1 lateral ratio no amount of edge lighting could break.
        */}
+      {/*
+       * Off the centre line properly, and rolled.
+       *
+       * Half a unit further camera-left and pulled back in z, but the roll is
+       * the part that matters: a softbox hung square to the world puts its
+       * reflection on an up-facing deck as a bar parallel to the deck's own
+       * front edge, so the lid and the palmrest and the tablet face all return
+       * the same horizontal sheen and none of it says which side the light is
+       * on. Rolling the box 0.16rad tips that bar off-parallel — the decks now
+       * carry a subtle diagonal, and the lateral sweep across a face reads as
+       * a source with a position rather than as a gradient.
+       */}
       <Lightformer
         color="#ffffff"
         form="rect"
         intensity={3.1}
-        position={[-1.9, 7.2, 2.4]}
-        rotation={[-Math.PI / 3, 0, 0]}
+        position={[-2.4, 7.2, 2.2]}
+        rotation={[-Math.PI / 3, 0, 0.16]}
         scale={[8.5, 6, 1]}
       />
       {/*
@@ -3738,28 +3902,48 @@ function Phone({
            * 0.206 of rail depth straight across the display well and buries
            * the screen behind mirror aluminum.
            */}
+          {/*
+           * Polished cuts, so no grain and no directional lobe — same reason
+           * as ChamferBand. On a band this narrow the brushing map does not
+           * read as a finish at all; it resolves as a row of hard stripes
+           * marching down the phone's silhouette.
+           */}
           <mesh geometry={railProud} position={[0, 0, -0.103]}>
             <AluminumMaterial
+              anisotropy={0}
               color={ALUMINUM_BRIGHT}
-              envMapIntensity={2.6}
+              envMapIntensity={2.4}
+              grain="none"
               roughness={0.05}
             />
           </mesh>
           {/* Front and back edge loops of the rail. */}
           <mesh geometry={railEdge} position={[0, 0, 0.0975]}>
             <AluminumMaterial
+              anisotropy={0}
               color={ALUMINUM_BRIGHT}
-              envMapIntensity={3.0}
+              envMapIntensity={2.6}
+              grain="none"
               roughness={0.05}
             />
           </mesh>
           <mesh geometry={railEdge} position={[0, 0, -0.1035]}>
-            <AluminumMaterial envMapIntensity={2.4} roughness={0.06} />
+            <AluminumMaterial
+              anisotropy={0}
+              envMapIntensity={2.2}
+              grain="none"
+              roughness={0.06}
+            />
           </mesh>
 
           {/* Machined chamfer around the display perimeter, in bright metal. */}
           <mesh geometry={chamfer} position={[0, 0, 0.0868]}>
-            <AluminumMaterial color={ALUMINUM_BRIGHT} roughness={0.16} />
+            <AluminumMaterial
+              anisotropy={0}
+              color={ALUMINUM_BRIGHT}
+              grain="none"
+              roughness={0.16}
+            />
           </mesh>
 
           {/*
@@ -3991,9 +4175,16 @@ function KeyGrid() {
        * blobs at the value of the palmrest" read. Held down to 0.35 with no
        * metalness, the caps finally sit where black keycaps belong.
        */}
+      {/*
+       * Down a step with the well plate under it. A keycap is the darkest
+       * thing on a laptop and the deck only has weight if the value order —
+       * silver chassis, bright lip, black well, black caps — actually spans
+       * the range. At #3c3e40 over a #2a2c2e plate the well was two greys a
+       * few codes apart and the whole keyboard averaged back into the deck.
+       */}
       <meshStandardMaterial
-        color="#3c3e40"
-        envMapIntensity={0.35}
+        color="#343638"
+        envMapIntensity={0.3}
         metalness={0}
         roughness={0.62}
       />
@@ -4090,6 +4281,17 @@ function Laptop({
          * is the front run of it. Brightened to ALUMINUM_BRIGHT so it resolves
          * the raking slit as a hard line rather than a broad sheen.
          */}
+        {/*
+         * Pulled off chrome. At ALUMINUM_BRIGHT / 2.6 / 0.05 this loop was a
+         * near-perfect mirror facing the lens square-on across the full width
+         * of both decks, and what it mirrored was whichever source it happened
+         * to be pointed at — so the front lip clipped to flat white and read as
+         * a chrome trim strip glued onto an aluminum body. Stock colour, a
+         * third off the gain and twice the roughness: it still resolves the
+         * raking slit as a hard line that travels with the lens, but it is now
+         * a machined cut in the same metal as the deck rather than a different
+         * material.
+         */}
         <RoundedBox
           args={[3.354, 0.011, 2.304]}
           position={[0, 0.092, 0]}
@@ -4097,9 +4299,10 @@ function Laptop({
           smoothness={3}
         >
           <AluminumMaterial
-            color={ALUMINUM_BRIGHT}
-            envMapIntensity={2.6}
-            roughness={0.05}
+            anisotropy={0}
+            envMapIntensity={1.9}
+            grain="none"
+            roughness={0.1}
           />
         </RoundedBox>
 
@@ -4136,8 +4339,8 @@ function Laptop({
         >
           <planeGeometry args={[2.7, 1.2]} />
           <meshStandardMaterial
-            color="#2a2c2e"
-            envMapIntensity={0.22}
+            color="#222426"
+            envMapIntensity={0.18}
             metalness={0}
             roughness={0.9}
           />
@@ -4201,8 +4404,20 @@ function Laptop({
             radius={0.028}
           />
           {/* Bright machined chamfer running the lid perimeter. */}
+          {/*
+           * Polished cut, no grain. This ring is ~2 CSS px wide down the sides
+           * of the lid, and the grain map's coarse tool scores are wider than
+           * that — so each score landed on it as its own hard tick and the lid
+           * silhouette read as a serrated edge rather than a machined one. The
+           * scores belong on faces big enough to hold them.
+           */}
           <mesh geometry={chamfer} position={[0, 1.07, 0.0262]}>
-            <AluminumMaterial color={ALUMINUM_BRIGHT} roughness={0.14} />
+            <AluminumMaterial
+              anisotropy={0}
+              color={ALUMINUM_BRIGHT}
+              grain="none"
+              roughness={0.14}
+            />
           </mesh>
           {/* 0.0525 bezel land, raised so the display sits 0.004 under it. */}
           <mesh geometry={bezel} position={[0, 1.07, 0.027]}>
