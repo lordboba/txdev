@@ -243,7 +243,7 @@ export const projects: Project[] = [
     tech: ['FastAPI', 'LangChain', 'Gemini API', 'React'],
     link: 'https://github.com/lordboba/docupilot',
     linkLabel: 'View repository',
-    image: '/projects/docupilot-v1.png',
+    image: '/projects/docupilot-v1.jpg',
   },
   {
     title: 'Kinetic',
