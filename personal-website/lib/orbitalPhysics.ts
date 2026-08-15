@@ -3,7 +3,10 @@ import { SCENE_CENTER, type OrbitalSectionMeta } from '@/lib/orbitalData';
 const TWO_PI = Math.PI * 2;
 const ORBIT_PATH_SAMPLES = 144;
 
-export const ORBITAL_AXIS_LIMIT_DEGREES = 90;
+// Wider independent pitch/yaw ranges can combine with a planet's own plane
+// tilt and turn its orbit almost edge-on. Keep the full control domain above
+// a 0.3 projected minor/major ratio so the rings retain visible depth.
+export const ORBITAL_AXIS_LIMIT_DEGREES = 35;
 
 export type OrbitalAxisState = {
   tiltX: number;
