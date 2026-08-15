@@ -15,12 +15,9 @@
     "react-doctor:score": "react-doctor . --score"
   },
   "dependencies": {
-    "@react-three/drei": "^10.7.7",
-    "@react-three/fiber": "^9.5.0",
     "next": "^16.1.6",
     "react": "^19.2.1",
-    "react-dom": "^19.2.1",
-    "three": "^0.182.0"
+    "react-dom": "^19.2.1"
   },
   "devDependencies": {
     "@react-grab/mcp": "^0.1.16",
