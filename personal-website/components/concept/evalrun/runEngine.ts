@@ -118,12 +118,6 @@ function compileWork(): SuiteDefinition {
 }
 
 function compileSignals(): SuiteDefinition {
-  const stateByStatus: Record<string, CaseState> = {
-    Shipping: 'pass',
-    Measuring: 'running',
-    Collecting: 'pending',
-  };
-
   return {
     id: 'inflight.suite',
     target: 'signals',
@@ -133,7 +127,7 @@ function compileSignals(): SuiteDefinition {
       assertion: experiment.status,
       evidence: experiment.description,
       duration: deterministicDuration(experiment.title),
-      terminalState: stateByStatus[experiment.status],
+      terminalState: 'running',
     })),
   };
 }

@@ -77,13 +77,17 @@ test('work cases preserve every real project artifact', () => {
   });
 });
 
-test('signals map source statuses to pass, running, and pending without invention', () => {
+test('signals preserve source labels and keep every active experiment running', () => {
   const suite = compileSuite('signals');
 
   assert.equal(suite.id, 'inflight.suite');
   assert.deepEqual(
     suite.cases.map((caseDefinition) => caseDefinition.terminalState),
-    ['pass', 'running', 'pending'],
+    experiments.map(() => 'running'),
+  );
+  assert.deepEqual(
+    suite.cases.map((caseDefinition) => caseDefinition.assertion),
+    experiments.map((experiment) => experiment.status),
   );
   assert.deepEqual(
     suite.cases.map((caseDefinition) => caseDefinition.evidence),
@@ -117,27 +121,28 @@ test('normal execution streams one case at a time before settling', () => {
   assert.equal(finished.completed, suite.cases.length);
 });
 
-test('reduced motion resolves finite suites immediately but preserves honest signal states', () => {
+test('reduced motion resolves finite suites but keeps active experiments running', () => {
   const work = resolveSuiteAt(compileSuite('work'), 0, 0, true);
   const signals = resolveSuiteAt(compileSuite('signals'), 0, 0, true);
 
   assert.ok(work.cases.every((entry) => entry.state === 'pass'));
-  assert.deepEqual(
-    signals.cases.map((entry) => entry.state),
-    ['pass', 'running', 'pending'],
-  );
-  assert.equal(signals.cases[1].elapsed, signals.cases[1].duration);
+  assert.ok(signals.cases.every((entry) => entry.state === 'running'));
+  assert.ok(signals.cases.every((entry) => entry.elapsed === entry.duration));
   assert.equal(
     signals.elapsed,
-    signals.cases[0].duration + signals.cases[1].duration,
+    signals.cases.reduce((total, entry) => total + entry.duration, 0),
   );
 });
 
-test('the measuring signal keeps the suite wall time running', () => {
+test('active experiments keep the suite wall time running', () => {
   const signals = compileSuite('signals');
   const snapshot = resolveSuiteAt(signals, 500, 100_500, false);
 
   assert.equal(snapshot.elapsed, 100_000);
-  assert.equal(snapshot.cases[1].state, 'running');
-  assert.ok(snapshot.cases[1].elapsed > signals.cases[1].duration);
+  assert.ok(snapshot.cases.every((entry) => entry.state === 'running'));
+  assert.ok(
+    snapshot.cases.every(
+      (entry, index) => entry.elapsed > signals.cases[index].duration,
+    ),
+  );
 });
