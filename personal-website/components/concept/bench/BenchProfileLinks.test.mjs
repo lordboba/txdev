@@ -19,3 +19,14 @@ test('profile destinations render as labelled icon cards', () => {
   assert.match(source, /className=\{styles\.profileLinkLabel\}/);
   assert.match(source, /aria-hidden="true"/);
 });
+
+test('side project gallery uses direct, personal copy', () => {
+  assert.match(source, /More things I’ve built\./);
+  assert.match(
+    source,
+    /Games, bots, benchmarks, and small tools\. Open any project for the repo or live version\./,
+  );
+  assert.match(source, /Choose a project for details\./);
+  assert.doesNotMatch(source, /The rest of the shelf\./);
+  assert.doesNotMatch(source, /Pick a piece to read its label\./);
+});

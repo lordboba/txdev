@@ -211,7 +211,7 @@ function GalleryDetails({ piece }: { piece: number }) {
           </a>
         </div>
       ) : (
-        <p className={styles.galleryPrompt}>Pick a piece to read its label.</p>
+        <p className={styles.galleryPrompt}>Choose a project for details.</p>
       )}
     </div>
   );
@@ -969,7 +969,7 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
         </FieldLabel>
         <h1 id="bench-title">
           {inGallery
-            ? 'The rest of the shelf.'
+            ? 'More things I’ve built.'
             : inTagRecord
               ? 'Where the work was done.'
               : inSignalRecord
@@ -980,7 +980,7 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
         </h1>
         <p>
           {inGallery
-            ? 'Everything I have built that is not one of the four shipped products — benchmarks, bots, games, and tools, each with its repo or live link.'
+            ? 'Games, bots, benchmarks, and small tools. Open any project for the repo or live version.'
             : inTagRecord
               ? 'Five tags on one rail: the run in the order it happened, and the credential at the end. The record for each is underneath.'
               : inSignalRecord
