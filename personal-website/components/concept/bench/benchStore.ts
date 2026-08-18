@@ -15,10 +15,25 @@ const focus: Focus = {
 };
 
 const pointer = { x: 0, y: 0 };
+let renderInvalidator: (() => void) | null = null;
+
+function requestBenchRender() {
+  renderInvalidator?.();
+}
+
+/** Connect store mutations to the mounted demand-driven Canvas. */
+export function setBenchRenderInvalidator(invalidate: (() => void) | null) {
+  renderInvalidator = invalidate;
+}
 
 export function setBenchPointer(x: number, y: number) {
+  if (pointer.x === x && pointer.y === y) {
+    return;
+  }
+
   pointer.x = x;
   pointer.y = y;
+  requestBenchRender();
 }
 
 export function readBenchPointer() {
@@ -27,22 +42,34 @@ export function readBenchPointer() {
 
 function enterFocusView(view: ConceptViewId) {
   if (focus.view === view) {
-    return;
+    return false;
   }
 
   focus.view = view;
   focus.hovered = -1;
   focus.selected = -1;
+  return true;
 }
 
 export function setBenchHover(view: ConceptViewId, index: number) {
-  enterFocusView(view);
+  const changedView = enterFocusView(view);
+
+  if (!changedView && focus.hovered === index) {
+    return;
+  }
+
   focus.hovered = index;
+  requestBenchRender();
 }
 
 export function setBenchSelection(view: ConceptViewId, index: number) {
-  enterFocusView(view);
+  const changedView = enterFocusView(view);
+  const changedSelection = focus.selected !== index;
   focus.selected = index;
+
+  if (changedView || changedSelection) {
+    requestBenchRender();
+  }
 
   /*
    * Devices and company tags are two selection channels inside the same work
@@ -53,7 +80,12 @@ export function setBenchSelection(view: ConceptViewId, index: number) {
 }
 
 export function clearBenchSelection() {
+  if (focus.selected < 0) {
+    return;
+  }
+
   focus.selected = -1;
+  requestBenchRender();
 }
 
 /**
@@ -154,6 +186,7 @@ function commitGallery(next: BenchGallery) {
 
   gallery = next;
   galleryListeners.forEach((listener) => listener());
+  requestBenchRender();
 }
 
 export function openBenchGallery() {
@@ -317,6 +350,7 @@ function commitTags(next: BenchTags) {
 
   tags = next;
   tagListeners.forEach((listener) => listener());
+  requestBenchRender();
 }
 
 export function setBenchTagHover(index: number) {
@@ -329,8 +363,13 @@ export function setBenchTagSelection(index: number) {
   }
 
   /* The tag shot owns the lens, so a device selection has to stand down. */
+  const clearedDevice = focus.selected >= 0;
   focus.selected = -1;
   commitTags({ ...tags, selected: index });
+
+  if (clearedDevice) {
+    requestBenchRender();
+  }
 }
 
 export function clearBenchTagSelection() {
@@ -381,6 +420,7 @@ function commitSignals(next: BenchSignals) {
 
   signals = next;
   signalListeners.forEach((listener) => listener());
+  requestBenchRender();
 }
 
 export function setBenchSignalHover(index: number) {
@@ -455,6 +495,7 @@ function commitHistory(next: BenchHistory) {
 
   history = next;
   historyListeners.forEach((listener) => listener());
+  requestBenchRender();
 }
 
 export function markBenchHistoryLive() {
@@ -469,7 +510,12 @@ export function setBenchHistorySelection(index: number) {
 
 export function clearBenchHistorySelection() {
   if (focus.view === 'history') {
+    const changedFocus = focus.selected >= 0;
     focus.selected = -1;
+
+    if (changedFocus) {
+      requestBenchRender();
+    }
   }
 
   commitHistory({ ...history, selected: -1, lightbox: false });

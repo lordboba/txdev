@@ -12,6 +12,8 @@ import {
   readBenchHistory,
   readBenchSignals,
   readBenchTags,
+  setBenchPointer,
+  setBenchRenderInvalidator,
   setBenchHistorySelection,
   setBenchHover,
   setBenchSelection,
@@ -22,6 +24,29 @@ import {
   subscribeBenchHistory,
   subscribeBenchSignals,
 } from './benchStore.ts';
+
+test('pointer and focus changes wake the renderer once per state change', () => {
+  let notified = 0;
+  setBenchRenderInvalidator(() => {
+    notified += 1;
+  });
+
+  setBenchPointer(0.25, -0.5);
+  assert.equal(notified, 1);
+
+  setBenchPointer(0.25, -0.5);
+  assert.equal(notified, 1);
+
+  setBenchHover('work', 3);
+  assert.equal(notified, 2);
+
+  setBenchHover('work', 3);
+  assert.equal(notified, 2);
+
+  setBenchRenderInvalidator(null);
+  setBenchPointer(0, 0);
+  assert.equal(notified, 2);
+});
 
 test('focus state is isolated by view', () => {
   setBenchSelection('work', 1);

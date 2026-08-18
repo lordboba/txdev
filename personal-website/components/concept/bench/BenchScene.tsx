@@ -7,8 +7,14 @@ import {
   RoundedBox,
   useTexture,
 } from '@react-three/drei';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { Suspense, useMemo, useRef, useSyncExternalStore } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import {
+  Suspense,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useSyncExternalStore,
+} from 'react';
 import * as THREE from 'three';
 import {
   companyTags,
@@ -49,6 +55,7 @@ import {
   setBenchHistorySelection,
   setBenchHover,
   setBenchPointer,
+  setBenchRenderInvalidator,
   setBenchSettled,
   setBenchSignalHover,
   setBenchSignalSelection,
@@ -3780,9 +3787,11 @@ function CompanyTagRack({
     })),
   );
 
-  useFrame((_, rawDelta) => {
+  useFrame(({ gl, invalidate }, rawDelta) => {
     const delta = Math.min(rawDelta, 1 / 30);
     const focus = readBenchTags();
+    let geometryChanged = false;
+    let animating = false;
 
     for (let index = 0; index < companyTags.length; index += 1) {
       const swing = swings.current[index];
@@ -3815,6 +3824,8 @@ function CompanyTagRack({
         continue;
       }
 
+      const previousAngle = state.angle;
+
       /* Semi-implicit Euler on a second-order spring; see TAG_SPRING_*. */
       state.velocity +=
         (targetAngle - state.angle) * TAG_SPRING_STIFFNESS * delta;
@@ -3834,9 +3845,11 @@ function CompanyTagRack({
         state.resting = true;
       } else {
         state.resting = false;
+        animating = true;
       }
 
       swing.rotation.x = state.angle;
+      geometryChanged ||= state.angle !== previousAngle;
 
       const material = plates.current[index];
 
@@ -3848,6 +3861,13 @@ function CompanyTagRack({
             Math.abs(state.glow),
           );
       }
+    }
+
+    if (geometryChanged) {
+      gl.shadowMap.needsUpdate = true;
+    }
+    if (animating) {
+      invalidate();
     }
   });
 
@@ -6887,9 +6907,11 @@ function GalleryHang({ reducedMotion }: { reducedMotion: boolean }) {
 
   const focused = gallery.piece >= 0 ? sideProjects[gallery.piece] : null;
 
-  useFrame((_, rawDelta) => {
+  useFrame(({ gl, invalidate }, rawDelta) => {
     const delta = Math.min(rawDelta, 1 / 30);
     const state = readBenchGallery();
+    let geometryMotion = 0;
+    let screenMotion = 0;
 
     frames.current.forEach((frame, index) => {
       if (!frame) {
@@ -6897,7 +6919,15 @@ function GalleryHang({ reducedMotion }: { reducedMotion: boolean }) {
       }
 
       const target = galleryFrameTarget(index, state);
-      dampTransform(frame, target, transitLambda(target, reducedMotion), delta);
+      geometryMotion = Math.max(
+        geometryMotion,
+        dampTransform(
+          frame,
+          target,
+          transitLambda(target, reducedMotion),
+          delta,
+        ),
+      );
     });
 
     /*
@@ -6927,6 +6957,7 @@ function GalleryHang({ reducedMotion }: { reducedMotion: boolean }) {
           reducedMotion ? 60 : 6,
           delta,
         );
+        screenMotion = Math.max(screenMotion, Math.abs(uniform.value - target));
       }
     });
 
@@ -6938,11 +6969,14 @@ function GalleryHang({ reducedMotion }: { reducedMotion: boolean }) {
             rotation: [0, 0, 0],
             scale: GALLERY_STOWED_SCALE,
           };
-      dampTransform(
-        rack.current,
-        target,
-        transitLambda(target, reducedMotion),
-        delta,
+      geometryMotion = Math.max(
+        geometryMotion,
+        dampTransform(
+          rack.current,
+          target,
+          transitLambda(target, reducedMotion),
+          delta,
+        ),
       );
     }
 
@@ -6959,12 +6993,22 @@ function GalleryHang({ reducedMotion }: { reducedMotion: boolean }) {
               rotation: [0, 0, 0],
               scale: GALLERY_STOWED_SCALE,
             };
-      dampTransform(
-        placard.current,
-        target,
-        transitLambda(target, reducedMotion),
-        delta,
+      geometryMotion = Math.max(
+        geometryMotion,
+        dampTransform(
+          placard.current,
+          target,
+          transitLambda(target, reducedMotion),
+          delta,
+        ),
       );
+    }
+
+    if (geometryMotion > 0) {
+      gl.shadowMap.needsUpdate = true;
+    }
+    if (Math.max(geometryMotion, screenMotion) >= 0.0015) {
+      invalidate();
     }
   });
 
@@ -7079,6 +7123,7 @@ type CameraShot = {
  */
 const LAMBDA_OUT = 4.6;
 const LAMBDA_IN = 2.6;
+const MOTION_EPSILON = 0.004;
 
 function transitLambda(target: Transform, reducedMotion: boolean) {
   if (reducedMotion) {
@@ -7086,6 +7131,11 @@ function transitLambda(target: Transform, reducedMotion: boolean) {
   }
 
   return target.scale <= HIDDEN.scale ? LAMBDA_OUT : LAMBDA_IN;
+}
+
+function angleDistance(current: number, target: number) {
+  const difference = current - target;
+  return Math.abs(Math.atan2(Math.sin(difference), Math.cos(difference)));
 }
 
 function dampTransform(
@@ -7125,12 +7175,22 @@ function dampTransform(
   group.visible =
     target.scale > HIDDEN.scale || group.scale.x > HIDDEN.scale * 1.05;
 
-  return (
+  const remaining =
     Math.abs(group.position.x - target.position[0]) +
     Math.abs(group.position.y - target.position[1]) +
     Math.abs(group.position.z - target.position[2]) +
-    Math.abs(group.scale.x - target.scale)
-  );
+    angleDistance(group.rotation.x, target.rotation[0]) +
+    angleDistance(group.rotation.y, target.rotation[1]) +
+    angleDistance(group.rotation.z, target.rotation[2]) +
+    Math.abs(group.scale.x - target.scale);
+
+  if (remaining > 0 && remaining < MOTION_EPSILON) {
+    group.position.set(...target.position);
+    group.rotation.set(...target.rotation);
+    group.scale.setScalar(target.scale);
+  }
+
+  return remaining;
 }
 
 /**
@@ -7202,6 +7262,8 @@ function Scene({
   mobile: boolean;
 }) {
   const view = useConceptView(initialView);
+  const invalidate = useThree((state) => state.invalidate);
+  useLayoutEffect(() => invalidate(), [invalidate, view]);
   const gallery = useSyncExternalStore(
     subscribeBenchGallery,
     readBenchGallery,
@@ -7243,7 +7305,7 @@ function Scene({
     t: 1,
   });
 
-  useFrame(({ camera }, rawDelta) => {
+  useFrame(({ camera, gl, invalidate }, rawDelta) => {
     const delta = Math.min(rawDelta, 1 / 30);
     const lambda = reducedMotion ? 80 : 3.2;
     const galleryState = readBenchGallery();
@@ -7302,6 +7364,7 @@ function Scene({
 
     const pointer = readBenchPointer();
     let motion = 0;
+    let shadowMotion = 0;
 
     projects.current.forEach((project, index) => {
       if (!project) {
@@ -7334,25 +7397,26 @@ function Scene({
       } else if (view === 'signals') {
         target = PROJECT_SIGNALS[index];
       }
-      motion = Math.max(
-        motion,
-        dampTransform(
-          project,
-          target,
-          transitLambda(target, reducedMotion),
-          delta,
-        ),
+      const projectMotion = dampTransform(
+        project,
+        target,
+        transitLambda(target, reducedMotion),
+        delta,
       );
+      motion = Math.max(motion, projectMotion);
+      shadowMotion = Math.max(shadowMotion, projectMotion);
 
       const screenMaterial = projectMaterials.current[index];
       if (screenMaterial) {
         const blurTarget = view === 'profile' ? 4 : view === 'signals' ? 3 : 0;
-        screenMaterial.uniforms.uBlur.value = damp(
+        const blur = damp(
           screenMaterial.uniforms.uBlur.value as number,
           blurTarget,
           lambda,
           delta,
         );
+        screenMaterial.uniforms.uBlur.value = blur;
+        motion = Math.max(motion, Math.abs(blur - blurTarget));
       }
     });
 
@@ -7409,15 +7473,14 @@ function Scene({
               scale: seat.scale * (open ? 1.05 : active ? 1.03 : 1),
             }
           : HIDDEN;
-      motion = Math.max(
-        motion,
-        dampTransform(
-          blank,
-          target,
-          transitLambda(target, reducedMotion),
-          delta,
-        ),
+      const blankMotion = dampTransform(
+        blank,
+        target,
+        transitLambda(target, reducedMotion),
+        delta,
       );
+      motion = Math.max(motion, blankMotion);
+      shadowMotion = Math.max(shadowMotion, blankMotion);
     });
 
     artifacts.current.forEach((artifact, index) => {
@@ -7454,15 +7517,14 @@ function Scene({
               scale: active ? 1.1 * 1.12 : 1.1,
             }
           : HIDDEN;
-      motion = Math.max(
-        motion,
-        dampTransform(
-          artifact,
-          target,
-          transitLambda(target, reducedMotion),
-          delta,
-        ),
+      const artifactMotion = dampTransform(
+        artifact,
+        target,
+        transitLambda(target, reducedMotion),
+        delta,
       );
+      motion = Math.max(motion, artifactMotion);
+      shadowMotion = Math.max(shadowMotion, artifactMotion);
     });
 
     if (badge.current) {
@@ -7490,15 +7552,14 @@ function Scene({
               scale: 0.62,
             }
           : HIDDEN;
-      motion = Math.max(
-        motion,
-        dampTransform(
-          badge.current,
-          badgeTarget,
-          transitLambda(badgeTarget, reducedMotion),
-          delta,
-        ),
+      const badgeMotion = dampTransform(
+        badge.current,
+        badgeTarget,
+        transitLambda(badgeTarget, reducedMotion),
+        delta,
       );
+      motion = Math.max(motion, badgeMotion);
+      shadowMotion = Math.max(shadowMotion, badgeMotion);
     }
 
     if (tagRack.current) {
@@ -7506,15 +7567,14 @@ function Scene({
         inGallery || view !== 'work'
           ? TAG_RACK_PARKED
           : fitWorkRack((camera as THREE.PerspectiveCamera).aspect);
-      motion = Math.max(
-        motion,
-        dampTransform(
-          tagRack.current,
-          rackTarget,
-          transitLambda(rackTarget, reducedMotion),
-          delta,
-        ),
+      const rackMotion = dampTransform(
+        tagRack.current,
+        rackTarget,
+        transitLambda(rackTarget, reducedMotion),
+        delta,
       );
+      motion = Math.max(motion, rackMotion);
+      shadowMotion = Math.max(shadowMotion, rackMotion);
     }
 
     if (tablet.current) {
@@ -7531,15 +7591,14 @@ function Scene({
               scale: TABLET_SEAT.scale * (active ? 1.05 : 1),
             }
           : HIDDEN;
-      motion = Math.max(
-        motion,
-        dampTransform(
-          tablet.current,
-          tabletTarget,
-          transitLambda(tabletTarget, reducedMotion),
-          delta,
-        ),
+      const tabletMotion = dampTransform(
+        tablet.current,
+        tabletTarget,
+        transitLambda(tabletTarget, reducedMotion),
+        delta,
       );
+      motion = Math.max(motion, tabletMotion);
+      shadowMotion = Math.max(shadowMotion, tabletMotion);
     }
 
     const selectedProject =
@@ -7891,6 +7950,12 @@ function Scene({
       lambda,
       delta,
     );
+    motion = Math.max(
+      motion,
+      Math.abs(cameraLook.current.x - lookX) +
+        Math.abs(cameraLook.current.y - shot.look) +
+        Math.abs(cameraLook.current.z - (shot.lookZ ?? 0)),
+    );
     camera.lookAt(cameraLook.current);
 
     /*
@@ -7899,9 +7964,18 @@ function Scene({
      * its own axis so a transit rolls into the new lens instead of snapping.
      */
     cameraRoll.current = damp(cameraRoll.current, shot.roll, lambda, delta);
+    motion = Math.max(motion, Math.abs(cameraRoll.current - shot.roll));
     camera.rotateZ(cameraRoll.current);
 
-    setBenchSettled(motion < 0.004);
+    const settled = motion < MOTION_EPSILON;
+    setBenchSettled(settled);
+
+    if (shadowMotion > 0) {
+      gl.shadowMap.needsUpdate = true;
+    }
+    if (!settled) {
+      invalidate();
+    }
 
     /*
      * Drop the hang once the exit transit has landed — held until then so the
@@ -8148,6 +8222,7 @@ export function BenchScene({
   mobile: boolean;
 }) {
   usePointerListener(setBenchPointer);
+  useLayoutEffect(() => () => setBenchRenderInvalidator(null), []);
 
   return (
     <div className={className}>
@@ -8159,6 +8234,7 @@ export function BenchScene({
           position: [WORK_CENTER_X, 2.25, WORK_CAMERA_Z],
         }}
         dpr={[1, 1.75]}
+        frameloop="demand"
         /*
          * NoToneMapping. ACES' shoulder was compressing the one thing on the
          * bench that is allowed to carry colour — Tyler's shipped UI — into
@@ -8171,7 +8247,7 @@ export function BenchScene({
           antialias: true,
           toneMapping: THREE.NoToneMapping,
         }}
-        onCreated={({ gl }) => {
+        onCreated={({ gl, invalidate }) => {
           /*
            * An alpha:false context defaults clearAlpha to 1, which makes the
            * ContactShadows depth target clear to *opaque black* — the catch
@@ -8179,6 +8255,9 @@ export function BenchScene({
            * background is a Color, so the main pass still clears opaque.
            */
           gl.setClearAlpha(0);
+          gl.shadowMap.autoUpdate = false;
+          gl.shadowMap.needsUpdate = true;
+          setBenchRenderInvalidator(invalidate);
         }}
         onPointerMissed={handlePointerMissed}
         /*
