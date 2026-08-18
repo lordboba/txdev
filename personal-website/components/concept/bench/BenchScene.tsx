@@ -5437,10 +5437,14 @@ function ProfileBadge({
   badgeRef: (node: THREE.Group | null) => void;
 }) {
   const portrait = useConfiguredTextures(['/pfp.JPG'])[0];
-  const coveredPortrait = useMemo(
-    () => coverTexture(portrait, 2 / 3),
-    [portrait],
-  );
+  const uprightPortrait = useMemo(() => {
+    /* The JPEG pixels are stored a quarter-turn left with no EXIF orientation. */
+    const upright = portrait.clone();
+    upright.center.set(0.5, 0.5);
+    upright.rotation = Math.PI / 2;
+    upright.needsUpdate = true;
+    return upright;
+  }, [portrait]);
   const fields = useMemo(() => createFieldTexture(), []);
   const name = useMemo(() => createNameTexture(), []);
   const shading = useMemo(() => getCardFalloff(), []);
@@ -5552,7 +5556,7 @@ function ProfileBadge({
             <planeGeometry args={[1.18, 1.77]} />
             <meshStandardMaterial
               envMapIntensity={0.92}
-              map={coveredPortrait}
+              map={uprightPortrait}
               roughness={0.52}
             />
           </mesh>
