@@ -1,0 +1,27 @@
+# Tyler Xiao
+
+> Personal portfolio for Tyler Xiao, a software engineer and UCLA computer science student building AI systems, backend infrastructure, and independent software products.
+
+This is an interactive portfolio. Use the resume and experience page for text-first details, and use linked repositories or live products for implementation evidence. Role dates and availability are time-sensitive.
+
+## Portfolio
+
+- [Studio Bench](https://tylerx.dev/): Primary portfolio with profile, work, experiments, and project history.
+- [Experience](https://tylerx.dev/past-experience): Work timeline, focus areas, projects, and supporting links.
+- [Blog](https://tylerx.dev/blog): Technical notes on AI agents, backend systems, and product engineering.
+- [Resume](https://tylerx.dev/resume/resume.pdf): Current resume in PDF format.
+
+## Alternate interfaces
+
+- [Orbital view](https://tylerx.dev/orbital): Spatial view of the same portfolio material.
+- [Terminal view](https://tylerx.dev/terminal): Command-line interface for exploring the site.
+
+## Profiles
+
+- [GitHub](https://github.com/lordboba): Public source repositories and contribution history.
+- [LinkedIn](https://www.linkedin.com/in/tyler-xiao): Professional profile.
+
+## Optional
+
+- [Portfolio source](https://github.com/lordboba/txdev): Source repository for this website.
+- [Schedule a call](https://tylerx.dev/schedule-a-call): Contact and scheduling page.
