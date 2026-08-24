@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  ContactShadows,
   Environment,
   Lightformer,
   RoundedBox,
@@ -28,6 +27,7 @@ import {
   type SideProject,
 } from '../conceptData';
 import { useConceptView } from '../conceptViewStore';
+import { exposeBenchDebug, isAblated } from './benchAblation';
 import {
   damp,
   dampAngle,
@@ -47,7 +47,6 @@ import {
   markBenchHistoryLive,
   readBenchHistory,
   readBenchPointer,
-  readBenchSettled,
   readBenchSignals,
   readBenchTags,
   releaseBenchGallery,
@@ -63,7 +62,6 @@ import {
   setBenchTagSelection,
   subscribeBenchGallery,
   subscribeBenchHistory,
-  subscribeBenchSettled,
   toggleBenchSelection,
 } from './benchStore';
 import { historyEras, historyShots } from './historyEras';
@@ -1926,14 +1924,17 @@ function wrapLines(
  * profile camera distance.
  */
 function createFieldTexture() {
+  const scale = 0.5;
   const canvas = document.createElement('canvas');
-  canvas.width = 2048;
-  canvas.height = 1024;
+  canvas.width = 2048 * scale;
+  canvas.height = 1024 * scale;
   const context = canvas.getContext('2d') as SpacedContext | null;
 
   if (!context) {
     return new THREE.CanvasTexture(canvas);
   }
+
+  context.scale(scale, scale);
 
   let cursor = 78;
 
@@ -3943,6 +3944,10 @@ function CompanyTagRack({
 }
 
 function StudioEnvironment() {
+  if (isAblated('env')) {
+    return null;
+  }
+
   return (
     <Environment frames={1} resolution={512}>
       {/*
@@ -7193,65 +7198,6 @@ function dampTransform(
   return remaining;
 }
 
-/**
- * ContactShadows re-renders a full depth pass every frame. Gate it on the store
- * settle flag: dynamic while anything is still damping, then exactly one more
- * pass once the scene lands (drei resets its internal counter on re-render, so
- * flipping `frames` to 1 captures the settled pose and stops).
- *
- * ONE pass, not three. At 0.30 / 0.38 / 0.30 the old stack multiplied out to
- * ~0.70 effective alpha wherever the three overlapped, which is exactly the
- * near-black ellipse that appeared under the profile badge stand, and its three
- * differently-sized 10-unit planes cut visible straight terminators across the
- * bench — a diagonal behind the left laptop in work, horizontal value steps in
- * signals.
- *
- * The single survivor is not the soft body of the shadow: `far` at 0.5 means
- * only geometry within half a unit of the bench registers, so this supplies
- * tight contact occlusion and nothing else. The *directional* key at
- * [-6.5, 7, 3.2] is the sole grounding authority for shadow direction, so every
- * soft shadow in the set now travels the same way instead of a symmetric pool
- * disagreeing with a pale streak thrown to the right. `scale` 17 puts the plane
- * edge outside every frustum in the file, and the colour is a studio grey
- * rather than the default black — on a #d4d6d8 bench a black-cored shadow is
- * always going to read as a decal.
- */
-function GroundShadows({ mobile }: { mobile: boolean }) {
-  const settled = useSyncExternalStore(
-    subscribeBenchSettled,
-    readBenchSettled,
-    readBenchSettled,
-  );
-  const frames = settled ? 1 : Infinity;
-
-  return (
-    /*
-     * Re-weighted against the PCSS directional rather than tuned in isolation.
-     * The two passes were disagreeing about how hard an object touches: the
-     * right cluster sat in a heavy dark smear while the left floated on faint
-     * ellipses, because this pass and the per-object cores were carrying most
-     * of the grounding on one side and the directional most of it on the other.
-     *
-     * `far` opened 0.5 → 0.85 so the pass sees a phone's whole stand rather
-     * than the last half-unit of it, `blur` up with it, and the colour warmed
-     * off pure grey toward the set's own shadow tone. Opacity stays modest —
-     * the soft directional is the grounding authority now, this is the ambient
-     * darkening that lives under it.
-     */
-    <ContactShadows
-      blur={2.6}
-      color="#5c6064"
-      far={0.85}
-      frames={frames}
-      opacity={0.26}
-      /* Offset along the key's ground vector so it agrees with the directional. */
-      position={[0.22, 0.005, -0.1]}
-      resolution={mobile ? 512 : 1024}
-      scale={17}
-    />
-  );
-}
-
 function Scene({
   initialView,
   reducedMotion,
@@ -8053,12 +7999,12 @@ function Scene({
        * the old -0.0002 / 0.09 pair — tuned to keep PCF acne off the laptop
        * gap and the history stand tops — has nothing to correct and only ever
        * peter-pans the contact. `radius` and `blurSamples` are the softness
-       * dials that replace them: 5.5 over a 2048 map is a penumbra a little
+       * dials that replace them: 2.75 over a 1024 map is a penumbra a little
        * under the apparent size of the overhead softbox, which is the whole
        * point of the change.
        */}
       <directionalLight
-        castShadow
+        castShadow={!isAblated('keyshadow')}
         intensity={1.55}
         position={[-6.5, 7, 3.2]}
         shadow-bias={0}
@@ -8069,9 +8015,9 @@ function Scene({
         shadow-camera-near={2}
         shadow-camera-right={7}
         shadow-camera-top={6}
-        shadow-mapSize={mobile ? [1024, 1024] : [2048, 2048]}
+        shadow-mapSize={[1024, 1024]}
         shadow-normalBias={0.02}
-        shadow-radius={5.5}
+        shadow-radius={2.75}
       />
       {/*
        * Fill, camera-right and slightly below the key's elevation, at roughly a
@@ -8161,8 +8107,6 @@ function Scene({
           shot={historyState.live ? era.shot : null}
         />
       ))}
-
-      <GroundShadows mobile={mobile} />
     </>
   );
 }
@@ -8233,7 +8177,7 @@ export function BenchScene({
           near: 0.1,
           position: [WORK_CENTER_X, 2.25, WORK_CAMERA_Z],
         }}
-        dpr={[1, 1.75]}
+        dpr={isAblated('dpr') ? 1 : [1, 1.5]}
         frameloop="demand"
         /*
          * NoToneMapping. ACES' shoulder was compressing the one thing on the
@@ -8244,10 +8188,11 @@ export function BenchScene({
          */
         gl={{
           alpha: false,
-          antialias: true,
+          antialias: false,
           toneMapping: THREE.NoToneMapping,
         }}
-        onCreated={({ gl, invalidate }) => {
+        onCreated={({ gl, invalidate, scene }) => {
+          exposeBenchDebug(gl, scene);
           /*
            * An alpha:false context defaults clearAlpha to 1, which makes the
            * ContactShadows depth target clear to *opaque black* — the catch
