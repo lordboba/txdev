@@ -148,6 +148,25 @@ export function setBenchSettled(source: BenchMotionSource, next: boolean) {
   settledListeners.forEach((listener) => listener());
 }
 
+/** Clear module-level motion state when a scene mounts or unmounts. */
+export function resetBenchSettlement() {
+  settledBySource.scene = false;
+  settledBySource.tags = true;
+  settledBySource.gallery = true;
+
+  if (!settled) {
+    return;
+  }
+
+  settled = false;
+
+  if (typeof document !== 'undefined') {
+    document.documentElement.dataset.benchSettled = 'false';
+  }
+
+  settledListeners.forEach((listener) => listener());
+}
+
 export function readBenchSettled() {
   return settled;
 }
@@ -199,9 +218,15 @@ function commitGallery(next: BenchGallery) {
 }
 
 export function openBenchGallery() {
+  if (gallery.open) {
+    return;
+  }
+
   /* The hang is the whole shot; a tag record cannot stay open behind it. */
   clearBenchTagSelection();
   setBenchTagHover(-1);
+  /* Publish motion before the texture-loading Suspense boundary can mount. */
+  setBenchSettled('gallery', false);
   commitGallery({ open: true, mounted: true, piece: -1 });
 }
 

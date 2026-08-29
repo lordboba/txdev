@@ -9,6 +9,7 @@ import {
 } from '@react-three/drei';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import {
+  memo,
   Suspense,
   useLayoutEffect,
   useMemo,
@@ -52,6 +53,7 @@ import {
   readBenchSignals,
   readBenchTags,
   releaseBenchGallery,
+  resetBenchSettlement,
   setBenchGalleryPiece,
   setBenchHistorySelection,
   setBenchHover,
@@ -7221,7 +7223,11 @@ function dampTransform(
  * This is one low-opacity contact pass. The directional light remains the main
  * source of shadow direction and softness.
  */
-function GroundShadows({ mobile }: { mobile: boolean }) {
+const GroundShadows = memo(function GroundShadows({
+  mobile,
+}: {
+  mobile: boolean;
+}) {
   const settled = useSyncExternalStore(
     subscribeBenchSettled,
     readBenchSettled,
@@ -7250,7 +7256,7 @@ function GroundShadows({ mobile }: { mobile: boolean }) {
       scale={17}
     />
   );
-}
+});
 
 function Scene({
   initialView,
@@ -7264,6 +7270,10 @@ function Scene({
   const view = useConceptView(initialView);
   const invalidate = useThree((state) => state.invalidate);
   useLayoutEffect(() => invalidate(), [invalidate, view]);
+  useLayoutEffect(() => {
+    resetBenchSettlement();
+    return resetBenchSettlement;
+  }, []);
   const gallery = useSyncExternalStore(
     subscribeBenchGallery,
     readBenchGallery,

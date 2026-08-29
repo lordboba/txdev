@@ -5,14 +5,18 @@ import {
   clearBenchSelection,
   clearBenchSignalSelection,
   clearBenchTagSelection,
+  closeBenchGallery,
   closeBenchHistoryLightbox,
   markBenchHistoryLive,
+  openBenchGallery,
   openBenchHistoryLightbox,
   readBenchFocus,
   readBenchHistory,
   readBenchSettled,
   readBenchSignals,
   readBenchTags,
+  releaseBenchGallery,
+  resetBenchSettlement,
   setBenchPointer,
   setBenchRenderInvalidator,
   setBenchSettled,
@@ -76,6 +80,29 @@ test('the bench settles only after every independent motion source settles', () 
   assert.equal(notified, 2);
 
   stop();
+});
+
+test('opening the gallery blocks settlement before suspended textures load', () => {
+  resetBenchSettlement();
+  setBenchSettled('scene', true);
+  assert.equal(readBenchSettled(), true);
+
+  openBenchGallery();
+  assert.equal(readBenchSettled(), false);
+
+  closeBenchGallery();
+  releaseBenchGallery();
+  setBenchSettled('gallery', true);
+});
+
+test('resetting a scene clears settlement carried by the previous mount', () => {
+  setBenchSettled('scene', true);
+  setBenchSettled('tags', true);
+  setBenchSettled('gallery', true);
+  assert.equal(readBenchSettled(), true);
+
+  resetBenchSettlement();
+  assert.equal(readBenchSettled(), false);
 });
 
 test('focus state is isolated by view', () => {

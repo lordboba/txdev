@@ -8,6 +8,7 @@ const source = await readFile(
 );
 
 test('contact shadows render once at the final pose instead of during motion', () => {
+  assert.match(source, /const GroundShadows = memo\(function GroundShadows/);
   assert.match(source, /const frames = settled \? 1 : 0;/);
   assert.doesNotMatch(source, /settled \? 1 : Infinity/);
 });
