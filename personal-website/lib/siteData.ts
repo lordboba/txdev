@@ -50,7 +50,7 @@ export const experiences: Experience[] = [
     status: 'upcoming',
     summary: 'Build Agents for reimbursements',
     proof: 'Incoming agent workflow role for reimbursement automation.',
-    focus: ['AI Agents', 'Backend Systems'],
+    focus: ['Workflow Systems', 'Backend Systems'],
   },
   {
     role: 'Member of Technical Staff',
@@ -60,10 +60,10 @@ export const experiences: Experience[] = [
     period: 'Jun 2025 to Sep 2025',
     status: 'past',
     summary:
-      'First intern owning agentic AI workflows for trust & safety review pipelines, helping the team ship automation that humans actually trusted.',
+      'First intern owning trust and safety review workflows, helping the team ship automation that humans actually trusted.',
     proof:
       'Owned agentic review workflows in a trust and safety production context.',
-    focus: ['AI Agents', 'Trust & Safety'],
+    focus: ['Workflow Systems', 'Trust & Safety'],
   },
   {
     role: 'Induction & Membership Chair',
@@ -89,7 +89,7 @@ export const experiences: Experience[] = [
       'Trained generative AI systems on complex coding and reasoning tasks, designing eval loops that kept quality high while throughput scaled.',
     proof:
       'Designed coding and reasoning evaluation loops for generative AI training quality.',
-    focus: ['AI Systems', 'Evaluation'],
+    focus: ['Evaluation Systems', 'Quality'],
   },
 ];
 
@@ -152,20 +152,7 @@ export const projects: Project[] = [
     tech: ['SwiftUI', 'Keychain', 'Local Auth', 'Next.js'],
     link: 'https://personal-env.vercel.app',
     linkLabel: 'Open website',
-    image: '/projects/personal-env.png',
-  },
-  {
-    title: 'TruthfulQA Benchmark Runner',
-    role: 'AI Evaluation Engineer',
-    description:
-      'Reproducible benchmark runner for forced binary TruthfulQA comparisons with answer-order controls, provider budgets, resume validation, and report generation.',
-    proof:
-      'Completed OpenAI and Anthropic controlled runs with frozen question sets, JSONL integrity checks, cost tracking, and invalid-output accounting.',
-    proofLabel: 'Benchmark repo',
-    tech: ['Python', 'OpenAI API', 'Anthropic API', 'pytest'],
-    link: 'https://github.com/lordboba/truthfulQA',
-    linkLabel: 'Open benchmark repo',
-    image: '/projects/truthfulqa.png',
+    image: '/projects/personal-env-card.svg',
   },
   {
     title: 'Personal Software Builder',
@@ -233,7 +220,7 @@ export const projects: Project[] = [
   },
   {
     title: 'DocuPilot',
-    role: 'AI Engineer',
+    role: 'Workflow Engineer',
     description:
       'Google Drive agent that executes document workflows from natural language chat, handling routing, summarization, and task updates.',
     proof:
@@ -242,7 +229,6 @@ export const projects: Project[] = [
     tech: ['FastAPI', 'LangChain', 'Gemini API', 'React'],
     link: 'https://github.com/lordboba/docupilot',
     linkLabel: 'View repository',
-    image: '/projects/docupilot-v1.jpg',
   },
   {
     title: 'Kinetic',
@@ -279,7 +265,7 @@ export const quickFacts = [
   },
   {
     label: 'Focus',
-    value: 'AI agents, backend systems, trust & safety automation',
+    value: 'Product software, backend systems, developer tools',
   },
 ];
 
@@ -295,13 +281,7 @@ export const contactLinks = [
 ];
 
 export const callHighlights = [
-  '15-minute intro for any type of chat.',
-  "Walk through relevant experience and what you're building.",
-  'Identify a concrete next step (referral, collaboration, follow-up).',
-];
-
-export const callSocialProof = [
-  'SafetyKit — Agentic AI workflow intern',
-  'Scale AI — Technical Advisor Intern',
-  'UPE @ UCLA — Induction & Membership Chair',
+  'A short introduction and context for the conversation.',
+  'Time to compare notes on projects, engineering, or work.',
+  'A clear follow-up if there is one.',
 ];

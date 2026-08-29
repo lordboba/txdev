@@ -19,12 +19,7 @@ import {
   useThemeMode,
 } from '@/components/runtime/themePreferences';
 import type { OrbitalSectionId } from '@/lib/orbitalData';
-import {
-  experienceGroups,
-  projects,
-  callHighlights,
-  callSocialProof,
-} from '@/lib/siteData';
+import { experienceGroups, projects, callHighlights } from '@/lib/siteData';
 
 const SECTION_IDS: OrbitalSectionId[] = [
   'home',
@@ -40,7 +35,7 @@ function isSectionId(id: string): id is OrbitalSectionId {
 
 const CALENDLY_URL =
   'https://calendly.com/yxiao1717/glitch-dev-team-officer-interview';
-const CALENDLY_EMBED_URL = `${CALENDLY_URL}?embed_domain=tylerxiao.com&embed_type=Inline`;
+const CALENDLY_EMBED_URL = `${CALENDLY_URL}?embed_domain=tylerx.dev&embed_type=Inline`;
 
 function TimelineModal({ onClose }: { onClose: () => void }) {
   const focusAreas = Array.from(
@@ -193,8 +188,8 @@ function ScheduleModal({ onClose }: { onClose: () => void }) {
     <Modal title="Schedule a Call" onClose={onClose}>
       <div className="modal-section">
         <p className="modal-desc">
-          15-minute chat to align on goals. We&rsquo;ll cover what you&rsquo;re
-          building, how I can help, and immediate next steps.
+          Book a 15-minute chat about a project, engineering, work, or anything
+          else you want to compare notes on.
         </p>
         <div className="modal-action-row">
           <a
@@ -228,17 +223,6 @@ function ScheduleModal({ onClose }: { onClose: () => void }) {
           {callHighlights.map((item) => (
             <div key={item} className="modal-list-item">
               {item}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="modal-section">
-        <h3 className="modal-section-title">Background</h3>
-        <div className="modal-list">
-          {callSocialProof.map((item) => (
-            <div key={item} className="modal-list-item">
-              <span className="modal-check">[ok]</span> {item}
             </div>
           ))}
         </div>

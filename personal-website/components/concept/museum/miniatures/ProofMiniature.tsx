@@ -4,7 +4,7 @@ import styles from './Miniatures.module.css';
 const proofs = [
   ['/projects/icalarms.png', 'iCalarms'],
   ['/projects/charades-2026.png', 'Charades 2026'],
-  ['/projects/personal-env.png', 'Personal Env'],
+  ['/projects/personal-env-card.svg', 'Personal Env'],
 ];
 
 export function ProofMiniature() {

@@ -13,7 +13,8 @@ export function TerminalMiniature() {
         <div className={styles.terminalIntro}>
           <code>{'// hi, i’m tyler'}</code>
           <strong>
-            UCLA CSE student building agentic AI and backend systems.
+            UCLA CSE student building products, backend systems, and developer
+            tools.
           </strong>
           <p>From trust &amp; safety automations to multiplayer card games.</p>
           <span className={styles.greenButton}>Contact</span>

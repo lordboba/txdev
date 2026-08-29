@@ -24,7 +24,7 @@ test('concept view identifiers are unique and cover the four profile angles', ()
 test('signature view copy uses Tyler’s approved release wording', () => {
   const views = Object.fromEntries(conceptViews.map((view) => [view.id, view]));
 
-  assert.equal(views.profile.heading, 'Welcome to my site! :)');
+  assert.equal(views.profile.heading, 'Welcome to my site!');
   assert.equal(
     views.profile.description,
     'Sharing my dev work, experiments, and personal thoughts here :)',
@@ -70,7 +70,7 @@ test('featured projects are visual and link to real work', () => {
   assert.ok(featuredProjects.length >= 3);
 
   for (const project of featuredProjects) {
-    assert.match(project.image, /^\/projects\/.+\.png$/);
+    assert.match(project.image, /^\/projects\/.+\.(?:png|jpe?g|webp|svg)$/);
     assert.match(project.link, /^https:\/\//);
   }
 });

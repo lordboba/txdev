@@ -1,18 +1,18 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { callHighlights, callSocialProof } from '@/lib/siteData';
+import { callHighlights } from '@/lib/siteData';
 import { NavBar } from '@/components/NavBar';
 import { ThemeBar } from '@/components/ThemeBar';
 
 export const metadata: Metadata = {
   title: 'Schedule a Call — Tyler Xiao',
   description:
-    'Book a quick intro with Tyler Xiao to talk internships, AI agent work, or backend collaborations.',
+    'Book a short conversation with Tyler Xiao about projects, engineering, or work.',
 };
 
 const CALENDLY_URL =
   'https://calendly.com/yxiao1717/glitch-dev-team-officer-interview';
-const CALENDLY_EMBED_URL = `${CALENDLY_URL}?embed_domain=tylerxiao.com&embed_type=Inline`;
+const CALENDLY_EMBED_URL = `${CALENDLY_URL}?embed_domain=tylerx.dev&embed_type=Inline`;
 
 export default function ScheduleCallPage() {
   return (
@@ -30,12 +30,11 @@ export default function ScheduleCallPage() {
           {'// schedule a call'}
         </p>
         <h1 className="mt-4 max-w-3xl font-[var(--font-display)] text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-          15-minute chat to align on goals.
+          Book a 15-minute chat.
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-7 text-muted sm:text-base">
-          We&rsquo;ll cover what you&rsquo;re building, how I can help, and
-          immediate next steps. Keep it lightweight: think of it as a quick code
-          review for your roadmap.
+          Share what you want to discuss when you book. We can talk through a
+          project, compare notes, or simply meet.
         </p>
         <div className="mt-6 flex flex-wrap gap-4">
           <Link
@@ -65,7 +64,7 @@ export default function ScheduleCallPage() {
         />
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
+      <section>
         <div className="rounded-sm border border-divider bg-surface p-6">
           <h2 className="font-[var(--font-display)] text-2xl font-semibold tracking-tight">
             What to expect
@@ -81,38 +80,10 @@ export default function ScheduleCallPage() {
             ))}
           </ul>
         </div>
-        <div className="rounded-sm border border-divider bg-surface p-6">
-          <h3 className="font-[var(--font-mono)] text-xs font-medium uppercase tracking-[0.18em] text-muted">
-            Social Proof
-          </h3>
-          <div className="mt-4 space-y-3 text-sm">
-            {callSocialProof.map((item) => (
-              <div
-                key={item}
-                className="flex items-center gap-2 rounded-sm border border-divider bg-surface-raised px-4 py-3 text-muted"
-              >
-                <span className="text-xs font-[var(--font-mono)] text-secondary">
-                  [ok]
-                </span>
-                <span>{item}</span>
-              </div>
-            ))}
-          </div>
-          <p className="mt-6 text-xs text-muted">
-            Questions before booking?{' '}
-            <Link
-              href="mailto:tylerxiao@ucla.edu"
-              className="font-medium text-accent transition hover:text-foreground"
-            >
-              Send a note.
-            </Link>
-          </p>
-        </div>
       </section>
 
       <footer className="rounded-sm border border-divider bg-surface p-5 text-sm text-muted">
-        Leave a short brief or NDA request in the Calendly notes. I&rsquo;ll
-        respond before the call.
+        Add any useful context in the Calendly notes, or email me first.
       </footer>
       <ThemeBar />
     </div>

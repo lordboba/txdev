@@ -48,7 +48,7 @@ export const conceptViews: ConceptView[] = [
     index: '01',
     label: 'In motion',
     shortLabel: 'Profile',
-    heading: 'Welcome to my site! :)',
+    heading: 'Welcome to my site!',
     /*
      * Framing copy only. The biographical fields — home, study, rotation —
      * are engraved on the badge in the scene (and printed by its DOM twin on
@@ -94,7 +94,7 @@ export const companyRun = [
   {
     company: 'SafetyKit',
     period: '2025',
-    detail: 'Agentic trust and safety workflows',
+    detail: 'Trust and safety workflow automation',
   },
   {
     company: 'Ramp',
@@ -191,7 +191,7 @@ export const featuredProjects: FeaturedProject[] = [
     role: 'macOS product',
     description:
       'A local-first environment variable manager with Keychain storage and explicit folder access.',
-    image: '/projects/personal-env.png',
+    image: '/projects/personal-env-card.svg',
     link: 'https://personal-env.vercel.app',
     accent: 'SwiftUI / Keychain',
   },
@@ -337,19 +337,17 @@ export const experimentNotes: ExperimentNote[] = [
   {
     number: 'B',
     question:
-      'Does agent reliability come from better prompting, or from boring infrastructure — explicit states, bounded toolsets, and a failure count nobody is allowed to drop?',
+      'Does workflow reliability come from better instructions, or from explicit states, bounded tools, and visible failures?',
     running: [
-      'A TruthfulQA benchmark runner: forced binary comparisons, frozen question sets, answer-order controls, and provider budgets.',
-      'Resume-safe runs — JSONL integrity checks and resume validation, so a run that dies halfway is continued rather than restarted and quietly re-scored.',
+      'Resume-safe runs with JSONL integrity checks and validation, so interrupted work can continue without being quietly re-scored.',
       'Invalid-output accounting kept inside the report instead of removed from the denominator.',
       'A working draft, "Agent Workflows Need Boring Guardrails": classify, bound the toolset, retry under strict timeouts, escalate when confidence drops.',
     ],
     readout:
       'I want a number I would be willing to show someone who disagrees with me, with the failures still in it.',
     evidence: [
-      'Completed controlled runs against both an OpenAI and an Anthropic model, with cost tracking',
       'A persisted run-state machine — queued, running, needs review, completed, failed',
-      'Evaluation loops at Scale AI, agentic trust and safety at SafetyKit, reimbursement agents at Ramp',
+      'Evaluation loops at Scale AI, trust and safety automation at SafetyKit, reimbursement workflows at Ramp',
     ],
     next: 'Publish the guardrails draft with the run reports attached to it, rather than as an opinion piece.',
   },

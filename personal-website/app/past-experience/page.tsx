@@ -39,8 +39,8 @@ export default function PastExperiencePage() {
           Timeline of upcoming, current, and shipped responsibility.
         </h1>
         <p className="max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
-          Role history grouped by time, with proof signals for systems work,
-          agent workflows, and infrastructure ownership.
+          Role history grouped by time, covering the work, responsibilities, and
+          systems behind each role.
         </p>
         <div className="h-px bg-divider/80" />
       </header>
@@ -127,8 +127,8 @@ export default function PastExperiencePage() {
             Projects
           </h2>
           <p className="mt-2 text-sm text-muted">
-            Each entry pairs a shipped surface or system signal with the stack
-            behind it.
+            Each project includes its implementation stack and a link to the
+            live product or source.
           </p>
           <div className="mt-3 h-px bg-divider/80" />
         </div>
