@@ -1,14 +1,14 @@
 [
   {
-    "company": "Snowflake",
-    "file": "snowflake.svg",
+    "company": "Decagon",
+    "file": "decagon.svg",
     "format": "svg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/ff/Snowflake_Logo.svg",
+    "source_url": "https://decagon.ai/",
     "status": "ok",
     "dark_on_light_safe": true,
-    "viewBox": "0 0 184 44",
-    "colors": ["#29B5E8"],
-    "notes": "Official mark + lowercase wordmark, single brand-blue fill. Recolorable by overriding fill."
+    "viewBox": "0 0 147 32",
+    "colors": ["currentColor"],
+    "notes": "Official mark + wordmark extracted from the Decagon homepage header. Paths use fill=currentColor for single-color rendering."
   },
   {
     "company": "Ramp",

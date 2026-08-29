@@ -31,7 +31,7 @@ test('signature view copy uses Tyler’s approved release wording', () => {
   );
   assert.equal(
     views.work.description,
-    "I've worked at Scale AI, SafetyKit, and Ramp. Incoming Fall 2026 at Snowflake",
+    "I've worked at Scale AI, SafetyKit, and Ramp.",
   );
   assert.equal(
     views.signals.description,
@@ -88,8 +88,8 @@ test('git eras are chronological snapshots backed by short commit hashes', () =>
 });
 
 test('company tags carry a verified mark and no invented copy', () => {
-  assert.equal(companyTags.length, 5);
-  assert.equal(new Set(companyTags.map((tag) => tag.mark)).size, 5);
+  assert.equal(companyTags.length, 4);
+  assert.equal(new Set(companyTags.map((tag) => tag.mark)).size, 4);
 
   /* The run leads in its own order; the credential is the last tag. */
   assert.deepEqual(

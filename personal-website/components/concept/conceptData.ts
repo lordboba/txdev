@@ -64,8 +64,7 @@ export const conceptViews: ConceptView[] = [
     label: 'Things shipped',
     shortLabel: 'Work',
     heading: 'Hi, I’m Tyler Xiao.',
-    description:
-      "I've worked at Scale AI, SafetyKit, and Ramp. Incoming Fall 2026 at Snowflake",
+    description: "I've worked at Scale AI, SafetyKit, and Ramp.",
   },
   {
     id: 'signals',
@@ -101,11 +100,6 @@ export const companyRun = [
     company: 'Ramp',
     period: '2026',
     detail: 'Agents for reimbursements',
-  },
-  {
-    company: 'Snowflake',
-    period: '2026',
-    detail: 'Data platforms and collaboration',
   },
 ];
 
@@ -145,7 +139,6 @@ const TAG_SOURCES: { mark: string; logo: string; record: string }[] = [
   { mark: 'Scale AI', logo: '/logos/scale-ai.svg', record: 'Scale AI' },
   { mark: 'SafetyKit', logo: '/logos/safetykit.svg', record: 'SafetyKit' },
   { mark: 'Ramp', logo: '/logos/ramp.svg', record: 'Ramp' },
-  { mark: 'Snowflake', logo: '/logos/snowflake.svg', record: 'Snowflake' },
   {
     mark: 'UCLA',
     logo: '/logos/ucla.svg',

@@ -218,8 +218,8 @@ function GalleryDetails({ piece }: { piece: number }) {
 }
 
 /**
- * The tags' keyboard-reachable twin. Names only, no marks: the five logos are
- * milled into the hanging plates in the 3D shot, and printing the same five
+ * The tags' keyboard-reachable twin. Names only, no marks: the four logos are
+ * milled into the hanging plates in the 3D shot, and printing the same four
  * SVGs again a hundred pixels below them is exactly what made the DOM the
  * louder of the two surfaces last time. Hover here lights the same tag the
  * raycast does, so the two agree about what is live.
@@ -372,7 +372,7 @@ function WorkDetails() {
         <div className={styles.signRail}>
           <FieldLabel>Signed</FieldLabel>
           {/*
-           * The same five buttons on every width. On desktop a press also
+           * The same four buttons on every width. On desktop a press also
            * focuses the lens on the hanging tag; on mobile only the DOM
            * record opens — the per-company role, period, and proof are one
            * tap away instead of unreachable.
@@ -982,7 +982,7 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
           {inGallery
             ? 'Games, bots, benchmarks, and small tools. Open any project for the repo or live version.'
             : inTagRecord
-              ? 'Five tags on one rail: the run in the order it happened, and the credential at the end. The record for each is underneath.'
+              ? 'Four tags on one rail: the run in the order it happened, and the credential at the end. The record for each is underneath.'
               : inSignalRecord
                 ? 'One of the three open questions, opened up. These are drafts I am still editing, not conclusions.'
                 : inEraRecord

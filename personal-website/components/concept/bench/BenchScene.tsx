@@ -743,7 +743,7 @@ const LOGO_SOURCES: Record<string, { file: string; aspect: number }> = {
   'Scale AI': { file: 'scale-ai.svg', aspect: 1377 / 261 },
   SafetyKit: { file: 'safetykit.svg', aspect: 178 / 40 },
   Ramp: { file: 'ramp.svg', aspect: 96 / 26 },
-  Snowflake: { file: 'snowflake.svg', aspect: 184 / 44 },
+  Decagon: { file: 'decagon.svg', aspect: 147 / 32 },
   UCLA: { file: 'ucla.svg', aspect: 250 / 81.851547 },
 };
 
@@ -752,12 +752,12 @@ const LOGO_SOURCES: Record<string, { file: string; aspect: number }> = {
  *
  * Three earlier attempts are worth stating, because this rack is the answer to
  * all of them. First a freestanding trophy placard — a prize, not a marking.
- * Then five inserts laser-marked flush INTO the bench, which read at 71° off
+ * Then one insert per mark laser-cut flush into the bench, which read at 71° off
  * axis under the work lens and were, correctly, called illegible. Then one
- * canted plate carrying all five marks together: legible at last, and a single
- * object where there are five distinct places.
+ * canted plate carrying every mark together: legible at last, and a single
+ * object where there are distinct places.
  *
- * So the marks come apart into five hanging spec tags on one rail. They are
+ * So the marks come apart into four hanging spec tags on one rail. They are
  * still a group — one rail, one baseline, one plate size, the run's own order
  * with the credential last — but each is now a discrete thing that can be
  * pointed at, swung, and opened. A tag hanging vertically also solves the
@@ -826,7 +826,7 @@ const TAG_WIRE_LEN = 1.0;
  * Satin plate stock, and the value it lifts to when a tag is live.
  *
  * #c8cacc sat within a couple of codes of the cove behind it, so the row had no
- * silhouette at all — five marks floating on the wall, which is exactly the
+ * silhouette at all — four marks floating on the wall, which is exactly the
  * decal read. The stock goes up to near-paper and the cove has come down, so
  * the plates now clear the backdrop by a full value step in the direction a
  * bright metal object should: brighter than what is behind it.
@@ -837,8 +837,8 @@ const TAG_PLATE_COLOR = new THREE.Color(TAG_PLATE);
 const TAG_PLATE_LIVE_COLOR = new THREE.Color(TAG_PLATE_LIVE);
 
 /**
- * Every mark is set to one width rather than one cap height — five plates of
- * identical size want five marks of identical measure, and a shared height
+ * Every mark is set to one width rather than one cap height — four plates of
+ * identical size want four marks of identical measure, and a shared height
  * would have left the 5.3:1 Scale lockup twice as long as the 3.1:1 UCLA one.
  * The height cap catches the squarest mark so nothing overruns the plate.
  */
@@ -850,13 +850,13 @@ const TAG_MARK_INK = '#26282a';
 /**
  * Optical trim, applied on top of the geometric fit.
  *
- * Setting five marks to one measure is the right *construction* rule and the
+ * Setting four marks to one measure is the right *construction* rule and the
  * wrong *optical* one, because a mark's weight on the plate is the ink it
  * covers, not the box it fits in. Measured over the plate faces in the work
- * shot, four of the five cover 8.8–14.6% of the card and the UCLA block covers
+ * shot, the company marks cover 8.8–14.6% of the card and the UCLA block covers
  * 16.0% at the darkest average ink in the set — it is also the squarest lockup
  * in the row, so it is the only one that hits `TAG_MARK_MAX_H` and gets the
- * full height as well. The result was a row of five employers with the school
+ * full height as well. The result was a row of employers with the school
  * shouting at the end of it.
  *
  * 0.87 uniform, which is a scale and never a squash: `EtchedMark` still derives
@@ -907,7 +907,7 @@ const TAG_SPRING_DAMPING = 14;
  *
  * The stand-down is held to about half a stop. At #b0b2b4 against a #c8cacc
  * live plate the gap was wide enough that the row stopped reading as one set
- * of five identical plates under one key and started reading as card stock
+ * of four identical plates under one key and started reading as card stock
  * next to acetate — siblings apparently made of different materials, which is
  * the one thing a signature row may not do.
  */
@@ -915,7 +915,7 @@ const TAG_PLATE_DIM = '#bec0c2';
 const TAG_PLATE_DIM_COLOR = new THREE.Color(TAG_PLATE_DIM);
 
 /**
- * Rest pose per tag. Five plates hung dead flat and dead parallel is the one
+ * Rest pose per tag. Four plates hung dead flat and dead parallel is the one
  * arrangement no real rail ever produces: each ring seats a little differently
  * and each plate finds its own face. A degree or two of yaw is enough to give
  * every plate its own value off the same cubemap — which is what stops the row
@@ -924,13 +924,13 @@ const TAG_PLATE_DIM_COLOR = new THREE.Color(TAG_PLATE_DIM);
 /*
  * The spread is capped at ±0.035 rather than ±0.05. Measured off the rendered
  * plates the row was running a 9-value spread face to face — Scale at L196 and
- * Snowflake at L205 — and at that width the jitter has stopped being "each ring
+ * brightest plate at L205 — and at that width the jitter has stopped being "each ring
  * seats a little differently" and started reading as plates of different stock.
- * Tightened, the same five angles still give every plate its own value off the
+ * Tightened, the same four angles still give every plate its own value off the
  * cubemap, inside about a 4-value band.
  */
-const TAG_REST_YAW = [0.032, -0.026, 0.017, -0.03, 0.028];
-const TAG_REST_ROLL = [-0.011, 0.007, -0.005, 0.013, -0.009];
+const TAG_REST_YAW = [0.032, -0.026, 0.017, -0.03];
+const TAG_REST_ROLL = [-0.011, 0.007, -0.005, 0.013];
 
 /** Badge fields, label above value, straight out of the real personal notes. */
 const BADGE_FIELDS = [
@@ -3415,7 +3415,7 @@ function BenchTop() {
  *
  * It belongs to `work` and only to `work`, and each of the other three views
  * parks it for its own reason rather than by default. Profile already prints
- * the whole company run as a DOM table carrying the same five marks, so hanging
+ * the whole company run as a DOM table carrying the same four marks, so hanging
  * them over the badge as well would be the exact duplication this rack was
  * built to end. Signals is a near-plan view of three blanks with no headroom
  * above them. History tracks laterally across six era cards and has no still
@@ -3462,7 +3462,7 @@ const WORK_RACK_ASPECT = 1.6;
  * The seat itself does NOT move again, and that is the point of the shorter
  * drop above. The rack's own rail sits four pixels under the header rule at
  * this seat: raising the seat by the 0.05 the plates needed was measured, and
- * it put the rail behind the header band entirely — five plates hanging from
+ * it put the rail behind the header band entirely — four plates hanging from
  * wires that vanish into a UI bar, with the fixture that holds them out of the
  * picture. The clearance comes out of the drop instead, which moves the plates
  * and leaves the rail exactly where it reads.
@@ -3494,8 +3494,8 @@ function tagFocusSeat(index: number, seat: Transform) {
 }
 
 /*
- * One geometry per part, shared by all five tags. Five plates that differ only
- * in the mark cut into them have no business owning five box geometries.
+ * One geometry per part, shared by all four tags. Four plates that differ only
+ * in the mark cut into them have no business owning four box geometries.
  */
 let tagPlateGeometry: THREE.BoxGeometry | null = null;
 let tagRingGeometry: THREE.TorusGeometry | null = null;
@@ -3589,7 +3589,7 @@ function getTagCordGeometry() {
  * plate with the employer's real mark milled into its face.
  *
  * The whole hanger is one swinging body pivoted at the rail. The plate keeps a
- * static yaw and roll of its own inside it, so the five plates never render as
+ * static yaw and roll of its own inside it, so the four plates never render as
  * one wide parallel decal, but nothing inside the hanger ever moves relative to
  * anything else — a tag and the ring holding it can never come apart.
  */
@@ -3692,8 +3692,8 @@ function CompanyTagPlate({
         {/*
          * Metalness down, environment gain up. Measured at the old 0.45/1.25
          * the plate face rendered L143 against a cove at L169 — DARKER than
-         * the wall behind it, which is the whole reason the row read as five
-         * decals printed on the backdrop rather than five objects hanging in
+         * the wall behind it, which is the whole reason the row read as four
+         * decals printed on the backdrop rather than four objects hanging in
          * front of it. A satin plate is mostly a diffuse surface with a sheen
          * on top; letting the diffuse term through is what puts it back above
          * the wall, and the gain keeps the sheen a plate's rather than paper's.
@@ -3729,7 +3729,7 @@ function CompanyTagPlate({
          * Filled engraving, not bare groove. At the browse camera a tag is
          * ~110x55 CSS px and a groove has only value to work with, so the two
          * lightest lockups in the set — the 5.3:1 Scale wordmark and the
-         * Snowflake mark — lost their channels under their own lip and read as
+         * widest mark — lost its channels under its own lip and read as
          * watermarks while UCLA held. The channel now carries the page's ink
          * at metalness 0, so every mark lands at the same weight whatever its
          * stroke, and the lip is pulled back to a hairline so it edges the
@@ -3762,7 +3762,7 @@ type TagMotion = {
 };
 
 /**
- * The rack: one rail on two drops, five tags, and the only per-frame work in
+ * The rack: one rail on two drops, four tags, and the only per-frame work in
  * the object.
  *
  * The loop early-outs on any tag that is already sitting exactly on its
@@ -5628,7 +5628,7 @@ function ProfileBadge({
             roughness={0.5}
           />
 
-          {/* Punched slot plus the clip end that carries the Snowflake mark. */}
+          {/* Punched slot plus the clip end that carries the Decagon easter egg. */}
           <mesh position={[0, CARD_HEIGHT / 2 - 0.16, 0.031]}>
             <planeGeometry args={[0.42, 0.055]} />
             <meshStandardMaterial color="#7d7f81" roughness={0.7} />
@@ -5668,7 +5668,7 @@ function ProfileBadge({
           <AluminumMaterial roughness={0.24} />
         </RoundedBox>
         <EtchedMark
-          company="Snowflake"
+          company="Decagon"
           height={0.09}
           hostColor={ALUMINUM}
           position={[0, CARD_HEIGHT + 0.16, 0.049]}
@@ -7281,8 +7281,8 @@ function Scene({
     const inGallery = view === 'work' && galleryState.open;
     const workFocus = readBenchFocus('work');
     /*
-     * Mobile never opens a tag: the rack is not mounted there at all (five
-     * marks at that camera distance render as five smudges, and an illegible
+     * Mobile never opens a tag: the rack is not mounted there at all (four
+     * marks at that camera distance render as four smudges, and an illegible
      * mark is worse than no mark), so there is nothing for the lens to fly to.
      * The DOM rail degrades to a caption to match.
      */

@@ -32,15 +32,14 @@ export type ExperienceGroup = {
 export const experiences: Experience[] = [
   {
     role: 'Software Engineering Intern',
-    company: 'Snowflake',
+    company: 'Decagon AI',
     start: 'Sep 2026',
     end: 'Dec 2026',
     period: 'Sep 2026 to Dec 2026',
     status: 'upcoming',
-    summary: 'Backend engineering for Data Platforms & Collaboration',
-    proof:
-      'Incoming backend platform role focused on data collaboration systems.',
-    focus: ['AI Agents', 'Backend Systems'],
+    summary: 'Machine learning engineering',
+    proof: 'Incoming software engineering role focused on machine learning.',
+    focus: ['Machine Learning', 'Software Engineering'],
   },
   {
     role: 'Software Engineering Intern',
