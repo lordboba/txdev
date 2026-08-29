@@ -106,21 +106,30 @@ export function toggleBenchSelection(view: ConceptViewId, index: number) {
   setBenchSelection(view, index);
 }
 
-/**
- * Whether every damped transform (and the camera) has landed on its target.
- * The ground-shadow pass subscribes to this so its depth render can be gated
- * off once the scene stops moving — it is the single largest avoidable
- * per-frame cost in the bench.
- */
+type BenchMotionSource = 'scene' | 'tags' | 'gallery';
+
+/** Whether every independent motion loop has landed on its target. */
+const settledBySource: Record<BenchMotionSource, boolean> = {
+  scene: false,
+  tags: true,
+  gallery: true,
+};
 let settled = false;
 const settledListeners = new Set<() => void>();
 
-export function setBenchSettled(next: boolean) {
-  if (settled === next) {
+export function setBenchSettled(source: BenchMotionSource, next: boolean) {
+  if (settledBySource[source] === next) {
     return;
   }
 
-  settled = next;
+  settledBySource[source] = next;
+  const nextSettled = Object.values(settledBySource).every(Boolean);
+
+  if (settled === nextSettled) {
+    return;
+  }
+
+  settled = nextSettled;
 
   /*
    * Published to the document as well as to the subscribers, because one of
@@ -133,7 +142,7 @@ export function setBenchSettled(next: boolean) {
    * read.
    */
   if (typeof document !== 'undefined') {
-    document.documentElement.dataset.benchSettled = next ? 'true' : 'false';
+    document.documentElement.dataset.benchSettled = settled ? 'true' : 'false';
   }
 
   settledListeners.forEach((listener) => listener());

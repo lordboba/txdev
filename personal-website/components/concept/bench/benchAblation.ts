@@ -5,6 +5,7 @@
  *
  * Flags in use (each gates one feature at its creation site in BenchScene):
  *   keyshadow — the key directional's VSM shadow map
+ *   contact   — the final-pose ContactShadows ground bake
  *   env       — the studio Environment cubemap
  *   dpr       — cap the canvas at 1x device pixel ratio
  */

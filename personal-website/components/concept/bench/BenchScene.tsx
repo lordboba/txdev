@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  ContactShadows,
   Environment,
   Lightformer,
   RoundedBox,
@@ -47,6 +48,7 @@ import {
   markBenchHistoryLive,
   readBenchHistory,
   readBenchPointer,
+  readBenchSettled,
   readBenchSignals,
   readBenchTags,
   releaseBenchGallery,
@@ -62,6 +64,7 @@ import {
   setBenchTagSelection,
   subscribeBenchGallery,
   subscribeBenchHistory,
+  subscribeBenchSettled,
   toggleBenchSelection,
 } from './benchStore';
 import { historyEras, historyShots } from './historyEras';
@@ -3867,6 +3870,7 @@ function CompanyTagRack({
     if (geometryChanged) {
       gl.shadowMap.needsUpdate = true;
     }
+    setBenchSettled('tags', !animating);
     if (animating) {
       invalidate();
     }
@@ -6900,6 +6904,13 @@ function GalleryHang({ reducedMotion }: { reducedMotion: boolean }) {
   const placard = useRef<THREE.Group | null>(null);
   const rack = useRef<THREE.Group | null>(null);
 
+  useLayoutEffect(
+    () => () => {
+      setBenchSettled('gallery', true);
+    },
+    [],
+  );
+
   const textures = useMemo(() => {
     let cursor = 0;
 
@@ -7009,10 +7020,13 @@ function GalleryHang({ reducedMotion }: { reducedMotion: boolean }) {
       );
     }
 
+    const motion = Math.max(geometryMotion, screenMotion);
+    setBenchSettled('gallery', motion < MOTION_EPSILON);
+
     if (geometryMotion > 0) {
       gl.shadowMap.needsUpdate = true;
     }
-    if (Math.max(geometryMotion, screenMotion) >= 0.0015) {
+    if (motion >= 0.0015) {
       invalidate();
     }
   });
@@ -7028,7 +7042,7 @@ function GalleryHang({ reducedMotion }: { reducedMotion: boolean }) {
        * bench, so at that grazing incidence each one smeared a translucent wash
        * across the whole hang and greyed out all eight screenshots. The feet
        * are below the DOM band in every gallery framing anyway, and the shared
-       * ContactShadows pass (far 0.5) already catches them.
+       * final contact-shadow bake already catches them.
        */}
       <group ref={rack} scale={GALLERY_STOWED_SCALE}>
         {[-RAIL_HALF_SPAN, RAIL_HALF_SPAN].map((x) => (
@@ -7196,6 +7210,46 @@ function dampTransform(
   }
 
   return remaining;
+}
+
+/**
+ * ContactShadows performs a depth render plus blur renders for every requested
+ * frame. Keep it off while anything is damping, then bake the final pose once.
+ * Drei resets its internal counter on re-render, so flipping `frames` from 0
+ * to 1 captures the aggregate settled pose and stops.
+ *
+ * This is one low-opacity contact pass. The directional light remains the main
+ * source of shadow direction and softness.
+ */
+function GroundShadows({ mobile }: { mobile: boolean }) {
+  const settled = useSyncExternalStore(
+    subscribeBenchSettled,
+    readBenchSettled,
+    readBenchSettled,
+  );
+  const frames = settled ? 1 : 0;
+
+  if (isAblated('contact')) {
+    return null;
+  }
+
+  return (
+    /*
+     * The wider depth range catches the stands while modest opacity keeps this
+     * pass secondary to the directional shadow.
+     */
+    <ContactShadows
+      blur={2.6}
+      color="#5c6064"
+      far={0.85}
+      frames={frames}
+      opacity={0.26}
+      /* Offset along the key's ground vector so it agrees with the directional. */
+      position={[0.22, 0.005, -0.1]}
+      resolution={mobile ? 256 : 512}
+      scale={17}
+    />
+  );
 }
 
 function Scene({
@@ -7914,7 +7968,7 @@ function Scene({
     camera.rotateZ(cameraRoll.current);
 
     const settled = motion < MOTION_EPSILON;
-    setBenchSettled(settled);
+    setBenchSettled('scene', settled);
 
     if (shadowMotion > 0) {
       gl.shadowMap.needsUpdate = true;
@@ -8107,6 +8161,8 @@ function Scene({
           shot={historyState.live ? era.shot : null}
         />
       ))}
+
+      <GroundShadows mobile={mobile} />
     </>
   );
 }
