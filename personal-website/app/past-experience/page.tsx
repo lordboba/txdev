@@ -36,7 +36,7 @@ export default function PastExperiencePage() {
           Experience
         </p>
         <h1 className="max-w-3xl font-[var(--font-display)] text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
-          Timeline of upcoming, current, and shipped responsibility.
+          Experience across past, current, and upcoming roles.
         </h1>
         <p className="max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
           Role history grouped by time, covering the work, responsibilities, and

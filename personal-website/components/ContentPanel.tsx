@@ -132,15 +132,14 @@ function HomeContent({ onOpenModal }: PanelProps) {
             Tyler Xiao
           </h3>
           <p className="panel-subtitle">
-            CS @ UCLA · Building agentic systems and shipping reliable
-            infrastructure.
+            CS @ UCLA · Building products, backend systems, and developer tools.
           </p>
           <p
             className="panel-desc"
             style={{ margin: '6px 0 0', fontFamily: 'var(--font-sans)' }}
           >
-            This portfolio is a single operating room for selected work: ideas,
-            execution notes, and the most recent builds worth keeping visible.
+            This site collects my projects, work history, writing, and current
+            experiments.
           </p>
         </div>
       </div>
