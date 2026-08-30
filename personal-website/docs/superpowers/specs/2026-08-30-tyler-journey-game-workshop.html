@@ -1,0 +1,2627 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Planning workshop for Tyler Xiao's autobiographical portfolio game."
+    />
+    <title>Tyler's Journey Game - Planning Workshop</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #0f1113;
+        --surface: #171a1d;
+        --surface-raised: #1d2023;
+        --rule: #30353a;
+        --rule-strong: #4a5056;
+        --paper: #e3e5e7;
+        --muted: #a6aaae;
+        --faint: #858b90;
+        --signal: #c4a55f;
+        --signal-soft: rgba(196, 165, 95, 0.13);
+        --risk: #d49a89;
+        --verified: #b9c4b7;
+        --radius: 3px;
+        --sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        --serif: 'Cormorant Garamond', 'Iowan Old Style', Georgia, serif;
+        --mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background: var(--ink);
+        color: var(--paper);
+        font-family: var(--sans);
+        font-size: 16px;
+        line-height: 1.55;
+      }
+
+      a {
+        color: inherit;
+        text-decoration-color: var(--rule-strong);
+        text-underline-offset: 0.22em;
+      }
+
+      a:hover {
+        text-decoration-color: var(--signal);
+      }
+
+      button,
+      summary {
+        font: inherit;
+      }
+
+      button {
+        color: inherit;
+      }
+
+      img {
+        display: block;
+        max-width: 100%;
+      }
+
+      .skip-link {
+        position: fixed;
+        left: 16px;
+        top: 16px;
+        z-index: 20;
+        padding: 10px 14px;
+        background: var(--paper);
+        color: var(--ink);
+        transform: translateY(-180%);
+      }
+
+      .skip-link:focus {
+        transform: translateY(0);
+      }
+
+      .shell {
+        width: min(1440px, calc(100% - 48px));
+        margin: 0 auto;
+      }
+
+      .masthead {
+        min-height: min(820px, 100dvh);
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        border-inline: 1px solid var(--rule);
+      }
+
+      .top-rail,
+      .bottom-rail {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        min-height: 68px;
+        padding: 0 28px;
+        border-bottom: 1px solid var(--rule);
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+      }
+
+      .bottom-rail {
+        border-top: 1px solid var(--rule);
+        border-bottom: 0;
+      }
+
+      .top-rail strong {
+        color: var(--paper);
+        font-weight: 500;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+        min-height: 620px;
+      }
+
+      .hero-copy {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 56px;
+        padding: clamp(42px, 7vw, 100px);
+        border-right: 1px solid var(--rule);
+      }
+
+      .eyebrow,
+      .status,
+      .chapter-meta,
+      .field-label {
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .eyebrow {
+        color: var(--signal);
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin-top: 0;
+      }
+
+      h1 {
+        max-width: 10ch;
+        margin-bottom: 30px;
+        font-family: var(--serif);
+        font-size: clamp(58px, 8vw, 116px);
+        font-weight: 400;
+        letter-spacing: -0.045em;
+        line-height: 0.88;
+      }
+
+      .hero-dek {
+        max-width: 650px;
+        margin-bottom: 0;
+        color: var(--muted);
+        font-size: clamp(18px, 2vw, 24px);
+        line-height: 1.45;
+      }
+
+      .thesis {
+        max-width: 700px;
+        margin: 0;
+        padding-left: 24px;
+        border-left: 2px solid var(--signal);
+        font-family: var(--serif);
+        font-size: clamp(24px, 3vw, 42px);
+        line-height: 1.15;
+      }
+
+      .hero-aside {
+        display: grid;
+        align-content: end;
+        padding: 36px;
+        background:
+          linear-gradient(var(--rule) 1px, transparent 1px),
+          linear-gradient(90deg, var(--rule) 1px, transparent 1px),
+          var(--surface);
+        background-size: 54px 54px;
+      }
+
+      .decision-panel {
+        padding: 28px;
+        background: rgba(15, 17, 19, 0.94);
+        border: 1px solid var(--rule-strong);
+        border-radius: var(--radius);
+      }
+
+      .decision-panel h2 {
+        margin: 12px 0 18px;
+        font-family: var(--serif);
+        font-size: 38px;
+        font-weight: 400;
+        line-height: 1.05;
+      }
+
+      .decision-panel p:last-child {
+        margin-bottom: 0;
+      }
+
+      .chapter-nav {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: rgba(15, 17, 19, 0.96);
+        border-top: 1px solid var(--rule);
+        border-bottom: 1px solid var(--rule);
+        backdrop-filter: blur(12px);
+      }
+
+      .chapter-nav ul {
+        display: flex;
+        gap: 4px;
+        width: min(1440px, calc(100% - 48px));
+        margin: 0 auto;
+        padding: 8px 0;
+        overflow-x: auto;
+        list-style: none;
+      }
+
+      .chapter-nav a {
+        display: block;
+        padding: 9px 13px;
+        border: 1px solid transparent;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 11px;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+
+      .chapter-nav a:hover,
+      .chapter-nav a[aria-current='true'] {
+        border-color: var(--rule-strong);
+        color: var(--paper);
+      }
+
+      main {
+        border-inline: 1px solid var(--rule);
+      }
+
+      .section {
+        display: grid;
+        grid-template-columns: minmax(180px, 0.23fr) minmax(0, 0.77fr);
+        gap: clamp(32px, 6vw, 96px);
+        padding: clamp(72px, 9vw, 140px) clamp(24px, 5vw, 76px);
+        border-bottom: 1px solid var(--rule);
+      }
+
+      .section-index {
+        color: var(--faint);
+        font-family: var(--mono);
+        font-size: 12px;
+      }
+
+      .section-index strong {
+        display: block;
+        margin-bottom: 10px;
+        color: var(--paper);
+        font-weight: 500;
+      }
+
+      .section-body > h2 {
+        max-width: 16ch;
+        margin-bottom: 20px;
+        font-family: var(--serif);
+        font-size: clamp(44px, 6vw, 76px);
+        font-weight: 400;
+        letter-spacing: -0.035em;
+        line-height: 0.98;
+      }
+
+      .section-intro {
+        max-width: 720px;
+        margin-bottom: 56px;
+        color: var(--muted);
+        font-size: 19px;
+      }
+
+      .callout {
+        padding: 20px 22px;
+        border: 1px solid var(--rule-strong);
+        background: var(--surface);
+      }
+
+      .callout strong {
+        color: var(--signal);
+      }
+
+      .callout p:last-child {
+        margin-bottom: 0;
+      }
+
+      .mockup-frame {
+        margin: 0;
+        border: 1px solid var(--rule-strong);
+        background: #090a0b;
+      }
+
+      .mockup-frame img {
+        width: 100%;
+        aspect-ratio: 1586 / 992;
+        object-fit: cover;
+      }
+
+      figcaption {
+        display: flex;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 16px 18px;
+        border-top: 1px solid var(--rule);
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .visual-spec {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-top: 28px;
+        border-top: 1px solid var(--rule);
+        border-left: 1px solid var(--rule);
+      }
+
+      .visual-spec article {
+        min-height: 160px;
+        padding: 24px;
+        border-right: 1px solid var(--rule);
+        border-bottom: 1px solid var(--rule);
+      }
+
+      .visual-spec h3 {
+        margin-bottom: 10px;
+        font-size: 16px;
+        font-weight: 500;
+      }
+
+      .visual-spec p {
+        margin-bottom: 0;
+        color: var(--muted);
+      }
+
+      .atlas-prototype {
+        display: grid;
+        grid-template-columns: minmax(0, 1.6fr) minmax(290px, 0.72fr);
+        min-height: 620px;
+        border: 1px solid var(--rule-strong);
+        background: var(--surface);
+      }
+
+      .atlas-map {
+        position: relative;
+        min-height: 620px;
+        overflow: hidden;
+        border-right: 1px solid var(--rule-strong);
+        background:
+          radial-gradient(
+            circle at 30% 72%,
+            var(--signal-soft),
+            transparent 19%
+          ),
+          linear-gradient(var(--rule) 1px, transparent 1px),
+          linear-gradient(90deg, var(--rule) 1px, transparent 1px), #111416;
+        background-size:
+          auto,
+          58px 58px,
+          58px 58px,
+          auto;
+      }
+
+      .atlas-map::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(90deg, transparent 72%, #111416 100%);
+      }
+
+      .route {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      .route path {
+        fill: none;
+        stroke: var(--signal);
+        stroke-width: 2;
+        vector-effect: non-scaling-stroke;
+      }
+
+      .route .future {
+        stroke: var(--rule-strong);
+        stroke-dasharray: 8 10;
+      }
+
+      .map-label {
+        position: absolute;
+        z-index: 2;
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .map-label.top {
+        left: 24px;
+        top: 22px;
+      }
+
+      .map-label.bottom {
+        left: 24px;
+        bottom: 22px;
+      }
+
+      .map-node {
+        position: absolute;
+        z-index: 3;
+        min-width: 32px;
+        min-height: 32px;
+        padding: 0;
+        border: 1px solid var(--muted);
+        border-radius: 0;
+        background: var(--ink);
+        cursor: pointer;
+        transform: translate(-50%, -50%);
+      }
+
+      .map-node::after {
+        content: attr(aria-label);
+        position: absolute;
+        left: 31px;
+        top: 50%;
+        width: max-content;
+        max-width: 150px;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 11px;
+        text-align: left;
+        transform: translateY(-50%);
+      }
+
+      .map-node:hover,
+      .map-node[aria-pressed='true'] {
+        border-color: var(--signal);
+        background: var(--signal);
+      }
+
+      .map-node:focus-visible {
+        outline: 2px solid var(--paper);
+        outline-offset: 4px;
+      }
+
+      .map-node[aria-pressed='true']::after {
+        color: var(--paper);
+      }
+
+      .map-node.ny::after,
+      .map-node.next::after {
+        right: 39px;
+        left: auto;
+        text-align: right;
+      }
+
+      .map-node.sd {
+        left: 18%;
+        top: 76%;
+      }
+
+      .map-node.la {
+        left: 30%;
+        top: 61%;
+      }
+
+      .map-node.sf {
+        left: 22%;
+        top: 31%;
+      }
+
+      .map-node.ny {
+        left: 72%;
+        top: 35%;
+      }
+
+      .map-node.next {
+        left: 88%;
+        top: 17%;
+      }
+
+      .atlas-story {
+        display: flex;
+        flex-direction: column;
+        padding: 30px;
+      }
+
+      .atlas-story h3 {
+        margin: 24px 0 18px;
+        font-family: var(--serif);
+        font-size: clamp(34px, 4vw, 52px);
+        font-weight: 400;
+        line-height: 1;
+      }
+
+      .atlas-story p {
+        color: var(--muted);
+      }
+
+      .atlas-artifact {
+        display: grid;
+        place-items: center;
+        min-height: 180px;
+        margin: 16px 0 22px;
+        border: 1px solid var(--rule-strong);
+        background: #d7d5d0;
+        color: #26282a;
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+      }
+
+      .story-fields {
+        display: grid;
+        gap: 0;
+        margin-top: auto;
+        border-top: 1px solid var(--rule);
+      }
+
+      .story-field {
+        display: grid;
+        grid-template-columns: 110px 1fr;
+        gap: 16px;
+        padding: 13px 0;
+        border-bottom: 1px solid var(--rule);
+        font-size: 13px;
+      }
+
+      .story-field dt {
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+
+      .story-field dd {
+        margin: 0;
+      }
+
+      .map-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 22px;
+        margin-top: 18px;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 11px;
+      }
+
+      .route-table,
+      .evidence-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .route-table th,
+      .route-table td,
+      .evidence-table th,
+      .evidence-table td {
+        padding: 18px 14px;
+        border-bottom: 1px solid var(--rule);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .route-table th,
+      .evidence-table th {
+        color: var(--faint);
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 400;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .route-table td:first-child {
+        color: var(--signal);
+        font-family: var(--mono);
+        white-space: nowrap;
+      }
+
+      .chapter-stack {
+        border-top: 1px solid var(--rule-strong);
+      }
+
+      details.chapter {
+        border-bottom: 1px solid var(--rule-strong);
+      }
+
+      details.chapter summary {
+        display: grid;
+        grid-template-columns: 76px minmax(0, 1fr) auto;
+        gap: 22px;
+        align-items: center;
+        padding: 24px 4px;
+        cursor: pointer;
+        list-style: none;
+      }
+
+      details.chapter summary::-webkit-details-marker {
+        display: none;
+      }
+
+      details.chapter summary::after {
+        content: '+';
+        color: var(--muted);
+        font-family: var(--mono);
+      }
+
+      details.chapter[open] summary::after {
+        content: '-';
+      }
+
+      .chapter-number {
+        color: var(--signal);
+        font-family: var(--mono);
+      }
+
+      .chapter-title {
+        font-family: var(--serif);
+        font-size: clamp(26px, 3vw, 38px);
+        line-height: 1.05;
+      }
+
+      .chapter-content {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(250px, 0.8fr);
+        gap: 42px;
+        padding: 0 4px 42px 98px;
+      }
+
+      .draft-copy {
+        padding-left: 20px;
+        border-left: 2px solid var(--signal);
+        font-family: var(--serif);
+        font-size: clamp(21px, 2.2vw, 29px);
+        line-height: 1.32;
+      }
+
+      .chapter-notes {
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .chapter-notes dl {
+        margin: 0;
+      }
+
+      .chapter-notes div {
+        padding: 12px 0;
+        border-bottom: 1px solid var(--rule);
+      }
+
+      .chapter-notes dt {
+        margin-bottom: 4px;
+        color: var(--faint);
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .chapter-notes dd {
+        margin: 0;
+      }
+
+      .status {
+        display: inline-block;
+        width: max-content;
+        padding: 5px 7px;
+        border: 1px solid var(--rule-strong);
+        color: var(--muted);
+      }
+
+      .status.verified {
+        border-color: var(--verified);
+        color: var(--verified);
+      }
+
+      .status.confirm {
+        border-color: var(--risk);
+        color: var(--risk);
+      }
+
+      .flow {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        border-top: 1px solid var(--rule-strong);
+        border-left: 1px solid var(--rule-strong);
+      }
+
+      .flow article {
+        position: relative;
+        min-height: 210px;
+        padding: 22px;
+        border-right: 1px solid var(--rule-strong);
+        border-bottom: 1px solid var(--rule-strong);
+      }
+
+      .flow article:not(:last-child)::after {
+        content: '→';
+        position: absolute;
+        right: -13px;
+        top: 28px;
+        z-index: 2;
+        width: 26px;
+        height: 26px;
+        display: grid;
+        place-items: center;
+        background: var(--ink);
+        color: var(--signal);
+      }
+
+      .flow h3 {
+        margin: 14px 0 10px;
+        font-size: 16px;
+        font-weight: 500;
+      }
+
+      .flow p {
+        margin-bottom: 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .architecture-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1px;
+        background: var(--rule-strong);
+        border: 1px solid var(--rule-strong);
+      }
+
+      .architecture-grid article {
+        min-height: 260px;
+        padding: 26px;
+        background: var(--surface);
+      }
+
+      .architecture-grid h3 {
+        margin: 14px 0;
+        font-family: var(--serif);
+        font-size: 28px;
+        font-weight: 400;
+      }
+
+      .architecture-grid ul,
+      .guardrails,
+      .questions,
+      .references {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--muted);
+      }
+
+      .architecture-grid li,
+      .guardrails li,
+      .questions li,
+      .references li {
+        margin-bottom: 9px;
+      }
+
+      pre {
+        margin: 28px 0 0;
+        padding: 22px;
+        overflow-x: auto;
+        border: 1px solid var(--rule-strong);
+        background: #0b0d0e;
+        color: #c8cbcd;
+        font-family: var(--mono);
+        font-size: 12px;
+        line-height: 1.65;
+      }
+
+      .asset-strip {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr 1fr 1fr;
+        gap: 1px;
+        margin-top: 34px;
+        background: var(--rule);
+        border: 1px solid var(--rule);
+      }
+
+      .asset {
+        min-width: 0;
+        background: var(--surface);
+      }
+
+      .asset img {
+        width: 100%;
+        height: 180px;
+        object-fit: contain;
+        background: #d4d6d8;
+      }
+
+      .asset:first-child img {
+        object-fit: cover;
+        object-position: center 32%;
+      }
+
+      .asset p {
+        margin: 0;
+        padding: 13px;
+        border-top: 1px solid var(--rule);
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .evidence-table td:first-child {
+        width: 23%;
+        color: var(--paper);
+        font-weight: 500;
+      }
+
+      .evidence-table td:nth-child(2) {
+        width: 27%;
+      }
+
+      .evidence-table td:last-child {
+        color: var(--muted);
+      }
+
+      .conflict {
+        margin: 32px 0;
+        padding: 22px;
+        border-left: 3px solid var(--risk);
+        background: rgba(212, 154, 137, 0.08);
+      }
+
+      .conflict h3 {
+        margin-bottom: 8px;
+        font-size: 17px;
+      }
+
+      .conflict p:last-child {
+        margin-bottom: 0;
+      }
+
+      .decision-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1px;
+        background: var(--rule-strong);
+        border: 1px solid var(--rule-strong);
+      }
+
+      .decision-item {
+        min-height: 190px;
+        padding: 24px;
+        background: var(--surface);
+      }
+
+      .decision-item h3 {
+        margin: 12px 0 10px;
+        font-size: 18px;
+      }
+
+      .decision-item p {
+        margin-bottom: 0;
+        color: var(--muted);
+      }
+
+      .release-slices {
+        counter-reset: release;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        border-top: 1px solid var(--rule-strong);
+      }
+
+      .release-slices li {
+        counter-increment: release;
+        display: grid;
+        grid-template-columns: 70px 1fr;
+        gap: 20px;
+        padding: 22px 0;
+        border-bottom: 1px solid var(--rule-strong);
+      }
+
+      .release-slices li::before {
+        content: counter(release, decimal-leading-zero);
+        color: var(--signal);
+        font-family: var(--mono);
+      }
+
+      .release-slices strong {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+      }
+
+      .release-slices span {
+        color: var(--muted);
+      }
+
+      .footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 28px;
+        padding: 38px clamp(24px, 5vw, 76px);
+        border-inline: 1px solid var(--rule);
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 11px;
+      }
+
+      .print-button {
+        padding: 8px 12px;
+        border: 1px solid var(--rule-strong);
+        border-radius: var(--radius);
+        background: transparent;
+        cursor: pointer;
+      }
+
+      .print-button:hover,
+      .print-button:focus-visible {
+        border-color: var(--signal);
+        outline: 0;
+      }
+
+      @media (max-width: 980px) {
+        .shell,
+        .chapter-nav ul {
+          width: min(calc(100% - 24px), 1440px);
+        }
+
+        .hero,
+        .section,
+        .atlas-prototype {
+          grid-template-columns: 1fr;
+        }
+
+        .hero-copy,
+        .atlas-map {
+          border-right: 0;
+          border-bottom: 1px solid var(--rule-strong);
+        }
+
+        .section {
+          gap: 28px;
+        }
+
+        .section-index {
+          display: flex;
+          gap: 10px;
+        }
+
+        .section-index strong {
+          margin: 0;
+        }
+
+        .atlas-map,
+        .atlas-prototype {
+          min-height: 520px;
+        }
+
+        .flow {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .flow article:not(:last-child)::after {
+          display: none;
+        }
+
+        .architecture-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .asset-strip {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 700px) {
+        .top-rail,
+        .bottom-rail,
+        .footer {
+          align-items: flex-start;
+          flex-direction: column;
+          padding-block: 18px;
+        }
+
+        .masthead {
+          min-height: auto;
+        }
+
+        .hero-copy,
+        .hero-aside {
+          padding: 34px 22px;
+        }
+
+        h1 {
+          font-size: clamp(54px, 18vw, 80px);
+        }
+
+        .section {
+          padding: 70px 20px;
+        }
+
+        .visual-spec,
+        .flow,
+        .decision-list,
+        .asset-strip {
+          grid-template-columns: 1fr;
+        }
+
+        .atlas-map,
+        .atlas-prototype {
+          min-height: 460px;
+        }
+
+        .atlas-story {
+          min-height: 520px;
+          padding: 24px;
+        }
+
+        .map-node {
+          min-width: 44px;
+          min-height: 44px;
+        }
+
+        .map-node::after {
+          left: 52px;
+          max-width: 94px;
+          font-size: 9px;
+          line-height: 1.25;
+        }
+
+        .map-node.ny::after,
+        .map-node.next::after {
+          right: 52px;
+          left: auto;
+          text-align: right;
+        }
+
+        .chapter-content {
+          grid-template-columns: 1fr;
+          padding-left: 0;
+        }
+
+        details.chapter summary {
+          grid-template-columns: 48px 1fr auto;
+          gap: 12px;
+        }
+
+        .route-table,
+        .evidence-table {
+          display: block;
+          overflow-x: auto;
+        }
+
+        figcaption {
+          flex-direction: column;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+
+      @media print {
+        :root {
+          color-scheme: light;
+        }
+
+        body {
+          background: #fff;
+          color: #111;
+        }
+
+        .chapter-nav,
+        .print-button,
+        .atlas-prototype {
+          display: none;
+        }
+
+        .shell {
+          width: 100%;
+        }
+
+        .masthead,
+        main,
+        .footer,
+        .section,
+        details.chapter,
+        .mockup-frame {
+          border-color: #bbb;
+        }
+
+        details.chapter {
+          break-inside: avoid;
+        }
+
+        details.chapter > * {
+          display: block;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#plan">Skip to plan</a>
+
+    <header class="masthead shell">
+      <div class="top-rail">
+        <strong>Tyler Xiao / Journey game workshop</strong>
+        <span>Planning artifact / August 30, 2026</span>
+      </div>
+
+      <div class="hero">
+        <div class="hero-copy">
+          <div>
+            <p class="eyebrow">Recommended direction</p>
+            <h1>The map keeps moving.</h1>
+            <p class="hero-dek">
+              A short, no-fail autobiographical game hidden inside the Bench.
+              Visitors move through places, memories, and artifacts instead of
+              clicking through a resume carousel.
+            </p>
+          </div>
+          <p class="thesis">
+            The place changes. The same habits keep returning: solve, run,
+            build, gather.
+          </p>
+        </div>
+
+        <aside class="hero-aside" aria-label="Planning decision">
+          <div class="decision-panel">
+            <span class="status verified">Recommendation</span>
+            <h2>Playable editorial atlas</h2>
+            <p>
+              Five maps, eight story beats, one persistent route. The ending
+              leaves the line unfinished, so the blank screen becomes part of
+              the meaning rather than an empty slot to fill.
+            </p>
+          </div>
+        </aside>
+      </div>
+
+      <div class="bottom-rail">
+        <span>Variance 8 / Motion 7 / Density 4</span>
+        <span>Target length 4-6 minutes</span>
+      </div>
+    </header>
+
+    <nav class="chapter-nav" aria-label="Workshop sections">
+      <ul>
+        <li><a href="#direction">Direction</a></li>
+        <li><a href="#mockup">Mockup</a></li>
+        <li><a href="#prototype">Prototype</a></li>
+        <li><a href="#story">Story</a></li>
+        <li><a href="#interaction">Interaction</a></li>
+        <li><a href="#architecture">Architecture</a></li>
+        <li><a href="#assets">Assets</a></li>
+        <li><a href="#evidence">Evidence</a></li>
+        <li><a href="#decisions">Decisions</a></li>
+        <li><a href="#release">Release slices</a></li>
+      </ul>
+    </nav>
+
+    <main class="shell" id="plan">
+      <section class="section" id="direction">
+        <div class="section-index">
+          <strong>Direction</strong>
+          <span>Core abstraction</span>
+        </div>
+        <div class="section-body">
+          <h2>Make movement the story.</h2>
+          <p class="section-intro">
+            The winning metaphor is a route, not a slide deck. Cross-country,
+            studying, moving between cities, shipping software, and gathering
+            builders all become different ways of continuing forward.
+          </p>
+
+          <div class="visual-spec">
+            <article>
+              <span class="field-label">Entry</span>
+              <h3>One quiet question</h3>
+              <p>
+                The near-dark display wakes once: “Tyler Xiao?” followed by a
+                single “Learn more” action. Hover and focus reveal the same
+                invitation.
+              </p>
+            </article>
+            <article>
+              <span class="field-label">Loop</span>
+              <h3>Move, find, read, continue</h3>
+              <p>
+                A waypoint graph gives the feeling of travel without physics,
+                collision, pathfinding, or a joystick. No story fact is locked
+                behind skill.
+              </p>
+            </article>
+            <article>
+              <span class="field-label">Reward</span>
+              <h3>Artifacts, not points</h3>
+              <p>
+                Each map leaves one small keepsake in a memory ledger. There is
+                no score, timer, death state, leaderboard, or achievement wall.
+              </p>
+            </article>
+            <article>
+              <span class="field-label">Ending</span>
+              <h3>No finish line</h3>
+              <p>
+                The signal-amber route leaves the printed map and enters an
+                uncharted margin. The visitor places the next pin without
+                predicting where it goes.
+              </p>
+            </article>
+          </div>
+
+          <div class="callout" style="margin-top: 28px">
+            <p>
+              <strong>Important repository finding:</strong> the current source
+              has no truly blank computer. Both laptops receive project
+              textures. The visually sparse Personal Env laptop is the likely
+              intended surface, but implementation must deliberately repurpose
+              it or add a new screen state.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="mockup">
+        <div class="section-index">
+          <strong>Mockup</strong>
+          <span>Visual target</span>
+        </div>
+        <div class="section-body">
+          <h2>A dark atlas inside the machine.</h2>
+          <p class="section-intro">
+            Keep the Bench exterior cool-grey and machined. Let the display
+            become a near-black editorial map with one muted signal-amber route.
+            The screen is 68 percent map and 32 percent story record.
+          </p>
+
+          <figure class="mockup-frame">
+            <img
+              alt="Concept mockup of a laptop showing a dark route map from San Diego through Los Angeles and San Francisco to New York, with a story panel on the right"
+              height="992"
+              src="./assets/tyler-journey-game-mockup.png"
+              width="1586"
+            />
+            <figcaption>
+              <span>
+                Generated layout study. The photo field and body lines are
+                placeholders. No generated personal details should ship.
+              </span>
+              <a
+                href="./assets/tyler-journey-game-mockup.png"
+                rel="noreferrer"
+                target="_blank"
+                >Open full resolution</a
+              >
+            </figcaption>
+          </figure>
+
+          <div class="visual-spec">
+            <article>
+              <span class="field-label">Palette</span>
+              <h3>Graphite and signal amber</h3>
+              <p>
+                Screen #0F1113, story surface #171A1D, rules #30353A, type
+                #E3E5E7 and #A6AAAE, accent #C4A55F.
+              </p>
+            </article>
+            <article>
+              <span class="field-label">Typography</span>
+              <h3>Editorial, not terminal</h3>
+              <p>
+                Cormorant or Iowan Old Style for chapter titles, Helvetica Neue
+                for narrative, and IBM Plex Mono or SF Mono for place labels and
+                controls.
+              </p>
+            </article>
+            <article>
+              <span class="field-label">Material</span>
+              <h3>Opaque and flush</h3>
+              <p>
+                One hairline separates map and record. Use square 2-4px corners,
+                dark glass, and no floating frosted cards.
+              </p>
+            </article>
+            <article>
+              <span class="field-label">Motion</span>
+              <h3>Move the route, not the text</h3>
+              <p>
+                The camera leans in, the map changes scale, and the token moves.
+                Story copy stays still while someone reads it.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="prototype">
+        <div class="section-index">
+          <strong>Prototype</strong>
+          <span>Click the places</span>
+        </div>
+        <div class="section-body">
+          <h2>The interaction in miniature.</h2>
+          <p class="section-intro">
+            This live planning mockup shows the relationship between macro maps
+            and story beats. The final experience uses richer local boards, but
+            the information hierarchy should remain this calm.
+          </p>
+
+          <div class="atlas-prototype">
+            <div class="atlas-map" aria-label="Interactive route map">
+              <span class="map-label top">THE ROUTE SO FAR</span>
+              <span class="map-label bottom"
+                >Select a place to inspect the beat</span
+              >
+              <svg
+                aria-hidden="true"
+                class="route"
+                preserveAspectRatio="none"
+                viewBox="0 0 900 620"
+              >
+                <path
+                  d="M162 472 C220 430 240 400 270 378 C230 306 207 250 198 192 C354 165 500 188 648 217"
+                />
+                <path class="future" d="M648 217 C710 174 758 137 792 105" />
+              </svg>
+              <button
+                aria-label="San Diego"
+                aria-pressed="true"
+                class="map-node sd"
+                data-preview="san-diego"
+                type="button"
+              ></button>
+              <button
+                aria-label="Los Angeles and UCLA"
+                aria-pressed="false"
+                class="map-node la"
+                data-preview="ucla"
+                type="button"
+              ></button>
+              <button
+                aria-label="San Francisco"
+                aria-pressed="false"
+                class="map-node sf"
+                data-preview="san-francisco"
+                type="button"
+              ></button>
+              <button
+                aria-label="New York"
+                aria-pressed="false"
+                class="map-node ny"
+                data-preview="new-york"
+                type="button"
+              ></button>
+              <button
+                aria-label="What comes next"
+                aria-pressed="false"
+                class="map-node next"
+                data-preview="horizon"
+                type="button"
+              ></button>
+            </div>
+
+            <article class="atlas-story" aria-live="polite">
+              <span class="eyebrow" id="preview-place">SAN DIEGO</span>
+              <h3 id="preview-title">Before the first build</h3>
+              <div class="atlas-artifact" id="preview-artifact">
+                TYLER PHOTO OR NOTEBOOK
+              </div>
+              <p id="preview-copy">
+                I grew up in San Diego. Math and programming gave me problems
+                worth staying with; running taught me how to keep showing up.
+              </p>
+              <dl class="story-fields">
+                <div class="story-field">
+                  <dt>Interaction</dt>
+                  <dd id="preview-interaction">Trace the first route.</dd>
+                </div>
+                <div class="story-field">
+                  <dt>Keepsake</dt>
+                  <dd id="preview-keepsake">A penciled grid.</dd>
+                </div>
+                <div class="story-field">
+                  <dt>Editorial</dt>
+                  <dd id="preview-status">
+                    Needs Tyler on age and first program.
+                  </dd>
+                </div>
+              </dl>
+            </article>
+          </div>
+          <p class="map-legend">
+            <span>Main path: required biography</span>
+            <span>Side path: optional artifact</span>
+            <span>Read mode: Back and Next always available</span>
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="story">
+        <div class="section-index">
+          <strong>Story</strong>
+          <span>Copy workshop</span>
+        </div>
+        <div class="section-body">
+          <h2>Eight beats, five maps.</h2>
+          <p class="section-intro">
+            The copy below is a first-person draft. Verified details are ready
+            to shape. Confirmation labels mark the places where the story needs
+            Tyler's memory or a choice between conflicting sources.
+          </p>
+
+          <table class="route-table">
+            <thead>
+              <tr>
+                <th>Map</th>
+                <th>Required beats</th>
+                <th>Emotional move</th>
+                <th>Persistent verb</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>San Diego</td>
+                <td>Math and first code, Del Norte, first app</td>
+                <td>Curiosity becomes endurance</td>
+                <td>Solve / run</td>
+              </tr>
+              <tr>
+                <td>UCLA</td>
+                <td>Freshman and sophomore years, Scale, UPE, building</td>
+                <td>Individual skill becomes shared work</td>
+                <td>Study / lead</td>
+              </tr>
+              <tr>
+                <td>San Francisco</td>
+                <td>SafetyKit and first startup-engineering summer</td>
+                <td>Projects become production responsibility</td>
+                <td>Ship</td>
+              </tr>
+              <tr>
+                <td>New York</td>
+                <td>Ramp and Codex community</td>
+                <td>Building and gathering people merge</td>
+                <td>Build / gather</td>
+              </tr>
+              <tr>
+                <td>Horizon</td>
+                <td>Known next step and open future</td>
+                <td>Certainty makes room for possibility</td>
+                <td>Continue</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="chapter-stack" style="margin-top: 52px">
+            <details class="chapter" open>
+              <summary>
+                <span class="chapter-number">00</span>
+                <span class="chapter-title">The screen wakes</span>
+                <span class="status verified">Ready</span>
+              </summary>
+              <div class="chapter-content">
+                <div>
+                  <p class="draft-copy">
+                    Tyler Xiao?<br />
+                    The short answer fits on this screen. The longer one starts
+                    in San Diego.<br />
+                    Learn more.
+                  </p>
+                </div>
+                <div class="chapter-notes">
+                  <dl>
+                    <div>
+                      <dt>Interaction</dt>
+                      <dd>Wake the dark display.</dd>
+                    </div>
+                    <div>
+                      <dt>Motion</dt>
+                      <dd>Type once, then remain still.</dd>
+                    </div>
+                    <div>
+                      <dt>Exit</dt>
+                      <dd>Back to the bench stays visible.</dd>
+                    </div>
+                  </dl>
+                </div>
+              </div>
+            </details>
+
+            <details class="chapter">
+              <summary>
+                <span class="chapter-number">01</span>
+                <span class="chapter-title"
+                  >San Diego: problems worth staying with</span
+                >
+                <span class="status confirm">Confirm</span>
+              </summary>
+              <div class="chapter-content">
+                <div>
+                  <p class="draft-copy">
+                    I grew up in San Diego, where most of my first maps were
+                    small: home, school, practice. In middle school, math and
+                    programming competitions gave me problems worth staying
+                    with. At [AGE], I started learning to code. A solution could
+                    suddenly do something, not just sit on a page.
+                  </p>
+                </div>
+                <div class="chapter-notes">
+                  <dl>
+                    <div>
+                      <dt>Verified</dt>
+                      <dd>
+                        San Diego upbringing; USACO Silver in eighth grade and
+                        Gold in ninth.
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Ask Tyler</dt>
+                      <dd>
+                        Exact age, first language, first program, and which
+                        middle-school math competition matters.
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Artifact</dt>
+                      <dd>
+                        Scratch project, App Inventor screenshot, notebook, or
+                        competition sheet.
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+              </div>
+            </details>
+
+            <details class="chapter">
+              <summary>
+                <span class="chapter-number">02</span>
+                <span class="chapter-title"
+                  >Del Norte: learning to set the pace</span
+                >
+                <span class="status confirm">Confirm</span>
+              </summary>
+              <div class="chapter-content">
+                <div>
+                  <p class="draft-copy">
+                    In high school, I kept two practices running at once.
+                    Cross-country and track taught me pace; the Math and
+                    Algorithmic Coding clubs taught me how to help a group keep
+                    moving. I learned that leadership was less about having the
+                    fastest answer and more about making it easier for other
+                    people to continue.
+                  </p>
+                </div>
+                <div class="chapter-notes">
+                  <dl>
+                    <div>
+                      <dt>Verified</dt>
+                      <dd>
+                        Del Norte, cross-country and track, president of both
+                        clubs.
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Ask Tyler</dt>
+                      <dd>
+                        Exact team leadership title and whether this
+                        interpretation feels true.
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Mini-game</dt>
+                      <dd>Keep a team pace instead of sprinting ahead.</dd>
+                    </div>
+                  </dl>
+                </div>
+              </div>
+            </details>
+
+            <details class="chapter">
+              <summary>
+                <span class="chapter-number">03</span>
+                <span class="chapter-title"
+                  >The first app for someone else</span
+                >
+                <span class="status confirm">Confirm</span>
+              </summary>
+              <div class="chapter-content">
+                <div>
+                  <p class="draft-copy">
+                    Grow &amp; Give turned focused minutes into progress inside
+                    an app and support for real nonprofits. Building it meant
+                    making choices for someone besides me: what to show, what to
+                    store, and what to make easy. A running app was only the
+                    beginning.
+                  </p>
+                </div>
+                <div class="chapter-notes">
+                  <dl>
+                    <div>
+                      <dt>Verified</dt>
+                      <dd>
+                        Swift and MongoDB app, 2022-2023, first place in the
+                        fair's senior computer-science category.
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Ask Tyler</dt>
+                      <dd>
+                        Is Grow &amp; Give the app you mean, or should this beat
+                        use RideHop?
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Interaction</dt>
+                      <dd>Arrange a simple plan, focus, reflect loop.</dd>
+                    </div>
+                  </dl>
+                </div>
+              </div>
+            </details>
+
+            <details class="chapter">
+              <summary>
+                <span class="chapter-number">04</span>
+                <span class="chapter-title">UCLA: the map gets larger</span>
+                <span class="status verified">Strong</span>
+              </summary>
+              <div class="chapter-content">
+                <div>
+                  <p class="draft-copy">
+                    I came to UCLA in 2024 to study computer science. Classes
+                    took me deeper into algorithms, systems, deep learning, and
+                    programming languages. Outside class I kept building,
+                    tutoring, organizing, running, and playing cello. College
+                    made the map larger, but it also made the work more shared.
+                  </p>
+                </div>
+                <div class="chapter-notes">
+                  <dl>
+                    <div>
+                      <dt>Verified</dt>
+                      <dd>
+                        Degree and coursework; ACM ICPC, UPE, VEST, Symphony
+                        Orchestra, tutoring, Jogging Club.
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Optional beat</dt>
+                      <dd>
+                        Scale AI evaluation work or DocuPilot team leadership
+                        during freshman year.
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Artifact</dt>
+                      <dd>
+                        UPE or UCLA photo, course notebook, project screenshot,
+                        cello program.
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+              </div>
+            </details>
+
+            <details class="chapter">
+              <summary>
+                <span class="chapter-number">05</span>
+                <span class="chapter-title"
+                  >San Francisco: production starts</span
+                >
+                <span class="status verified">Strong</span>
+              </summary>
+              <div class="chapter-content">
+                <div>
+                  <p class="draft-copy">
+                    After freshman year, the route moved north. SafetyKit was my
+                    first startup-engineering summer and my first time spending
+                    months in San Francisco. I worked on trust-and-safety
+                    systems where a pipeline could fail and a reviewer could
+                    lose trust. The details mattered because people used the
+                    system.
+                  </p>
+                </div>
+                <div class="chapter-notes">
+                  <dl>
+                    <div>
+                      <dt>Verified</dt>
+                      <dd>
+                        SafetyKit reflection, June-September 2025, first
+                        engineering intern, months in San Francisco.
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Wording rule</dt>
+                      <dd>
+                        Do not call SafetyKit Tyler's first internship. Scale AI
+                        appears earlier.
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Artifact</dt>
+                      <dd>
+                        Intern presentation, MCP diagram, or Tyler's own San
+                        Francisco photo.
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+              </div>
+            </details>
+
+            <details class="chapter">
+              <summary>
+                <span class="chapter-number">06</span>
+                <span class="chapter-title"
+                  >Codex: turn the tools into a room</span
+                >
+                <span class="status verified">Strong</span>
+              </summary>
+              <div class="chapter-content">
+                <div>
+                  <p class="draft-copy">
+                    I wanted technical work to happen in person, too. As a Codex
+                    Ambassador, I began hosting campus demos, workshops, and
+                    build sessions. Builders brought projects, compared notes,
+                    and made things together. The same thread followed me to New
+                    York, where I helped organize and judge Ramp's Builders Cup.
+                  </p>
+                </div>
+                <div class="chapter-notes">
+                  <dl>
+                    <div>
+                      <dt>Verified</dt>
+                      <dd>
+                        OpenAI directory; UPE and BMES events; Sundays in LA;
+                        Builders Cup role.
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Boundary</dt>
+                      <dd>
+                        Ambassador is a community role, not OpenAI employment.
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Interaction</dt>
+                      <dd>
+                        Connect attendee nodes until separate points become one
+                        shared route.
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+              </div>
+            </details>
+
+            <details class="chapter">
+              <summary>
+                <span class="chapter-number">07</span>
+                <span class="chapter-title"
+                  >New York: build at a larger scale</span
+                >
+                <span class="status verified">Current</span>
+              </summary>
+              <div class="chapter-content">
+                <div>
+                  <p class="draft-copy">
+                    This summer brought me to New York and Ramp's Reimbursements
+                    team. New city, larger system, same question: what would
+                    make this workflow genuinely useful to the person depending
+                    on it? Building and gathering people started to feel like
+                    parts of the same job.
+                  </p>
+                </div>
+                <div class="chapter-notes">
+                  <dl>
+                    <div>
+                      <dt>Verified</dt>
+                      <dd>
+                        User brief, Reimbursements announcement, public New York
+                        and Builders Cup posts.
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Repo cleanup</dt>
+                      <dd>
+                        Canonical site data still says Ramp is incoming, which
+                        is stale for August 2026.
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Artifact</dt>
+                      <dd>
+                        Ramp NYC photo or event image, subject to company-safe
+                        review.
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+              </div>
+            </details>
+
+            <details class="chapter">
+              <summary>
+                <span class="chapter-number">08</span>
+                <span class="chapter-title">Horizon: the unlabelled map</span>
+                <span class="status confirm">Resolve</span>
+              </summary>
+              <div class="chapter-content">
+                <div>
+                  <p class="draft-copy">
+                    One next step is already planned. The rest is not. I want to
+                    keep building AI systems that become genuinely useful inside
+                    companies, and keep bringing the people using those systems
+                    into the same room. The map ends here because the story does
+                    not.
+                  </p>
+                </div>
+                <div class="chapter-notes">
+                  <dl>
+                    <div>
+                      <dt>Conflict</dt>
+                      <dd>
+                        Current repo says Decagon AI next; public LinkedIn still
+                        says Snowflake.
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Ask Tyler</dt>
+                      <dd>
+                        Which employer, if any, should appear in the ending?
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Final action</dt>
+                      <dd>
+                        Place one pin beyond the known map, then return to the
+                        Bench.
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+              </div>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="interaction">
+        <div class="section-index">
+          <strong>Interaction</strong>
+          <span>No-fail loop</span>
+        </div>
+        <div class="section-body">
+          <h2>The computer is a portal, not the whole game.</h2>
+          <p class="section-intro">
+            Keep Three.js responsible for the physical invitation and camera
+            move. The readable experience expands into semantic HTML and SVG.
+            This protects legibility, keyboard access, mobile, and the Bench's
+            demand-rendered performance model.
+          </p>
+
+          <div class="flow" aria-label="Interaction sequence">
+            <article>
+              <span class="field-label">Attract</span>
+              <h3>Near-dark screen</h3>
+              <p>A quiet power glow. Hover or focus wakes the question.</p>
+            </article>
+            <article>
+              <span class="field-label">Prompt</span>
+              <h3>Tyler Xiao?</h3>
+              <p>
+                The camera leans toward the display. A real DOM twin appears.
+              </p>
+            </article>
+            <article>
+              <span class="field-label">Explore</span>
+              <h3>Waypoint map</h3>
+              <p>
+                Move to a connected landmark or use Back and Next in read mode.
+              </p>
+            </article>
+            <article>
+              <span class="field-label">Remember</span>
+              <h3>Story and artifact</h3>
+              <p>
+                One concrete memory, one visual artifact, one keepsake per map.
+              </p>
+            </article>
+            <article>
+              <span class="field-label">Return</span>
+              <h3>Back to Bench</h3>
+              <p>
+                Restore the prior view and focus. Same action works with Escape.
+              </p>
+            </article>
+          </div>
+
+          <div class="visual-spec" style="margin-top: 34px">
+            <article>
+              <span class="field-label">Controls</span>
+              <h3>Pointer, touch, keyboard</h3>
+              <p>
+                Tap a connected node; arrows or WASD choose an adjacent node;
+                Enter or Space opens it; Tab reaches every landmark.
+              </p>
+            </article>
+            <article>
+              <span class="field-label">Presentation mode</span>
+              <h3>Read without playing</h3>
+              <p>
+                A visible read-only mode opens each beat with Back and Next. The
+                map stays as context, never as a gate.
+              </p>
+            </article>
+            <article>
+              <span class="field-label">Recovery</span>
+              <h3>No dead ends</h3>
+              <p>
+                If map art fails, chapter copy remains. Invalid progress resets
+                safely. “Show me” reveals the required landmark.
+              </p>
+            </article>
+            <article>
+              <span class="field-label">Reduced motion</span>
+              <h3>Cut, do not travel</h3>
+              <p>
+                Replace route draws, parallax, and camera arcs with immediate
+                states or short opacity dissolves.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="architecture">
+        <div class="section-index">
+          <strong>Architecture</strong>
+          <span>Production boundary</span>
+        </div>
+        <div class="section-body">
+          <h2>One story model, three views.</h2>
+          <p class="section-intro">
+            The map, read-only presentation, and screen-reader chronology must
+            derive from one typed record. Do not scatter biographical copy
+            across Three.js textures, JSX panels, and mobile fallbacks.
+          </p>
+
+          <div class="architecture-grid">
+            <article>
+              <span class="field-label">Bench / R3F</span>
+              <h3>Portal</h3>
+              <ul>
+                <li>Screen wake texture</li>
+                <li>Screen-specific hit plane above glass</li>
+                <li>Camera focus and bounded transition</li>
+                <li>Story channel in the existing unwind ladder</li>
+                <li>No continuous render loop</li>
+              </ul>
+            </article>
+            <article>
+              <span class="field-label">Journey / DOM</span>
+              <h3>Experience</h3>
+              <ul>
+                <li>Semantic dialog or full page</li>
+                <li>Inline SVG route and real buttons</li>
+                <li>Local reducer for movement and story phase</li>
+                <li>Read-only mode and story index</li>
+                <li>Mobile and no-WebGL launcher</li>
+              </ul>
+            </article>
+            <article>
+              <span class="field-label">Content / TypeScript</span>
+              <h3>Truth</h3>
+              <ul>
+                <li>Stable place, beat, artifact, and node IDs</li>
+                <li>Editorial status on every claim</li>
+                <li>Source note stored with the sentence</li>
+                <li>Tests reject unresolved publishable copy</li>
+                <li>Company/project facts join canonical records</li>
+              </ul>
+            </article>
+          </div>
+
+          <pre
+            aria-label="Proposed journey data shape"
+          ><code>type JourneyBeat = {
+  id: string;
+  mapId: 'san-diego' | 'ucla' | 'san-francisco' | 'new-york' | 'horizon';
+  title: string;
+  period: string;
+  story: string[];
+  artifactIds: string[];
+  interactionId: string;
+  nextId: string | null;
+  editorialStatus: 'confirmed' | 'needs-tyler' | 'source-conflict';
+  sourceNotes: string[];
+};
+
+type JourneyState =
+  | { status: 'closed' }
+  | { status: 'screen'; phase: 'waking' | 'ready' }
+  | { status: 'chapter'; mode: 'explore' | 'read'; beatId: string; nodeId: string }
+  | { status: 'index'; returnTo: string }
+  | { status: 'ending'; keepsakes: string[] }
+  | { status: 'error'; recoverTo: 'story' | 'index' };</code></pre>
+
+          <div class="callout" style="margin-top: 28px">
+            <p>
+              <strong>Lowest-risk routing choice for the final PR:</strong>
+              build a canonical <code>/journey</code> route and reuse the same
+              component in a full-viewport Bench overlay. Save Next.js
+              intercepted parallel routing for a follow-up unless the direct
+              route and overlay are already stable.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="assets">
+        <div class="section-index">
+          <strong>Assets</strong>
+          <span>Real before generated</span>
+        </div>
+        <div class="section-body">
+          <h2>Use Tyler's artifacts as the world texture.</h2>
+          <p class="section-intro">
+            The repository already holds useful anchors. Production should add
+            Tyler-owned photos and documents rather than asking generated scenes
+            to impersonate his life.
+          </p>
+
+          <div class="asset-strip">
+            <article class="asset">
+              <img
+                alt="Portrait of Tyler Xiao already available in the site repository"
+                loading="lazy"
+                src="../../../public/pfp.JPG"
+              />
+              <p>Existing portrait</p>
+            </article>
+            <article class="asset">
+              <img
+                alt="Grow and Give app screenshot already available in the site repository"
+                loading="lazy"
+                src="../../../public/projects/grow-and-give.png"
+              />
+              <p>Grow &amp; Give artifact</p>
+            </article>
+            <article class="asset">
+              <img
+                alt="UCLA mark already available in the site repository"
+                loading="lazy"
+                src="../../../public/logos/ucla.svg"
+              />
+              <p>UCLA mark</p>
+            </article>
+            <article class="asset">
+              <img
+                alt="SafetyKit mark already available in the site repository"
+                loading="lazy"
+                src="../../../public/logos/safetykit.svg"
+              />
+              <p>SafetyKit mark</p>
+            </article>
+          </div>
+
+          <div class="visual-spec">
+            <article>
+              <span class="field-label">Request from Tyler</span>
+              <h3>San Diego and school</h3>
+              <p>
+                Childhood photo, early coding screenshot, competition sheet,
+                running bib or team photo.
+              </p>
+            </article>
+            <article>
+              <span class="field-label">Request from Tyler</span>
+              <h3>UCLA</h3>
+              <p>
+                Campus, UPE, Symphony, project-team, or tutoring image that
+                carries an actual memory.
+              </p>
+            </article>
+            <article>
+              <span class="field-label">Request from Tyler</span>
+              <h3>Internships</h3>
+              <p>
+                SafetyKit San Francisco and Ramp New York photos cleared for
+                public use.
+              </p>
+            </article>
+            <article>
+              <span class="field-label">Request from Tyler</span>
+              <h3>Community</h3>
+              <p>
+                Codex event photos or posters from UCLA, Sundays in LA, or
+                Builders Cup.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="evidence">
+        <div class="section-index">
+          <strong>Evidence</strong>
+          <span>Fact boundaries</span>
+        </div>
+        <div class="section-body">
+          <h2>Research supports the spine, not every detail.</h2>
+          <p class="section-intro">
+            The draft deliberately separates Tyler's direct brief, self-authored
+            site copy, canonical repository data, public posts, and open
+            questions. Metrics belong in optional artifacts, not the main voice.
+          </p>
+
+          <table class="evidence-table">
+            <thead>
+              <tr>
+                <th>Source</th>
+                <th>Safe use</th>
+                <th>Boundary</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Tyler's direct brief</td>
+                <td>
+                  San Diego, math competitions, coding, cross-country
+                  leadership, SafetyKit in San Francisco, Ramp in New York,
+                  Codex events.
+                </td>
+                <td>
+                  Exact age, roles, dates, and chosen anecdotes still need
+                  Tyler's wording.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="https://www.tylerx.dev/blog/introduction"
+                    >Self-authored introduction</a
+                  >
+                </td>
+                <td>
+                  San Diego, Del Norte, cross-country and track, club
+                  leadership, UCLA study and involvement.
+                </td>
+                <td>
+                  “Second year” is dated February 2026, not a timeless label.
+                </td>
+              </tr>
+              <tr>
+                <td>Canonical site content</td>
+                <td>
+                  UCLA, Scale AI, SafetyKit, Ramp, UPE, projects, and current AI
+                  developer-experience interest.
+                </td>
+                <td>
+                  Ramp status is stale; SafetyKit and Scale month ranges
+                  conflict across files.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="https://ingenius.us/usaco-awards-list/"
+                    >inGenius USACO history</a
+                  >
+                </td>
+                <td>
+                  USACO Silver in eighth grade, Gold in ninth, more than two
+                  years of Java study by then.
+                </td>
+                <td>Does not establish the exact age or first program.</td>
+              </tr>
+              <tr>
+                <td>
+                  <a
+                    href="https://www.gsdsef.org/sites/default/files/SR-COMP%202023%20AbstractsR.pdf"
+                    >Official Grow &amp; Give abstract</a
+                  >
+                </td>
+                <td>
+                  Swift and MongoDB app, productivity flow, nonprofit incentive,
+                  user study.
+                </td>
+                <td>
+                  Tyler should choose whether this is the “first app” chapter.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <a
+                    href="https://www.linkedin.com/posts/tyler-xiao_thank-you-safetykit-this-past-summer-i-activity-7386438629230841856-YXj-"
+                    >SafetyKit reflection</a
+                  >
+                </td>
+                <td>
+                  Projects shipped and first time spending months in San
+                  Francisco.
+                </td>
+                <td>
+                  Call it the first startup-engineering summer, not first
+                  internship overall.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <a
+                    href="https://developers.openai.com/community/codex-ambassadors"
+                    >OpenAI ambassador directory</a
+                  >
+                  and <a href="https://luma.com/tog765e0">public event pages</a>
+                </td>
+                <td>Codex Ambassador role and co-hosted UCLA workshops.</td>
+                <td>
+                  Community-program role, not OpenAI employment. Event count can
+                  change.
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <a
+                    href="https://www.linkedin.com/posts/tyler-xiao_a-quick-life-update-i-will-be-joining-activity-7449475259994497024-ncA9"
+                    >Ramp announcement</a
+                  >
+                </td>
+                <td>Ramp Reimbursements team in summer 2026.</td>
+                <td>
+                  The public post names Snowflake next, while the repository now
+                  names Decagon AI.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="conflict">
+            <h3>Resolve before public copy: Decagon AI or Snowflake?</h3>
+            <p>
+              The current repository deliberately replaced Snowflake with
+              Decagon AI. Public LinkedIn pages still advertise Snowflake for
+              fall 2026. The ending should remain employer-neutral until Tyler
+              chooses the current truth and updates the stale surface.
+            </p>
+          </div>
+
+          <h3 style="margin-top: 52px">Reference experiences</h3>
+          <ul class="references">
+            <li>
+              <a href="https://ncase.me/cos/">Coming Out Simulator 2014</a>:
+              conversational entry and choices that change pacing rather than
+              history.
+            </li>
+            <li>
+              <a href="https://w.itch.io/dys4ia">dys4ia</a>: tiny
+              autobiographical mechanics that express each moment.
+            </li>
+            <li>
+              <a href="https://bear71vr.nfb.ca/">Bear 71</a>: true story
+              organized by route, narration, and artifacts.
+            </li>
+            <li>
+              <a href="https://ncase.me/trust/">The Evolution of Trust</a>:
+              short promised duration, chapter index, and one idea per
+              interaction.
+            </li>
+            <li>
+              <a href="https://www.rleonardi.com/interactive-resume/"
+                >Robby Leonardi's Interactive Resume</a
+              >: chronology as one continuous course.
+            </li>
+            <li>
+              <a href="https://bruno-simon.com/">Bruno Simon's portfolio</a>:
+              discovery cues and clear controls, without copying its open-world
+              scope.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section" id="decisions">
+        <div class="section-index">
+          <strong>Decisions</strong>
+          <span>Tyler workshop</span>
+        </div>
+        <div class="section-body">
+          <h2>The questions that materially change the story.</h2>
+          <p class="section-intro">
+            These are not polish questions. Each answer changes what the game
+            says or which device it uses. Everything else can be refined after
+            the spine is approved.
+          </p>
+
+          <div class="decision-list">
+            <article class="decision-item">
+              <span class="status confirm">Device</span>
+              <h3>Which screen is the portal?</h3>
+              <p>
+                Repurpose the sparse Personal Env laptop, or add a dedicated
+                computer and recompose the carefully fitted work shot?
+              </p>
+            </article>
+            <article class="decision-item">
+              <span class="status confirm">Origin</span>
+              <h3>What was the first code?</h3>
+              <p>
+                Exact age, first language, first memorable program, and the
+                middle-school competition you want to remember.
+              </p>
+            </article>
+            <article class="decision-item">
+              <span class="status confirm">Leadership</span>
+              <h3>What changed on the team?</h3>
+              <p>
+                Your exact cross-country role and one moment when leadership
+                stopped meaning “go fastest.”
+              </p>
+            </article>
+            <article class="decision-item">
+              <span class="status confirm">First app</span>
+              <h3>Grow &amp; Give or RideHop?</h3>
+              <p>
+                Choose the project that feels like the first time code became a
+                product for someone else.
+              </p>
+            </article>
+            <article class="decision-item">
+              <span class="status confirm">UCLA</span>
+              <h3>What is college really about?</h3>
+              <p>
+                Pick one academic change and one community change. The scene
+                should not become a club or coursework inventory.
+              </p>
+            </article>
+            <article class="decision-item">
+              <span class="status confirm">Future</span>
+              <h3>Name the next stop or leave it open?</h3>
+              <p>
+                Resolve Decagon versus Snowflake, then decide whether the
+                employer belongs in the ending at all.
+              </p>
+            </article>
+          </div>
+
+          <div class="callout" style="margin-top: 30px">
+            <p>
+              <strong>Recommended workshop answer:</strong> keep the employer
+              out of the final spoken line. Let the future scene focus on the
+              kind of work and community Tyler wants to keep building. A small
+              optional artifact can name the confirmed next stop later.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="release">
+        <div class="section-index">
+          <strong>Release slices</strong>
+          <span>Reversible commits</span>
+        </div>
+        <div class="section-body">
+          <h2>Ship the truth before the flourish.</h2>
+          <p class="section-intro">
+            Keep each slice independently testable and reversible. Avoid a
+            single all-or-nothing Three.js change at the end of a merge-ready
+            branch.
+          </p>
+
+          <ol class="release-slices">
+            <li>
+              <div>
+                <strong>Canonical journey story model</strong>
+                <span
+                  >Typed places, beats, artifacts, editorial statuses, source
+                  notes, and contract tests.</span
+                >
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>Accessible direct journey</strong>
+                <span
+                  >Full <code>/journey</code> route, read mode, map, reducer,
+                  mobile, reduced motion, and no-WebGL access.</span
+                >
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>Bench overlay and exit contract</strong>
+                <span
+                  >Focus trap, inert Bench, Escape, focus restoration, and the
+                  same component rendered over the scene.</span
+                >
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>Screen-specific portal</strong>
+                <span
+                  >Dedicated hit plane above the laptop glass, camera shot, DOM
+                  twin, prompt texture, and state mutual exclusion.</span
+                >
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>Real assets and bounded motion</strong>
+                <span
+                  >Tyler-owned imagery, local vector maps, route travel, idle
+                  frame-count check, and focused browser verification.</span
+                >
+              </div>
+            </li>
+          </ol>
+
+          <div class="visual-spec" style="margin-top: 36px">
+            <article>
+              <span class="field-label">Tests</span>
+              <h3>Data and reducer first</h3>
+              <p>
+                Unique IDs, reachable graph, bounded coordinates, valid assets,
+                next/previous, restart, and idempotent actions.
+              </p>
+            </article>
+            <article>
+              <span class="field-label">Bench</span>
+              <h3>Restore interaction coverage</h3>
+              <p>
+                Portal mutual exclusion, Escape ordering, click-away ordering,
+                render invalidation, and selection restoration.
+              </p>
+            </article>
+            <article>
+              <span class="field-label">Browser</span>
+              <h3>One focused story</h3>
+              <p>
+                Pointer and keyboard entry, direct route, 390px layout, no-WebGL
+                launcher, focus restore, clean console.
+              </p>
+            </article>
+            <article>
+              <span class="field-label">Performance</span>
+              <h3>Keep idle and active separate</h3>
+              <p>
+                The Bench should stay settled while the DOM game is open.
+                Measure idle, route movement, and rapid clicking independently.
+              </p>
+            </article>
+          </div>
+
+          <ul class="guardrails" style="margin-top: 36px">
+            <li>
+              No combat, branching history, free-roaming physics, Mapbox,
+              procedural levels, or second WebGL canvas.
+            </li>
+            <li>
+              No fake childhood photos, invented ages, city clichés, or resume
+              metrics in the main narration.
+            </li>
+            <li>
+              No score, timer, XP, locked story, autoplay audio, custom cursor,
+              or continuous ambient animation.
+            </li>
+            <li>
+              Keep the existing dirty Bench, generated history, and debug-script
+              changes outside future focused commits.
+            </li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer shell">
+      <span>Planning only. No production game code changed.</span>
+      <button class="print-button" onclick="window.print()" type="button">
+        Print workshop
+      </button>
+    </footer>
+
+    <script>
+      const previewData = {
+        'san-diego': {
+          place: 'SAN DIEGO',
+          title: 'Before the first build',
+          artifact: 'TYLER PHOTO OR NOTEBOOK',
+          copy: 'I grew up in San Diego. Math and programming gave me problems worth staying with; running taught me how to keep showing up.',
+          interaction: 'Trace the first route.',
+          keepsake: 'A penciled grid.',
+          status: 'Needs Tyler on age and first program.',
+        },
+        ucla: {
+          place: 'LOS ANGELES / UCLA',
+          title: 'The map gets larger',
+          artifact: 'UCLA OR UPE ARTIFACT',
+          copy: 'College pulled systems, teams, music, and community onto the same map. The work became larger and more shared.',
+          interaction: 'Connect class, project, and community nodes.',
+          keepsake: 'A shared key.',
+          status: 'Strong source support; choose one personal moment.',
+        },
+        'san-francisco': {
+          place: 'SAN FRANCISCO',
+          title: 'Production starts',
+          artifact: 'SAFETYKIT OR SF PHOTO',
+          copy: 'SafetyKit was my first startup-engineering summer and my first time spending months in San Francisco. The details mattered because people used the system.',
+          interaction: 'Repair one broken production route.',
+          keepsake: 'A stamped runbook.',
+          status: 'Verified; avoid calling it the first internship.',
+        },
+        'new-york': {
+          place: 'NEW YORK',
+          title: 'Build and gather',
+          artifact: 'RAMP OR CODEX EVENT PHOTO',
+          copy: 'At Ramp, building reimbursement workflows and gathering builders started to feel like parts of the same job.',
+          interaction: 'Bring separate builder nodes into one room.',
+          keepsake: 'An event badge.',
+          status: 'Current; repo status needs freshness cleanup.',
+        },
+        horizon: {
+          place: 'HORIZON',
+          title: 'No finish line',
+          artifact: 'UNPRINTED MARGIN',
+          copy: 'One next step is planned. The rest is not. The map ends here because the story does not.',
+          interaction: 'Place the next pin.',
+          keepsake: 'An unfinished route.',
+          status: 'Resolve Decagon versus Snowflake before naming it.',
+        },
+      };
+
+      const previewNodes = Array.from(
+        document.querySelectorAll('[data-preview]'),
+      );
+      const previewPlace = document.querySelector('#preview-place');
+      const previewTitle = document.querySelector('#preview-title');
+      const previewArtifact = document.querySelector('#preview-artifact');
+      const previewCopy = document.querySelector('#preview-copy');
+      const previewInteraction = document.querySelector('#preview-interaction');
+      const previewKeepsake = document.querySelector('#preview-keepsake');
+      const previewStatus = document.querySelector('#preview-status');
+
+      function selectPreview(id) {
+        const entry = previewData[id];
+        if (!entry) return;
+
+        previewNodes.forEach((node) => {
+          node.setAttribute(
+            'aria-pressed',
+            String(node.dataset.preview === id),
+          );
+        });
+        previewPlace.textContent = entry.place;
+        previewTitle.textContent = entry.title;
+        previewArtifact.textContent = entry.artifact;
+        previewCopy.textContent = entry.copy;
+        previewInteraction.textContent = entry.interaction;
+        previewKeepsake.textContent = entry.keepsake;
+        previewStatus.textContent = entry.status;
+      }
+
+      previewNodes.forEach((node) => {
+        node.addEventListener('click', () =>
+          selectPreview(node.dataset.preview),
+        );
+      });
+
+      const navLinks = Array.from(document.querySelectorAll('.chapter-nav a'));
+      const sections = navLinks
+        .map((link) => document.querySelector(link.getAttribute('href')))
+        .filter(Boolean);
+
+      const sectionObserver = new IntersectionObserver(
+        (entries) => {
+          const visible = entries
+            .filter((entry) => entry.isIntersecting)
+            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+          if (!visible) return;
+
+          navLinks.forEach((link) => {
+            link.setAttribute(
+              'aria-current',
+              String(link.getAttribute('href') === `#${visible.target.id}`),
+            );
+          });
+        },
+        { rootMargin: '-20% 0px -65%', threshold: [0.05, 0.25, 0.5] },
+      );
+
+      sections.forEach((section) => sectionObserver.observe(section));
+    </script>
+  </body>
+</html>
