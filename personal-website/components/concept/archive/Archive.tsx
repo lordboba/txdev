@@ -5,10 +5,10 @@ import { useCallback, useState } from 'react';
 import {
   conceptViews,
   experiments,
-  featuredProjects,
   gitEras,
   personalNotes,
 } from '../conceptData';
+import { featuredProjects } from '../../../content/projectData';
 import { setConceptView, useConceptView } from '../conceptViewStore';
 import { useMounted, usePrefersReducedMotion } from '../shared/runtime';
 import { Monolith } from './Monolith';

@@ -28,8 +28,10 @@ Most shared visual decisions flow through [`app/globals.css`](./app/globals.css)
 - [`components/home/BenchHome.tsx`](./components/home/BenchHome.tsx)
 - [`components/concept/bench/Bench.tsx`](./components/concept/bench/Bench.tsx)
 - [`components/concept/bench/BenchScene.tsx`](./components/concept/bench/BenchScene.tsx)
+- [`content/projectData.ts`](./content/projectData.ts) — canonical project catalog and derived Bench project views
+- [`content/experienceData.ts`](./content/experienceData.ts) — canonical experience records and derived groups and Bench tags
 - [`components/concept/conceptData.ts`](./components/concept/conceptData.ts)
-- [`lib/siteData.ts`](./lib/siteData.ts)
+- [`lib/siteData.ts`](./lib/siteData.ts) — shared profile, contact, and scheduling content
 
 ## Local Development
 

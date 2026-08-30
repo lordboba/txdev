@@ -12,16 +12,15 @@ import {
 } from '@phosphor-icons/react';
 import { useCallback, useSyncExternalStore } from 'react';
 import {
-  companyTags,
   conceptViews,
   experimentNotes,
   experiments,
-  featuredProjects,
   notesLabel,
   personalNotes,
-  sideProjects,
   type ConceptViewId,
 } from '../conceptData';
+import { featuredProjects, sideProjects } from '../../../content/projectData';
+import { companyTags } from '../../../content/experienceData';
 import { setConceptView, useConceptView } from '../conceptViewStore';
 import { useMounted, usePrefersReducedMotion } from '../shared/runtime';
 import { BenchScene, preloadHistoryShots } from './BenchScene';
@@ -249,8 +248,8 @@ function TagIndex({ selected }: { selected: number }) {
 
 /**
  * The opened tag. Everything here is a field off the joined record in
- * `companyTags`, which is itself a join onto lib/siteData — the panel has no
- * copy of its own to get wrong. Same exit contract as the gallery: a back
+ * `companyTags`, which is derived from content/experienceData — the panel has
+ * no copy of its own to get wrong. Same exit contract as the gallery: a back
  * control, Escape, or a click on empty bench.
  */
 function TagDetails({ selected }: { selected: number }) {
@@ -389,7 +388,7 @@ function WorkDetails() {
  * profile view used to repeat down here — card fields, the company run — is
  * already on the badge or on the work view's signature plate, so the DOM
  * keeps only real destinations. All five are live routes or profiles, from
- * `app/` and `lib/siteData.ts` — nothing invented.
+ * `app/`, content/projectData, and lib/siteData — nothing invented.
  */
 const profileLinks: {
   label: string;

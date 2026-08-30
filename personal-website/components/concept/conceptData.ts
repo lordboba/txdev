@@ -1,17 +1,3 @@
-/*
- * The `.ts` extension is deliberate and load-bearing: this module is imported
- * by conceptData.test.mts under `node --test`, whose ESM resolver does not
- * extension-guess. tsconfig sets `allowImportingTsExtensions`, and bundlers
- * resolve the literal path, so the same specifier works in all three.
- */
-import {
-  experienceGroups,
-  experiences,
-  projects,
-  type Experience,
-  type Project,
-} from '../../lib/siteData.ts';
-
 export type ConceptViewId = 'profile' | 'work' | 'signals' | 'history';
 
 export type ConceptView = {
@@ -21,15 +7,6 @@ export type ConceptView = {
   shortLabel: string;
   heading: string;
   description: string;
-};
-
-export type FeaturedProject = {
-  title: string;
-  role: string;
-  description: string;
-  image: string;
-  link: string;
-  accent: string;
 };
 
 export type GitEra = {
@@ -85,169 +62,6 @@ export const conceptViews: ConceptView[] = [
   },
 ];
 
-export const companyRun = [
-  {
-    company: 'Scale AI',
-    period: '2024—25',
-    detail: 'Coding and reasoning evaluation loops',
-  },
-  {
-    company: 'SafetyKit',
-    period: '2025',
-    detail: 'Trust and safety workflow automation',
-  },
-  {
-    company: 'Ramp',
-    period: '2026',
-    detail: 'Agents for reimbursements',
-  },
-];
-
-/**
- * One hanging tag per place the work was done, in the order the run happened,
- * with the credential last.
- *
- * Every field on a tag is a join, never a rewrite: `mark` and `logo` name the
- * verified asset in public/logos, `run` is the short label the company run
- * already carries, and everything else — the legal org name, the role title,
- * the dated period, the summary and the proof line — is lifted verbatim from
- * the matching record in lib/siteData `experiences`. A tag can therefore never
- * claim anything the resume does not: if a record disappears, its tag does
- * too, rather than falling back to invented copy.
- */
-export type CompanyTag = {
-  /** Display name, and the key into the logo table on both surfaces. */
-  mark: string;
-  logo: string;
-  /** The org exactly as the experience record names it. */
-  org: string;
-  role: string;
-  /** Dated period from the record, e.g. "Nov 2024 to May 2025". */
-  period: string;
-  /** Short run label from `companyRun`, absent for the credential. */
-  run: string | null;
-  /** One-line focus from `companyRun`, absent for the credential. */
-  detail: string | null;
-  status: Experience['status'];
-  statusLabel: string;
-  summary: string;
-  proof: string;
-  focus: string[];
-};
-
-const TAG_SOURCES: { mark: string; logo: string; record: string }[] = [
-  { mark: 'Scale AI', logo: '/logos/scale-ai.svg', record: 'Scale AI' },
-  { mark: 'SafetyKit', logo: '/logos/safetykit.svg', record: 'SafetyKit' },
-  { mark: 'Ramp', logo: '/logos/ramp.svg', record: 'Ramp' },
-  {
-    mark: 'UCLA',
-    logo: '/logos/ucla.svg',
-    record: 'Upsilon Pi Epsilon @ UCLA',
-  },
-];
-
-export const companyTags: CompanyTag[] = TAG_SOURCES.flatMap((source) => {
-  const record = experiences.find((entry) => entry.company === source.record);
-
-  if (!record) {
-    return [];
-  }
-
-  const run = companyRun.find((entry) => entry.company === source.mark) ?? null;
-  const group = experienceGroups.find(
-    (entry) => entry.status === record.status,
-  );
-
-  return [
-    {
-      mark: source.mark,
-      logo: source.logo,
-      org: record.company,
-      role: record.role,
-      period: record.period,
-      run: run ? run.period : null,
-      detail: run ? run.detail : null,
-      status: record.status,
-      statusLabel: group ? group.label : record.status,
-      summary: record.summary,
-      proof: record.proof,
-      focus: record.focus,
-    },
-  ];
-});
-
-export const featuredProjects: FeaturedProject[] = [
-  {
-    title: 'iCalarms',
-    role: 'iOS product',
-    description:
-      'Calendar events become configurable alarm rules, timelines, and native scheduling behavior.',
-    image: '/projects/icalarms.png',
-    link: 'https://icalarms.vercel.app',
-    accent: 'AlarmKit / EventKit',
-  },
-  {
-    title: 'Personal Env',
-    role: 'macOS product',
-    description:
-      'A local-first environment variable manager with Keychain storage and explicit folder access.',
-    image: '/projects/personal-env-card.svg',
-    link: 'https://personal-env.vercel.app',
-    accent: 'SwiftUI / Keychain',
-  },
-  {
-    title: 'Med Negotiate',
-    role: 'AI workflow',
-    description:
-      'A medical-bill audit and negotiation workflow built around real cases and provider outreach.',
-    image: '/projects/med-negotiate.png',
-    link: 'https://med-negotiate-yvml.vercel.app',
-    accent: 'Next.js / AI SDK',
-  },
-  {
-    title: 'Charades 2026',
-    role: 'iOS game',
-    description:
-      'A native party game with custom decks, tilt controls, commerce, and release gates.',
-    image: '/projects/charades-2026.png',
-    link: 'https://charades-2026.vercel.app',
-    accent: 'SwiftUI / StoreKit 2',
-  },
-];
-
-/**
- * Everything in the full project list that is NOT one of the four shipped
- * products staged on the bench. These are the gallery hang behind the side
- * projects tablet — same records, same real links, no second copy of the data.
- *
- * `image` is nullable on purpose: one entry has no capture in public/projects,
- * and inventing a screenshot for it would be the one thing this gallery must
- * never do. The renderer draws a stated "no capture" plate instead.
- */
-export type SideProject = {
-  title: string;
-  role: string;
-  description: string;
-  tech: string[];
-  link: string;
-  linkLabel: string;
-  image: string | null;
-};
-
-const FEATURED_TITLES = new Set(featuredProjects.map((entry) => entry.title));
-
-export const sideProjects: SideProject[] = projects
-  .filter((entry: Project) => !FEATURED_TITLES.has(entry.title))
-  .map((entry: Project) => ({
-    title: entry.title,
-    role: entry.role,
-    description: entry.description,
-    tech: entry.tech,
-    link: entry.link,
-    linkLabel: entry.linkLabel,
-    image: entry.image ?? null,
-  }));
-
 export const experiments = [
   {
     number: 'A',
@@ -283,11 +97,10 @@ export const experiments = [
  * Two rules this block is written under, and must keep being written under:
  *
  *   1. No invented facts. Every concrete noun here already exists somewhere in
- *      the repo — the four shipped products and their proof lines in
- *      lib/siteData `projects`, the run in `experiences`, the routes under
- *      app/, the commits in `gitEras`, and the two working drafts in
- *      content/blog/drafts. Nothing claims a metric, a date, or an outcome
- *      that is not already written down.
+ *      the repo — the shipped products in content/projectData, the run in
+ *      content/experienceData, the routes under app/, the commits in `gitEras`,
+ *      and the two working drafts in content/blog/drafts. Nothing claims a
+ *      metric, a date, or an outcome that is not already written down.
  *   2. `readout` and `next` are stated as intentions in the first person, not
  *      as results. An experiment that is still running has not concluded, and
  *      the panel must not read as though it has.

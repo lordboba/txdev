@@ -1,11 +1,7 @@
 import Image from 'next/image';
-import {
-  companyRun,
-  experiments,
-  featuredProjects,
-  gitEras,
-  personalNotes,
-} from '../conceptData';
+import { experiments, gitEras, personalNotes } from '../conceptData';
+import { featuredProjects } from '../../../content/projectData';
+import { companyRun } from '../../../content/experienceData';
 import { Miniature } from './Miniature';
 import styles from './Museum.module.css';
 

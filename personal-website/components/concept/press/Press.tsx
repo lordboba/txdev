@@ -4,13 +4,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import {
-  companyRun,
   conceptViews,
   experiments,
-  featuredProjects,
   gitEras,
   personalNotes,
 } from '../conceptData';
+import { featuredProjects } from '../../../content/projectData';
+import { companyRun } from '../../../content/experienceData';
 import { setConceptView, useConceptView } from '../conceptViewStore';
 import { useMounted, usePrefersReducedMotion } from '../shared/runtime';
 import { PressObject } from './PressObject';

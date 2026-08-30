@@ -2,8 +2,12 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { companyRun, companyTags, conceptViews } from '../conceptData.ts';
-import { experiences } from '../../../lib/siteData.ts';
+import { conceptViews } from '../conceptData.ts';
+import {
+  companyRun,
+  companyTags,
+  experiences,
+} from '../../../content/experienceData.ts';
 
 const benchSceneSource = readFileSync(
   fileURLToPath(new URL('./BenchScene.tsx', import.meta.url)),

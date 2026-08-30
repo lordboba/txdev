@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
-import { experienceGroups, projects } from '@/lib/siteData';
+import { projects } from '@/content/projectData';
+import { experienceGroups } from '@/content/experienceData';
 import { NavBar } from '@/components/NavBar';
 import { ThemeBar } from '@/components/ThemeBar';
 

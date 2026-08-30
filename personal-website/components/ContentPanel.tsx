@@ -3,13 +3,9 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import type { OrbitalSectionId } from '@/lib/orbitalData';
-import {
-  quickFacts,
-  projects,
-  experienceGroups,
-  contactLinks,
-  type Project,
-} from '@/lib/siteData';
+import { projects, type Project } from '@/content/projectData';
+import { experienceGroups } from '@/content/experienceData';
+import { contactLinks, quickFacts } from '@/lib/siteData';
 
 type PanelProps = { onOpenModal: (id: string) => void };
 

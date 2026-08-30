@@ -1,11 +1,11 @@
 import {
-  companyRun,
   experiments,
-  featuredProjects,
   gitEras,
   personalNotes,
   type ConceptViewId,
 } from '../conceptData';
+import { featuredProjects } from '../../../content/projectData';
+import { companyRun } from '../../../content/experienceData';
 
 export type CaseState = 'pending' | 'running' | 'pass';
 

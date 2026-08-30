@@ -14,8 +14,11 @@ registerHooks({
   },
 });
 
-const { companyRun, experiments, featuredProjects, gitEras, personalNotes } =
-  await import('../conceptData.ts');
+const { experiments, gitEras, personalNotes } = await import(
+  '../conceptData.ts'
+);
+const { featuredProjects } = await import('../../../content/projectData.ts');
+const { companyRun } = await import('../../../content/experienceData.ts');
 const { compileSuite, deterministicDuration, resolveSuiteAt } = await import(
   './runEngine.ts'
 );

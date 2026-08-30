@@ -1,17 +1,19 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-  companyRun,
-  companyTags,
   conceptViews,
   experimentNotes,
   experiments,
-  featuredProjects,
   gitEras,
   notesLabel,
 } from './conceptData.ts';
 import { conceptEntries } from './conceptRegistry.ts';
-import { experiences } from '../../lib/siteData.ts';
+import { featuredProjects } from '../../content/projectData.ts';
+import {
+  companyRun,
+  companyTags,
+  experiences,
+} from '../../content/experienceData.ts';
 
 test('concept view identifiers are unique and cover the four profile angles', () => {
   assert.equal(conceptViews.length, 4);
@@ -37,7 +39,11 @@ test('signature view copy uses Tyler’s approved release wording', () => {
     views.signals.description,
     'Right now, I’m building tools for myself, evaluating agents, and finishing this site.',
   );
-  assert.equal(views.history.description, 'Previous site history :)');
+  assert.equal(views.history.heading, 'Previous site history.');
+  assert.equal(
+    views.history.description,
+    'Earlier versions, oldest to newest.',
+  );
 });
 
 test('focus areas use direct labels and descriptions', () => {

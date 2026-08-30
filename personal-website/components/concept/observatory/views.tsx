@@ -2,13 +2,9 @@
 
 import Image from 'next/image';
 import { useState, type ReactNode } from 'react';
-import {
-  companyRun,
-  experiments,
-  featuredProjects,
-  gitEras,
-  personalNotes,
-} from '../conceptData';
+import { experiments, gitEras, personalNotes } from '../conceptData';
+import { featuredProjects } from '../../../content/projectData';
+import { companyRun } from '../../../content/experienceData';
 import { Readout } from './Readout';
 import styles from './Observatory.module.css';
 

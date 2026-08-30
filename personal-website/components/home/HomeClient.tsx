@@ -19,7 +19,9 @@ import {
   useThemeMode,
 } from '@/components/runtime/themePreferences';
 import type { OrbitalSectionId } from '@/lib/orbitalData';
-import { experienceGroups, projects, callHighlights } from '@/lib/siteData';
+import { projects } from '@/content/projectData';
+import { experienceGroups } from '@/content/experienceData';
+import { callHighlights } from '@/lib/siteData';
 
 const SECTION_IDS: OrbitalSectionId[] = [
   'home',

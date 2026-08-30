@@ -17,17 +17,14 @@ import {
   useSyncExternalStore,
 } from 'react';
 import * as THREE from 'three';
+import { experiments, personalNotes, type ConceptViewId } from '../conceptData';
 import {
-  companyTags,
-  experiments,
   featuredProjects,
-  personalNotes,
   sideProjects,
-  type CompanyTag,
-  type ConceptViewId,
   type FeaturedProject,
   type SideProject,
-} from '../conceptData';
+} from '../../../content/projectData';
+import { companyTags, type CompanyTag } from '../../../content/experienceData';
 import { useConceptView } from '../conceptViewStore';
 import { exposeBenchDebug, isAblated } from './benchAblation';
 import {
