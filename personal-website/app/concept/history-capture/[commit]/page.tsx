@@ -5,7 +5,7 @@
  * Renders one museum miniature standalone, full-bleed at the viewport size, so
  * `npm run history` can screenshot it straight into public/history. The
  * miniatures in components/concept/museum/miniatures are faithful DOM rebuilds
- * of the six real commits in `gitEras` (built from `git show` against those
+ * of the real commits in `gitEras` (built from `git show` against those
  * hashes), which is the sanctioned way to photograph a past state of this site
  * without checking out and booting an old build.
  *

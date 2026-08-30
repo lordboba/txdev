@@ -7,9 +7,8 @@ import { NavBar } from '@/components/NavBar';
 import { ThemeBar } from '@/components/ThemeBar';
 
 export const metadata: Metadata = {
-  title: 'Experience — Tyler Xiao',
-  description:
-    "Detailed look at Tyler Xiao's upcoming, current, and past work with related project proof.",
+  title: 'Experience - Tyler Xiao',
+  description: 'Detailed look at my upcoming, current, and past work.',
 };
 
 const focusAreas = Array.from(

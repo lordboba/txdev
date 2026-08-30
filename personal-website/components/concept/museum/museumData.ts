@@ -11,7 +11,6 @@ type PaletteWords =
   | 'Charcoal / phosphor'
   | 'Night / signal gold'
   | 'Dusk / brass / sage'
-  | 'Umber / parchment / gold'
   | 'Dusk / screen color';
 
 /**
@@ -47,12 +46,6 @@ export const paletteByWords: Record<
     accent: '#c89b52',
     miniature: '#12100d',
   },
-  'Umber / parchment / gold': {
-    wall: '#e8e0d4',
-    ink: '#201b16',
-    accent: '#a57b37',
-    miniature: '#181512',
-  },
   'Dusk / screen color': {
     wall: '#e2d9cc',
     ink: '#201b16',
@@ -66,7 +59,6 @@ const museumEraKeys: { commit: string; palette: PaletteWords }[] = [
   { commit: '79348e8', palette: 'Charcoal / phosphor' },
   { commit: '46a72ca', palette: 'Night / signal gold' },
   { commit: '4fc5d06', palette: 'Dusk / brass / sage' },
-  { commit: 'daebe22', palette: 'Umber / parchment / gold' },
   { commit: 'ad3e87a', palette: 'Dusk / screen color' },
 ];
 

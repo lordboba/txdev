@@ -24,7 +24,7 @@ export const conceptEntries: ConceptEntry[] = [
     name: 'Observatory',
     route: '/concept/observatory',
     thesis:
-      'The page as a measuring instrument. Mono only, hairline plates, live telemetry read off the real camera.',
+      'The page is a measuring instrument. Mono only, hairline plates, live telemetry read off the real camera.',
     motion: 'Camera transits, scrambling readouts, cursor-tracked parallax.',
     object: 'A six-ring armillary armature that reconfigures per view.',
     palette: ['#0a0b0d', '#74e0e8', '#c9d3da'],
@@ -35,7 +35,7 @@ export const conceptEntries: ConceptEntry[] = [
     name: 'Bench',
     route: '/concept/bench',
     thesis:
-      'Product photography as interface. The shipped apps are the only color on the page — their screens carry the real screenshots.',
+      'Product photography as interface. The shipped apps with real screenshots are the only color on the page.',
     motion:
       'Slow weighted camera transits; hovered devices lift toward the lens.',
     object:
@@ -59,7 +59,7 @@ export const conceptEntries: ConceptEntry[] = [
     name: 'Museum',
     route: '/concept/museum',
     thesis:
-      'The site as its own museum. Six real git eras rebuilt as living miniatures; the chrome has no color until an era lends it one.',
+      'The site is its own museum. Real git eras rebuilt as living miniatures; the chrome has no color until an era lends it one.',
     motion: 'A weighted timeline scrub; the active era recolors the page.',
     object: 'A gallery wall of this repository’s actual past homepages.',
     palette: ['#eceae4', '#1a1917', '#8a8578'],

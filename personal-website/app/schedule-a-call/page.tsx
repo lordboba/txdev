@@ -6,8 +6,7 @@ import { ThemeBar } from '@/components/ThemeBar';
 
 export const metadata: Metadata = {
   title: 'Schedule a Call — Tyler Xiao',
-  description:
-    'Book a short conversation with Tyler Xiao about projects, engineering, or work.',
+  description: 'Book a call with me.',
 };
 
 const CALENDLY_URL =
@@ -58,7 +57,7 @@ export default function ScheduleCallPage() {
       >
         <iframe
           src={CALENDLY_EMBED_URL}
-          title="Schedule a call with Tyler Xiao"
+          title="Schedule a call with me"
           className="h-[640px] min-h-[640px] w-full sm:h-[760px]"
           frameBorder="0"
         />

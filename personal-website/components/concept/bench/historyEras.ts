@@ -2,7 +2,7 @@
  * The history view's run of eras, assembled from two sources that are never
  * allowed to blur into one another:
  *
- *   1. `gitEras` in conceptData.ts — hand-authored, six real commits, each with
+ *   1. `gitEras` in conceptData.ts — hand-authored real commits, each with
  *      a curated title, visual language, and palette. Nothing writes to it but
  *      a person.
  *   2. historyGenerated.json — written by scripts/update-history.mjs off `git

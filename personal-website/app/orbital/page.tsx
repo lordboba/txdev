@@ -3,8 +3,8 @@ import { HomeClient } from '@/components/home/HomeClient';
 import { getInitialVisitorCount } from '@/lib/userCount';
 
 export const metadata: Metadata = {
-  title: 'Orbital — Tyler Xiao',
-  description: 'Explore Tyler Xiao’s work through an interactive orbital view.',
+  title: 'Orbital - Tyler Xiao',
+  description: 'Orbital view',
 };
 
 export default async function OrbitalPage() {
