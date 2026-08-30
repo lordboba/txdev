@@ -2428,16 +2428,17 @@ function createPaletteTexture(palette: string) {
  * visual language and palette as body. Transparent ground — this is ink on the
  * card stock the mesh already is, not a second brighter plate laid over it.
  *
- * 1024px across 0.92 world units, the same ~1113 px/unit the rest of the
- * bench's printed surfaces are drawn at.
+ * The canvas follows the physical panel's height-to-width ratio. If those
+ * ratios diverge, Three stretches the texture and every glyph reads too wide.
  */
 function createEraPlacardTexture(
   era: { commit: string; date: string; label: string; palette: string },
   visualLanguage: string,
+  heightToWidth: number,
 ) {
   const canvas = document.createElement('canvas');
   canvas.width = 1024;
-  canvas.height = 880;
+  canvas.height = Math.round(canvas.width * heightToWidth);
   const context = canvas.getContext('2d') as SpacedContext | null;
 
   if (!context) {
@@ -6361,6 +6362,7 @@ function HistoryArtifact({
         era.provisional
           ? `${era.visualLanguage} · not yet named`
           : era.visualLanguage,
+        CARD_TEXT_H / CARD_INNER_W,
       ),
     [era],
   );

@@ -29,6 +29,17 @@ test('history artifacts form a level, square gallery line', () => {
   assert.match(scene, /rotation=\{\[0, 0, 0\]\}/);
 });
 
+test('history placard texture preserves the printed panel aspect', () => {
+  assert.match(
+    scene,
+    /canvas\.height = Math\.round\(canvas\.width \* heightToWidth\)/,
+  );
+  assert.match(
+    scene,
+    /createEraPlacardTexture\([\s\S]*?CARD_TEXT_H \/ CARD_INNER_W,[\s\S]*?\)/,
+  );
+});
+
 test('history camera is level and free of decorative roll', () => {
   assert.match(scene, /position: \[0, HISTORY_CAMERA_EYE, HISTORY_CAMERA_Z\]/);
   assert.match(scene, /look: HISTORY_CAMERA_EYE/);
