@@ -186,8 +186,6 @@ const COVE_FOOT = 0.9;
 const HISTORY_BASE_SPACING = 1.52;
 /** Never tighter than this: below it the cards' own edges start touching. */
 const HISTORY_MIN_SPACING = 1.34;
-/** Shallow arc radius the history chips are laid on so the outer chips toe in. */
-const HISTORY_ARC = 16;
 /**
  * The run has to survive growing. scripts/update-history.mjs records a
  * provisional era whenever the repository drifts past the newest recorded one,
@@ -211,6 +209,8 @@ const HISTORY_RUN_HALF = ((historyEras.length - 1) / 2) * HISTORY_SPACING + 0.6;
 /** What the composed history lens frames at its own stand-off. */
 const HISTORY_FIT_HALF = 2.5 * HISTORY_BASE_SPACING + 0.6;
 const HISTORY_CAMERA_Z = 9.2 * Math.max(1, HISTORY_RUN_HALF / HISTORY_FIT_HALF);
+/** Eye and target share one height so the archive is read straight-on. */
+const HISTORY_CAMERA_EYE = 1.02;
 /**
  * Where the work cluster sits. The camera *and* the look target both ride this
  * value, so moving it slides the whole cluster across the frame without ever
@@ -6466,7 +6466,7 @@ function HistoryArtifact({
         <meshStandardMaterial color="#6e7174" metalness={0.6} roughness={0.7} />
       </mesh>
 
-      <group position={[0, 0.06, 0]} rotation={[-0.14, 0, 0]}>
+      <group position={[0, 0.06, 0]} rotation={[0, 0, 0]}>
         <RoundedBox
           args={[CARD_BODY_W, CARD_BODY_H, 0.05]}
           castShadow
@@ -7502,27 +7502,20 @@ function Scene({
       const offset = index - (historyEras.length - 1) / 2;
       const chipX = offset * HISTORY_SPACING;
       /*
-       * One smooth arc, nothing else. The run used to carry a ±0.62 depth
-       * stagger and ±0.12 rad of alternating yaw on top of the arc, which was
-       * meant to read as a sequence in a room and instead read as jitter:
-       * Scene, an even index, sat a full 0.62 forward of both its neighbours,
-       * so it rendered lower and larger and the intended shallow arc broke into
-       * an uneven line. Every card now shares an identical world y, and only z
-       * and rotation.y vary — both as smooth functions of the arc.
+       * One museum line. Depth, yaw and card pitch made the dates recede at
+       * different rates and turned chronology into a perspective puzzle. The
+       * archive now shares one ground line, one depth and one face angle. Only
+       * the active card rises and scales as interaction feedback.
        */
       const target =
         view === 'history'
           ? {
-              position: [
-                chipX,
-                active ? 0.16 : 0,
-                -(chipX * chipX) / (2 * HISTORY_ARC),
-              ] as [number, number, number],
-              rotation: [0, -chipX / HISTORY_ARC, 0] as [
+              position: [chipX, active ? 0.16 : 0, 0] as [
                 number,
                 number,
                 number,
               ],
+              rotation: [0, 0, 0] as [number, number, number],
               /* The focused era steps 1.12x clear of the run and becomes its hero. */
               scale: active ? 1.1 * 1.12 : 1.1,
             }
@@ -7615,14 +7608,6 @@ function Scene({
       view === 'work' && workFocus.selected >= 0
         ? PROJECT_WORK[workFocus.selected]
         : null;
-    const historyIndex =
-      historyFocus.hovered >= 0
-        ? historyFocus.hovered
-        : historyFocus.selected >= 0
-          ? historyFocus.selected
-          : (historyEras.length - 1) / 2;
-    const historyX =
-      (historyIndex - (historyEras.length - 1) / 2) * HISTORY_SPACING * 0.7;
     /*
      * Asymmetric, and deliberately so.
      *
@@ -7647,8 +7632,8 @@ function Scene({
 
     /**
      * Four distinct lenses, not four heights of the same shot: work is the
-     * tight frontal product plate, profile a slightly off-axis portrait, signals
-     * a high plan, history a longer lens tracking laterally along the run.
+     * tight frontal product plate, profile a slightly off-axis portrait,
+     * signals a high plan, and history a fixed eye-level gallery view.
      */
     /*
      * Mobile has no intro plate beside the cluster, so it keeps the camera on
@@ -7672,9 +7657,9 @@ function Scene({
              up now, so the axis has to meet their faces rather than their tops. */
           signals: { position: [0, 4.3, 8.9], look: 0.8, fov: 38, roll: 0 },
           history: {
-            position: [historyX, 4.4, 13.4],
-            look: 0.9,
-            fov: 30,
+            position: [0, HISTORY_CAMERA_EYE, 13.4],
+            look: HISTORY_CAMERA_EYE,
+            fov: 32,
             roll: 0,
           },
         }
@@ -7745,12 +7730,12 @@ function Scene({
             fov: 36,
             roll: 0.006,
           },
-          /* Same treatment: the era run climbs into the upper two-thirds. */
+          /* A fixed, level lens keeps every capture equally readable. */
           history: {
-            position: [historyX + parallaxX * 0.25, 2.85, HISTORY_CAMERA_Z],
-            look: 0.8,
-            fov: 36,
-            roll: -0.008,
+            position: [0, HISTORY_CAMERA_EYE, HISTORY_CAMERA_Z],
+            look: HISTORY_CAMERA_EYE,
+            fov: 34,
+            roll: 0,
           },
         };
     /*
@@ -7944,7 +7929,7 @@ function Scene({
         : signalCentre
           ? signalCentre.x
           : view === 'history'
-            ? historyX
+            ? 0
             : view === 'profile'
               ? mobile
                 ? 0.15

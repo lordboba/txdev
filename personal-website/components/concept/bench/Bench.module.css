@@ -1215,7 +1215,7 @@
 .historyDetails {
   display: grid;
   grid-template-columns: repeat(var(--era-count, 6), minmax(0, 1fr));
-  gap: 2px;
+  gap: 1px;
   margin: 0;
   padding: 0;
   background: rgba(20, 21, 23, 0.42);
@@ -1256,11 +1256,6 @@
     transform 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.historyDetails li:nth-child(even),
-.historyDetails li:nth-child(even) button {
-  background: #dde0e1;
-}
-
 .historyDetails li:has(button:hover),
 .historyDetails li:has(button:focus-visible) {
   z-index: 2;
@@ -1284,6 +1279,10 @@
 }
 
 .historyDetails .plateHeading {
+  width: 100%;
+  margin-bottom: 0.15rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid rgba(20, 21, 23, 0.22);
   color: var(--muted);
   font-size: 0.54rem;
 }

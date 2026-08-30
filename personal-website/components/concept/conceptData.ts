@@ -80,8 +80,8 @@ export const conceptViews: ConceptView[] = [
     index: '04',
     label: 'Version history',
     shortLabel: 'History',
-    heading: 'Here’s how this site grew.',
-    description: 'Previous site history :)',
+    heading: 'Previous site history.',
+    description: 'Earlier versions, oldest to newest.',
   },
 ];
 

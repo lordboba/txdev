@@ -824,6 +824,7 @@ function HistoryDetails({ selected }: { selected: number }) {
 
   return (
     <ol
+      aria-label="Previous site history, oldest to newest"
       className={`${styles.details} ${styles.historyDetails}`}
       style={{ '--era-count': historyEras.length } as React.CSSProperties}
     >
