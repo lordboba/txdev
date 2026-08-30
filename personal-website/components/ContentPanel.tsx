@@ -3,13 +3,9 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import type { OrbitalSectionId } from '@/lib/orbitalData';
-import {
-  quickFacts,
-  projects,
-  experienceGroups,
-  contactLinks,
-  type Project,
-} from '@/lib/siteData';
+import { projects, type Project } from '@/content/projectData';
+import { experienceGroups } from '@/content/experienceData';
+import { contactLinks, quickFacts } from '@/lib/siteData';
 
 type PanelProps = { onOpenModal: (id: string) => void };
 
@@ -132,15 +128,14 @@ function HomeContent({ onOpenModal }: PanelProps) {
             Tyler Xiao
           </h3>
           <p className="panel-subtitle">
-            CS @ UCLA · Building agentic systems and shipping reliable
-            infrastructure.
+            CS @ UCLA · Building products, backend systems, and developer tools.
           </p>
           <p
             className="panel-desc"
             style={{ margin: '6px 0 0', fontFamily: 'var(--font-sans)' }}
           >
-            This portfolio is a single operating room for selected work: ideas,
-            execution notes, and the most recent builds worth keeping visible.
+            This site collects my projects, work history, writing, and current
+            experiments.
           </p>
         </div>
       </div>

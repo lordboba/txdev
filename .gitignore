@@ -11,4 +11,15 @@ personal-website/content/blog/drafts/*
 /**/*.fls
 /**/*.synctex.gz
 
-.superpowers
+# Local agent and planning artifacts
+.claude/
+.superpowers/
+**/docs/superpowers/
+AGENTS.md
+DESIGN.md
+terminal.md
+personal-website/ANIMATION_PLAN.md
+
+# Local browser and capture artifacts
+.playwright-mcp/
+personal-website/scripts/capture-bench.mjs

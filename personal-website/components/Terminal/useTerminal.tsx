@@ -2,12 +2,9 @@ import { useState, useCallback, ReactNode } from 'react';
 import { HistoryItem, INITIAL_FILES } from './types';
 import { ASCII_ART, WELCOME_MESSAGE } from './ascii';
 import { AnimatedLines } from './AnimatedLines';
-import {
-  experiences,
-  projects,
-  contactLinks,
-  quickFacts,
-} from '../../lib/siteData';
+import { projects } from '../../content/projectData';
+import { experiences } from '../../content/experienceData';
+import { contactLinks, quickFacts } from '../../lib/siteData';
 
 type UseTerminalOptions = {
   onExit?: () => boolean | void;

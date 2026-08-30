@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Personal Env</title>
+  <desc id="desc">Text-only project card for the Personal Env macOS utility.</desc>
+  <rect width="1600" height="900" fill="#d8d7d2" />
+  <rect x="72" y="72" width="1456" height="756" rx="8" fill="none" stroke="#1c1c1a" stroke-opacity="0.2" stroke-width="2" />
+  <text x="128" y="155" fill="#5b5a56" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="24" letter-spacing="5">MACOS UTILITY / LOCAL FIRST</text>
+  <text x="128" y="390" fill="#1c1c1a" font-family="Georgia, Times New Roman, serif" font-size="124" font-weight="600">Personal Env</text>
+  <text x="132" y="485" fill="#44433f" font-family="ui-sans-serif, -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif" font-size="42">Environment variables, kept local.</text>
+  <line x1="128" y1="650" x2="1472" y2="650" stroke="#1c1c1a" stroke-opacity="0.2" stroke-width="2" />
+  <text x="128" y="725" fill="#5b5a56" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="26">SWIFTUI / KEYCHAIN / TOUCH ID</text>
+</svg>

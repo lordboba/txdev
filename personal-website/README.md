@@ -1,64 +1,37 @@
 # Tyler Xiao Personal Website
 
-Personal portfolio built with Next.js 16, React 19, and Tailwind CSS v4. The site is designed to feel technical, warm, and a little hidden-in-plain-sight: editorial typography, terminal-native interactions, gold accent lighting, and motion that reacts to user intent instead of running constantly.
+Personal portfolio built with Next.js 16, React 19, React Three Fiber, and Tailwind CSS v4. The current homepage is an interactive workbench for exploring Tyler's profile, work, current experiments, and the site's visual history.
 
-## Current Design Direction
+## Current Design
 
-- Dark by default, with a light theme that keeps the same hierarchy and interaction model.
-- Warm gold accent as the primary highlight color, with teal reserved as a secondary support tone.
-- Clear type pairing:
-  - `Clash Display` for headings
-  - `Satoshi` for body and UI text
-  - `Monaspace Neon` for terminal and monospace surfaces
-- Portfolio framing that mixes product-engineering polish with terminal-inspired affordances.
+- A WebGL bench serves as the main navigation surface on desktop.
+- Work, Profile, Signals, and History are four views over the same scene and source data.
+- Mobile and reduced-motion visitors receive accessible DOM equivalents.
+- Dark and light themes share the same editorial and studio-inspired visual language.
+- Project imagery uses real captures or text-only plates. Invented product screenshots are intentionally excluded.
 
-## Recent Design Choices
+## Main Routes
 
-- Hero now supports two modes:
-  - headline mode for the main personal pitch
-  - a hidden terminal mode for interactive exploration
-- Yellow accent surfaces now use dark ink for contrast-sensitive CTA treatment.
-- Terminal colors were updated to match the site accent system instead of the older green-heavy palette.
-- Motion favors reveal-on-scroll, tilt, and subtle glow effects over always-on animation.
-- Navigation stays lightweight and sticky, with an accent indicator on desktop and a compact mobile menu.
-
-## Site Structure
-
-- `/`
-  - sticky navigation
-  - hero with headline/terminal mode toggle
-  - about/status monitor
-  - experience timeline
-  - selected projects
-  - writing feed
-  - contact block
+- `/` — current Bench homepage
+- `/orbital` — previous orbital homepage
+- `/concept` — internal comparison board with four design directions
 - `/blog`
-  - changelog-style writing index
 - `/blog/[slug]`
-  - individual writing pages
-- `/past-experience`
-  - extended timeline and project archive
-- `/schedule-a-call`
-  - CTA-led booking page with Calendly embed
-- `/terminal`
-  - fullscreen terminal experience
+- `/past-experience` — extended timeline and project archive
+- `/schedule-a-call` — Calendly booking page
+- `/terminal` — terminal-era homepage
 
-## Design System Notes
+## Implementation Notes
 
-Most visual decisions flow through [`app/globals.css`](./app/globals.css):
+Most shared visual decisions flow through [`app/globals.css`](./app/globals.css). The Bench implementation is split between React controls and the Three.js scene:
 
-- Theme tokens define background, surface, foreground, accent, divider, and terminal colors.
-- Light mode preserves the same layout language rather than becoming a separate design.
-- Terminal-specific tokens control shell background, accent-led text, muted text, links, and chip states.
-- Shared utility classes handle accent CTA ink color, terminal command chips, reveal animations, and motion polish.
-
-Primary implementation files:
-
-- [`app/page.tsx`](./app/page.tsx)
-- [`components/HomeHero.tsx`](./components/HomeHero.tsx)
-- [`components/NavBar.tsx`](./components/NavBar.tsx)
-- [`components/Terminal/Terminal.tsx`](./components/Terminal/Terminal.tsx)
-- [`components/Terminal/useTerminal.tsx`](./components/Terminal/useTerminal.tsx)
+- [`components/home/BenchHome.tsx`](./components/home/BenchHome.tsx)
+- [`components/concept/bench/Bench.tsx`](./components/concept/bench/Bench.tsx)
+- [`components/concept/bench/BenchScene.tsx`](./components/concept/bench/BenchScene.tsx)
+- [`content/projectData.ts`](./content/projectData.ts) — canonical project catalog and derived Bench project views
+- [`content/experienceData.ts`](./content/experienceData.ts) — canonical experience records and derived groups and Bench tags
+- [`components/concept/conceptData.ts`](./components/concept/conceptData.ts)
+- [`lib/siteData.ts`](./lib/siteData.ts) — shared profile, contact, and scheduling content
 
 ## Local Development
 
@@ -73,10 +46,28 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ```bash
 npm run dev
+npm run bench:measure -- --url=http://localhost:3000
 npm run build
 npm run start
 npm run lint
 ```
+
+### Bench A/B measurements
+
+The Bench exposes URL-driven ablation flags only when the measurement harness
+opens it with `bench-debug=1`. Start the site, record a baseline, then disable
+one feature at a time:
+
+```bash
+npm run bench:measure -- --url=http://localhost:3000
+npm run bench:measure -- --url=http://localhost:3000 --ablate=contact
+npm run bench:measure -- --url=http://localhost:3000 --ablate=keyshadow --verbose=true
+```
+
+Available flags are `keyshadow`, `contact`, `env`, and `dpr`. The command emits
+JSON containing process RSS, JavaScript heap, renderer memory, program count,
+texture estimates, and drawing-buffer dimensions. Use `--binary=/path/to/chrome`
+when the default Playwright Chromium location does not match the local install.
 
 ## Stack
 
@@ -87,4 +78,4 @@ npm run lint
 
 ## Status
 
-This README reflects the current visual system in the app code rather than the default `create-next-app` template.
+This README describes the current routed experience. Experimental views remain available for comparison and historical reference.

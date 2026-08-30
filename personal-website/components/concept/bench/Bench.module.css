@@ -1,0 +1,1812 @@
+.shell {
+  /*
+   * The page's one horizontal inset, named because three things now have to
+   * agree about it: the header padding, the details row, and the full-bleed
+   * card band that has to cancel it exactly.
+   */
+  --page-gutter: clamp(1rem, 2.8vw, 2.75rem);
+
+  --ground-light: #cfd2d5;
+  --ground-dark: #a6aaae;
+  --ink: #141517;
+  --muted: rgba(20, 21, 23, 0.7);
+  --ink-body: rgba(20, 21, 23, 0.84);
+  --hairline: rgba(20, 21, 23, 0.18);
+
+  /*
+   * The plate fill sits at the bench's own value, not above it — and it is a
+   * plate, not a sheet of acetate.
+   *
+   * Two constraints, and only one fill satisfies both. At the original
+   * rgba(235,236,236,0.84) the plates composited to ~#eef0f1 against a bench
+   * around #d7dadb: the brightest surfaces in the frame, pulling the eye off
+   * the devices they describe. But alpha is the wrong instrument for that.
+   * Below about 0.9 the 3D subjects read straight through the copy — the
+   * MacBook lid behind the company record printed a hard vertical value step
+   * down the ROLE column, and the tab strip's hairline picked up a darker
+   * segment across the same span and read as a broken double rule. A panel
+   * you can see the set through is a smudged transparency, not a plate.
+   *
+   * So the value is set where the composite used to land and the fill is made
+   * opaque. #dee0e1 is within a point of what 0.6 over the bench resolved to,
+   * so the plates keep the value the art direction wants, and nothing behind
+   * them can print through the type.
+   *
+   * Lifted to #e3e5e7 with the scene regrade. The card row used to be told
+   * apart from the bench behind it by a 1px hairline and nothing else, which is
+   * a UI boundary rather than a physical one — and now that the near bench is
+   * the darkest band in the frame, the same row can be separated the way the
+   * rest of the set is: by value. Roughly 30 codes of daylight between the
+   * plate and the ground under it, so the hairline is confirmation rather than
+   * the whole edge.
+   */
+  --paper: #e3e5e7;
+
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100dvh;
+  overflow: hidden;
+  background: linear-gradient(145deg, var(--ground-light), var(--ground-dark));
+  color: var(--ink);
+  font-family:
+    'Helvetica Neue',
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.header {
+  position: relative;
+  z-index: 4;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  min-height: 64px;
+  padding: 0 clamp(1rem, 2.8vw, 2.75rem);
+  border-bottom: 1px solid rgba(20, 21, 23, 0.3);
+  background: rgba(196, 200, 203, 0.76);
+  backdrop-filter: blur(16px) saturate(0.82);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.3) inset;
+}
+
+.wordmark {
+  width: max-content;
+  color: var(--ink);
+  font-size: 0.86rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.wordmark:hover {
+  text-decoration: none;
+}
+
+.nav {
+  display: flex;
+  gap: clamp(0.85rem, 2.2vw, 2.35rem);
+  align-items: center;
+}
+
+.nav button {
+  position: relative;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(20, 21, 23, 0.76);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 550;
+  letter-spacing: 0.015em;
+}
+
+.nav button::after {
+  position: absolute;
+  right: 0;
+  bottom: 5px;
+  left: 0;
+  height: 1px;
+  background: currentColor;
+  content: '';
+  transform: scaleX(0);
+  transition: transform 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.nav button:hover,
+.nav button[data-active='true'] {
+  color: var(--ink);
+}
+
+.nav button[data-active='true'] {
+  font-weight: 650;
+}
+
+.nav button[data-active='true']::after {
+  transform: scaleX(1);
+}
+
+.context {
+  justify-self: end;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.intro {
+  position: absolute;
+  z-index: 3;
+  top: 88px;
+  left: clamp(1rem, 2.8vw, 2.75rem);
+  width: min(26rem, 38vw);
+  pointer-events: none;
+}
+
+/*
+ * Ground-tint veil so the intro stays legible when scene objects drift under
+ * it. The falloff is radial, anchored under the type: the previous 102deg
+ * linear mask feathered only the right edge, so the panel still terminated as
+ * a hard straight line along its bottom — the exact "veil's straight edge
+ * crossing objects" complaint, cutting the iPad bezel on /#work and the
+ * SHIPPING card on /#signals. One elliptical mask holds full strength under
+ * the copy and dissolves on a curve before every edge of its own box, so no
+ * straight boundary of any orientation can land on a subject. The bottom
+ * inset overshoots to give that curve room below the last line, and the blur
+ * travels with the mask so the defocus fades on the same ramp as the tint.
+ */
+.intro::before {
+  position: absolute;
+  z-index: -1;
+  inset: -1.25rem -1.4rem -3rem;
+  /*
+   * The veil is a legibility device, and it was sized for a set that had no
+   * tonal contrast of its own: at 14px of blur it defocused a third of the
+   * frame — the tablet, the near phone and half the left MacBook — to buy
+   * headline contrast the scene could not supply. With the regrade the bench
+   * behind the headline sits a full value step under the type, so the veil can
+   * come down to a whisper: it still lifts the copy off whatever passes behind
+   * it, and the set is no longer soft where it should be sharp.
+   */
+  background: rgba(210, 213, 216, 0.4);
+  backdrop-filter: blur(5px);
+  /*
+   * The radii must land the transparent stop INSIDE the box: the ellipse is
+   * centred at 16%/18%, so the far edges sit at ~84% of the width and ~82% of
+   * the height — radii of 88%/86% put those edges past the 95% transparent
+   * stop, and no edge of the element itself is ever visible.
+   */
+  -webkit-mask-image: radial-gradient(
+    88% 86% at 16% 18%,
+    #000 0 42%,
+    rgba(0, 0, 0, 0.45) 68%,
+    transparent 95%
+  );
+  mask-image: radial-gradient(
+    88% 86% at 16% 18%,
+    #000 0 42%,
+    rgba(0, 0, 0, 0.45) 68%,
+    transparent 95%
+  );
+  content: '';
+}
+
+.fieldLabel {
+  display: block;
+  color: var(--muted);
+  font-size: 0.57rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/*
+ * The escape hatch for a label that is already set. `text-transform` is all or
+ * nothing per element, so a mark whose lowercase prefix is part of the mark —
+ * iOS, macOS — cannot survive it. Those labels arrive at their final casing from
+ * the component and this switches the transform off for them; everything else
+ * about the eyebrow, size, weight, tracking, colour, is unchanged, so the row
+ * still reads as one set of five labels.
+ */
+.fieldLabel[data-cased='true'] {
+  text-transform: none;
+}
+
+.intro h1 {
+  margin: 0.5rem 0 0.8rem;
+  color: var(--ink);
+  font-family: var(--font-display), 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(2.6rem, 4.4vw, 4.35rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 0.94;
+  text-wrap: balance;
+}
+
+.intro p {
+  position: relative;
+  max-width: 40ch;
+  margin: 0;
+  color: var(--ink-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+/*
+ * There is deliberately no second scrim under the subhead.
+ *
+ * The collision this paragraph had with the left MacBook's lid at the far end
+ * of the parallax sweep is fixed upstream, by flooring the camera's travel to
+ * camera-left so the lid never reaches the text box (see parallaxX). A local
+ * tint was tried first and rejected in pixels: at any opacity strong enough to
+ * mute a chassis edge, an extra veil over two lines of copy reads as a
+ * rectangle of lighter ground floating in the middle of the set — masked or
+ * gradient-faded, the blob is still a blob. Trading a solved collision for a
+ * visible patch is not a trade. The travel floor is the whole fix.
+ */
+
+/*
+ * Gallery sub-view. The 4.35rem display heading owns a 26rem x 260px block in
+ * the top-left, which is precisely where the hang's first framed piece lands —
+ * the intro would sit on top of an exhibit. It steps down to a caption here:
+ * still the page's h1, no longer the loudest object in a room full of work.
+ */
+.intro[data-compact='true'] {
+  width: min(21rem, 30vw);
+}
+
+.intro[data-compact='true'] h1 {
+  margin: 0.35rem 0 0.3rem;
+  font-family: inherit;
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.intro[data-compact='true'] p {
+  max-width: 34ch;
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+/*
+ * Staged view transition, DOM half.
+ *
+ * The scene now leaves at lambda 4.6 and arrives at 2.6, so the outgoing set is
+ * gone in ~250ms while the incoming one takes ~600ms to seat. The copy used to
+ * hard-swap on the same frame the click landed, which put the new heading in
+ * front of the old arrangement — the one moment in the transition where the
+ * words and the picture disagree.
+ *
+ * `data-view` on the shell is written by the same store that drives the scene,
+ * so the swap is store-driven with no effect and no timer: changing the
+ * attribute changes which animation-name applies, which is what restarts the
+ * animation. Four names, one per view, because two alternating names would fail
+ * to restart on a work → signals jump.
+ *
+ * The copy holds at a quarter value for ~175ms rather than going to zero: this
+ * is the page's LCP text and it must never be invisible, only recessive.
+ */
+@keyframes benchIntroWork {
+  0%,
+  22% {
+    opacity: 0.25;
+    transform: translate3d(-7px, 0, 0);
+  }
+
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes benchIntroProfile {
+  0%,
+  22% {
+    opacity: 0.25;
+    transform: translate3d(-7px, 0, 0);
+  }
+
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes benchIntroSignals {
+  0%,
+  22% {
+    opacity: 0.25;
+    transform: translate3d(-7px, 0, 0);
+  }
+
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes benchIntroHistory {
+  0%,
+  22% {
+    opacity: 0.25;
+    transform: translate3d(-7px, 0, 0);
+  }
+
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.shell[data-view='work'] .intro > * {
+  animation: benchIntroWork 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.shell[data-view='profile'] .intro > * {
+  animation: benchIntroProfile 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.shell[data-view='signals'] .intro > * {
+  animation: benchIntroSignals 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.shell[data-view='history'] .intro > * {
+  animation: benchIntroHistory 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell[data-view] .intro > * {
+    animation: none;
+  }
+}
+
+.sceneStage,
+.canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.sceneStage {
+  z-index: 0;
+}
+
+.canvas {
+  background: linear-gradient(145deg, var(--ground-light), var(--ground-dark));
+}
+
+.details {
+  position: absolute;
+  z-index: 3;
+  right: var(--page-gutter);
+  bottom: 48px;
+  left: var(--page-gutter);
+  pointer-events: none;
+}
+
+/*
+ * bottom 40px in the work shot only, and it is a set note rather than a layout
+ * one.
+ *
+ * The row is bottom-anchored, so its height and its offset are the only two
+ * things that decide where its top edge lands on the bench behind it — and its
+ * top edge was landing within a pixel of the two foreground phone stands' front
+ * feet. A contact shadow that a UI panel cuts off before it finishes is the one
+ * kind of shadow that cannot ground anything: the eye reads the panel edge as
+ * the end of the floor. Eight pixels here plus the plate's own vertical trim
+ * below give the pools ~13 px of bench to resolve in.
+ *
+ * Scoped to `work` on purpose. Nothing stands that far downstage in the other
+ * three setups, so they have no shadow to make room for — and the same eight
+ * pixels there only take their panel from 17 px clear of the footer rule to
+ * nine. Measured across all four views before scoping, which is how that got
+ * caught.
+ */
+.shell[data-view='work'] .details {
+  bottom: 40px;
+}
+
+.details > * {
+  pointer-events: auto;
+}
+
+.workDetails {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+}
+
+.projectPlate,
+.linkPlate,
+.signalDetails button,
+.historyDetails li {
+  border: 1px solid var(--hairline);
+  background: var(--paper);
+  backdrop-filter: blur(12px);
+}
+
+/*
+ * Vertical padding down to 0.8rem while the horizontal stays at 0.95rem — the
+ * gutter-cancelling overrides below are written against that 0.95rem and the
+ * type has to stay on the page's margin. Five pixels off the band's height,
+ * spent on bench under the phone stands (see `.details`), and the plate is
+ * still taller than its 150px floor so the row's rhythm does not move.
+ */
+.projectPlate {
+  display: flex;
+  min-height: 150px;
+  padding: 0.8rem 0.95rem;
+  color: var(--ink);
+  flex-direction: column;
+  /*
+   * The one tie-in to the set behind them.
+   *
+   * These plates were the only objects in the frame with no relationship to the
+   * light: four slabs standing over a lit bench, casting nothing, while every
+   * device beside them carried a contact shadow. This is the smallest thing
+   * that fixes it — a wide, low, very soft cast offset the way the key throws
+   * on the bench (the rig's ground vector runs camera-right, so the shadow
+   * leaves to the right), at an opacity where you can only see it if you go
+   * looking for its absence. No blur on the plate, no gloss, no gradient: they
+   * stay flat editorial cards that happen to be in the room.
+   */
+  box-shadow: 7px 9px 26px -18px rgba(20, 21, 23, 0.62);
+  transition:
+    background 180ms linear,
+    border-color 180ms linear,
+    box-shadow 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/*
+ * Hover reads as definition, not brightness: the border firms up and the
+ * plate's shadow deepens, but the fill barely moves. The old
+ * rgba(245,245,244,0.96) hover made the already-brightest surface in the frame
+ * brighter still — interaction was widening the DOM/subject value gap it should
+ * close.
+ *
+ * And it no longer moves. A 5px lift on one plate of a four-up row is a break
+ * in the row: the pointer parks over the fourth card at the right end of the
+ * parallax sweep, and what that reads as in a still frame is not "this card is
+ * hovered", it is "this card is misregistered". The row is a single rigid band
+ * of the layout and it holds still; the response is carried entirely by the
+ * shadow opening and the border firming, which is a lift without a jump.
+ */
+.projectPlate:hover,
+.projectPlate:focus-visible {
+  z-index: 1;
+  border-color: rgba(20, 21, 23, 0.45);
+  background: #e3e5e6;
+  box-shadow: 10px 14px 34px -16px rgba(20, 21, 23, 0.72);
+  text-decoration: none;
+}
+
+/*
+ * The card band runs off both edges of the frame.
+ *
+ * The row is inset by the page gutter, so at the left and right margins a
+ * 40px-wide column of scene showed between the outer card and the frame edge —
+ * and what shows there is the bench's front lip and the fascia under it, a
+ * near-black step against a near-white plate. Two orphan dark verticals
+ * flanking the row, both of them seams the composition never asked for. The
+ * outer plates now bleed past the gutter and off the frame, with their padding
+ * compensating so the type inside them stays on the same margin as the rest of
+ * the page: the band terminates at the edge of the picture instead of a few
+ * pixels short of it.
+ */
+/*
+ * Only while the row is actually one row. Under 900px the grid folds to two
+ * columns, and then "first" and "last" are the top-left and bottom-right cards
+ * — bleeding those two would put a step in each of the row's four corners
+ * instead of closing the two it was built to close.
+ */
+@media (min-width: 901px) {
+  .projectPlate:first-child {
+    margin-left: calc(-1 * var(--page-gutter));
+    padding-left: calc(0.95rem + var(--page-gutter));
+    border-left: 0;
+  }
+
+  .projectPlate:last-of-type {
+    margin-right: calc(-1 * var(--page-gutter));
+    padding-right: calc(0.95rem + var(--page-gutter));
+    border-right: 0;
+  }
+}
+
+.plateHeading {
+  display: flex;
+  gap: 0.6rem;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+/*
+ * The serif, echoed once below the fold.
+ *
+ * The page had exactly one voice above the fold and a different one everywhere
+ * else: a 4.35rem Cormorant headline, then nothing but Helvetica for the rest
+ * of the document. That is not restraint, it is two designs stacked. Setting
+ * the product titles — and only the product titles — in the display face gives
+ * the type system a second beat and ties the card row back to the masthead
+ * without the serif ever becoming the page's body voice.
+ *
+ * The size goes up with it: a serif at 0.96rem next to a 0.67rem sans reads as
+ * a caption, not as a title, so it needs the extra tenth of a rem to hold the
+ * hierarchy it is claiming. Letter-spacing comes back off — the tight negative
+ * tracking was compensation for Helvetica's wide default fit and it closes a
+ * Cormorant lockup up too far.
+ */
+.projectPlate h2,
+.signalDetails h2,
+.historyDetails h2 {
+  margin: 0.6rem 0 0.5rem;
+  font-family: var(--font-display), 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.12rem;
+  font-weight: 600;
+  letter-spacing: -0.008em;
+  line-height: 1.15;
+}
+
+.projectPlate p,
+.signalDetails p {
+  margin: 0 0 0.85rem;
+  color: var(--ink-body);
+  /*
+   * 0.735rem. At 0.67 the card body was set two full steps under the eyebrow
+   * it sat below and read as legal small print — the copy describing four
+   * shipped products should not be the smallest type on the page.
+   */
+  font-size: 0.735rem;
+  line-height: 1.45;
+}
+
+.projectPlate strong {
+  margin-top: auto;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+/*
+ * The work view's bottom rail: the gallery control on the left, and on the
+ * right the five company tags as text. It used to be a second copy of the
+ * employer logos competing with the marks on the bench — the marks stay milled
+ * into the hanging plates, and this row is the words for them.
+ */
+.credLine {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  gap: 0.6rem clamp(1.1rem, 2.6vw, 2.4rem);
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 0.95rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--hairline);
+}
+
+.credLine .fieldLabel,
+.signRail .fieldLabel,
+.tagProof .fieldLabel {
+  display: inline-block;
+  margin-right: 0.5rem;
+}
+
+/*
+ * The credit rail is the other row of copy with no plate under it — it reads
+ * straight off the near bench, so it carries the same regrade cost the footer
+ * does and gets the same correction. Scoped to this rail on purpose: every
+ * other `.fieldLabel` on the page sits on an opaque plate whose value did not
+ * move, and lifting those would only make the small caps shout.
+ */
+.credLine,
+.credLine .fieldLabel,
+.signRail .fieldLabel {
+  color: rgba(20, 21, 23, 0.82);
+}
+
+.signRail {
+  display: flex;
+  gap: 0.1rem 0.55rem;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+
+/*
+ * The tags as a row of words. Deliberately styled as a caption that happens to
+ * be pressable rather than as five buttons: hairline underline only, so the
+ * bottom rail stays a rule of type under the plates and does not become a
+ * second row of controls competing with the four project cards above it.
+ */
+.tagIndex {
+  display: flex;
+  gap: 0.15rem 0.85rem;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tagIndex button {
+  padding: 0 0 2px;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: none;
+  color: var(--ink-body);
+  font: inherit;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: color 160ms linear;
+}
+
+.tagIndex button:hover,
+.tagIndex button:focus-visible,
+.tagIndex button[data-active='true'] {
+  border-bottom-color: var(--ink);
+  color: var(--ink);
+}
+
+/*
+ * The 1px gutters between plates are hairlines, not windows.
+ *
+ * A grid gap with nothing painted behind it shows the 3D set through it, so
+ * the rule between an opened record's tab strip and its fields ran light over
+ * bench and dark over a laptop lid — one hairline that changed value halfway
+ * across, which reads as a broken double rule rather than as a rule. Painting
+ * the container in the hairline ink makes every gutter a drawn line at a
+ * single value, which is what the rest of the system is made of.
+ *
+ * Opaque, not `var(--hairline)`: an 18% ink wash still lets the set through,
+ * so the rule would go on changing value along its own length — just less.
+ * #b9bbbc is what that wash resolves to over the plate fill, so a gutter reads
+ * as the same hairline the plates' own borders draw.
+ *
+ * `.workDetails` is deliberately absent. Its last row is the signature rail —
+ * a rule-topped caption spanning the grid with no plate of its own — so
+ * painting that container would seat the caption on a dark bar instead of on
+ * the bench. Its gutters run between four full-bleed plates where a value
+ * change is not read as a broken rule.
+ */
+.tagDetails,
+.galleryDetails,
+.signalDetails,
+.signalRecord,
+.historyDetails,
+.eraRecord {
+  background: #b9bbbc;
+}
+
+/* ---- Company tag record ---------------------------------------------- */
+
+.tagDetails {
+  display: grid;
+  gap: 1px;
+}
+
+.tagRecord {
+  display: grid;
+  gap: 0.9rem clamp(1rem, 2.6vw, 2.4rem);
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--hairline);
+  background: var(--paper);
+  backdrop-filter: blur(12px);
+}
+
+.tagHeading h2 {
+  margin: 0.35rem 0 0.4rem;
+  color: var(--ink);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.tagHeading p {
+  margin: 0;
+  max-width: 58ch;
+  color: var(--ink-body);
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.tagFields {
+  display: grid;
+  gap: 0.35rem 1.2rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+  align-content: start;
+}
+
+.tagFields dt {
+  color: var(--muted);
+  font-size: 0.57rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.tagFields dd {
+  margin: 0.2rem 0 0;
+  color: var(--ink);
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+}
+
+.tagProof {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--hairline);
+  color: var(--ink-body);
+  font-size: 0.66rem;
+  line-height: 1.5;
+}
+
+.galleryCue {
+  display: flex;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  gap: 0.75rem;
+  align-items: baseline;
+  cursor: pointer;
+}
+
+.galleryCue span:last-child {
+  border-bottom: 1px solid var(--hairline);
+  padding-bottom: 2px;
+}
+
+.galleryCue:hover span:last-child,
+.galleryCue:focus-visible span:last-child {
+  border-bottom-color: var(--ink);
+}
+
+/* ---- Side-projects gallery sub-view ---------------------------------- */
+
+.galleryDetails {
+  display: grid;
+  gap: 1px;
+}
+
+.galleryBar,
+.galleryPlacard,
+.galleryPrompt {
+  border: 1px solid var(--hairline);
+  background: var(--paper);
+  backdrop-filter: blur(12px);
+}
+
+.galleryBar {
+  display: flex;
+  gap: 0.85rem clamp(0.9rem, 2vw, 1.6rem);
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 0.7rem 0.95rem;
+}
+
+.galleryBack,
+.galleryIndex button {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--hairline);
+  background: none;
+  color: var(--ink-body);
+  font: inherit;
+  font-size: 0.63rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 160ms linear;
+}
+
+.galleryBack {
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.galleryIndex {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  flex: 1 1 auto;
+}
+
+.galleryBack:hover,
+.galleryIndex button:hover,
+.galleryIndex button[data-active='true'] {
+  border-color: var(--ink);
+  background: #e3e5e6;
+  color: var(--ink);
+}
+
+.galleryHint {
+  color: var(--ink-body);
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.galleryPlacard {
+  display: flex;
+  gap: 0.6rem clamp(1rem, 2.4vw, 2rem);
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0.7rem 0.95rem;
+  color: var(--ink);
+}
+
+.galleryPlacard p {
+  margin: 0;
+  max-width: 82ch;
+  color: var(--ink-body);
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.galleryPlacard .fieldLabel {
+  display: inline-block;
+  margin-right: 0.55rem;
+}
+
+.galleryPlacard a {
+  justify-self: start;
+  color: var(--ink);
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.galleryPlacard a:hover,
+.galleryPlacard a:focus-visible {
+  border-bottom-color: var(--ink);
+}
+
+.galleryPrompt {
+  margin: 0;
+  padding: 0.85rem 0.95rem;
+  color: var(--ink-body);
+  font-size: 0.68rem;
+}
+
+/*
+ * Profile keeps a single quiet plate in the lower band: the badge in the
+ * scene is the identity record, so the DOM only offers the destinations the
+ * engraving cannot follow. Width hugs the content instead of running the
+ * full band so the studio floor stays part of the frame.
+ */
+.profileDetails {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.linkPlate {
+  padding: 0.8rem 0.85rem 0.85rem;
+}
+
+.linkRow {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.7rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.profileLinkCard {
+  position: relative;
+  display: grid;
+  width: 52px;
+  height: 52px;
+  border: 1px solid var(--hairline);
+  background: rgba(235, 236, 236, 0.38);
+  color: var(--ink);
+  place-items: center;
+  text-decoration: none;
+  transition:
+    background 180ms linear,
+    border-color 180ms linear,
+    transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.profileLinkCard:hover,
+.profileLinkCard:focus-visible {
+  border-color: rgba(20, 21, 23, 0.48);
+  background: rgba(244, 245, 245, 0.72);
+  text-decoration: none;
+  transform: translateY(-2px);
+}
+
+.profileLinkCard:focus-visible {
+  outline: 1px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.profileLinkLabel {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
+  width: max-content;
+  max-width: 10rem;
+  padding: 0.38rem 0.5rem;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 4px);
+  transition:
+    opacity 160ms linear,
+    transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.profileLinkCard:hover .profileLinkLabel,
+.profileLinkCard:focus-visible .profileLinkLabel {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/*
+ * Mobile-only DOM twin of the engraved badge (rendered only when the layout
+ * is mobile — see ProfileDetails). Same plate language as everything else in
+ * the band: square, hairline, paper.
+ */
+.badgeCard {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.9rem;
+  align-items: start;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--hairline);
+  background: var(--paper);
+  backdrop-filter: blur(12px);
+  margin-bottom: 0.6rem;
+}
+
+.badgePortrait {
+  width: 72px;
+  height: 96px;
+  border: 1px solid var(--hairline);
+  object-fit: cover;
+}
+
+.badgeFields {
+  display: grid;
+  gap: 0.5rem 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.badgeFields div:last-child {
+  grid-column: 1 / -1;
+}
+
+.badgeFields dt {
+  color: var(--muted);
+  font-size: 0.57rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.badgeFields dd {
+  margin: 0.2rem 0 0;
+  color: var(--ink);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+}
+
+.signalDetails {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.signalDetails li {
+  display: grid;
+}
+
+/*
+ * The whole plate is the control. It used to be a list item with a hover
+ * handler, which lit the fixture on the bench but could not open it and could
+ * not be reached from the keyboard — the 3D object was clickable and its DOM
+ * twin was not, so the two surfaces disagreed about what the set does.
+ */
+.signalDetails button {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 165px;
+  padding: 1rem;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  flex-direction: column;
+  cursor: pointer;
+  transition:
+    background 180ms linear,
+    border-color 180ms linear,
+    transform 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Same contract as .projectPlate: hover firms the edge, not the fill. */
+.signalDetails button:hover,
+.signalDetails button:focus-visible {
+  z-index: 1;
+  border-color: rgba(20, 21, 23, 0.45);
+  background: #e3e5e6;
+  transform: translateY(-5px);
+}
+
+.signalDetails .plateHeading {
+  width: 100%;
+}
+
+.signalDetails .plateHeading strong {
+  font-size: 0.63rem;
+}
+
+.signalCue {
+  margin-top: auto;
+  color: var(--ink);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border-bottom: 1px solid var(--hairline);
+  padding-bottom: 2px;
+  align-self: flex-start;
+}
+
+.signalDetails button:hover .signalCue,
+.signalDetails button:focus-visible .signalCue {
+  border-bottom-color: var(--ink);
+}
+
+/* ---- Opened signal ---------------------------------------------------- */
+
+.signalRecord {
+  display: grid;
+  gap: 1px;
+}
+
+/*
+ * Four columns, no full-width foot. The panel is not free to grow downwards:
+ * the plate it belongs to is standing right above it, and every row this band
+ * gains is a row of the subject the lens has to give up. Reading across —
+ * question, what is running, what already exists, what it is being read for —
+ * keeps the whole record inside ~200px.
+ *
+ * Same plate language as the tag record — square, hairline, paper — because an
+ * opened signal and an opened tag are the same kind of object.
+ */
+.signalNote {
+  display: grid;
+  gap: 0.85rem clamp(0.9rem, 2.2vw, 1.9rem);
+  grid-template-columns:
+    minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1.15fr)
+    minmax(0, 0.95fr);
+  padding: 0.8rem 0.95rem;
+  border: 1px solid var(--hairline);
+  background: var(--paper);
+  backdrop-filter: blur(12px);
+}
+
+.signalMarker {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+
+/*
+ * The draft marker, second in the row. Bracketed and dimmed so it reads as a
+ * stamp on the page rather than as another field name — the copy in this panel
+ * is not final, and the panel is required to say so.
+ */
+.signalMarker .fieldLabel:last-child {
+  color: var(--ink-body);
+  opacity: 0.75;
+}
+
+.signalMarker .fieldLabel:last-child::before {
+  content: '(';
+}
+
+.signalMarker .fieldLabel:last-child::after {
+  content: ')';
+}
+
+.signalHeading h2 {
+  margin: 0.35rem 0 0.4rem;
+  color: var(--ink);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.signalHeading p {
+  margin: 0;
+  max-width: 42ch;
+  color: var(--ink-body);
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.signalColumn ul {
+  margin: 0.45rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.signalColumn li {
+  padding-left: 0.7rem;
+  position: relative;
+  color: var(--ink-body);
+  font-size: 0.635rem;
+  line-height: 1.42;
+}
+
+.signalColumn li::before {
+  content: '';
+  position: absolute;
+  top: 0.42em;
+  left: 0;
+  width: 4px;
+  height: 1px;
+  background: var(--ink);
+  opacity: 0.55;
+}
+
+.signalFoot {
+  display: grid;
+  gap: 0.55rem;
+  align-content: start;
+  margin: 0;
+  padding-left: clamp(0.9rem, 2.2vw, 1.9rem);
+  border-left: 1px solid var(--hairline);
+}
+
+.signalFoot dt {
+  color: var(--muted);
+  font-size: 0.57rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.signalFoot dd {
+  margin: 0.24rem 0 0;
+  max-width: 62ch;
+  color: var(--ink-body);
+  font-size: 0.66rem;
+  line-height: 1.5;
+}
+
+/*
+ * The column count is the length of the era run, not the literal six: the run
+ * grows by one when scripts/update-history.mjs records a provisional era, and a
+ * hard-coded six wraps the new card onto a second row inside a 200px band.
+ */
+.historyDetails {
+  display: grid;
+  grid-template-columns: repeat(var(--era-count, 6), minmax(0, 1fr));
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  background: rgba(20, 21, 23, 0.42);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.52) inset,
+    0 14px 30px rgba(60, 64, 68, 0.16),
+    0 3px 8px rgba(60, 64, 68, 0.12);
+  list-style: none;
+}
+
+.historyDetails li {
+  position: relative;
+  z-index: 0;
+  min-height: 102px;
+  border-color: rgba(20, 21, 23, 0.28);
+  background: #e2e4e5;
+}
+
+.historyDetails button {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 102px;
+  padding: 0.85rem;
+  border: 0;
+  background: #e2e4e5;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 -1px 0 rgba(20, 21, 23, 0.08) inset;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  flex-direction: column;
+  transition:
+    background 180ms linear,
+    box-shadow 180ms linear,
+    color 180ms linear,
+    transform 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.historyDetails li:has(button:hover),
+.historyDetails li:has(button:focus-visible) {
+  z-index: 2;
+}
+
+.historyDetails button:hover,
+.historyDetails button:focus-visible {
+  background: #c9cdd0;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.72) inset,
+    0 -1px 0 rgba(20, 21, 23, 0.14) inset,
+    0 14px 24px rgba(54, 59, 63, 0.2),
+    0 3px 7px rgba(54, 59, 63, 0.14);
+  color: var(--ink);
+  transform: translateY(-6px);
+}
+
+.historyDetails button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: -4px;
+}
+
+.historyDetails .plateHeading {
+  width: 100%;
+  margin-bottom: 0.15rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid rgba(20, 21, 23, 0.22);
+  color: var(--muted);
+  font-size: 0.54rem;
+}
+
+.historyDetails button > span:not(.plateHeading) {
+  color: var(--ink-body);
+  font-size: 0.56rem;
+}
+
+.historyDetails strong {
+  margin-top: 0.7rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.historyDetails button > span {
+  margin-bottom: 0.35rem;
+  line-height: 1.4;
+}
+
+.historyDetails button:hover .signalCue,
+.historyDetails button:focus-visible .signalCue {
+  border-bottom-color: var(--ink);
+}
+
+/* ---- Opened era ------------------------------------------------------- */
+
+.eraRecord {
+  display: grid;
+  gap: 1px;
+}
+
+/*
+ * Capture on the left, record to the right of it. The band cannot grow
+ * downwards — the card it belongs to is standing directly above — so the
+ * picture is sized to the band's own height and the reading runs across.
+ */
+.eraPanel {
+  display: grid;
+  gap: 0.85rem clamp(0.9rem, 2.2vw, 1.9rem);
+  grid-template-columns: auto minmax(0, 1.35fr) minmax(0, 1fr);
+  align-items: start;
+  padding: 0.8rem 0.95rem;
+  border: 1px solid var(--hairline);
+  background: var(--paper);
+  backdrop-filter: blur(12px);
+}
+
+/*
+ * The picture is a control, so it is a button — but it must not look like a
+ * chip with a screenshot in it. Hairline, square, no padding: the capture's own
+ * edge is the frame, and the affordance is the caption that slides in under it.
+ */
+.eraShot {
+  position: relative;
+  display: block;
+  width: 268px;
+  padding: 0;
+  border: 1px solid var(--hairline);
+  background: none;
+  font: inherit;
+  line-height: 0;
+  cursor: pointer;
+}
+
+.eraShot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.eraShot > span {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  padding: 0.2rem 0.4rem;
+  border-top: 1px solid var(--hairline);
+  border-left: 1px solid var(--hairline);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 0.56rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  line-height: 1.3;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity 180ms linear;
+}
+
+.eraShot:hover > span,
+.eraShot:focus-visible > span {
+  opacity: 1;
+}
+
+.eraShot:focus-visible {
+  outline: 1px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.eraNoShot {
+  width: 268px;
+  margin: 0;
+  padding: 0.7rem;
+  border: 1px dashed var(--hairline);
+  color: var(--ink-body);
+  font-size: 0.62rem;
+  line-height: 1.5;
+}
+
+.eraNoShot .fieldLabel {
+  display: block;
+  margin-bottom: 0.3rem;
+}
+
+.eraMarker {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+
+/*
+ * The provisional stamp, second in the row. Bracketed off the same way the
+ * signal panel marks draft copy: a generated era's name came off a commit
+ * subject, and the panel is required to say so.
+ */
+.eraMarker .fieldLabel:last-child {
+  color: var(--ink-body);
+  opacity: 0.75;
+}
+
+.eraHeading h2 {
+  margin: 0.5rem 0 0.4rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.eraHeading p {
+  margin: 0;
+  color: var(--ink-body);
+  font-size: 0.67rem;
+  line-height: 1.5;
+}
+
+.eraFields {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.eraFields dt {
+  color: var(--muted);
+  font-size: 0.54rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.eraFields dd {
+  margin: 0.15rem 0 0;
+  color: var(--ink);
+  font-size: 0.67rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.45;
+}
+
+.eraFields a {
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.eraFields a:hover,
+.eraFields a:focus-visible {
+  border-bottom-color: var(--ink);
+}
+
+/* ---- The capture at full size ----------------------------------------- */
+
+.lightbox {
+  /*
+   * Fixed, not absolute: below 700px the shell stops being a viewport-sized box
+   * and becomes a tall scrolling column, and an absolute overlay would cover
+   * the document rather than the screen.
+   */
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1.5rem, 5vw, 4rem);
+  background: rgba(20, 21, 23, 0.82);
+  backdrop-filter: blur(6px);
+  animation: benchLightboxIn 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.lightbox figure {
+  max-width: min(1280px, 100%);
+  margin: 0;
+}
+
+.lightbox img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 74vh;
+  object-fit: contain;
+  border: 1px solid rgba(235, 236, 236, 0.35);
+}
+
+.lightbox figcaption {
+  display: flex;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 0.7rem;
+  color: rgba(235, 236, 236, 0.92);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.lightbox figcaption .fieldLabel {
+  margin-right: 0.55rem;
+  color: rgba(235, 236, 236, 0.62);
+}
+
+.lightbox figcaption button {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid rgba(235, 236, 236, 0.4);
+  background: none;
+  color: rgba(235, 236, 236, 0.92);
+  font: inherit;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.lightbox figcaption button:hover,
+.lightbox figcaption button:focus-visible {
+  border-color: rgba(235, 236, 236, 0.9);
+}
+
+@keyframes benchLightboxIn {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lightbox {
+    animation: none;
+  }
+}
+
+.footer {
+  position: absolute;
+  z-index: 4;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 32px;
+  padding: 0 clamp(1rem, 2.8vw, 2.75rem);
+  border-top: 1px solid var(--hairline);
+  /*
+   * Not `var(--muted)`. This is the one row of copy on the page that sits
+   * directly on the bench's shadowed front mass rather than on a plate, so it
+   * is the only one whose contrast moves when the set is regraded — and the
+   * set just came down a third of a stop. Measured against the new fascia it
+   * was the lowest-contrast text on the page; four points of ink put it back
+   * where it read before the regrade without making a decorative caption
+   * shout.
+   */
+  color: rgba(20, 21, 23, 0.82);
+  font-size: 0.56rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.footerMeta,
+.visitorMetric {
+  display: flex;
+  align-items: center;
+}
+
+.footerMeta > * + * {
+  margin-left: 0.75rem;
+  padding-left: 0.75rem;
+  border-left: 1px solid var(--hairline);
+}
+
+.visitorMetric {
+  gap: 0.4rem;
+}
+
+.visitorValue {
+  color: var(--ink);
+  letter-spacing: normal;
+}
+
+.nav button:focus-visible,
+.projectPlate:focus-visible,
+.galleryCue:focus-visible,
+.galleryBack:focus-visible,
+.galleryIndex button:focus-visible,
+.galleryPlacard a:focus-visible,
+.signalDetails button:focus-visible,
+.historyDetails button:focus-visible,
+.eraFields a:focus-visible,
+.lightbox figcaption button:focus-visible,
+.tagIndex button:focus-visible,
+.wordmark:focus-visible {
+  outline: 1px solid var(--ink);
+  outline-offset: 3px;
+}
+
+@media (max-width: 900px) {
+  .workDetails {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tagRecord,
+  .signalNote {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .eraPanel {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .eraShot,
+  .eraNoShot {
+    width: 200px;
+  }
+
+  .signalFoot {
+    padding-left: 0;
+    padding-top: 0.7rem;
+    border-top: 1px solid var(--hairline);
+    border-left: 0;
+  }
+
+  .projectPlate {
+    min-height: 130px;
+  }
+
+  .historyDetails {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .shell {
+    display: block;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 6;
+    grid-template-columns: 1fr auto;
+    min-height: 58px;
+    padding: 0 0.8rem;
+    background: rgba(218, 220, 221, 0.91);
+    backdrop-filter: blur(12px);
+  }
+
+  .header[data-has-actions='true'] {
+    grid-template-columns: max-content minmax(0, 1fr) max-content;
+    column-gap: 0.35rem;
+  }
+
+  .header[data-has-actions='true'] .nav {
+    min-width: 0;
+    justify-content: center;
+    gap: clamp(0.3rem, 1.8vw, 0.55rem);
+  }
+
+  .wordmark {
+    font-size: 0.72rem;
+  }
+
+  .nav {
+    gap: 0.75rem;
+  }
+
+  .nav button {
+    font-size: 0.68rem;
+  }
+
+  .context {
+    display: none;
+  }
+
+  /*
+   * Bottom padding is load-bearing: the scene band below is an opaque grey
+   * surface painted over anything it overlaps, and at zero bottom padding
+   * (plus the band's old -0.5rem pull-up) it guillotined the dek's last line
+   * on all four views. The copy owns its own space; the band starts after it.
+   */
+  .intro {
+    position: relative;
+    top: auto;
+    left: auto;
+    z-index: 2;
+    width: auto;
+    padding: 1.25rem 1rem 1rem;
+  }
+
+  .intro::before {
+    content: none;
+  }
+
+  /* The compact width exists to clear the hang; stacked, nothing overlaps. */
+  .intro[data-compact='true'] {
+    width: auto;
+  }
+
+  /* No Escape key on a phone. */
+  .galleryHint {
+    display: none;
+  }
+
+  .intro h1 {
+    margin-top: 0.4rem;
+    font-size: 2.6rem;
+  }
+
+  .sceneStage {
+    position: relative;
+    height: 42vh;
+    min-height: 300px;
+  }
+
+  .details {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    left: auto;
+    z-index: 2;
+    padding: 0 0.8rem 4rem;
+  }
+
+  .workDetails,
+  .signalDetails,
+  .historyDetails {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.6rem;
+  }
+
+  .eraPanel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .eraShot,
+  .eraNoShot {
+    width: 100%;
+  }
+
+  .profileDetails {
+    flex-direction: column;
+  }
+
+  .linkRow {
+    flex-wrap: wrap;
+  }
+
+  .profileLinkCard {
+    width: 48px;
+    height: 48px;
+  }
+
+  .projectPlate,
+  .signalDetails button,
+  .historyDetails li {
+    min-height: auto;
+  }
+
+  .footer {
+    position: fixed;
+    background: rgba(218, 220, 221, 0.9);
+    backdrop-filter: blur(12px);
+  }
+}
+
+@media (max-width: 360px) {
+  .header[data-has-actions='true'] {
+    column-gap: 0.2rem;
+  }
+
+  .header[data-has-actions='true'] .nav {
+    gap: 0.2rem;
+  }
+
+  .header[data-has-actions='true'] .nav button {
+    font-size: 0.58rem;
+    letter-spacing: 0.02em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav button::after,
+  .profileLinkCard,
+  .profileLinkLabel,
+  .projectPlate,
+  .signalDetails button,
+  .historyDetails button,
+  .galleryBack,
+  .galleryIndex button {
+    transition-duration: 1ms;
+  }
+}

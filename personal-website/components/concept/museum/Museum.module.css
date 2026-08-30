@@ -1,0 +1,916 @@
+.museum {
+  --museum-wall: #e2d9cc;
+  --museum-ink: #201b16;
+  --museum-accent: #c89b52;
+  --museum-miniature: #12100d;
+  --museum-position: 5;
+  min-height: 100dvh;
+  overflow: hidden;
+  color: var(--museum-ink);
+  background: var(--museum-wall);
+  font-family:
+    Inter,
+    ui-sans-serif,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  transition:
+    color 500ms ease-out,
+    background 500ms ease-out;
+}
+
+.museum *,
+.museum *::before,
+.museum *::after {
+  box-sizing: border-box;
+}
+
+.museum button,
+.museum a {
+  color: inherit;
+  font: inherit;
+}
+
+.header {
+  position: relative;
+  z-index: 300;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  min-height: 64px;
+  padding: 0 28px;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--museum-ink) 16%, transparent);
+  font-size: 11px;
+  letter-spacing: 0.07em;
+}
+
+.museumMark {
+  justify-self: start;
+  text-decoration: none;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+}
+
+.nav button {
+  position: relative;
+  padding: 8px 0;
+  border: 0;
+  outline-offset: 5px;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.5;
+}
+
+.nav button::after {
+  position: absolute;
+  right: 0;
+  bottom: 2px;
+  left: 0;
+  height: 1px;
+  background: var(--museum-accent);
+  content: '';
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 360ms ease;
+}
+
+.nav button[data-active='true'] {
+  opacity: 1;
+}
+
+.nav button[data-active='true']::after {
+  transform: scaleX(1);
+}
+
+.activeReference {
+  display: flex;
+  justify-self: end;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 10px;
+}
+
+.activeReference code,
+.catalogue,
+.projectPlacard > span,
+.curatorNote code,
+.timelineRange,
+.stop code {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.activeReference span {
+  opacity: 0.55;
+}
+
+.room {
+  position: relative;
+  height: calc(100dvh - 196px);
+  min-height: 520px;
+  overflow: hidden;
+}
+
+.viewPanel {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(0, 34px, 0);
+  transition:
+    opacity 650ms ease,
+    transform 850ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.viewPanel[data-active='true'] {
+  z-index: 2;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate3d(0, 0, 0);
+}
+
+.historyView,
+.galleryWall {
+  height: 100%;
+}
+
+.galleryWall {
+  position: relative;
+}
+
+.exhibit {
+  --gallery-x: 0px;
+  --gallery-scale: 1;
+  --gallery-opacity: 1;
+  --gallery-z: 100;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: var(--gallery-z);
+  width: min(720px, 53vw);
+  margin: 0;
+  opacity: var(--gallery-opacity);
+  transform: translate3d(calc(-50% + var(--gallery-x)), -51%, 0)
+    scale(var(--gallery-scale));
+  transform-origin: center;
+  will-change: transform, opacity;
+}
+
+.miniatureFrame {
+  padding: 7px;
+  border: 1px solid color-mix(in srgb, var(--museum-ink) 48%, transparent);
+  background: color-mix(in srgb, var(--museum-wall) 78%, white);
+  box-shadow:
+    0 18px 45px rgb(20 18 14 / 12%),
+    0 2px 7px rgb(20 18 14 / 8%);
+}
+
+.miniatureCanvas {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--museum-miniature);
+}
+
+.miniatureScale {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 960px;
+  height: 540px;
+  container-type: inline-size;
+  transform: scale(var(--miniature-scale, 0.75));
+  transform-origin: top left;
+}
+
+.placard {
+  width: min(490px, 80%);
+  margin: 14px auto 0;
+  font-size: 11px;
+  line-height: 1.55;
+  opacity: 0.62;
+  transition: opacity 400ms ease;
+}
+
+.exhibit[aria-current='true'] .placard {
+  opacity: 1;
+}
+
+.catalogue {
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 7px;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--museum-ink) 18%, transparent);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+}
+
+.placard h2,
+.wallText h2,
+.viewIntro h2 {
+  margin: 8px 0 5px;
+  font-size: 18px;
+  font-weight: 520;
+  letter-spacing: -0.025em;
+}
+
+.placard p {
+  margin: 0;
+  max-width: 62ch;
+  opacity: 0.72;
+}
+
+.placard > span {
+  display: block;
+  margin-top: 4px;
+  color: var(--museum-accent);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.footer {
+  position: relative;
+  z-index: 300;
+  display: grid;
+  grid-template-columns: minmax(170px, 0.28fr) 1fr;
+  gap: 36px;
+  align-items: end;
+  min-height: 132px;
+  padding: 14px 28px 20px;
+  border-top: 1px solid color-mix(in srgb, var(--museum-ink) 16%, transparent);
+}
+
+.footer > p {
+  max-width: 32ch;
+  margin: 0 0 3px;
+  font-size: 10px;
+  line-height: 1.55;
+  opacity: 0.52;
+}
+
+.timeline {
+  min-width: 0;
+}
+
+.timelineRange {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 13px;
+  font-size: 8px;
+  letter-spacing: 0.06em;
+  opacity: 0.5;
+}
+
+.scrubber {
+  position: relative;
+  height: 62px;
+  outline-offset: 6px;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.scrubberLine,
+.scrubberProgress {
+  position: absolute;
+  top: 7px;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: color-mix(in srgb, var(--museum-ink) 25%, transparent);
+}
+
+.scrubberProgress {
+  right: auto;
+  width: calc(var(--museum-position) * 20%);
+  background: var(--museum-accent);
+}
+
+.scrubberHandle {
+  position: absolute;
+  top: 2px;
+  left: calc(var(--museum-position) * 20%);
+  width: 11px;
+  height: 11px;
+  border: 2px solid var(--museum-wall);
+  border-radius: 50%;
+  background: var(--museum-accent);
+  box-shadow: 0 0 0 1px var(--museum-accent);
+  transform: translateX(-50%);
+}
+
+.stops {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+}
+
+.stop {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.stop:first-child {
+  justify-content: flex-start;
+}
+
+.stop:last-child {
+  justify-content: flex-end;
+}
+
+.stop i {
+  position: absolute;
+  top: 4px;
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--museum-wall);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--museum-ink) 38%, var(--museum-wall));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--museum-ink) 22%, transparent);
+}
+
+.stop[data-active='true'] i {
+  background: var(--museum-accent);
+  box-shadow: 0 0 0 1px var(--museum-accent);
+}
+
+.stop span {
+  position: absolute;
+  top: 22px;
+  width: 140px;
+  font-size: 8px;
+  line-height: 1.45;
+  text-align: center;
+  white-space: nowrap;
+  opacity: 0.5;
+}
+
+.stop:first-child span {
+  text-align: left;
+  transform: translateX(calc(50% - 3px));
+}
+
+.stop:last-child span {
+  text-align: right;
+  transform: translateX(calc(-50% + 3px));
+}
+
+.stop[data-active='true'] span {
+  opacity: 1;
+}
+
+.profileView,
+.workView,
+.signalsView {
+  min-height: 100%;
+  padding: 5vh 6vw 7vh;
+}
+
+.profileView {
+  display: grid;
+  grid-template-columns: minmax(540px, 1.4fr) minmax(320px, 0.7fr);
+  gap: 7vw;
+  align-items: center;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.portraitHang {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(190px, 0.54fr);
+  gap: 30px;
+  align-items: end;
+}
+
+.portraitFrame {
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--museum-ink) 55%, transparent);
+  background: color-mix(in srgb, var(--museum-wall) 78%, white);
+  box-shadow: 0 20px 55px rgb(20 18 14 / 12%);
+}
+
+.portrait {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  object-position: 50% 48%;
+}
+
+.wallText {
+  font-size: 11px;
+  line-height: 1.58;
+}
+
+.portraitText ul {
+  margin: 18px 0 0;
+  padding: 13px 0 0;
+  border-top: 1px solid color-mix(in srgb, var(--museum-ink) 18%, transparent);
+  list-style: none;
+}
+
+.portraitText li + li {
+  margin-top: 5px;
+}
+
+.kicker {
+  margin: 0;
+  color: var(--museum-accent);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.loanLedger {
+  align-self: center;
+}
+
+.ledgerRow {
+  display: grid;
+  grid-template-columns: 0.8fr 0.55fr 1.65fr;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid color-mix(in srgb, var(--museum-ink) 18%, transparent);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.ledgerRow strong {
+  font-weight: 600;
+}
+
+.ledgerRow time {
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.55;
+}
+
+.ledgerRow span {
+  opacity: 0.68;
+}
+
+.workView,
+.signalsView {
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+.viewIntro {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 16px;
+}
+
+.viewIntro h2 {
+  font-size: 20px;
+}
+
+.salonWall {
+  position: relative;
+  min-height: 780px;
+}
+
+.projectHang {
+  position: absolute;
+}
+
+.projectHang a {
+  display: block;
+  text-decoration: none;
+}
+
+.projectHang1 {
+  top: 2%;
+  left: 3%;
+  width: 42%;
+}
+
+.projectHang2 {
+  top: 0;
+  right: 3%;
+  width: 33%;
+}
+
+.projectHang3 {
+  top: 47%;
+  left: 13%;
+  width: 31%;
+}
+
+.projectHang4 {
+  top: 42%;
+  right: 8%;
+  width: 43%;
+}
+
+.projectFrame {
+  padding: 6px;
+  border: 1px solid color-mix(in srgb, var(--museum-ink) 52%, transparent);
+  background: color-mix(in srgb, var(--museum-wall) 75%, white);
+  box-shadow: 0 14px 38px rgb(20 18 14 / 11%);
+}
+
+.projectFrame img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.projectPlacard {
+  width: 78%;
+  margin: 10px auto 0;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.projectPlacard > span {
+  color: var(--museum-accent);
+  font-size: 8px;
+}
+
+.projectPlacard h3 {
+  margin: 4px 0;
+  font-size: 14px;
+  font-weight: 560;
+}
+
+.projectPlacard p {
+  margin: 0;
+  opacity: 0.65;
+}
+
+.projectPlacard strong {
+  display: inline-block;
+  margin-top: 5px;
+  font-size: 8px;
+  font-weight: 600;
+}
+
+.crateRoom {
+  position: relative;
+  min-height: 610px;
+}
+
+.cratedExhibit {
+  position: absolute;
+  width: 30%;
+}
+
+.crate1 {
+  top: 5%;
+  left: 4%;
+}
+
+.crate2 {
+  top: 23%;
+  left: 36%;
+}
+
+.crate3 {
+  top: 2%;
+  right: 2%;
+}
+
+.crate {
+  position: relative;
+  aspect-ratio: 1.22;
+  border: 7px solid #765d3c;
+  background:
+    linear-gradient(90deg, transparent 47%, #765d3c 47% 53%, transparent 53%),
+    linear-gradient(#aa8456, #8f6e47);
+  box-shadow:
+    inset 0 0 0 1px #4f3b27,
+    0 18px 32px rgb(40 30 20 / 15%);
+}
+
+.crate::before,
+.crate::after {
+  position: absolute;
+  top: 7%;
+  bottom: 7%;
+  width: 7px;
+  background: #765d3c;
+  content: '';
+}
+
+.crate::before {
+  left: 8%;
+}
+
+.crate::after {
+  right: 8%;
+}
+
+.crate > strong {
+  position: absolute;
+  right: 12%;
+  bottom: 11%;
+  z-index: 2;
+  padding: 4px 7px;
+  border: 2px solid #35291d;
+  color: #35291d;
+  font:
+    700 11px 'SFMono-Regular',
+    Consolas,
+    monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transform: rotate(-3deg);
+}
+
+.dustSheet {
+  position: absolute;
+  top: -10%;
+  left: -4%;
+  z-index: 1;
+  width: 78%;
+  height: 72%;
+  border-radius: 48% 35% 8% 12% / 14% 22% 10% 18%;
+  background:
+    linear-gradient(115deg, rgb(255 255 255 / 32%), transparent 38%), #d2cec4;
+  box-shadow: 7px 9px 14px rgb(36 30 22 / 16%);
+  transform: rotate(-4deg);
+}
+
+.dustSheet span {
+  position: absolute;
+  right: 13%;
+  bottom: 15%;
+  left: 13%;
+  overflow: hidden;
+  font-size: 9px;
+  line-height: 1.35;
+  opacity: 0.35;
+}
+
+.curatorNote {
+  width: 88%;
+  margin: 13px auto 0;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.curatorNote code {
+  color: var(--museum-accent);
+  font-size: 8px;
+}
+
+.curatorNote h3 {
+  margin: 4px 0;
+  font-size: 13px;
+  font-weight: 560;
+}
+
+.curatorNote p {
+  margin: 0;
+  opacity: 0.65;
+}
+
+[data-reduced-motion='true'] .viewPanel,
+[data-reduced-motion='true'] .nav button::after {
+  transition: none;
+}
+
+@media (max-width: 760px) {
+  .museum {
+    min-height: 100dvh;
+    overflow: auto;
+  }
+
+  .header {
+    position: sticky;
+    top: 0;
+    grid-template-columns: 1fr auto;
+    min-height: 76px;
+    padding: 10px 16px;
+    background: color-mix(in srgb, var(--museum-wall) 94%, transparent);
+    backdrop-filter: blur(12px);
+  }
+
+  .museumMark {
+    font-size: 10px;
+  }
+
+  .nav {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-content: space-between;
+    gap: 0;
+    width: 100%;
+  }
+
+  .nav button {
+    padding: 7px 0 3px;
+    font-size: 10px;
+  }
+
+  .activeReference {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .activeReference span {
+    display: none;
+  }
+
+  .room {
+    height: auto;
+    min-height: calc(100dvh - 76px);
+    overflow: visible;
+  }
+
+  .viewPanel {
+    position: relative;
+    inset: auto;
+    display: none;
+    min-height: calc(100dvh - 76px);
+    overflow: visible;
+    transform: none;
+  }
+
+  .viewPanel[data-active='true'] {
+    display: block;
+  }
+
+  .historyView,
+  .galleryWall {
+    height: auto;
+  }
+
+  .galleryWall {
+    display: flex;
+    flex-direction: column;
+    gap: 72px;
+    padding: 42px 16px 68px;
+  }
+
+  .exhibit {
+    position: relative;
+    top: auto;
+    left: auto;
+    width: 100%;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .miniatureFrame {
+    padding: 4px;
+  }
+
+  .placard {
+    width: 88%;
+    margin-top: 12px;
+    opacity: 1;
+  }
+
+  .placard h2 {
+    font-size: 16px;
+  }
+
+  .footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 310;
+    display: block;
+    min-height: 62px;
+    padding: 10px 16px 8px;
+    background: color-mix(in srgb, var(--museum-wall) 94%, transparent);
+    backdrop-filter: blur(12px);
+  }
+
+  .footer > p,
+  .timelineRange,
+  .scrubberLine,
+  .scrubberProgress,
+  .scrubberHandle,
+  .stop span {
+    display: none;
+  }
+
+  .scrubber {
+    height: 38px;
+    cursor: default;
+  }
+
+  .stops {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+  }
+
+  .stop,
+  .stop:first-child,
+  .stop:last-child {
+    display: block;
+    width: 10px;
+  }
+
+  .stop i {
+    top: 10px;
+    left: 50%;
+    width: 8px;
+    height: 8px;
+    transform: translateX(-50%);
+  }
+
+  .profileView,
+  .workView,
+  .signalsView {
+    padding: 40px 18px 70px;
+  }
+
+  .profileView {
+    display: block;
+  }
+
+  .portraitHang {
+    display: block;
+  }
+
+  .portraitFrame {
+    max-width: 330px;
+    margin: 0 auto;
+    padding: 6px;
+  }
+
+  .portraitText {
+    width: 88%;
+    margin: 18px auto 48px;
+  }
+
+  .loanLedger {
+    width: 92%;
+    margin: 0 auto;
+  }
+
+  .ledgerRow {
+    grid-template-columns: 1fr auto;
+  }
+
+  .ledgerRow span {
+    grid-column: 1 / -1;
+  }
+
+  .viewIntro {
+    display: block;
+    margin-bottom: 28px;
+  }
+
+  .salonWall,
+  .crateRoom {
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+    gap: 52px;
+  }
+
+  .projectHang,
+  .cratedExhibit {
+    position: relative;
+    top: auto;
+    right: auto;
+    left: auto;
+    width: 100%;
+  }
+
+  .projectHang2,
+  .projectHang3 {
+    width: 86%;
+    align-self: flex-end;
+  }
+
+  .projectHang4 {
+    width: 94%;
+  }
+
+  .projectPlacard,
+  .curatorNote {
+    width: 88%;
+  }
+
+  .cratedExhibit {
+    width: 88%;
+  }
+
+  .cratedExhibit:nth-child(2) {
+    align-self: flex-end;
+  }
+}
