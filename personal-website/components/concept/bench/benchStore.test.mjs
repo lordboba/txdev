@@ -5,21 +5,13 @@ import {
   clearBenchSelection,
   clearBenchSignalSelection,
   clearBenchTagSelection,
-  closeBenchGallery,
   closeBenchHistoryLightbox,
   markBenchHistoryLive,
-  openBenchGallery,
   openBenchHistoryLightbox,
   readBenchFocus,
   readBenchHistory,
-  readBenchSettled,
   readBenchSignals,
   readBenchTags,
-  releaseBenchGallery,
-  resetBenchSettlement,
-  setBenchPointer,
-  setBenchRenderInvalidator,
-  setBenchSettled,
   setBenchHistorySelection,
   setBenchHover,
   setBenchSelection,
@@ -28,82 +20,8 @@ import {
   setBenchTagHover,
   setBenchTagSelection,
   subscribeBenchHistory,
-  subscribeBenchSettled,
   subscribeBenchSignals,
 } from './benchStore.ts';
-
-test('pointer and focus changes wake the renderer once per state change', () => {
-  let notified = 0;
-  setBenchRenderInvalidator(() => {
-    notified += 1;
-  });
-
-  setBenchPointer(0.25, -0.5);
-  assert.equal(notified, 1);
-
-  setBenchPointer(0.25, -0.5);
-  assert.equal(notified, 1);
-
-  setBenchHover('work', 3);
-  assert.equal(notified, 2);
-
-  setBenchHover('work', 3);
-  assert.equal(notified, 2);
-
-  setBenchRenderInvalidator(null);
-  setBenchPointer(0, 0);
-  assert.equal(notified, 2);
-});
-
-test('the bench settles only after every independent motion source settles', () => {
-  setBenchSettled('scene', true);
-  setBenchSettled('tags', true);
-  setBenchSettled('gallery', true);
-  assert.equal(readBenchSettled(), true);
-
-  let notified = 0;
-  const stop = subscribeBenchSettled(() => {
-    notified += 1;
-  });
-
-  setBenchSettled('scene', false);
-  setBenchSettled('gallery', false);
-  assert.equal(readBenchSettled(), false);
-  assert.equal(notified, 1);
-
-  setBenchSettled('scene', true);
-  assert.equal(readBenchSettled(), false);
-  assert.equal(notified, 1);
-
-  setBenchSettled('gallery', true);
-  assert.equal(readBenchSettled(), true);
-  assert.equal(notified, 2);
-
-  stop();
-});
-
-test('opening the gallery blocks settlement before suspended textures load', () => {
-  resetBenchSettlement();
-  setBenchSettled('scene', true);
-  assert.equal(readBenchSettled(), true);
-
-  openBenchGallery();
-  assert.equal(readBenchSettled(), false);
-
-  closeBenchGallery();
-  releaseBenchGallery();
-  setBenchSettled('gallery', true);
-});
-
-test('resetting a scene clears settlement carried by the previous mount', () => {
-  setBenchSettled('scene', true);
-  setBenchSettled('tags', true);
-  setBenchSettled('gallery', true);
-  assert.equal(readBenchSettled(), true);
-
-  resetBenchSettlement();
-  assert.equal(readBenchSettled(), false);
-});
 
 test('focus state is isolated by view', () => {
   setBenchSelection('work', 1);

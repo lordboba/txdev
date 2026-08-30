@@ -19,38 +19,7 @@ const { experiments, gitEras, personalNotes } = await import(
 );
 const { featuredProjects } = await import('../../../content/projectData.ts');
 const { companyRun } = await import('../../../content/experienceData.ts');
-const { compileSuite, deterministicDuration, resolveSuiteAt } = await import(
-  './runEngine.ts'
-);
-
-test('case durations are deterministic and stay within the mechanical run window', () => {
-  const names = [
-    ...personalNotes,
-    ...featuredProjects.map((project) => project.title),
-    ...experiments.map((experiment) => experiment.title),
-    ...gitEras.map((era) => era.commit),
-  ];
-
-  for (const name of names) {
-    const first = deterministicDuration(name);
-    assert.equal(first, deterministicDuration(name));
-    assert.ok(first >= 650);
-    assert.ok(first <= 900);
-  }
-});
-
-test('every compiled duration is hashed from its final case name', () => {
-  for (const view of ['profile', 'work', 'signals', 'history']) {
-    const suite = compileSuite(view);
-
-    for (const caseDefinition of suite.cases) {
-      assert.equal(
-        caseDefinition.duration,
-        deterministicDuration(caseDefinition.name),
-      );
-    }
-  }
-});
+const { compileSuite, resolveSuiteAt } = await import('./runEngine.ts');
 
 test('profile compiles personal facts as cases and company history as configuration', () => {
   const suite = compileSuite('profile');

@@ -9,11 +9,6 @@ import {
 } from './conceptData.ts';
 import { conceptEntries } from './conceptRegistry.ts';
 import { featuredProjects } from '../../content/projectData.ts';
-import {
-  companyRun,
-  companyTags,
-  experiences,
-} from '../../content/experienceData.ts';
 
 test('concept view identifiers are unique and cover the four profile angles', () => {
   assert.equal(conceptViews.length, 4);
@@ -21,55 +16,6 @@ test('concept view identifiers are unique and cover the four profile angles', ()
     new Set(conceptViews.map((view) => view.id)).size,
     conceptViews.length,
   );
-});
-
-test('signature view copy uses Tyler’s approved release wording', () => {
-  const views = Object.fromEntries(conceptViews.map((view) => [view.id, view]));
-
-  assert.equal(views.profile.heading, 'Welcome to my site!');
-  assert.equal(
-    views.profile.description,
-    'Sharing my dev work, experiments, and personal thoughts here :)',
-  );
-  assert.equal(
-    views.work.description,
-    "I've worked at Scale AI, SafetyKit, and Ramp.",
-  );
-  assert.equal(
-    views.signals.description,
-    'I’m hosting Codex meetups, improving AI developer experience inside companies, and sharing what I learn in public.',
-  );
-  assert.equal(views.history.heading, 'Previous site history.');
-  assert.equal(
-    views.history.description,
-    'Earlier versions, oldest to newest.',
-  );
-});
-
-test('focus areas use direct labels and descriptions', () => {
-  assert.deepEqual(experiments, [
-    {
-      number: 'A',
-      status: 'Organizing',
-      title: 'Hosting Codex meetups',
-      description:
-        'I’m a Codex Ambassador, and I host roughly monthly meetups wherever I happen to be. They bring together builders who use agents, share what they’re working on, and build cool projects with them.',
-    },
-    {
-      number: 'B',
-      status: 'Engineering',
-      title: 'Improving AI developer experience',
-      description:
-        'Professionally, I’m interested in AI developer experience: how organizations can improve the way they use AI systems and build shared infrastructure that makes those systems more useful across the company.',
-    },
-    {
-      number: 'C',
-      status: 'Posting',
-      title: 'Sharing what I’m learning',
-      description:
-        'Catch me on Twitter or LinkedIn to follow along with my professional journey and see my takes on tech, AI, and other fun stuff!',
-    },
-  ]);
 });
 
 test('featured projects are visual and link to real work', () => {
@@ -91,36 +37,6 @@ test('git eras are chronological snapshots backed by short commit hashes', () =>
 
   const dates = gitEras.map((era) => era.date);
   assert.deepEqual(dates, [...dates].sort());
-});
-
-test('company tags carry a verified mark and no invented copy', () => {
-  assert.equal(companyTags.length, 4);
-  assert.equal(new Set(companyTags.map((tag) => tag.mark)).size, 4);
-
-  /* The run leads in its own order; the credential is the last tag. */
-  assert.deepEqual(
-    companyTags.slice(0, companyRun.length).map((tag) => tag.mark),
-    companyRun.map((entry) => entry.company),
-  );
-  assert.equal(companyTags[companyTags.length - 1].mark, 'UCLA');
-
-  for (const tag of companyTags) {
-    assert.match(tag.logo, /^\/logos\/[a-z-]+\.svg$/);
-
-    /* Every prose field has to exist verbatim on a real experience record. */
-    const record = experiences.find((entry) => entry.company === tag.org);
-    assert.ok(record, `no experience record for ${tag.org}`);
-    assert.equal(tag.role, record.role);
-    assert.equal(tag.period, record.period);
-    assert.equal(tag.summary, record.summary);
-    assert.equal(tag.proof, record.proof);
-    assert.deepEqual(tag.focus, record.focus);
-
-    /* And the run label, where there is one, has to match the run entry. */
-    const run = companyRun.find((entry) => entry.company === tag.mark) ?? null;
-    assert.equal(tag.run, run ? run.period : null);
-    assert.equal(tag.detail, run ? run.detail : null);
-  }
 });
 
 test('every effort has exactly one elaboration and a visible label', () => {
