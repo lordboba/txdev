@@ -46,10 +46,28 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ```bash
 npm run dev
+npm run bench:measure -- --url=http://localhost:3000
 npm run build
 npm run start
 npm run lint
 ```
+
+### Bench A/B measurements
+
+The Bench exposes URL-driven ablation flags only when the measurement harness
+opens it with `bench-debug=1`. Start the site, record a baseline, then disable
+one feature at a time:
+
+```bash
+npm run bench:measure -- --url=http://localhost:3000
+npm run bench:measure -- --url=http://localhost:3000 --ablate=contact
+npm run bench:measure -- --url=http://localhost:3000 --ablate=keyshadow --verbose=true
+```
+
+Available flags are `keyshadow`, `contact`, `env`, and `dpr`. The command emits
+JSON containing process RSS, JavaScript heap, renderer memory, program count,
+texture estimates, and drawing-buffer dimensions. Use `--binary=/path/to/chrome`
+when the default Playwright Chromium location does not match the local install.
 
 ## Stack
 

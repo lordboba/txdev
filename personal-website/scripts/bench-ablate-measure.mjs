@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Memory measurement harness for the bench scene's ablation flags.
- * Modified to handle headless Chrome Page.loadEventFired issue.
+ * Pass --verbose=true to expose browser startup and scene-mount progress.
  */
 
 import { spawn, execFileSync } from 'node:child_process';
@@ -20,6 +20,7 @@ const BASE_URL = args.url ?? 'http://localhost:3000';
 const ABLATE = args.ablate ?? '';
 const SETTLE_MS = Number(args.settle ?? 9000);
 const SHOT_PATH = args.shot ?? null;
+const VERBOSE = args.verbose === 'true';
 const BINARY =
   args.binary ??
   join(
@@ -27,8 +28,17 @@ const BINARY =
     'Library/Caches/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-mac-arm64/chrome-headless-shell',
   );
 
+const log = (message) => {
+  if (VERBOSE) {
+    console.error(`[bench-ablate] ${message}`);
+  }
+};
+
 const pageUrl = `${BASE_URL}/?bench-debug=1${ABLATE ? `&ablate=${ABLATE}` : ''}`;
 const profileDir = mkdtempSync(join(tmpdir(), 'bench-ablate-'));
+
+log(`opening ${pageUrl}`);
+log(`using browser ${BINARY}`);
 
 const browser = spawn(
   BINARY,
@@ -49,7 +59,14 @@ function fail(message) {
   try {
     browser.kill('SIGKILL');
   } catch {}
-  rmSync(profileDir, { recursive: true, force: true });
+  try {
+    rmSync(profileDir, {
+      recursive: true,
+      force: true,
+      maxRetries: 5,
+      retryDelay: 100,
+    });
+  } catch {}
   process.exit(1);
 }
 
@@ -79,21 +96,61 @@ function processTreeRssKb(rootPid) {
   return total;
 }
 
-const wsUrl = await new Promise((resolve) => {
+const wsUrl = await new Promise((resolve, reject) => {
   let buffer = '';
+  const timeout = setTimeout(() => {
+    reject(new Error(`browser did not expose a DevTools URL\n${buffer}`));
+  }, 10_000);
+
+  const onExit = (code, signal) => {
+    clearTimeout(timeout);
+    browser.off('error', onError);
+    reject(
+      new Error(
+        `browser exited before startup (code ${code}, signal ${signal})\n${buffer}`,
+      ),
+    );
+  };
+  const onError = (error) => {
+    clearTimeout(timeout);
+    browser.off('exit', onExit);
+    reject(error);
+  };
+
   browser.stderr.on('data', (chunk) => {
     buffer += chunk;
     const match = buffer.match(/DevTools listening on (ws:\/\/\S+)/);
-    if (match) resolve(match[1]);
+    if (match) {
+      clearTimeout(timeout);
+      browser.off('exit', onExit);
+      browser.off('error', onError);
+      resolve(match[1]);
+    }
   });
-  browser.on('exit', () => fail(`browser exited early\n${buffer}`));
-});
+  browser.once('exit', onExit);
+  browser.once('error', onError);
+}).catch((error) => fail(error.message));
+
+log('browser started');
 
 const ws = new WebSocket(wsUrl);
 await new Promise((resolve, reject) => {
-  ws.onopen = resolve;
-  ws.onerror = reject;
-});
+  const timeout = setTimeout(
+    () => reject(new Error('DevTools WebSocket connection timed out')),
+    5_000,
+  );
+
+  ws.onopen = () => {
+    clearTimeout(timeout);
+    resolve();
+  };
+  ws.onerror = (error) => {
+    clearTimeout(timeout);
+    reject(error);
+  };
+}).catch((error) => fail(`DevTools connection failed: ${error.message}`));
+
+log('DevTools connected');
 
 let nextId = 1;
 const pending = new Map();
@@ -163,6 +220,7 @@ const sampler = setInterval(() => {
 
 // Navigate and wait for scene to mount (skip Page.loadEventFired which doesn't fire in headless)
 await send('Page.navigate', { url: pageUrl }, sessionId);
+log('page navigation started');
 
 // Wait for the scene to mount, polling every 500ms for up to 60 seconds
 for (let i = 0; i < 120; i++) {
@@ -170,9 +228,14 @@ for (let i = 0; i < 120; i++) {
   await sleep(500);
 }
 const sceneMounted = await evaluate('Boolean(window.__benchGL)');
+if (!sceneMounted) {
+  fail('bench scene did not mount within 60 seconds');
+}
+log('bench scene mounted');
 
 // Let animations settle
 await sleep(SETTLE_MS);
+log(`scene settled after ${SETTLE_MS}ms`);
 
 await send('HeapProfiler.enable', {}, sessionId).catch(() => {});
 await send('HeapProfiler.collectGarbage', {}, sessionId).catch(() => {});
@@ -250,6 +313,20 @@ console.log(
   ),
 );
 
+const browserExited = new Promise((resolve) => browser.once('exit', resolve));
 browser.kill('SIGKILL');
-rmSync(profileDir, { recursive: true, force: true });
+await Promise.race([browserExited, sleep(5000)]);
+
+try {
+  rmSync(profileDir, {
+    recursive: true,
+    force: true,
+    maxRetries: 5,
+    retryDelay: 100,
+  });
+} catch (error) {
+  console.error(
+    `[bench-ablate] warning: unable to remove browser profile: ${error.message}`,
+  );
+}
 process.exit(0);
