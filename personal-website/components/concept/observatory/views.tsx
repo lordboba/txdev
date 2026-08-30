@@ -135,7 +135,7 @@ export function WorkView({ onFocus }: { onFocus: FocusHandler }) {
 export function SignalsView() {
   return (
     <>
-      <Plate code="03.1" title="Active experiments" wide>
+      <Plate code="03.1" title="Current efforts" wide>
         <ol className={styles.experiments}>
           {experiments.map((experiment) => (
             <li key={experiment.number}>

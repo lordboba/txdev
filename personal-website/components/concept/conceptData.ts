@@ -46,11 +46,11 @@ export const conceptViews: ConceptView[] = [
   {
     id: 'signals',
     index: '03',
-    label: 'Open tabs',
+    label: 'Current efforts',
     shortLabel: 'Signals',
-    heading: 'Here’s what I’m testing.',
+    heading: 'Here are some of my current efforts:',
     description:
-      'Right now, I’m building tools for myself, evaluating agents, and finishing this site.',
+      'I’m hosting Codex meetups, improving AI developer experience inside companies, and sharing what I learn in public.',
   },
   {
     id: 'history',
@@ -65,24 +65,24 @@ export const conceptViews: ConceptView[] = [
 export const experiments = [
   {
     number: 'A',
-    status: 'Building',
-    title: 'Tools I wanted enough to make',
+    status: 'Organizing',
+    title: 'Hosting Codex meetups',
     description:
-      'Small, local-first products built around problems I kept running into.',
+      'I’m a Codex Ambassador, and I host roughly monthly meetups wherever I happen to be. They bring together builders who use agents, share what they’re working on, and build cool projects with them.',
   },
   {
     number: 'B',
-    status: 'Testing',
-    title: 'Finding where agents break',
+    status: 'Engineering',
+    title: 'Improving AI developer experience',
     description:
-      'Evals that preserve failures, resume interrupted runs, and show what actually went wrong.',
+      'Professionally, I’m interested in AI developer experience: how organizations can improve the way they use AI systems and build shared infrastructure that makes those systems more useful across the company.',
   },
   {
     number: 'C',
-    status: 'Editing',
-    title: 'One profile, a few different views',
+    status: 'Posting',
+    title: 'Sharing what I’m learning',
     description:
-      'The site changes depending on what you came to learn: who I am, what I’ve built, or what I’m testing.',
+      'Catch me on Twitter or LinkedIn to follow along with my professional journey and see my takes on tech, AI, and other fun stuff!',
   },
 ];
 
@@ -125,63 +125,57 @@ export type ExperimentNote = {
 };
 
 /** The honest marker the elaboration panel prints on itself. */
-export const notesLabel = 'Draft notes';
+export const notesLabel = 'Current effort';
 
 export const experimentNotes: ExperimentNote[] = [
   {
     number: 'A',
     question:
-      'Does a tool built for one person survive a month of ordinary use, or does it get uninstalled once the novelty of having built it wears off?',
+      'I’m a Codex Ambassador, and I host roughly monthly meetups wherever I happen to be.',
     running: [
-      'iCalarms — calendar events turned into configurable alarm rules, day timelines, and snooze behavior, running against my own calendar.',
-      'Personal Env — environment variables in the Apple Keychain behind Touch ID, with explicit per-folder approval, used across my own projects.',
-      'Med Negotiate — line-item bill extraction, pricing audit, and provider outreach, built around real cases rather than a sample file.',
-      'Charades 2026 — the one built for other people: bundled decks, custom deck import, tilt play, and StoreKit commerce.',
+      'Hosting roughly monthly Codex meetups in whichever city I am in.',
+      'Bringing together builders who use agents, share what they are working on, and build cool projects with them.',
+      "Helping host Ramp's Builders Cup and judging the Codex prize track.",
     ],
     readout:
-      'The bar I am holding these to is not downloads. It is whether I still open them without reminding myself that I made them.',
+      'I care about meeting builders in person and giving them a place to learn from one another.',
     evidence: [
-      'Four products live at their own addresses, each linked from the work view',
-      'App Store support surfaces and submission gates on the two iOS builds',
-      'Local-first storage paths — Keychain vaults, Touch ID unlock, dotenv import and export',
+      'Codex Ambassador',
+      'Six Codex events hosted so far',
+      "Ramp's Builders Cup host and Codex prize track judge",
     ],
-    next: 'Keep the ones that stayed installed, and retire the ones that did not, in public.',
+    next: 'Keep hosting meetups as I move between cities and make hands-on building the center of each event.',
   },
   {
     number: 'B',
     question:
-      'Does workflow reliability come from better instructions, or from explicit states, bounded tools, and visible failures?',
+      'Professionally, I’m interested in how organizations can improve the way they use AI systems.',
     running: [
-      'Resume-safe runs with JSONL integrity checks and validation, so interrupted work can continue without being quietly re-scored.',
-      'Invalid-output accounting kept inside the report instead of removed from the denominator.',
-      'A working draft, "Agent Workflows Need Boring Guardrails": classify, bound the toolset, retry under strict timeouts, escalate when confidence drops.',
+      'Looking at how developers across an organization can use AI systems more effectively.',
+      'Building shared infrastructure so useful AI workflows can be reused across teams.',
+      'Learning where AI fits into day-to-day software development and where it gets in the way.',
     ],
     readout:
-      'I want a number I would be willing to show someone who disagrees with me, with the failures still in it.',
+      'I want AI to be genuinely useful inside a company, not simply available.',
     evidence: [
-      'A persisted run-state machine — queued, running, needs review, completed, failed',
-      'Evaluation loops at Scale AI, trust and safety automation at SafetyKit, reimbursement workflows at Ramp',
+      'Reusable tools and workflows instead of one-off setups',
+      'Infrastructure that improves as teams learn what works',
     ],
-    next: 'Publish the guardrails draft with the run reports attached to it, rather than as an opinion piece.',
+    next: 'Keep finding repeated developer needs and turn the useful patterns into shared systems.',
   },
   {
     number: 'C',
     question:
-      'Can one person have several honest homepages, so that a recruiter, an engineer, and a friend each land on the cut that answers their question?',
+      'Catch me on Twitter or LinkedIn to follow along with my professional journey.',
     running: [
-      'This bench — four views over a single scene: the work, the person, the open questions, and the version history.',
-      'A terminal homepage at /terminal, from the era where navigation became a command instead of a menu.',
-      'An orbital homepage at /orbital, where the same records are axes, themes, and content modes.',
-      'Every earlier visual era kept reachable in the history view instead of being rewritten away.',
+      'Posting about my professional journey on Twitter and LinkedIn.',
+      'Sharing my takes on tech and AI.',
+      'Making room for fun stuff that catches my attention.',
     ],
     readout:
-      'It works if someone can tell me which cut they were looking at without my having to name the tabs for them.',
-    evidence: [
-      'Six commits, 96ccd76 through ad3e87a, each still readable as its own era',
-      'Two live alternate homepages under app/, not screenshots of retired ones',
-      'A working draft on treating terminal convention as information architecture rather than decoration',
-    ],
-    next: 'Let the entry point follow the question that brought someone here, instead of asking them to pick.',
+      'I want my posts to sound like me and make it easy to follow what I am working on.',
+    evidence: ['Twitter at @tylerxdev', 'LinkedIn at /in/tyler-xiao'],
+    next: 'Post more consistently and keep the mix broad enough to reflect what I actually care about.',
   },
 ];
 

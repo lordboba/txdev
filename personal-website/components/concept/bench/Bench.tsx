@@ -571,7 +571,7 @@ function SignalRecord({ selected }: { selected: number }) {
       <div className={styles.signalNote}>
         <div className={styles.signalHeading}>
           <span className={styles.signalMarker}>
-            <FieldLabel>Experiment {experiment.number}</FieldLabel>
+            <FieldLabel>Effort {experiment.number}</FieldLabel>
             <FieldLabel>{notesLabel}</FieldLabel>
           </span>
           <h2>{experiment.title}</h2>
@@ -581,7 +581,7 @@ function SignalRecord({ selected }: { selected: number }) {
         {note ? (
           <>
             <div className={styles.signalColumn}>
-              <FieldLabel>In rotation</FieldLabel>
+              <FieldLabel>What I’m doing</FieldLabel>
               <ul>
                 {note.running.map((line) => (
                   <li key={line}>{line}</li>
@@ -590,7 +590,7 @@ function SignalRecord({ selected }: { selected: number }) {
             </div>
 
             <div className={styles.signalColumn}>
-              <FieldLabel>Already on the bench</FieldLabel>
+              <FieldLabel>Current focus</FieldLabel>
               <ul>
                 {note.evidence.map((line) => (
                   <li key={line}>{line}</li>
@@ -600,11 +600,11 @@ function SignalRecord({ selected }: { selected: number }) {
 
             <dl className={styles.signalFoot}>
               <div>
-                <dt>Reading for</dt>
+                <dt>Why it matters</dt>
                 <dd>{note.readout}</dd>
               </div>
               <div>
-                <dt>Next</dt>
+                <dt>What’s next</dt>
                 <dd>{note.next}</dd>
               </div>
             </dl>
@@ -647,13 +647,13 @@ function SignalsDetails() {
             type="button"
           >
             <span className={styles.plateHeading}>
-              <FieldLabel>Experiment {experiment.number}</FieldLabel>
+              <FieldLabel>Effort {experiment.number}</FieldLabel>
               <strong>{experiment.status}</strong>
             </span>
             <h2>{experiment.title}</h2>
             <p>{experiment.description}</p>
             <span className={styles.signalCue}>
-              Read the notes <span aria-hidden="true">→</span>
+              Read more <span aria-hidden="true">→</span>
             </span>
           </button>
         </li>
@@ -962,7 +962,7 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
             : inTagRecord
               ? 'Signed'
               : inSignalRecord
-                ? `Experiment ${experiments[signals.selected].number}`
+                ? `Effort ${experiments[signals.selected].number}`
                 : inEraRecord
                   ? historyEras[history.selected].date
                   : activeView.label}
@@ -973,7 +973,7 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
             : inTagRecord
               ? 'Where the work was done.'
               : inSignalRecord
-                ? 'Here are the working notes.'
+                ? 'Here is what I’m working on.'
                 : inEraRecord
                   ? 'Here is what it looked like.'
                   : activeView.heading}

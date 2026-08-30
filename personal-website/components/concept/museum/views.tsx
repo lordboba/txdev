@@ -110,7 +110,7 @@ export function SignalsView() {
     <section aria-labelledby="signals-title" className={styles.signalsView}>
       <div className={styles.viewIntro}>
         <p className={styles.kicker}>New wing under construction</p>
-        <h2 id="signals-title">Experiments awaiting exhibition</h2>
+        <h2 id="signals-title">Current efforts</h2>
       </div>
       <div className={styles.crateRoom}>
         {experiments.map((experiment, index) => (
@@ -125,7 +125,7 @@ export function SignalsView() {
               <strong>{experiment.status}</strong>
             </div>
             <div className={styles.curatorNote}>
-              <code>Study {experiment.number}</code>
+              <code>Effort {experiment.number}</code>
               <h3>{experiment.title}</h3>
               <p>{experiment.description}</p>
             </div>

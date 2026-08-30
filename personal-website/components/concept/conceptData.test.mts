@@ -37,7 +37,7 @@ test('signature view copy uses Tyler’s approved release wording', () => {
   );
   assert.equal(
     views.signals.description,
-    'Right now, I’m building tools for myself, evaluating agents, and finishing this site.',
+    'I’m hosting Codex meetups, improving AI developer experience inside companies, and sharing what I learn in public.',
   );
   assert.equal(views.history.heading, 'Previous site history.');
   assert.equal(
@@ -50,24 +50,24 @@ test('focus areas use direct labels and descriptions', () => {
   assert.deepEqual(experiments, [
     {
       number: 'A',
-      status: 'Building',
-      title: 'Tools I wanted enough to make',
+      status: 'Organizing',
+      title: 'Hosting Codex meetups',
       description:
-        'Small, local-first products built around problems I kept running into.',
+        'I’m a Codex Ambassador, and I host roughly monthly meetups wherever I happen to be. They bring together builders who use agents, share what they’re working on, and build cool projects with them.',
     },
     {
       number: 'B',
-      status: 'Testing',
-      title: 'Finding where agents break',
+      status: 'Engineering',
+      title: 'Improving AI developer experience',
       description:
-        'Evals that preserve failures, resume interrupted runs, and show what actually went wrong.',
+        'Professionally, I’m interested in AI developer experience: how organizations can improve the way they use AI systems and build shared infrastructure that makes those systems more useful across the company.',
     },
     {
       number: 'C',
-      status: 'Editing',
-      title: 'One profile, a few different views',
+      status: 'Posting',
+      title: 'Sharing what I’m learning',
       description:
-        'The site changes depending on what you came to learn: who I am, what I’ve built, or what I’m testing.',
+        'Catch me on Twitter or LinkedIn to follow along with my professional journey and see my takes on tech, AI, and other fun stuff!',
     },
   ]);
 });
@@ -123,7 +123,7 @@ test('company tags carry a verified mark and no invented copy', () => {
   }
 });
 
-test('every experiment has exactly one elaboration, and it is marked a draft', () => {
+test('every effort has exactly one elaboration and a visible label', () => {
   assert.equal(experimentNotes.length, experiments.length);
   assert.ok(notesLabel.length > 0);
 
