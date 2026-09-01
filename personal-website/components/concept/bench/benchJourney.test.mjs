@@ -34,6 +34,7 @@ const {
   openBenchJourney,
   readBenchGallery,
   readBenchJourney,
+  readBenchPointer,
   readBenchJourneyRevealed,
   readBenchSignals,
   readBenchTags,
@@ -41,6 +42,7 @@ const {
   releaseBenchJourney,
   revealBenchJourney,
   setBenchJourneyEscapeDelegate,
+  setBenchPointer,
   setBenchRenderInvalidator,
   setBenchSignalSelection,
   setBenchTagSelection,
@@ -48,6 +50,7 @@ const {
 } = await import('./benchStore.ts');
 
 const {
+  consumeJourneyFocus,
   enterJourneyChapter,
   escapeJourney,
   readJourneyProgress,
@@ -110,6 +113,8 @@ test('escape answers the open journey before any other rung', () => {
 });
 
 test('an engaged journey refuses the gallery and the tag record', () => {
+  /* A renderer is attached: only its exit flight keeps `mounted` up. */
+  setBenchRenderInvalidator(() => {});
   openBenchJourney();
 
   /* Under the overlay (or mid entry flight) the tablet click bounces. */
@@ -133,9 +138,12 @@ test('an engaged journey refuses the gallery and the tag record', () => {
   assert.equal(readBenchGallery().open, true);
   closeBenchGallery();
   releaseBenchGallery();
+  setBenchRenderInvalidator(null);
 });
 
 test('the delegate decides whether escape may close the overlay', () => {
+  /* A renderer is attached: only its exit flight keeps `mounted` up. */
+  setBenchRenderInvalidator(() => {});
   let notified = 0;
   const stop = subscribeBenchJourney(() => {
     notified += 1;
@@ -168,6 +176,7 @@ test('the delegate decides whether escape may close the overlay', () => {
 
   setBenchJourneyEscapeDelegate(null);
   releaseBenchJourney();
+  setBenchRenderInvalidator(null);
   stop();
 });
 
@@ -249,6 +258,8 @@ test('opening the overlay resets a stale standalone run', () => {
 });
 
 test('open and close are idempotent, and release is renderer-only', () => {
+  /* A renderer is attached: only its exit flight keeps `mounted` up. */
+  setBenchRenderInvalidator(() => {});
   let notified = 0;
   const stop = subscribeBenchJourney(() => {
     notified += 1;
@@ -275,6 +286,7 @@ test('open and close are idempotent, and release is renderer-only', () => {
   releaseBenchJourney();
   assert.equal(notified, 3);
 
+  setBenchRenderInvalidator(null);
   stop();
 });
 
@@ -285,7 +297,17 @@ test('with no renderer the open grants the reveal on the same commit', () => {
 
   closeBenchJourney();
   assert.equal(readBenchJourneyRevealed(), false);
-  releaseBenchJourney();
+
+  /*
+   * And the close drops `mounted` on the same commit: with no renderer there
+   * is no exit flight and releaseBenchJourney can never run, so a lingering
+   * `mounted` would wedge the gallery and tag guards for the page's life.
+   */
+  assert.deepEqual(readBenchJourney(), { open: false, mounted: false });
+  openBenchGallery();
+  assert.equal(readBenchGallery().open, true);
+  closeBenchGallery();
+  releaseBenchGallery();
 });
 
 test('with a renderer the reveal waits for the scene to promote it', () => {
@@ -320,4 +342,62 @@ test('a reveal without an open journey is refused', () => {
   revealBenchJourney();
   assert.equal(readBenchJourneyRevealed(), false);
   assert.deepEqual(readBenchJourney(), { open: false, mounted: false });
+});
+
+test('open and close discard the pending focus flag', () => {
+  /* Play into a chapter so the close's reset commits a status change. */
+  openBenchJourney();
+  wakeJourney();
+  enterJourneyChapter();
+  /* Drain the flag the play legitimately set, as the mount refs would. */
+  consumeJourneyFocus();
+
+  closeBenchJourney();
+
+  /*
+   * The close's reset flagged a swap the unmounting overlay never consumed;
+   * left pending it would auto-focus the next wake hint, whose onFocus wakes
+   * the screen and skips the near-dark reveal — and it would steal focus on
+   * the standalone route's next render.
+   */
+  assert.equal(consumeJourneyFocus(), false);
+  releaseBenchJourney();
+
+  /* A stale standalone run: the open's own reset must discard its flag too. */
+  wakeJourney();
+  enterJourneyChapter();
+  openBenchJourney();
+  assert.equal(consumeJourneyFocus(), false);
+
+  closeBenchJourney();
+  releaseBenchJourney();
+});
+
+test('pointer moves do not render the scene under the open overlay', () => {
+  let invalidations = 0;
+  setBenchRenderInvalidator(() => {
+    invalidations += 1;
+  });
+
+  setBenchPointer(0.1, 0.2);
+  assert.equal(invalidations, 1);
+
+  openBenchJourney();
+  const afterOpen = invalidations;
+
+  /* Occluded scene: coords still recorded, but no render is requested. */
+  setBenchPointer(0.3, 0.4);
+  setBenchPointer(0.5, 0.6);
+  assert.equal(invalidations, afterOpen);
+  assert.deepEqual(readBenchPointer(), { x: 0.5, y: 0.6 });
+
+  closeBenchJourney();
+  releaseBenchJourney();
+  const afterClose = invalidations;
+
+  /* Overlay down: pointer parallax invalidates again. */
+  setBenchPointer(0.7, 0.8);
+  assert.equal(invalidations, afterClose + 1);
+
+  setBenchRenderInvalidator(null);
 });

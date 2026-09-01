@@ -25,6 +25,7 @@ import {
   type SideProject,
 } from '../../../content/projectData';
 import { companyTags, type CompanyTag } from '../../../content/experienceData';
+import { journeyBeats } from '../../../content/journeyData';
 import { useConceptView } from '../conceptViewStore';
 import { exposeBenchDebug, isAblated } from './benchAblation';
 import {
@@ -2167,7 +2168,18 @@ function getTabletScreenTexture() {
 const JOURNEY_SCREEN_W = 1296;
 const JOURNEY_SCREEN_H = 812;
 
-const JOURNEY_TITLE = 'Tyler Xiao?';
+/*
+ * The screen's copy is the wake beat's copy, never a fork of it: the question
+ * is the beat's first story line and the affordance its call-to-action, with
+ * the same trailing-period trim WakeScreen applies (uppercase is texture-only
+ * styling). Editing content/journeyData.ts re-paints this texture and the DOM
+ * twin together.
+ */
+const journeyWakeBeat = journeyBeats[0];
+const JOURNEY_TITLE = journeyWakeBeat.story[0];
+const JOURNEY_AFFORDANCE = (journeyWakeBeat.story[2] ?? 'Learn more.')
+  .replace(/\.$/, '')
+  .toUpperCase();
 /** Seconds per typed glyph; the whole question lands in about half a second. */
 const JOURNEY_TYPE_PACE = 0.045;
 /** Seconds the LEARN MORE affordance takes to fade up after the last glyph. */
@@ -2281,7 +2293,7 @@ function drawJourneyPrompt(context: SpacedContext, elapsed: number) {
     context.fillStyle = '#c4a55f';
     context.letterSpacing = '11px';
     context.font = `500 34px ${mono}`;
-    context.fillText('LEARN MORE', 128, 566);
+    context.fillText(JOURNEY_AFFORDANCE, 128, 566);
     /*
      * The arrow sits a measured gap after the label, not at a constant: at
      * this size and tracking the label's ink runs well past 400, so a fixed
@@ -2289,7 +2301,7 @@ function drawJourneyPrompt(context: SpacedContext, elapsed: number) {
      * trailing letterSpacing, so +26 lands the same visual gap the tablet's
      * OPEN affordance uses.
      */
-    const labelWidth = context.measureText('LEARN MORE').width;
+    const labelWidth = context.measureText(JOURNEY_AFFORDANCE).width;
     context.letterSpacing = '0px';
     context.font = `500 36px ${mono}`;
     context.fillText('→', 128 + labelWidth + 26, 567);

@@ -1,6 +1,9 @@
 'use client';
 
-import { resetJourney } from '../../journey/journeyStore.ts';
+import {
+  consumeJourneyFocus,
+  resetJourney,
+} from '../../journey/journeyStore.ts';
 import type { ConceptViewId } from '../conceptData';
 
 type Focus = {
@@ -34,6 +37,19 @@ export function setBenchPointer(x: number, y: number) {
 
   pointer.x = x;
   pointer.y = y;
+
+  /*
+   * While the journey overlay owns the viewport the scene is fully occluded,
+   * so a pointer-rate stream of invalidates would render hidden frames for
+   * the whole play session. The coords are still recorded above, so parallax
+   * resumes seamlessly on close; during the entry flight (open, not yet
+   * revealed) the frame loop is already self-invalidating, and the exit
+   * flight runs after `open` drops, so nothing visible loses liveness.
+   */
+  if (journey.open) {
+    return;
+  }
+
   requestBenchRender();
 }
 
@@ -379,6 +395,15 @@ export function openBenchJourney() {
    */
   resetJourney();
   /*
+   * Discard any focus flag a reset (or an earlier close) left pending: the
+   * overlay's mount deliberately focuses the dialog container, and a stale
+   * flag would instead auto-focus the wake hint, whose onFocus wakes the
+   * screen and skips the near-dark waking reveal. Not cleared inside
+   * resetJourney itself — the in-session "Start again" relies on the flag to
+   * move focus into the fresh wake screen.
+   */
+  consumeJourneyFocus();
+  /*
    * Rides the open's own notify. With a renderer attached the overlay waits
    * for the flight; without one there is nothing to fly and the overlay is
    * the whole experience, so it stands up on this same commit.
@@ -394,7 +419,13 @@ export function closeBenchJourney() {
 
   /* The overlay leaves first; the exit flight then plays in the clear. */
   journeyRevealed = false;
-  commitJourney({ ...journey, open: false });
+  /*
+   * Mirror of the open-side reveal shortcut: with no renderer attached there
+   * is no exit flight to wait for and releaseBenchJourney can never run, so
+   * `mounted` drops on this same commit — a wedged `mounted: true` would
+   * silently refuse the gallery and tag records for the rest of the page.
+   */
+  commitJourney({ open: false, mounted: renderInvalidator !== null });
 
   /*
    * A fresh overlay every time: the journey store is module-global and the
@@ -402,6 +433,13 @@ export function closeBenchJourney() {
    * resume mid-chapter instead of waking the near-dark screen.
    */
   resetJourney();
+  /*
+   * The reset's own status commit flags a focus swap, but the overlay
+   * unmounts in the same batch and nothing consumes it — left pending, the
+   * next open (or the standalone /journey route's next render) would steal
+   * focus and auto-wake the screen.
+   */
+  consumeJourneyFocus();
 }
 
 /** Renderer-only: drop the screen portal once its exit transit has landed. */

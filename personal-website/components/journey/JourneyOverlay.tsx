@@ -147,7 +147,7 @@ export function JourneyOverlay() {
       >
         Close <span aria-hidden="true">✕</span>
       </button>
-      <Journey />
+      <Journey onExit={closeBenchJourney} />
     </div>,
     document.body,
   );

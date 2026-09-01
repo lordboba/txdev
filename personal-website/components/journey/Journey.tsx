@@ -434,12 +434,22 @@ function StoryPanel({
   return (
     <aside
       aria-label="Chapter text"
-      aria-live="polite"
       className={styles.story}
       data-journey-story
       ref={swapFocusRef}
       tabIndex={0}
     >
+      {/*
+       * The live region is this one small summary, not the whole panel: a
+       * polite region wrapping the multi-paragraph body plus controls,
+       * ledger, and footer would queue full-chapter readouts on every rapid
+       * arrow-key page. The body itself is read on demand from the focused
+       * panel; only where the visitor landed is announced.
+       */}
+      <p aria-live="polite" className={styles.srAnnounce}>
+        Chapter {number} of {chapterTotal} &mdash; {beat.title},{' '}
+        {map?.placeLabel ?? beat.mapId}
+      </p>
       <div className={styles.storyControls}>
         <button
           aria-pressed={reading}
@@ -566,9 +576,11 @@ function IndexView({ progress }: { progress: JourneyProgress }) {
 
 function EndingView({
   keepsakes,
+  onExit,
   standalone,
 }: {
   keepsakes: string[];
+  onExit?: () => void;
   standalone: boolean;
 }) {
   const [pin, setPin] = useState<{ x: number; y: number } | null>(null);
@@ -612,11 +624,17 @@ function EndingView({
 
       <aside
         aria-label="Ending text"
-        aria-live="polite"
         className={styles.story}
         data-journey-story
         tabIndex={0}
       >
+        {/* Same narrow live region as the story panel: announce the arrival
+            and the pin, never the whole re-rendered body. */}
+        <p aria-live="polite" className={styles.srAnnounce}>
+          {pin
+            ? `Pin placed in the unprinted margin — ${finalBeat.title}`
+            : `No finish line — ${finalBeat.title}`}
+        </p>
         <div className={styles.storyBody}>
           <p className={styles.eyebrow}>
             {mapsById.get(finalBeat.mapId)?.placeLabel ?? 'Horizon'} &middot; No
@@ -658,7 +676,14 @@ function EndingView({
             ) : (
               <button
                 className={styles.nextAction}
-                onClick={() => escapeJourney()}
+                /*
+                 * The labelled exit really exits: the spec's final action is
+                 * "place one pin, then return to the Bench", so this closes
+                 * the overlay outright — the one-level escapeJourney unwind
+                 * stays reserved for the Escape key, which would otherwise
+                 * land the visitor back inside the final chapter.
+                 */
+                onClick={onExit ?? (() => escapeJourney())}
                 type="button"
               >
                 Return &rarr;
@@ -691,7 +716,14 @@ function ErrorView() {
   );
 }
 
-export function Journey({ standalone = false }: { standalone?: boolean }) {
+export function Journey({
+  onExit,
+  standalone = false,
+}: {
+  /** Embedded only: the ending's "Return" leaves the whole overlay. */
+  onExit?: () => void;
+  standalone?: boolean;
+}) {
   /* Idempotent module write: the final Escape closes only an embedded run. */
   setJourneyEmbedded(!standalone);
 
@@ -731,7 +763,11 @@ export function Journey({ standalone = false }: { standalone?: boolean }) {
         {state.status === 'index' ? <IndexView progress={progress} /> : null}
 
         {state.status === 'ending' ? (
-          <EndingView keepsakes={state.keepsakes} standalone={standalone} />
+          <EndingView
+            keepsakes={state.keepsakes}
+            onExit={onExit}
+            standalone={standalone}
+          />
         ) : null}
 
         {state.status === 'error' ? <ErrorView /> : null}

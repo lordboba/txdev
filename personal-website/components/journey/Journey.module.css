@@ -414,6 +414,20 @@
   background: var(--surface);
 }
 
+/*
+ * The panel's screen-reader-only live summary: visually hidden but still
+ * rendered, so a chapter change announces one line instead of the whole body.
+ */
+.srAnnounce {
+  position: absolute;
+  overflow: hidden;
+  clip-path: inset(50%);
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  white-space: nowrap;
+}
+
 /* The panel is focusable so overflowing copy scrolls by keyboard. */
 .story:focus-visible {
   outline: 2px solid var(--paper);
