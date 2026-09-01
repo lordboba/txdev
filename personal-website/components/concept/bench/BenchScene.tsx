@@ -938,7 +938,7 @@ const TAG_REST_ROLL = [-0.011, 0.007, -0.005, 0.013];
 const BADGE_FIELDS = [
   { label: 'Home', value: personalNotes[0] },
   { label: 'Study', value: personalNotes[1] },
-  { label: 'In rotation', value: personalNotes[3] },
+  { label: 'Location', value: personalNotes[3] },
 ];
 
 /* -------------------------------------------------------------------------- */
