@@ -30,10 +30,13 @@ import {
   clearBenchTagSelection,
   closeBenchGallery,
   closeBenchHistoryLightbox,
+  closeBenchJourney,
   openBenchGallery,
   openBenchHistoryLightbox,
+  openBenchJourney,
   readBenchGallery,
   readBenchHistory,
+  readBenchJourney,
   readBenchSignals,
   readBenchTags,
   setBenchGalleryPiece,
@@ -46,9 +49,11 @@ import {
   setBenchTagSelection,
   subscribeBenchGallery,
   subscribeBenchHistory,
+  subscribeBenchJourney,
   subscribeBenchSignals,
   subscribeBenchTags,
 } from './benchStore';
+import { JourneyOverlay } from '../../journey/JourneyOverlay';
 import { historyEras } from './historyEras';
 import styles from './Bench.module.css';
 
@@ -157,6 +162,23 @@ function useBenchSignals() {
     readBenchSignals,
   );
 }
+
+function useBenchJourney() {
+  return useSyncExternalStore(
+    subscribeBenchJourney,
+    readBenchJourney,
+    readBenchJourney,
+  );
+}
+
+/**
+ * The device whose screen hosts the journey. Found by title rather than
+ * hard-coded, because `featuredProjects` is sorted by bench order and the
+ * hover twin below has to light the same laptop the scene will focus.
+ */
+const personalEnvIndex = featuredProjects.findIndex(
+  (project) => project.title === 'Personal Env',
+);
 
 /**
  * The gallery's DOM half. Two jobs the canvas cannot do: give the hang a
@@ -366,6 +388,27 @@ function WorkDetails() {
           <span>
             {sideProjects.length} side projects{' '}
             <span aria-hidden="true">→</span>
+          </span>
+        </button>
+        {/*
+         * The Personal Env screen's DOM twin. The 3D screen portal arrives
+         * with the camera slice; this button is the keyboard-reachable half,
+         * and it lights the same laptop hover slot the raycast will.
+         */}
+        <button
+          aria-haspopup="dialog"
+          aria-label="Open Tyler’s journey — Personal Env"
+          className={styles.galleryCue}
+          onBlur={() => setBenchHover('work', -1)}
+          onClick={openBenchJourney}
+          onFocus={() => setBenchHover('work', personalEnvIndex)}
+          onPointerEnter={() => setBenchHover('work', personalEnvIndex)}
+          onPointerLeave={() => setBenchHover('work', -1)}
+          type="button"
+        >
+          <FieldLabel>On the laptop</FieldLabel>
+          <span>
+            Tyler’s journey <span aria-hidden="true">→</span>
           </span>
         </button>
         <div className={styles.signRail}>
@@ -860,12 +903,32 @@ type BenchProps = {
   visitorCount?: number | null;
 };
 
+/*
+ * The bench's unmount hook, as a module-stable ref callback (the eslint config
+ * bans useEffect; React 19 ref cleanups are the replacement). The journey
+ * channel is module-global and survives SPA navigation, so a Back/Forward or
+ * route change with the overlay up would otherwise auto-reopen it mid-run on
+ * the next visit. StrictMode-safe: the dev double-invoke runs the fake cleanup
+ * at mount time, when `journey.open` is still false and closeBenchJourney is a
+ * no-op; a real unmount with the overlay open resets both stores.
+ */
+function benchRootRef(element: HTMLElement | null) {
+  if (!element) {
+    return;
+  }
+
+  return () => {
+    closeBenchJourney();
+  };
+}
+
 export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
   const view = useConceptView(initialView);
   const gallery = useBenchGallery();
   const tags = useBenchTags();
   const signals = useBenchSignals();
   const history = useBenchHistory();
+  const journey = useBenchJourney();
   const mounted = useMounted();
   const webGLSupported = useWebGLSupport();
   const reducedMotion = usePrefersReducedMotion();
@@ -912,7 +975,13 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
   };
 
   return (
-    <main className={styles.shell} data-view={view}>
+    /* data-bench-root: the journey overlay's handle for making the page inert. */
+    <main
+      className={styles.shell}
+      data-bench-root
+      data-view={view}
+      ref={benchRootRef}
+    >
       <header
         className={styles.header}
         data-has-actions={actions ? 'true' : undefined}
@@ -1011,6 +1080,13 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
       {inEraRecord && history.lightbox ? (
         <EraLightbox selected={history.selected} />
       ) : null}
+      {/*
+       * Gated on `open`, not `mounted`: the overlay is DOM and leaves with the
+       * close (running its focus-restore cleanup); `mounted` is the renderer's
+       * later-falling flag for the 3D screen portal. Portalled to <body>, so
+       * the Canvas under it stays mounted and its invalidator stays live.
+       */}
+      {journey.open ? <JourneyOverlay /> : null}
 
       <footer className={styles.footer}>
         <span>My studio bench</span>

@@ -1,5 +1,6 @@
 'use client';
 
+import { resetJourney } from '../../journey/journeyStore.ts';
 import type { ConceptViewId } from '../conceptData';
 
 type Focus = {
@@ -263,8 +264,122 @@ export function clearBenchGalleryPiece() {
   commitGallery({ ...gallery, piece: -1 });
 }
 
+/* -------------------------------------------------------------------------- */
+/* Journey overlay                                                              */
+/* -------------------------------------------------------------------------- */
+
 /**
- * Escape unwinds one level at a time — focused piece, then the gallery, then
+ * The Personal Env screen's game, rendered as a DOM overlay over the scene.
+ * Same open/mounted split as the gallery: `open` is what the DOM overlay and
+ * the escape ladder read, and `mounted` is the later-falling flag the renderer
+ * owns, so the screen portal can still animate out after `open` drops. Nothing
+ * drops it yet — the scene's exit transit takes ownership with the camera
+ * slice, through `releaseBenchJourney`.
+ */
+export type BenchJourney = {
+  open: boolean;
+  mounted: boolean;
+};
+
+let journey: BenchJourney = { open: false, mounted: false };
+const journeyListeners = new Set<() => void>();
+
+function commitJourney(next: BenchJourney) {
+  if (journey.open === next.open && journey.mounted === next.mounted) {
+    return;
+  }
+
+  journey = next;
+  journeyListeners.forEach((listener) => listener());
+  requestBenchRender();
+}
+
+/**
+ * While the overlay is open the journey's own store answers Escape, and only
+ * the bench ladder decides when the overlay itself closes. The overlay
+ * registers its store's single-step unwind here; the delegate returns true
+ * once the journey has fully unwound to 'closed', which is the bench's cue to
+ * drop the overlay. One delegate rather than a listener list, for the same
+ * reason the ladder is one handler: two responders to a keystroke would have
+ * no defined order between them.
+ */
+let journeyEscapeDelegate: (() => boolean) | null = null;
+
+export function setBenchJourneyEscapeDelegate(
+  delegate: (() => boolean) | null,
+) {
+  journeyEscapeDelegate = delegate;
+}
+
+export function openBenchJourney() {
+  if (journey.open) {
+    return;
+  }
+
+  /*
+   * The overlay owns the whole viewport, so every camera-owning sub-view of
+   * `work` stands down — an open tag record or gallery would otherwise still
+   * hold the lens when the overlay lifts. The device selection is left alone
+   * on purpose: the coming journey camera shot keys off this channel directly
+   * (the gallery precedent), not off `focus`, so forcing the Personal Env
+   * selection here would only make the work lens lean fight that shot.
+   */
+  closeBenchGallery();
+  clearBenchTagSelection();
+  setBenchTagHover(-1);
+
+  /*
+   * Reset on open as well as on close: the journey store is module-global and
+   * also drives the standalone /journey route, so a visitor who played there
+   * and client-navigated here would otherwise get an overlay that opens
+   * mid-chapter — no overlay close ran to reset it. resetJourney bails on
+   * equality, so this is free when the state is already neutral.
+   */
+  resetJourney();
+  commitJourney({ open: true, mounted: true });
+}
+
+export function closeBenchJourney() {
+  if (!journey.open) {
+    return;
+  }
+
+  commitJourney({ ...journey, open: false });
+
+  /*
+   * A fresh overlay every time: the journey store is module-global and the
+   * Bench is mounted on two routes, so without this a reopened overlay would
+   * resume mid-chapter instead of waking the near-dark screen.
+   */
+  resetJourney();
+}
+
+/** Renderer-only: drop the screen portal once its exit transit has landed. */
+export function releaseBenchJourney() {
+  if (journey.open || !journey.mounted) {
+    return;
+  }
+
+  commitJourney({ ...journey, mounted: false });
+}
+
+export function readBenchJourney() {
+  return journey;
+}
+
+export function subscribeBenchJourney(listener: () => void) {
+  journeyListeners.add(listener);
+  retainEscape();
+
+  return () => {
+    journeyListeners.delete(listener);
+    releaseEscape();
+  };
+}
+
+/**
+ * Escape unwinds one level at a time — the journey overlay's own ladder while
+ * it is open, otherwise the focused piece, then the gallery, then
  * an open company-tag record, then an opened era capture, then the era record
  * behind it, then an open signal. It is bound here rather
  * than in a component so there is exactly one handler no matter how many
@@ -280,6 +395,21 @@ export function clearBenchGalleryPiece() {
  */
 function handleBenchEscape(event: KeyboardEvent) {
   if (event.key !== 'Escape') {
+    return;
+  }
+
+  /*
+   * First rung: the open journey overlay owns the key outright. Its store
+   * unwinds one level per press through the registered delegate, and only a
+   * delegate reporting the journey fully unwound — or no delegate at all, the
+   * overlay not yet mounted — lets the bench drop the overlay. Either way
+   * nothing behind the overlay may move on the same press.
+   */
+  if (journey.open) {
+    if (!journeyEscapeDelegate || journeyEscapeDelegate() === true) {
+      closeBenchJourney();
+    }
+
     return;
   }
 

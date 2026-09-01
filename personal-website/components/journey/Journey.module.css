@@ -852,3 +852,56 @@
   animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
 }
+
+/* -------------------------------------------------------------------------- */
+/* Bench overlay chrome                                                        */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Full-viewport host for the embedded journey. Under the site's grain film
+ * (z-index 999) so the page keeps one uniform texture; opaque so nothing —
+ * pointer or paint — reaches the bench behind it. The journey's own screen
+ * chrome fills the frame; this box only pins and scrolls it.
+ */
+.overlay {
+  position: fixed;
+  z-index: 990;
+  inset: 0;
+  overflow: auto;
+  background: #0f1113;
+  overscroll-behavior: contain;
+}
+
+.overlay:focus {
+  outline: none;
+}
+
+/*
+ * The overlay's always-present dismiss. Outside the .journey scope, so the
+ * colors are the same literal spec values the palette block documents. Fixed
+ * so it stays pinned while the overlay scrolls, and above the journey's own
+ * chrome (its deepest layer is z-index 4).
+ */
+.overlayClose {
+  position: fixed;
+  z-index: 5;
+  top: 14px;
+  right: 16px;
+  padding: 9px 14px;
+  border: 1px solid #4a5056;
+  border-radius: 2px;
+  background: rgba(15, 17, 19, 0.85);
+  color: #a6aaae;
+  cursor: pointer;
+  font-family:
+    var(--font-mono, 'IBM Plex Mono'), 'SFMono-Regular', Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.overlayClose:hover,
+.overlayClose:focus-visible {
+  border-color: #c4a55f;
+  color: #c4a55f;
+}

@@ -520,6 +520,16 @@ function handleJourneyKeydown(event: KeyboardEvent) {
   }
 
   if (event.key === 'Escape') {
+    /*
+     * Embedded, the Bench's window handler owns Escape: both stores bind
+     * window keydown, and exactly one may act per press. The bench ladder's
+     * first rung calls this store's unwind through its registered delegate,
+     * so acting here as well would unwind two levels per keystroke.
+     */
+    if (embedded) {
+      return;
+    }
+
     if (escapeJourney()) {
       event.preventDefault();
     }
