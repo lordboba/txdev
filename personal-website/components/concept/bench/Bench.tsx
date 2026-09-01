@@ -37,6 +37,7 @@ import {
   readBenchGallery,
   readBenchHistory,
   readBenchJourney,
+  readBenchJourneyRevealed,
   readBenchSignals,
   readBenchTags,
   setBenchGalleryPiece,
@@ -168,6 +169,19 @@ function useBenchJourney() {
     subscribeBenchJourney,
     readBenchJourney,
     readBenchJourney,
+  );
+}
+
+/*
+ * The reveal rides the same listener set as the journey channel, so one
+ * subscription covers both snapshots and the two can never disagree for a
+ * render.
+ */
+function useBenchJourneyRevealed() {
+  return useSyncExternalStore(
+    subscribeBenchJourney,
+    readBenchJourneyRevealed,
+    readBenchJourneyRevealed,
   );
 }
 
@@ -929,6 +943,7 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
   const signals = useBenchSignals();
   const history = useBenchHistory();
   const journey = useBenchJourney();
+  const journeyRevealed = useBenchJourneyRevealed();
   const mounted = useMounted();
   const webGLSupported = useWebGLSupport();
   const reducedMotion = usePrefersReducedMotion();
@@ -1085,8 +1100,12 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
        * close (running its focus-restore cleanup); `mounted` is the renderer's
        * later-falling flag for the 3D screen portal. Portalled to <body>, so
        * the Canvas under it stays mounted and its invalidator stays live.
+       *
+       * `revealed` is the second gate: with a Canvas up, the open flies the
+       * camera into the laptop screen first and the scene promotes the reveal
+       * when that transit lands. With no Canvas the open granted it already.
        */}
-      {journey.open ? <JourneyOverlay /> : null}
+      {journey.open && journeyRevealed ? <JourneyOverlay /> : null}
 
       <footer className={styles.footer}>
         <span>My studio bench</span>

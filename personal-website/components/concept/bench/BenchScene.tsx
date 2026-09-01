@@ -40,17 +40,23 @@ import {
   clearBenchSignalSelection,
   clearBenchTagSelection,
   closeBenchGallery,
+  closeBenchJourney,
   openBenchGallery,
+  openBenchJourney,
   readBenchFocus,
   readBenchGallery,
   markBenchHistoryLive,
   readBenchHistory,
+  readBenchJourney,
+  readBenchJourneyRevealed,
   readBenchPointer,
   readBenchSettled,
   readBenchSignals,
   readBenchTags,
   releaseBenchGallery,
+  releaseBenchJourney,
   resetBenchSettlement,
+  revealBenchJourney,
   setBenchGalleryPiece,
   setBenchHistorySelection,
   setBenchHover,
@@ -602,6 +608,15 @@ const PROJECT_WORK: Transform[] = [
   { position: [2.0, 0, -1.82], rotation: [0, -0.3, 0], scale: 0.66 },
   { position: [2.46, 0, 0.86], rotation: [0, -0.5, 0], scale: 0.57 },
 ];
+
+/**
+ * The laptop whose screen hosts the journey portal. Found by title rather
+ * than hard-coded, the same lookup the DOM twin in Bench.tsx does, so the two
+ * surfaces can never disagree about which device is the door.
+ */
+const PERSONAL_ENV_INDEX = featuredProjects.findIndex(
+  (project) => project.title === 'Personal Env',
+);
 
 /**
  * Profile: the badge is the whole shot. The profile camera now sits 6 units off
@@ -2128,6 +2143,237 @@ function getTabletScreenTexture() {
   texture.needsUpdate = true;
   tabletScreenTexture = texture;
   return texture;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Personal Env journey screen                                                  */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The Personal Env laptop's display, repurposed as the journey portal — the
+ * one screen on the bench that is an invitation rather than a capture. Drawn
+ * the same way the tablet UI is drawn (a 2D-canvas CanvasTexture through the
+ * same Screen shader, so sheen and vignette stay consistent), in the journey's
+ * own palette: a near-black #0F1113 field with a quiet power glow while it
+ * attracts, and the typed question plus one mono affordance once it wakes.
+ *
+ * Both states are static drawings. The only animation is the wake's one-time
+ * type-in, driven by the frame loop redrawing a handful of frames with a hard
+ * end — nothing here ever asks for a continuous loop, which is what keeps the
+ * demand-rendered bench idle while the screen merely glows.
+ */
+/* 400 canvas px per world unit of the 3.24 x 2.03 display, so the cover fit
+   in `Screen` resolves to exactly repeat 1 / offset 0 and no glyph is cropped. */
+const JOURNEY_SCREEN_W = 1296;
+const JOURNEY_SCREEN_H = 812;
+
+const JOURNEY_TITLE = 'Tyler Xiao?';
+/** Seconds per typed glyph; the whole question lands in about half a second. */
+const JOURNEY_TYPE_PACE = 0.045;
+/** Seconds the LEARN MORE affordance takes to fade up after the last glyph. */
+const JOURNEY_AFFORDANCE_RAMP = 0.22;
+const JOURNEY_WAKE_TOTAL =
+  JOURNEY_TITLE.length * JOURNEY_TYPE_PACE + JOURNEY_AFFORDANCE_RAMP;
+
+type JourneyScreen = {
+  texture: THREE.CanvasTexture;
+  context: SpacedContext | null;
+  awake: boolean;
+  /** Seconds into the wake animation; pinned to the total when done. */
+  elapsed: number;
+  /** A state change happened off-frame; the next tick must repaint once. */
+  dirty: boolean;
+};
+
+let journeyScreen: JourneyScreen | null = null;
+
+/**
+ * The loaded page fonts, resolved for a canvas font string. next/font serves
+ * Cormorant Garamond and IBM Plex Mono under mangled family names published
+ * only through CSS variables on <html>, so the variable's computed value *is*
+ * the real loaded family list; the fallback covers SSR and a variable that
+ * has not landed yet.
+ */
+function journeyFontStack(cssVariable: string, fallback: string) {
+  if (typeof document === 'undefined') {
+    return fallback;
+  }
+
+  const family = getComputedStyle(document.documentElement)
+    .getPropertyValue(cssVariable)
+    .trim();
+  return family ? `${family}, ${fallback}` : fallback;
+}
+
+/** The near-dark field both states share: #0F1113 with a faint panel lift. */
+function drawJourneyField(context: SpacedContext, lift: number) {
+  context.fillStyle = '#0f1113';
+  context.fillRect(0, 0, JOURNEY_SCREEN_W, JOURNEY_SCREEN_H);
+
+  const glow = context.createRadialGradient(
+    JOURNEY_SCREEN_W / 2,
+    JOURNEY_SCREEN_H * 0.46,
+    60,
+    JOURNEY_SCREEN_W / 2,
+    JOURNEY_SCREEN_H * 0.46,
+    640,
+  );
+  glow.addColorStop(0, `rgba(62,70,78,${lift})`);
+  glow.addColorStop(1, 'rgba(62,70,78,0)');
+  context.fillStyle = glow;
+  context.fillRect(0, 0, JOURNEY_SCREEN_W, JOURNEY_SCREEN_H);
+}
+
+/** Attract: a sleeping panel that still reads powered — glow and one LED. */
+function drawJourneyAttract(context: SpacedContext) {
+  drawJourneyField(context, 0.09);
+
+  const ledX = JOURNEY_SCREEN_W / 2;
+  const ledY = JOURNEY_SCREEN_H - 64;
+  const halo = context.createRadialGradient(ledX, ledY, 0, ledX, ledY, 48);
+  halo.addColorStop(0, 'rgba(196,165,95,0.45)');
+  halo.addColorStop(0.3, 'rgba(196,165,95,0.14)');
+  halo.addColorStop(1, 'rgba(196,165,95,0)');
+  context.fillStyle = halo;
+  context.fillRect(ledX - 48, ledY - 48, 96, 96);
+
+  context.fillStyle = '#c4a55f';
+  context.beginPath();
+  context.arc(ledX, ledY, 5, 0, Math.PI * 2);
+  context.fill();
+}
+
+/** Woken: the typed question, then the one mono affordance fading up. */
+function drawJourneyPrompt(context: SpacedContext, elapsed: number) {
+  const typed = Math.min(
+    JOURNEY_TITLE.length,
+    Math.floor(elapsed / JOURNEY_TYPE_PACE),
+  );
+  const affordance = Math.max(
+    0,
+    Math.min(
+      1,
+      (elapsed - JOURNEY_TITLE.length * JOURNEY_TYPE_PACE) /
+        JOURNEY_AFFORDANCE_RAMP,
+    ),
+  );
+
+  drawJourneyField(context, 0.14);
+  context.textBaseline = 'alphabetic';
+
+  const shown = JOURNEY_TITLE.slice(0, typed);
+  context.letterSpacing = '0px';
+  context.fillStyle = '#e3e5e7';
+  context.font = `500 150px ${journeyFontStack('--font-display', 'Georgia, serif')}`;
+  context.fillText(shown, 128, 400);
+
+  /* The typing caret, only while glyphs are still arriving. */
+  if (typed < JOURNEY_TITLE.length) {
+    context.fillStyle = 'rgba(227,229,231,0.7)';
+    context.fillRect(140 + context.measureText(shown).width, 292, 6, 120);
+  }
+
+  if (affordance > 0) {
+    const mono = journeyFontStack('--font-mono', 'monospace');
+    context.globalAlpha = affordance;
+    context.fillStyle = '#30353a';
+    context.fillRect(128, 470, 320, 2);
+    context.fillStyle = '#c4a55f';
+    context.letterSpacing = '11px';
+    context.font = `500 34px ${mono}`;
+    context.fillText('LEARN MORE', 128, 566);
+    /*
+     * The arrow sits a measured gap after the label, not at a constant: at
+     * this size and tracking the label's ink runs well past 400, so a fixed
+     * x would paint the arrow into its last glyphs. measureText includes the
+     * trailing letterSpacing, so +26 lands the same visual gap the tablet's
+     * OPEN affordance uses.
+     */
+    const labelWidth = context.measureText('LEARN MORE').width;
+    context.letterSpacing = '0px';
+    context.font = `500 36px ${mono}`;
+    context.fillText('→', 128 + labelWidth + 26, 567);
+    context.globalAlpha = 1;
+  }
+}
+
+/** The singleton portal texture, created asleep. */
+function getJourneyScreenTexture() {
+  if (journeyScreen) {
+    return journeyScreen.texture;
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = JOURNEY_SCREEN_W;
+  canvas.height = JOURNEY_SCREEN_H;
+  const context = canvas.getContext('2d') as SpacedContext | null;
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
+
+  if (context) {
+    drawJourneyAttract(context);
+  }
+
+  texture.needsUpdate = true;
+  journeyScreen = {
+    texture,
+    context,
+    awake: false,
+    elapsed: 0,
+    dirty: false,
+  };
+  return texture;
+}
+
+/**
+ * Frame-loop only. Waking starts the type-in from zero (or, under reduced
+ * motion, pins it straight to the finished frame); sleeping falls back to the
+ * attract drawing in one repaint. Equal states bail so the per-frame call is
+ * free.
+ */
+function setJourneyScreenAwake(awake: boolean, instant: boolean) {
+  if (!journeyScreen || journeyScreen.awake === awake) {
+    return;
+  }
+
+  journeyScreen.awake = awake;
+  journeyScreen.elapsed = awake && !instant ? 0 : JOURNEY_WAKE_TOTAL;
+  journeyScreen.dirty = true;
+}
+
+/**
+ * Advance and repaint if there is anything to paint. Returns true when it drew
+ * this frame — the caller's cue to re-upload the rendered clone and keep the
+ * demand loop alive for one more frame. Returns false at rest, which is the
+ * hard end: a settled bench never repaints this canvas.
+ */
+function tickJourneyScreen(delta: number) {
+  const screen = journeyScreen;
+
+  if (!screen || !screen.context) {
+    return false;
+  }
+
+  const animating = screen.awake && screen.elapsed < JOURNEY_WAKE_TOTAL;
+
+  if (!screen.dirty && !animating) {
+    return false;
+  }
+
+  if (animating) {
+    screen.elapsed = Math.min(screen.elapsed + delta, JOURNEY_WAKE_TOTAL);
+  }
+
+  if (screen.awake) {
+    drawJourneyPrompt(screen.context, screen.elapsed);
+  } else {
+    drawJourneyAttract(screen.context);
+  }
+
+  screen.dirty = false;
+  screen.texture.needsUpdate = true;
+  return true;
 }
 
 /**
@@ -4812,17 +5058,69 @@ function KeyGrid() {
   );
 }
 
+/**
+ * The journey portal's own hit target: one invisible plane standing just proud
+ * of the Personal Env glass, sized to the display. A separate surface rather
+ * than a handler on the Screen because the click contract differs from the
+ * chassis around it — the body still toggles the device selection through the
+ * group's own onClick, while a press on the *display* opens the journey, and
+ * stopPropagation on this nearer plane is what keeps the two apart.
+ *
+ * colorWrite off is the whole disguise: the mesh raycasts like any other (a
+ * material's pixels have no say in three's raycaster) but writes neither
+ * colour nor depth, so it costs a no-op draw call and changes no image.
+ *
+ * Hover deliberately has no store call here — entering this plane is entering
+ * the device group's subtree, so the group's own onPointerEnter already
+ * lights the work hover slot, and the frame loop derives the screen wake from
+ * that same slot. The cursor is the one thing the group does not manage; it
+ * is set on the canvas the event itself arrived through, which sidesteps
+ * mutating anything a hook handed out.
+ */
+function setJourneyCursor(event: { nativeEvent: Event }, cursor: string) {
+  const canvas = event.nativeEvent.target;
+
+  if (canvas instanceof HTMLElement) {
+    canvas.style.cursor = cursor;
+  }
+}
+
+function JourneyScreenHitPlane() {
+  return (
+    <mesh
+      onClick={(event) => {
+        event.stopPropagation();
+        setJourneyCursor(event, '');
+        openBenchJourney();
+      }}
+      onPointerEnter={(event) => {
+        setJourneyCursor(event, 'pointer');
+      }}
+      onPointerLeave={(event) => {
+        setJourneyCursor(event, '');
+      }}
+      position={[0, 1.07, 0.045]}
+    >
+      <planeGeometry args={[3.24, 2.03]} />
+      <meshBasicMaterial colorWrite={false} depthWrite={false} />
+    </mesh>
+  );
+}
+
 function Laptop({
   texture,
   seed,
   gain,
   crop,
+  journey = false,
   materialRef,
 }: {
   texture: THREE.Texture;
   seed: number;
   gain: number;
   crop?: SourceRect;
+  /** True only for the Personal Env laptop, whose display is the portal. */
+  journey?: boolean;
   materialRef: (node: THREE.ShaderMaterial | null) => void;
 }) {
   const bezel = useMemo(
@@ -5169,6 +5467,7 @@ function Laptop({
             radius={0.012}
             width={3.24}
           />
+          {journey ? <JourneyScreenHitPlane /> : null}
           <mesh position={[0, 2.108, 0.0335]}>
             <circleGeometry args={[0.016, 14]} />
             <meshStandardMaterial
@@ -5230,6 +5529,7 @@ function ProjectDevice({
         <Laptop
           crop={crop}
           gain={gain}
+          journey={index === PERSONAL_ENV_INDEX}
           materialRef={materialRef}
           seed={seed}
           texture={texture}
@@ -7257,6 +7557,52 @@ const GroundShadows = memo(function GroundShadows({
   );
 });
 
+/**
+ * Where the journey lens flies: the Personal Env display's centre and outward
+ * normal in world space, derived from the same numbers the Laptop is built
+ * from rather than eyeballed — the screen plane at [0, 1.07, 0.029] inside a
+ * lid canted LID_ANGLE about the hinge at [0, 0.09, -1.09], lifted 0.022 by
+ * the feet, then seated by PROJECT_WORK. If the laptop is ever restaged the
+ * shot moves with it.
+ */
+const JOURNEY_SCREEN_SEAT = (() => {
+  /*
+   * A content edit that renames the project must degrade, not crash: with
+   * PERSONAL_ENV_INDEX at -1 the portal wiring already stands down (no hit
+   * plane, no texture swap, no wake), so this seat only has to be a valid
+   * transform for a stray journey open to fly at. Reading PROJECT_WORK[-1]
+   * here would instead throw at module evaluation and white-screen every
+   * page that imports this file — Bench.tsx does the same lookup and only
+   * degrades, and this must match it.
+   */
+  if (PERSONAL_ENV_INDEX < 0) {
+    console.error(
+      "Journey portal disabled: no 'Personal Env' project in featuredProjects",
+    );
+  }
+
+  const seat = PROJECT_WORK[PERSONAL_ENV_INDEX] ?? PROJECT_WORK[0];
+  const lid = new THREE.Euler(LID_ANGLE, 0, 0);
+  const yaw = new THREE.Euler(0, seat.rotation[1], 0);
+  const centre = new THREE.Vector3(0, 1.07, 0.029)
+    .applyEuler(lid)
+    .add(new THREE.Vector3(0, 0.09 + 0.022, -1.09))
+    .multiplyScalar(seat.scale)
+    .applyEuler(yaw)
+    .add(new THREE.Vector3(...seat.position));
+  const normal = new THREE.Vector3(0, 0, 1).applyEuler(lid).applyEuler(yaw);
+  return { centre, normal };
+})();
+
+/**
+ * Stand-off along the display's own normal. At fov 30 the frame is 0.965
+ * world units half-tall here, so the 0.69 half-tall display fills ~72% of the
+ * viewport height — well inside the work lean, without the bezel touching a
+ * frame edge on any sensible aspect.
+ */
+const JOURNEY_FOCUS_DISTANCE = 3.6;
+const JOURNEY_FOCUS_FOV = 30;
+
 function Scene({
   initialView,
   reducedMotion,
@@ -7281,6 +7627,8 @@ function Scene({
   const projectTextures = useConfiguredTextures(
     featuredProjects.map((project) => project.image),
   );
+  /* The journey portal's canvas — a module singleton, like the tablet's UI. */
+  const journeyScreenTexture = useMemo(() => getJourneyScreenTexture(), []);
   const projects = useRef<(THREE.Group | null)[]>([]);
   const projectMaterials = useRef<(THREE.ShaderMaterial | null)[]>([]);
   const blanks = useRef<(THREE.Group | null)[]>([]);
@@ -7341,7 +7689,19 @@ function Scene({
       clearBenchSignalSelection();
     }
 
+    /*
+     * And once more for the journey: its portal is the Personal Env laptop,
+     * which only stands on the bench inside `work` — every other view parks
+     * the device at HIDDEN, and an overlay opened over an empty seat would
+     * strand the lens mid-bench with nothing to frame.
+     */
+    const journeyState = readBenchJourney();
+    if (view !== 'work' && journeyState.open) {
+      closeBenchJourney();
+    }
+
     const inGallery = view === 'work' && galleryState.open;
+    const inJourney = view === 'work' && journeyState.open;
     const workFocus = readBenchFocus('work');
     /*
      * Mobile never opens a tag: the rack is not mounted there at all (four
@@ -7385,8 +7745,16 @@ function Scene({
         /* The hang is the whole shot; the bench clears for it. */
         target = HIDDEN;
       } else if (view === 'work') {
+        /*
+         * The journey shot is computed from the laptop's *seated* pose, so
+         * while the portal is engaged the hover/selection lift stands down for
+         * that one device — otherwise the pointer resting on the hit plane
+         * during the fly-in would raise the screen 0.28 out of a frame that
+         * was measured for it.
+         */
         const active =
-          workFocus.hovered === index || workFocus.selected === index;
+          (workFocus.hovered === index || workFocus.selected === index) &&
+          !(index === PERSONAL_ENV_INDEX && journeyState.mounted);
         const base = PROJECT_WORK[index];
         target = {
           position: [
@@ -7428,6 +7796,34 @@ function Scene({
         motion = Math.max(motion, Math.abs(blur - blurTarget));
       }
     });
+
+    /*
+     * The journey portal's wake. Hovering or selecting the Personal Env
+     * laptop — by raycast or by its DOM twin, both of which light the same
+     * work hover slot — wakes the near-dark screen, and an engaged journey
+     * holds it awake for the whole flight and exit. The tick repaints only
+     * while the short type-in runs (or a state flip left one frame dirty);
+     * `Screen` renders a cover-fit *clone* of the canvas texture, so the
+     * repaint has to re-upload that clone, not just the original.
+     */
+    setJourneyScreenAwake(
+      journeyState.mounted ||
+        (view === 'work' &&
+          PERSONAL_ENV_INDEX >= 0 &&
+          (workFocus.hovered === PERSONAL_ENV_INDEX ||
+            workFocus.selected === PERSONAL_ENV_INDEX)),
+      reducedMotion,
+    );
+    if (tickJourneyScreen(delta)) {
+      const journeyMaterial = projectMaterials.current[PERSONAL_ENV_INDEX];
+      const rendered = journeyMaterial?.uniforms.uTexture.value as
+        | THREE.Texture
+        | undefined;
+      if (rendered) {
+        rendered.needsUpdate = true;
+      }
+      motion = 1;
+    }
 
     blanks.current.forEach((blank, index) => {
       if (!blank) {
@@ -7843,11 +8239,46 @@ function Scene({
         })()
       : null;
 
-    const shot = inGallery
-      ? galleryShot
-      : (tagShot ?? signalShot ?? shots[view]);
+    /*
+     * The journey is the fifth sub-shot, and the one that outranks the rest:
+     * the overlay it precedes owns the whole viewport, so nothing else may
+     * hold the lens while it is open (openBenchJourney already stood the
+     * gallery and tag record down; this ordering is the camera-side half of
+     * that exclusion). The lens flies out along the display's own normal, so
+     * it arrives square to the panel with the screen filling most of the
+     * frame — a closer setup than the work lean on purpose: this shot is the
+     * handoff into a DOM surface drawn at the same framing.
+     *
+     * No parallax term — targetY zeroes it below while this shot holds the
+     * lens: the DOM overlay mounts the moment this shot lands, and a
+     * pointer-fed offset would hand it a frame composed off the measured
+     * one. Just as important, pointer moves are tracked on `window`, so with
+     * a parallax term the opaque overlay would keep re-damping the hidden
+     * scene toward a moving target on every mouse move — a constant target
+     * is what lets the demand loop actually go idle underneath it.
+     */
+    const journeyShot: CameraShot | null = inJourney
+      ? {
+          position: [
+            JOURNEY_SCREEN_SEAT.centre.x +
+              JOURNEY_SCREEN_SEAT.normal.x * JOURNEY_FOCUS_DISTANCE,
+            JOURNEY_SCREEN_SEAT.centre.y +
+              JOURNEY_SCREEN_SEAT.normal.y * JOURNEY_FOCUS_DISTANCE,
+            JOURNEY_SCREEN_SEAT.centre.z +
+              JOURNEY_SCREEN_SEAT.normal.z * JOURNEY_FOCUS_DISTANCE,
+          ],
+          look: JOURNEY_SCREEN_SEAT.centre.y,
+          lookZ: JOURNEY_SCREEN_SEAT.centre.z,
+          fov: JOURNEY_FOCUS_FOV,
+          roll: 0,
+        }
+      : null;
+
+    const shot =
+      journeyShot ??
+      (inGallery ? galleryShot : (tagShot ?? signalShot ?? shots[view]));
     const targetX = shot.position[0] + (inGallery ? parallaxX * 0.4 : 0);
-    const targetY = shot.position[1] - parallaxY;
+    const targetY = shot.position[1] - (journeyShot ? 0 : parallaxY);
     const targetZ = shot.position[2];
 
     /*
@@ -7856,13 +8287,15 @@ function Scene({
      * than sliding down a straight line. Departure is fast, arrival is slow.
      */
     const move = transit.current;
-    const shotKey = inGallery
-      ? `gallery:${galleryState.piece >= 0 ? 'piece' : 'hang'}`
-      : focusedTag >= 0
-        ? `tag:${focusedTag}`
-        : focusedSignal >= 0
-          ? `signal:${focusedSignal}`
-          : view;
+    const shotKey = inJourney
+      ? 'journey'
+      : inGallery
+        ? `gallery:${galleryState.piece >= 0 ? 'piece' : 'hang'}`
+        : focusedTag >= 0
+          ? `tag:${focusedTag}`
+          : focusedSignal >= 0
+            ? `signal:${focusedSignal}`
+            : view;
 
     if (move.view !== shotKey) {
       if (move.view === null || reducedMotion) {
@@ -7919,23 +8352,25 @@ function Scene({
      * the four-device silhouette into the right 60% of the frame and left a
      * dead third under the intro plate.
      */
-    const lookX = inGallery
-      ? galleryState.piece >= 0
-        ? GALLERY_FOCUS.position[0] * 0.45
-        : 0
-      : tagSeat
-        ? tagSeat.x
-        : signalCentre
-          ? signalCentre.x
-          : view === 'history'
-            ? 0
-            : view === 'profile'
-              ? mobile
-                ? 0.15
-                : 0.34
-              : view === 'work'
-                ? (selectedProject?.position[0] ?? workCenterX)
-                : 0;
+    const lookX = journeyShot
+      ? JOURNEY_SCREEN_SEAT.centre.x
+      : inGallery
+        ? galleryState.piece >= 0
+          ? GALLERY_FOCUS.position[0] * 0.45
+          : 0
+        : tagSeat
+          ? tagSeat.x
+          : signalCentre
+            ? signalCentre.x
+            : view === 'history'
+              ? 0
+              : view === 'profile'
+                ? mobile
+                  ? 0.15
+                  : 0.34
+                : view === 'work'
+                  ? (selectedProject?.position[0] ?? workCenterX)
+                  : 0;
     cameraLook.current.x = damp(cameraLook.current.x, lookX, lambda, delta);
     cameraLook.current.y = damp(cameraLook.current.y, shot.look, lambda, delta);
     cameraLook.current.z = damp(
@@ -7984,6 +8419,30 @@ function Scene({
      */
     if (!galleryState.open && galleryState.mounted && move.t >= 1) {
       releaseBenchGallery();
+    }
+
+    /*
+     * The journey's two handoffs, both gated on the same transit flag for the
+     * same reason as the gallery release above.
+     *
+     * Entry: the DOM overlay stands up only once the flight into the screen
+     * has landed — under reduced motion the transit cuts (`move.t` starts at
+     * 1), so the overlay opens on the first frame, which is the no-flight
+     * path the contract asks for. Exit: `open` fell first and the overlay is
+     * already gone, the lens flies back to the work shot in the clear, and
+     * only a landed transit lets the renderer drop `mounted`.
+     */
+    if (
+      inJourney &&
+      move.view === 'journey' &&
+      move.t >= 1 &&
+      !readBenchJourneyRevealed()
+    ) {
+      revealBenchJourney();
+    }
+
+    if (!journeyState.open && journeyState.mounted && move.t >= 1) {
+      releaseBenchJourney();
     }
   });
 
@@ -8109,7 +8568,17 @@ function Scene({
             projectMaterials.current[index] = node;
           }}
           project={project}
-          texture={projectTextures[index]}
+          /*
+           * The Personal Env display carries the journey portal, not its
+           * project capture — the spec's recorded decision. Same Screen
+           * shader path, so its sheen, vignette and blur match the other
+           * three; only the pixels differ.
+           */
+          texture={
+            index === PERSONAL_ENV_INDEX
+              ? journeyScreenTexture
+              : projectTextures[index]
+          }
         />
       ))}
 
@@ -8176,6 +8645,16 @@ function Scene({
  * for exactly this purpose.
  */
 function handlePointerMissed() {
+  /*
+   * While the journey is engaged the overlay owns the viewport and its opaque
+   * ground swallows every pointer event anyway — but during the entry and
+   * exit flights the canvas is still exposed, and a stray click on empty
+   * bench must not unwind selections underneath a sequence already in motion.
+   */
+  if (readBenchJourney().open || readBenchJourney().mounted) {
+    return;
+  }
+
   const gallery = readBenchGallery();
 
   if (gallery.open) {

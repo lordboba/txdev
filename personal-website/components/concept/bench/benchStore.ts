@@ -223,6 +223,20 @@ export function openBenchGallery() {
     return;
   }
 
+  /*
+   * The journey's camera exclusion, mirrored: openBenchJourney stands the
+   * gallery down, and an engaged journey (open, or still flying out while
+   * `mounted`) must refuse the gallery right back. During the ~1s entry or
+   * exit flight the canvas is still exposed and the tablet — and its DOM
+   * twin — is still clickable; a gallery opened under the overlay would
+   * wedge benchSettled false and hand the exit flight the gallery shot
+   * instead of the bench. Guarded here rather than at the 3D handler so the
+   * DOM twins hit the same wall.
+   */
+  if (journey.open || journey.mounted) {
+    return;
+  }
+
   /* The hang is the whole shot; a tag record cannot stay open behind it. */
   clearBenchTagSelection();
   setBenchTagHover(-1);
@@ -311,6 +325,34 @@ export function setBenchJourneyEscapeDelegate(
   journeyEscapeDelegate = delegate;
 }
 
+/**
+ * Whether the DOM overlay may actually stand up. `open` is the intent — set by
+ * the gesture, read by the escape ladder — and the overlay itself waits for
+ * this later flag so the camera's flight to the laptop screen plays in the
+ * clear rather than under an opaque sheet. The renderer promotes it when the
+ * journey transit lands; with no Canvas attached (no WebGL, or the scene not
+ * mounted) there is no flight to wait for and the open itself grants it.
+ *
+ * Not a field of `BenchJourney`: the reveal only ever changes inside an open
+ * or close that already notifies, or through `revealBenchJourney`, which
+ * notifies the same listener set itself.
+ */
+let journeyRevealed = false;
+
+export function readBenchJourneyRevealed() {
+  return journeyRevealed;
+}
+
+/** Renderer-only: stand the overlay up once the entry flight has landed. */
+export function revealBenchJourney() {
+  if (!journey.open || journeyRevealed) {
+    return;
+  }
+
+  journeyRevealed = true;
+  journeyListeners.forEach((listener) => listener());
+}
+
 export function openBenchJourney() {
   if (journey.open) {
     return;
@@ -336,6 +378,12 @@ export function openBenchJourney() {
    * equality, so this is free when the state is already neutral.
    */
   resetJourney();
+  /*
+   * Rides the open's own notify. With a renderer attached the overlay waits
+   * for the flight; without one there is nothing to fly and the overlay is
+   * the whole experience, so it stands up on this same commit.
+   */
+  journeyRevealed = renderInvalidator === null;
   commitJourney({ open: true, mounted: true });
 }
 
@@ -344,6 +392,8 @@ export function closeBenchJourney() {
     return;
   }
 
+  /* The overlay leaves first; the exit flight then plays in the clear. */
+  journeyRevealed = false;
   commitJourney({ ...journey, open: false });
 
   /*
@@ -523,6 +573,11 @@ export function setBenchTagHover(index: number) {
 
 export function setBenchTagSelection(index: number) {
   if (gallery.open) {
+    return;
+  }
+
+  /* Same wall as the gallery: an engaged journey owns the lens outright. */
+  if (journey.open || journey.mounted) {
     return;
   }
 
