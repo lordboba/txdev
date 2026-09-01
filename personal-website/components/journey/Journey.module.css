@@ -1,0 +1,854 @@
+/*
+ * The journey screen is deliberately dark in both themes — it is the inside of
+ * a machine, not a page of the site — so the palette is self-contained literal
+ * spec values and consumes zero global theme tokens.
+ *
+ * Graphite and signal amber, per the workshop mockup:
+ * screen #0F1113 · surface #171A1D · rules #30353A / #4A5056 ·
+ * type #E3E5E7 / #A6AAAE / #858B90 · accent #C4A55F.
+ */
+
+.journey {
+  --screen: #0f1113;
+  --surface: #171a1d;
+  --surface-raised: #1d2023;
+  --rule: #30353a;
+  --rule-strong: #4a5056;
+  --paper: #e3e5e7;
+  --muted: #a6aaae;
+  --faint: #858b90;
+  --amber: #c4a55f;
+  --amber-soft: rgba(196, 165, 95, 0.13);
+  --mono:
+    var(--font-mono, 'IBM Plex Mono'), 'SFMono-Regular', Consolas, monospace;
+  --serif:
+    var(--font-display, 'Cormorant Garamond'), 'Iowan Old Style', Georgia, serif;
+
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--screen);
+  color: var(--paper);
+  color-scheme: dark;
+  font-family: 'Helvetica Neue', Helvetica, var(--font-sans, Arial), sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.journey button {
+  font: inherit;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Standalone chrome                                                           */
+/* -------------------------------------------------------------------------- */
+
+.rail {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 52px;
+  padding: 0 22px;
+  border-bottom: 1px solid var(--rule);
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.railLink {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.railLink:hover,
+.railLink:focus-visible {
+  color: var(--paper);
+}
+
+.railTitle {
+  color: var(--paper);
+}
+
+.stage {
+  display: grid;
+  flex: 1;
+  min-height: 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Wake screen                                                                 */
+/* -------------------------------------------------------------------------- */
+
+.wake {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+  background: radial-gradient(
+    ellipse 62% 48% at 50% 54%,
+    var(--amber-soft),
+    transparent 72%
+  );
+  text-align: center;
+}
+
+.wakeEyebrow {
+  margin: 0;
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.wakeQuestion {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(52px, 9vw, 108px);
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+  transition: opacity 700ms ease;
+}
+
+.wake[data-phase='waking'] .wakeQuestion {
+  opacity: 0.34;
+}
+
+.wakeLine {
+  max-width: 34em;
+  margin: 0;
+  color: var(--muted);
+  font-size: clamp(16px, 2vw, 19px);
+}
+
+.wakeActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 14px;
+}
+
+.wakeHint {
+  padding: 12px 18px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--faint);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.wakeHint:hover,
+.wakeHint:focus-visible {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+.primaryAction {
+  padding: 13px 22px;
+  border: 1px solid var(--amber);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--amber);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.primaryAction:hover,
+.primaryAction:focus-visible {
+  background: var(--amber-soft);
+}
+
+.ghostAction {
+  padding: 13px 22px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ghostAction:hover,
+.ghostAction:focus-visible {
+  border-color: var(--muted);
+  color: var(--paper);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Chapter: map + story record                                                 */
+/* -------------------------------------------------------------------------- */
+
+.chapter,
+.ending {
+  display: grid;
+  grid-template-columns: minmax(0, 68fr) minmax(310px, 32fr);
+  min-height: 0;
+}
+
+.map {
+  position: relative;
+  overflow: hidden;
+  min-height: 420px;
+  border-right: 1px solid var(--rule);
+  background:
+    radial-gradient(circle at 28% 70%, var(--amber-soft), transparent 22%),
+    linear-gradient(rgba(48, 53, 58, 0.45) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(48, 53, 58, 0.45) 1px, transparent 1px), #111416;
+  background-size:
+    auto,
+    56px 56px,
+    56px 56px,
+    auto;
+}
+
+/* Read mode keeps the map as context, never as a gate. */
+.chapter[data-mode='read'] .map {
+  opacity: 0.55;
+}
+
+.backAction {
+  position: absolute;
+  z-index: 4;
+  top: 14px;
+  left: 16px;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.backAction:hover,
+.backAction:focus-visible {
+  color: var(--paper);
+}
+
+.mapLabelTop,
+.mapLabelBottom {
+  position: absolute;
+  z-index: 2;
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mapLabelTop {
+  top: 22px;
+  right: 22px;
+}
+
+.mapLabelBottom {
+  bottom: 20px;
+  left: 22px;
+}
+
+.route {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.routePast {
+  fill: none;
+  stroke: var(--amber);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.routeFuture {
+  fill: none;
+  stroke: var(--rule-strong);
+  stroke-dasharray: 1.1 1.6;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.sideLink {
+  fill: none;
+  stroke: var(--rule);
+  stroke-dasharray: 0.7 1.1;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+/*
+ * The "you are here" token. Travel is the page's motion budget: the square
+ * glides between waypoints while the story copy itself stays still.
+ */
+.token {
+  position: absolute;
+  z-index: 2;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--amber);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition:
+    left 700ms cubic-bezier(0.22, 0.8, 0.24, 1),
+    top 700ms cubic-bezier(0.22, 0.8, 0.24, 1);
+}
+
+.nodeMain,
+.nodeSide {
+  position: absolute;
+  z-index: 3;
+  padding: 0;
+  border: 1px solid var(--muted);
+  border-radius: 0;
+  background: var(--screen);
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+}
+
+.nodeMain {
+  width: 13px;
+  height: 13px;
+}
+
+.nodeSide {
+  width: 9px;
+  height: 9px;
+  border-color: var(--rule-strong);
+}
+
+/* Generous invisible hit area so the visual mark can stay a small pin. */
+.nodeMain::before,
+.nodeSide::before {
+  content: '';
+  position: absolute;
+  inset: -12px;
+}
+
+.nodeMain::after,
+.nodeSide::after {
+  content: attr(aria-label);
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 10px);
+  width: max-content;
+  max-width: 140px;
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+  text-align: left;
+  text-transform: uppercase;
+  transform: translateY(-50%);
+}
+
+.nodeMain[data-flip]::after,
+.nodeSide[data-flip]::after {
+  right: calc(100% + 10px);
+  left: auto;
+  text-align: right;
+}
+
+.nodeMain[data-visited] {
+  border-color: var(--amber);
+}
+
+/* "You are here" is a location, not a toggle: styled off aria-current. */
+.nodeMain[aria-current],
+.nodeSide[aria-current] {
+  border-color: var(--amber);
+  background: var(--amber);
+}
+
+.nodeSide[data-collected] {
+  border-color: var(--amber);
+}
+
+.nodeMain[aria-current]::after,
+.nodeSide[aria-current]::after {
+  color: var(--paper);
+}
+
+.nodeMain:hover,
+.nodeSide:hover {
+  border-color: var(--amber);
+}
+
+.nodeMain:focus-visible,
+.nodeSide:focus-visible,
+.margin:focus-visible {
+  outline: 2px solid var(--paper);
+  outline-offset: 4px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Story record                                                                */
+/* -------------------------------------------------------------------------- */
+
+.story {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 24px 26px;
+  background: var(--surface);
+}
+
+/* The panel is focusable so overflowing copy scrolls by keyboard. */
+.story:focus-visible {
+  outline: 2px solid var(--paper);
+  outline-offset: -2px;
+}
+
+.storyControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.controlAction {
+  padding: 8px 11px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.controlAction:hover,
+.controlAction:focus-visible {
+  border-color: var(--rule-strong);
+  color: var(--paper);
+}
+
+.controlAction[aria-pressed='true'] {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+.storyBody {
+  animation: storyDissolve 320ms ease both;
+}
+
+/* Opacity only: the copy dissolves in, it never travels. */
+@keyframes storyDissolve {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  color: var(--amber);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.storyTitle {
+  margin: 0 0 8px;
+  font-family: var(--serif);
+  font-size: clamp(30px, 3.2vw, 44px);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.02;
+}
+
+.period {
+  margin: 0 0 18px;
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.artifact {
+  margin: 0 0 20px;
+  border: 1px solid var(--rule-strong);
+  background: var(--surface-raised);
+}
+
+.artifactImage {
+  position: relative;
+  height: 190px;
+  background: #101214;
+}
+
+.artifactImg {
+  object-fit: contain;
+  padding: 14px;
+}
+
+.artifactPlaceholder {
+  display: grid;
+  place-items: center;
+  min-height: 150px;
+  padding: 16px;
+  background: #d7d5d0;
+  color: #26282a;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.artifactCaption {
+  padding: 10px 12px;
+  border-top: 1px solid var(--rule);
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.artifactMargin {
+  height: 120px;
+  margin: 0 0 20px;
+  border: 1px solid var(--rule);
+  background:
+    linear-gradient(rgba(48, 53, 58, 0.4) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(48, 53, 58, 0.4) 1px, transparent 1px), #101214;
+  background-size:
+    28px 28px,
+    28px 28px,
+    auto;
+}
+
+.storyText {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 14.5px;
+  line-height: 1.62;
+}
+
+.ledger {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
+}
+
+.ledgerLabel {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ledgerEmpty {
+  color: var(--faint);
+  font-size: 12.5px;
+}
+
+.ledgerList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ledgerList li {
+  padding: 5px 9px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  color: var(--paper);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.storyFooter {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
+}
+
+.progressLabel {
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.nextAction {
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  color: var(--amber);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.nextAction:hover,
+.nextAction:focus-visible {
+  color: var(--paper);
+}
+
+.pagerAction {
+  padding: 8px 11px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pagerAction:hover:enabled,
+.pagerAction:focus-visible {
+  border-color: var(--rule-strong);
+  color: var(--paper);
+}
+
+.pagerAction:disabled {
+  opacity: 0.4;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Story index                                                                 */
+/* -------------------------------------------------------------------------- */
+
+.index {
+  width: min(760px, 100%);
+  margin: 0 auto;
+  overflow-y: auto;
+  padding: clamp(28px, 6vw, 64px) 22px;
+}
+
+.indexHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.indexList {
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--rule-strong);
+  list-style: none;
+}
+
+.indexRow {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: baseline;
+  width: 100%;
+  padding: 18px 4px;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.indexRow:hover .indexTitle,
+.indexRow:focus-visible .indexTitle {
+  color: var(--amber);
+}
+
+.indexNumber {
+  color: var(--amber);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.indexTitle {
+  display: block;
+  font-family: var(--serif);
+  font-size: clamp(21px, 2.4vw, 27px);
+  line-height: 1.1;
+}
+
+.indexMeta {
+  display: block;
+  margin-top: 4px;
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.indexMark {
+  color: var(--faint);
+  font-size: 12px;
+}
+
+.indexRow[data-visited] .indexMark {
+  color: var(--amber);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Ending: the unprinted margin                                                */
+/* -------------------------------------------------------------------------- */
+
+.margin {
+  position: relative;
+  overflow: hidden;
+  min-height: 420px;
+  padding: 0;
+  border: 0;
+  border-right: 1px solid var(--rule);
+  background:
+    linear-gradient(rgba(48, 53, 58, 0.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(48, 53, 58, 0.3) 1px, transparent 1px), #101214;
+  background-size:
+    56px 56px,
+    56px 56px,
+    auto;
+  cursor: crosshair;
+  text-align: left;
+}
+
+.marginHint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transform: translate(-50%, -50%);
+}
+
+.pin {
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  background: var(--amber);
+  animation: storyDissolve 320ms ease both;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.pin::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  width: 68px;
+  border-top: 1px dashed var(--rule-strong);
+  transform: rotate(24deg);
+  transform-origin: right center;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Error view                                                                  */
+/* -------------------------------------------------------------------------- */
+
+.errorView {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Mobile: stacked, map above story, larger touch targets                      */
+/* -------------------------------------------------------------------------- */
+
+@media (max-width: 700px) {
+  .chapter,
+  .ending {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(320px, 46dvh) minmax(0, 1fr);
+  }
+
+  .map,
+  .margin {
+    min-height: 320px;
+    border-right: 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .rail {
+    gap: 10px;
+    padding: 0 14px;
+  }
+
+  .railMeta {
+    display: none;
+  }
+
+  .story {
+    padding: 20px 16px;
+  }
+
+  .nodeMain::before,
+  .nodeSide::before {
+    inset: -16px;
+  }
+
+  .nodeMain::after,
+  .nodeSide::after {
+    max-width: 96px;
+    font-size: 9px;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Reduced motion: cut, do not travel                                          */
+/* -------------------------------------------------------------------------- */
+
+.journey[data-reduced='true'] *,
+.journey[data-reduced='true'] *::before,
+.journey[data-reduced='true'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
