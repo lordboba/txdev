@@ -141,6 +141,27 @@ test('map ids, artifact links, and node graph are internally consistent', async 
   }
 });
 
+test('consecutive main nodes along the spine are mutually adjacent', async () => {
+  const { journeyNodes, orderedBeatIds } = await loadJourneyData();
+
+  const mainNodes = orderedBeatIds.map((beatId) => {
+    const node = journeyNodes.find(
+      (candidate) => candidate.kind === 'main' && candidate.beatId === beatId,
+    );
+    assert.ok(node, `beat ${beatId} has no main node`);
+    return node;
+  });
+
+  for (let i = 0; i < mainNodes.length - 1; i += 1) {
+    const here = mainNodes[i];
+    const next = mainNodes[i + 1];
+    assert.ok(
+      here.adjacency.includes(next.id) && next.adjacency.includes(here.id),
+      `spine break: ${here.id} and ${next.id} are not adjacent`,
+    );
+  }
+});
+
 test('canonical references resolve against experiences and projects', async () => {
   const { canonicalRefs } = await loadJourneyData();
 

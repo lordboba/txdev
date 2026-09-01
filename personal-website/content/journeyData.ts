@@ -375,7 +375,7 @@ export const journeyNodes: JourneyMapNode[] = [
     y: 64,
     kind: 'main',
     beatId: '03-first-app',
-    adjacency: ['sd-del-norte', 'sd-app-artifact'],
+    adjacency: ['sd-del-norte', 'sd-app-artifact', 'la-ucla'],
   },
   {
     id: 'sd-app-artifact',
@@ -395,7 +395,7 @@ export const journeyNodes: JourneyMapNode[] = [
     y: 56,
     kind: 'main',
     beatId: '04-ucla',
-    adjacency: ['la-ucla-artifact'],
+    adjacency: ['sd-first-app', 'la-ucla-artifact', 'sf-safetykit'],
   },
   {
     id: 'la-ucla-artifact',
@@ -415,7 +415,7 @@ export const journeyNodes: JourneyMapNode[] = [
     y: 30,
     kind: 'main',
     beatId: '05-safetykit',
-    adjacency: ['sf-safetykit-artifact'],
+    adjacency: ['la-ucla', 'sf-safetykit-artifact', 'ny-codex'],
   },
   {
     id: 'sf-safetykit-artifact',
@@ -435,7 +435,7 @@ export const journeyNodes: JourneyMapNode[] = [
     y: 38,
     kind: 'main',
     beatId: '06-codex',
-    adjacency: ['ny-codex-artifact', 'ny-ramp'],
+    adjacency: ['sf-safetykit', 'ny-codex-artifact', 'ny-ramp'],
   },
   {
     id: 'ny-codex-artifact',
@@ -455,7 +455,7 @@ export const journeyNodes: JourneyMapNode[] = [
     y: 32,
     kind: 'main',
     beatId: '07-ramp',
-    adjacency: ['ny-codex', 'ny-ramp-artifact'],
+    adjacency: ['ny-codex', 'ny-ramp-artifact', 'horizon-pin'],
   },
   {
     id: 'ny-ramp-artifact',
@@ -475,7 +475,7 @@ export const journeyNodes: JourneyMapNode[] = [
     y: 14,
     kind: 'main',
     beatId: '08-horizon',
-    adjacency: ['horizon-margin'],
+    adjacency: ['ny-ramp', 'horizon-margin'],
   },
   {
     id: 'horizon-margin',
