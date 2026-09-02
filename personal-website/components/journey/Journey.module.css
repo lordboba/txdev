@@ -6,12 +6,16 @@
  * Graphite and signal amber, per the workshop mockup:
  * screen #0F1113 · surface #171A1D · rules #30353A / #4A5056 ·
  * type #E3E5E7 / #A6AAAE / #858B90 · accent #C4A55F.
+ *
+ * Motion has one rule: move the route, not the text. The camera flies, the
+ * token travels, the amber draws; copy dissolves in once and then holds still.
  */
 
 .journey {
   --screen: #0f1113;
   --surface: #171a1d;
   --surface-raised: #1d2023;
+  --land: #161a1d;
   --rule: #30353a;
   --rule-strong: #4a5056;
   --paper: #e3e5e7;
@@ -19,6 +23,9 @@
   --faint: #858b90;
   --amber: #c4a55f;
   --amber-soft: rgba(196, 165, 95, 0.13);
+  --amber-glow: rgba(196, 165, 95, 0.32);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --mono:
     var(--font-mono, 'IBM Plex Mono'), 'SFMono-Regular', Consolas, monospace;
   --serif:
@@ -26,7 +33,7 @@
 
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  height: 100dvh;
   background: var(--screen);
   color: var(--paper);
   color-scheme: dark;
@@ -49,7 +56,7 @@
   align-items: center;
   justify-content: space-between;
   min-height: 52px;
-  padding: 0 22px;
+  padding: 0 24px;
   border-bottom: 1px solid var(--rule);
   color: var(--faint);
   font-family: var(--mono);
@@ -61,6 +68,7 @@
 .railLink {
   color: var(--muted);
   text-decoration: none;
+  transition: color 200ms ease;
 }
 
 .railLink:hover,
@@ -83,18 +91,81 @@
 /* -------------------------------------------------------------------------- */
 
 .wake {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  align-items: center;
-  justify-content: center;
+  position: relative;
+  display: grid;
+  overflow: hidden;
+  place-items: center;
   padding: 32px 20px;
   background: radial-gradient(
-    ellipse 62% 48% at 50% 54%,
+    ellipse 58% 46% at 50% 52%,
     var(--amber-soft),
     transparent 72%
   );
   text-align: center;
+}
+
+/* The country under the question: hairline land, four real cities, one route. */
+.ghost {
+  position: absolute;
+  inset: 6% 4%;
+  width: 92%;
+  height: 88%;
+  opacity: 0.55;
+  pointer-events: none;
+  transition: opacity 900ms ease;
+}
+
+.wake[data-phase='ready'] .ghost {
+  opacity: 1;
+}
+
+.ghostNation {
+  fill: rgba(22, 26, 29, 0.9);
+  stroke: rgba(74, 80, 86, 0.8);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.ghostBorders {
+  fill: none;
+  stroke: rgba(74, 80, 86, 0.3);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.ghostCity {
+  fill: var(--screen);
+  stroke: var(--muted);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.ghostRoute {
+  fill: none;
+  stroke: var(--amber);
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.wake[data-phase='ready'] .ghostRoute {
+  animation: drawRoute 3600ms var(--ease-in-out) 500ms forwards;
+}
+
+@keyframes drawRoute {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.wakeInner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  align-items: center;
 }
 
 .wakeEyebrow {
@@ -107,17 +178,40 @@
 }
 
 .wakeQuestion {
+  display: inline-flex;
+  align-items: baseline;
   margin: 0;
   font-family: var(--serif);
   font-size: clamp(52px, 9vw, 108px);
   font-weight: 400;
   letter-spacing: -0.035em;
   line-height: 0.95;
+  text-shadow: 0 0 60px rgba(196, 165, 95, 0.12);
   transition: opacity 700ms ease;
 }
 
 .wake[data-phase='waking'] .wakeQuestion {
-  opacity: 0.34;
+  opacity: 0.42;
+}
+
+/* The typing caret: a thin amber bar that blinks once the line is set. */
+.caret {
+  display: inline-block;
+  width: 0.05em;
+  height: 0.78em;
+  margin-left: 0.06em;
+  background: var(--amber);
+  transform: translateY(0.08em);
+}
+
+.wake[data-typed] .caret {
+  animation: blink 1100ms steps(2, start) infinite;
+}
+
+@keyframes blink {
+  to {
+    visibility: hidden;
+  }
 }
 
 .wakeLine {
@@ -125,6 +219,7 @@
   margin: 0;
   color: var(--muted);
   font-size: clamp(16px, 2vw, 19px);
+  animation: riseIn 700ms var(--ease-out) both;
 }
 
 .wakeActions {
@@ -133,6 +228,7 @@
   gap: 12px;
   justify-content: center;
   margin-top: 14px;
+  animation: riseIn 700ms var(--ease-out) 120ms both;
 }
 
 .wakeHint {
@@ -146,6 +242,9 @@
   font-size: 11px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  transition:
+    border-color 200ms ease,
+    color 200ms ease;
 }
 
 .wakeHint:hover,
@@ -165,6 +264,7 @@
   font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  transition: background-color 200ms ease;
 }
 
 .primaryAction:hover,
@@ -183,6 +283,9 @@
   font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  transition:
+    border-color 200ms ease,
+    color 200ms ease;
 }
 
 .ghostAction:hover,
@@ -192,80 +295,31 @@
 }
 
 /* -------------------------------------------------------------------------- */
-/* Chapter: map + story record                                                 */
+/* Chapter: atlas + story record                                               */
 /* -------------------------------------------------------------------------- */
 
 .chapter,
 .ending {
   display: grid;
-  grid-template-columns: minmax(0, 68fr) minmax(310px, 32fr);
+  grid-template-columns: minmax(0, 68fr) minmax(360px, 32fr);
   min-height: 0;
 }
 
 .map {
   position: relative;
   overflow: hidden;
-  min-height: 420px;
+  min-height: 460px;
   border-right: 1px solid var(--rule);
-  background:
-    radial-gradient(circle at 28% 70%, var(--amber-soft), transparent 22%),
-    linear-gradient(rgba(48, 53, 58, 0.45) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(48, 53, 58, 0.45) 1px, transparent 1px), #111416;
-  background-size:
-    auto,
-    56px 56px,
-    56px 56px,
-    auto;
+  background: var(--screen);
 }
 
 /* Read mode keeps the map as context, never as a gate. */
 .chapter[data-mode='read'] .map {
-  opacity: 0.55;
+  opacity: 0.6;
+  transition: opacity 400ms ease;
 }
 
-.backAction {
-  position: absolute;
-  z-index: 4;
-  top: 14px;
-  left: 16px;
-  padding: 8px 10px;
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.backAction:hover,
-.backAction:focus-visible {
-  color: var(--paper);
-}
-
-.mapLabelTop,
-.mapLabelBottom {
-  position: absolute;
-  z-index: 2;
-  color: var(--faint);
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.mapLabelTop {
-  top: 22px;
-  right: 22px;
-}
-
-.mapLabelBottom {
-  bottom: 20px;
-  left: 22px;
-}
-
-.route {
+.atlas {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -273,56 +327,114 @@
   pointer-events: none;
 }
 
-.routePast {
+.nation {
+  fill: var(--land);
+  stroke: rgba(106, 113, 120, 0.9);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.borders {
   fill: none;
-  stroke: var(--amber);
-  stroke-width: 2;
+  stroke: rgba(74, 80, 86, 0.55);
+  stroke-width: 1;
   vector-effect: non-scaling-stroke;
 }
 
 .routeFuture {
   fill: none;
   stroke: var(--rule-strong);
-  stroke-dasharray: 1.1 1.6;
+  stroke-dasharray: 3 5;
   stroke-width: 1.5;
   vector-effect: non-scaling-stroke;
 }
 
+/* Amber overlays only the travelled prefix: dasharray is written per frame. */
+.routePast {
+  fill: none;
+  stroke: var(--amber);
+  stroke-linecap: round;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 6px rgba(196, 165, 95, 0.35));
+}
+
 .sideLink {
   fill: none;
-  stroke: var(--rule);
-  stroke-dasharray: 0.7 1.1;
+  stroke: var(--rule-strong);
+  stroke-dasharray: 2 4;
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
 }
 
-/*
- * The "you are here" token. Travel is the page's motion budget: the square
- * glides between waypoints while the story copy itself stays still.
- */
-.token {
+/* Every marker is positioned by the motion loop: transform only, never layout. */
+.layer {
   position: absolute;
-  z-index: 2;
-  width: 26px;
-  height: 26px;
-  border: 1px solid var(--amber);
+  inset: 0;
   pointer-events: none;
+}
+
+.marker {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+}
+
+.marker[data-away] {
+  opacity: 0.5;
+  transition: opacity 600ms ease;
+}
+
+/* The real city: a hollow ring the chapters gather around. */
+.cityRing {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--muted);
+  border-radius: 50%;
+  background: transparent;
   transform: translate(-50%, -50%);
   transition:
-    left 700ms cubic-bezier(0.22, 0.8, 0.24, 1),
-    top 700ms cubic-bezier(0.22, 0.8, 0.24, 1);
+    width 500ms var(--ease-out),
+    height 500ms var(--ease-out),
+    border-color 400ms ease;
+}
+
+.cityLabel {
+  position: absolute;
+  bottom: 15px;
+  left: 14px;
+  width: max-content;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-shadow:
+    0 0 2px var(--screen),
+    0 0 6px var(--screen);
+  text-transform: uppercase;
+  transition:
+    opacity 400ms ease,
+    transform 500ms var(--ease-out);
 }
 
 .nodeMain,
 .nodeSide {
   position: absolute;
-  z-index: 3;
   padding: 0;
   border: 1px solid var(--muted);
   border-radius: 0;
   background: var(--screen);
   cursor: pointer;
+  pointer-events: auto;
   transform: translate(-50%, -50%);
+  transition:
+    width 400ms var(--ease-out),
+    height 400ms var(--ease-out),
+    border-color 300ms ease,
+    background-color 300ms ease,
+    opacity 400ms ease;
 }
 
 .nodeMain {
@@ -341,31 +453,38 @@
 .nodeSide::before {
   content: '';
   position: absolute;
-  inset: -12px;
+  inset: -14px;
 }
 
-.nodeMain::after,
-.nodeSide::after {
-  content: attr(aria-label);
+.nodeLabel {
   position: absolute;
   top: 50%;
-  left: calc(100% + 10px);
   width: max-content;
-  max-width: 140px;
+  max-width: 150px;
   color: var(--faint);
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 10.5px;
   letter-spacing: 0.06em;
   line-height: 1.3;
-  text-align: left;
+  text-shadow:
+    0 0 2px var(--screen),
+    0 0 6px var(--screen);
   text-transform: uppercase;
   transform: translateY(-50%);
+  transition:
+    color 300ms ease,
+    opacity 300ms ease;
 }
 
-.nodeMain[data-flip]::after,
-.nodeSide[data-flip]::after {
-  right: calc(100% + 10px);
-  left: auto;
+.nodeMain[data-side='right'] .nodeLabel,
+.nodeSide[data-side='right'] .nodeLabel {
+  left: calc(100% + 11px);
+  text-align: left;
+}
+
+.nodeMain[data-side='left'] .nodeLabel,
+.nodeSide[data-side='left'] .nodeLabel {
+  right: calc(100% + 11px);
   text-align: right;
 }
 
@@ -382,10 +501,11 @@
 
 .nodeSide[data-collected] {
   border-color: var(--amber);
+  background: var(--amber-soft);
 }
 
-.nodeMain[aria-current]::after,
-.nodeSide[aria-current]::after {
+.nodeMain[aria-current] .nodeLabel,
+.nodeSide[aria-current] .nodeLabel {
   color: var(--paper);
 }
 
@@ -394,11 +514,241 @@
   border-color: var(--amber);
 }
 
+.nodeMain:hover .nodeLabel,
+.nodeSide:hover .nodeLabel {
+  color: var(--muted);
+}
+
 .nodeMain:focus-visible,
 .nodeSide:focus-visible,
-.margin:focus-visible {
+.pickArea:focus-visible {
   outline: 2px solid var(--paper);
   outline-offset: 4px;
+}
+
+/*
+ * Pulled out to the whole country, the clusters are a few pixels wide: the
+ * chapter pins shrink to dots and their labels lift away; the cities carry
+ * the map instead.
+ */
+.map[data-zoom='far'] .nodeMain,
+.map[data-zoom='far'] .nodeSide {
+  width: 5px;
+  height: 5px;
+}
+
+.map[data-zoom='far'] .nodeLabel {
+  opacity: 0;
+}
+
+.map[data-zoom='far'] .cityRing {
+  width: 14px;
+  height: 14px;
+  border-color: var(--paper);
+}
+
+.map[data-zoom='near'] .cityLabel {
+  opacity: 0.7;
+}
+
+/*
+ * Leaned in, the place plate already names the city and its chapters carry
+ * their own labels, so the current city's ring goes quiet and only the
+ * neighbouring cities keep their names as bearings.
+ */
+.map[data-zoom='near'] .marker[data-current] .cityLabel {
+  opacity: 0;
+}
+
+/* Chapters of another city read as dots from here: labels are for where you are. */
+.marker[data-away] .nodeLabel {
+  opacity: 0;
+}
+
+/*
+ * The "you are here" token. Travel is the page's motion budget: the square
+ * rides the route while the story copy itself stays still.
+ */
+.token {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: 0;
+  will-change: transform;
+}
+
+.tokenMark {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--amber);
+  box-shadow: 0 0 0 0 var(--amber-glow);
+  transform: translate(-50%, -50%);
+  transition:
+    box-shadow 500ms ease,
+    transform 500ms var(--ease-out);
+}
+
+.map[data-travelling='true'] .tokenMark {
+  box-shadow: 0 0 0 7px var(--amber-glow);
+  transform: translate(-50%, -50%) scale(0.86);
+}
+
+/* The next pin, placed by hand in the margin. */
+.pin {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  left: 0;
+}
+
+.pinMark {
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  background: var(--amber);
+  animation: pinDrop 700ms var(--ease-out) both;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.pinMark::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  width: 68px;
+  border-top: 1px dashed var(--rule-strong);
+  transform: rotate(24deg);
+  transform-origin: right center;
+}
+
+.pinRipple {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--amber);
+  border-radius: 50%;
+  animation: ripple 1400ms var(--ease-out) 150ms both;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes pinDrop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -160%) rotate(45deg) scale(1.6);
+  }
+
+  60% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(45deg) scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(45deg) scale(1);
+  }
+}
+
+@keyframes ripple {
+  from {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(6);
+  }
+}
+
+/* The ending's whole panel takes the pin; nodes underneath go inert. */
+.pickArea {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: crosshair;
+}
+
+.backAction {
+  position: absolute;
+  z-index: 5;
+  top: 16px;
+  left: 18px;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: color 200ms ease;
+}
+
+.backAction:hover,
+.backAction:focus-visible {
+  color: var(--paper);
+}
+
+.mapLabelTop {
+  position: absolute;
+  z-index: 5;
+  top: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.mapHint {
+  color: var(--rule-strong);
+  font-size: 10px;
+}
+
+/* The place plate: the real place, its state, its coordinates. */
+.plate {
+  position: absolute;
+  z-index: 5;
+  bottom: 22px;
+  left: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: riseIn 600ms var(--ease-out) both;
+  pointer-events: none;
+}
+
+.plateName {
+  font-family: var(--serif);
+  font-size: clamp(26px, 2.6vw, 34px);
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.plateRegion {
+  color: var(--muted);
+}
+
+.plateCoords {
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  white-space: pre;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -410,7 +760,7 @@
   flex-direction: column;
   overflow-y: auto;
   min-height: 0;
-  padding: 24px 26px;
+  padding: 26px 32px 28px;
   background: var(--surface);
 }
 
@@ -438,7 +788,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-bottom: 22px;
+  margin-bottom: 30px;
 }
 
 .controlAction {
@@ -452,6 +802,9 @@
   font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  transition:
+    border-color 200ms ease,
+    color 200ms ease;
 }
 
 .controlAction:hover,
@@ -465,23 +818,29 @@
   color: var(--amber);
 }
 
-.storyBody {
-  animation: storyDissolve 320ms ease both;
+/*
+ * Each block of a chapter rises in once, staggered by its --i index, then
+ * holds perfectly still. Six pixels and 480ms: felt, not watched.
+ */
+.storyBody > *,
+.storyBody .artifact {
+  animation: riseIn 520ms var(--ease-out) calc(var(--i, 0) * 70ms) both;
 }
 
-/* Opacity only: the copy dissolves in, it never travels. */
-@keyframes storyDissolve {
+@keyframes riseIn {
   from {
     opacity: 0;
+    transform: translateY(6px);
   }
 
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
 .eyebrow {
-  margin: 0 0 10px;
+  margin: 0 0 12px;
   color: var(--amber);
   font-family: var(--mono);
   font-size: 11px;
@@ -490,16 +849,17 @@
 }
 
 .storyTitle {
-  margin: 0 0 8px;
+  margin: 0 0 10px;
   font-family: var(--serif);
-  font-size: clamp(30px, 3.2vw, 44px);
+  font-size: clamp(30px, 3vw, 42px);
   font-weight: 400;
   letter-spacing: -0.02em;
-  line-height: 1.02;
+  line-height: 1.04;
+  text-wrap: balance;
 }
 
 .period {
-  margin: 0 0 18px;
+  margin: 0 0 22px;
   color: var(--faint);
   font-family: var(--mono);
   font-size: 11px;
@@ -508,34 +868,57 @@
 }
 
 .artifact {
-  margin: 0 0 20px;
+  margin: 0 0 24px;
   border: 1px solid var(--rule-strong);
   background: var(--surface-raised);
 }
 
 .artifactImage {
   position: relative;
-  height: 190px;
+  height: 200px;
   background: #101214;
 }
 
-.artifactImg {
-  object-fit: contain;
-  padding: 14px;
+/* Ink on paper: vector marks get the light plate they were drawn for. */
+.artifactImage[data-kind='mark'] {
+  background: var(--paper);
 }
 
+/*
+ * Never rotated, never flipped: the frame shows the file exactly as saved,
+ * with the camera's own orientation tag honoured.
+ */
+.artifactImg {
+  object-fit: contain;
+  padding: 16px;
+  image-orientation: from-image;
+  transform: none;
+}
+
+/* An artifact still to come: a quiet reserved plate, not a glaring blank. */
 .artifactPlaceholder {
   display: grid;
+  gap: 8px;
   place-items: center;
-  min-height: 150px;
+  min-height: 160px;
   padding: 16px;
-  background: #d7d5d0;
-  color: #26282a;
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      transparent 0 9px,
+      rgba(74, 80, 86, 0.18) 9px 10px
+    ),
+    #101214;
+  color: var(--muted);
   font-family: var(--mono);
   font-size: 10px;
   letter-spacing: 0.1em;
   text-align: center;
   text-transform: uppercase;
+}
+
+.artifactPending {
+  color: var(--faint);
 }
 
 .artifactCaption {
@@ -550,7 +933,7 @@
 
 .artifactMargin {
   height: 120px;
-  margin: 0 0 20px;
+  margin: 0 0 24px;
   border: 1px solid var(--rule);
   background:
     linear-gradient(rgba(48, 53, 58, 0.4) 1px, transparent 1px),
@@ -562,15 +945,16 @@
 }
 
 .storyText {
+  max-width: 34em;
   margin: 0 0 14px;
   color: var(--muted);
-  font-size: 14.5px;
-  line-height: 1.62;
+  font-size: 15px;
+  line-height: 1.65;
 }
 
 .ledger {
   margin-top: auto;
-  padding-top: 16px;
+  padding-top: 18px;
   border-top: 1px solid var(--rule);
 }
 
@@ -600,13 +984,14 @@
 
 .ledgerList li {
   padding: 5px 9px;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--amber);
   border-radius: 2px;
   color: var(--paper);
   font-family: var(--mono);
   font-size: 10px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  animation: riseIn 420ms var(--ease-out) both;
 }
 
 .storyFooter {
@@ -614,8 +999,8 @@
   gap: 14px;
   align-items: center;
   justify-content: space-between;
-  margin-top: 16px;
-  padding-top: 16px;
+  margin-top: 18px;
+  padding-top: 18px;
   border-top: 1px solid var(--rule);
 }
 
@@ -637,6 +1022,7 @@
   letter-spacing: 0.1em;
   text-decoration: none;
   text-transform: uppercase;
+  transition: color 200ms ease;
 }
 
 .nextAction:hover,
@@ -655,6 +1041,9 @@
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  transition:
+    border-color 200ms ease,
+    color 200ms ease;
 }
 
 .pagerAction:hover:enabled,
@@ -692,6 +1081,10 @@
   list-style: none;
 }
 
+.indexList > li {
+  animation: riseIn 480ms var(--ease-out) calc(var(--i, 0) * 45ms) both;
+}
+
 .indexRow {
   display: grid;
   grid-template-columns: 52px minmax(0, 1fr) auto;
@@ -707,6 +1100,14 @@
   text-align: left;
 }
 
+.indexTitle {
+  display: block;
+  font-family: var(--serif);
+  font-size: clamp(21px, 2.4vw, 27px);
+  line-height: 1.1;
+  transition: color 200ms ease;
+}
+
 .indexRow:hover .indexTitle,
 .indexRow:focus-visible .indexTitle {
   color: var(--amber);
@@ -716,13 +1117,6 @@
   color: var(--amber);
   font-family: var(--mono);
   font-size: 12px;
-}
-
-.indexTitle {
-  display: block;
-  font-family: var(--serif);
-  font-size: clamp(21px, 2.4vw, 27px);
-  line-height: 1.1;
 }
 
 .indexMeta {
@@ -742,60 +1136,6 @@
 
 .indexRow[data-visited] .indexMark {
   color: var(--amber);
-}
-
-/* -------------------------------------------------------------------------- */
-/* Ending: the unprinted margin                                                */
-/* -------------------------------------------------------------------------- */
-
-.margin {
-  position: relative;
-  overflow: hidden;
-  min-height: 420px;
-  padding: 0;
-  border: 0;
-  border-right: 1px solid var(--rule);
-  background:
-    linear-gradient(rgba(48, 53, 58, 0.3) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(48, 53, 58, 0.3) 1px, transparent 1px), #101214;
-  background-size:
-    56px 56px,
-    56px 56px,
-    auto;
-  cursor: crosshair;
-  text-align: left;
-}
-
-.marginHint {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  color: var(--faint);
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  transform: translate(-50%, -50%);
-}
-
-.pin {
-  position: absolute;
-  width: 13px;
-  height: 13px;
-  background: var(--amber);
-  animation: storyDissolve 320ms ease both;
-  transform: translate(-50%, -50%) rotate(45deg);
-}
-
-.pin::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  right: 100%;
-  width: 68px;
-  border-top: 1px dashed var(--rule-strong);
-  transform: rotate(24deg);
-  transform-origin: right center;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -820,14 +1160,23 @@
   .chapter,
   .ending {
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(320px, 46dvh) minmax(0, 1fr);
+    grid-template-rows: minmax(300px, 46dvh) minmax(0, 1fr);
   }
 
-  .map,
-  .margin {
-    min-height: 320px;
+  .map {
+    min-height: 300px;
     border-right: 0;
     border-bottom: 1px solid var(--rule);
+  }
+
+  .storyControls {
+    gap: 8px;
+    margin-bottom: 22px;
+  }
+
+  .controlAction {
+    padding: 7px 9px;
+    font-size: 9.5px;
   }
 
   .rail {
@@ -840,7 +1189,7 @@
   }
 
   .story {
-    padding: 20px 16px;
+    padding: 20px 18px 24px;
   }
 
   .nodeMain::before,
@@ -848,10 +1197,28 @@
     inset: -16px;
   }
 
-  .nodeMain::after,
-  .nodeSide::after {
+  .nodeLabel {
     max-width: 96px;
     font-size: 9px;
+  }
+
+  .plate {
+    bottom: 16px;
+    left: 16px;
+  }
+
+  .plateName {
+    font-size: 22px;
+  }
+
+  .mapHint {
+    display: none;
+  }
+
+  .ghost {
+    inset: 14% 2%;
+    width: 96%;
+    height: 72%;
   }
 }
 
@@ -863,6 +1230,7 @@
 .journey[data-reduced='true'] *::before,
 .journey[data-reduced='true'] *::after {
   animation-duration: 0.01ms !important;
+  animation-delay: 0ms !important;
   animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
 }
@@ -894,11 +1262,11 @@
  * The overlay's always-present dismiss. Outside the .journey scope, so the
  * colors are the same literal spec values the palette block documents. Fixed
  * so it stays pinned while the overlay scrolls, and above the journey's own
- * chrome (its deepest layer is z-index 4).
+ * chrome (its deepest layer is z-index 5).
  */
 .overlayClose {
   position: fixed;
-  z-index: 5;
+  z-index: 6;
   top: 14px;
   right: 16px;
   padding: 9px 14px;

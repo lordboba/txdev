@@ -2,7 +2,13 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRef, useState, useSyncExternalStore } from 'react';
+import {
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import {
   journeyArtifacts,
   journeyBeats,
@@ -11,9 +17,23 @@ import {
   orderedBeatIds,
   type JourneyArtifact,
   type JourneyBeat,
+  type JourneyMap,
+  type JourneyMapId,
   type JourneyMapNode,
 } from '../../content/journeyData';
+import {
+  usMapHeight,
+  usMapWidth,
+  usNationPath,
+  usStateBordersPath,
+} from '../../content/usMapGenerated';
 import { usePrefersReducedMotion } from '../concept/shared/runtime';
+import {
+  createAtlasMotion,
+  resetAtlasMotion,
+  type AtlasMotion,
+  type MotionFrame,
+} from './journeyMotion';
 import {
   closeJourneyIndex,
   collectJourneyKeepsake,
@@ -37,6 +57,15 @@ import {
   type JourneyProgress,
   type JourneyState,
 } from './journeyStore';
+import {
+  buildSpine,
+  cameraScale,
+  cameraTransform,
+  project,
+  unproject,
+  type Camera,
+  type Point,
+} from './routeGeometry';
 import styles from './Journey.module.css';
 
 type MainNode = Extract<JourneyMapNode, { kind: 'main' }>;
@@ -62,13 +91,49 @@ const orderedMainNodes = orderedBeatIds
   .map((beatId) => mainNodeByBeatId.get(beatId))
   .filter((node): node is MainNode => node !== undefined);
 
+/** The route, sampled once: the token travels it and the amber draws along it. */
+const spine = buildSpine(orderedMainNodes);
+const spineLengthByNodeId = new Map(
+  orderedMainNodes.map((node, index) => [node.id, spine.pointLengths[index]]),
+);
+
 const wakeBeat = journeyBeats[0];
 const finalBeat = journeyBeats.find((beat) => beat.nextId === null) ?? wakeBeat;
 /** The wake beat is the screen itself, so the chapter count starts after it. */
 const chapterTotal = String(orderedBeatIds.length - 1).padStart(2, '0');
 
+/**
+ * Camera framings over the atlas (see routeGeometry.Camera). `national` is
+ * the whole lower 48; each map is a regional lean-in around its real city,
+ * wide enough that the neighbouring city stays in frame as context.
+ */
+type CameraId = JourneyMapId | 'national' | 'ending';
+
+const cameras: Record<CameraId, Camera> = {
+  national: { cx: usMapWidth / 2, cy: usMapHeight / 2, w: 1060 },
+  'san-diego': { cx: 122, cy: 386, w: 168 },
+  ucla: { cx: 104, cy: 376, w: 180 },
+  'san-francisco': { cx: 66, cy: 306, w: 270 },
+  'new-york': { cx: 872, cy: 224, w: 210 },
+  horizon: { cx: 940, cy: 222, w: 330 },
+  ending: { cx: 575, cy: 300, w: 1190 },
+};
+
+/** Where a keyboard-placed pin lands: open Atlantic, east of the route. */
+const defaultPin: Point = { x: 1040, y: 262 };
+
+/** Under this many pixels per atlas unit, node labels would collide: hide them. */
+const FAR_ZOOM_SCALE = 2.4;
+
 function chapterNumber(beatId: string) {
   return String(Math.max(orderedBeatIds.indexOf(beatId), 0)).padStart(2, '0');
+}
+
+function formatCoordinates(lat: number, lng: number) {
+  return (
+    `${Math.abs(lat).toFixed(2)}° ${lat >= 0 ? 'N' : 'S'}` +
+    `  ${Math.abs(lng).toFixed(2)}° ${lng >= 0 ? 'E' : 'W'}`
+  );
 }
 
 /**
@@ -91,30 +156,26 @@ function cleanStory(beat: JourneyBeat): string[] {
     .filter((paragraph) => paragraph.length > 0);
 }
 
-/** Catmull-Rom through every point, so the route actually visits each node. */
-function smoothPath(points: { x: number; y: number }[]) {
-  if (points.length < 2) {
-    return '';
+/**
+ * Spine length of the furthest contiguous visited chapter: amber means
+ * "travelled so far", and a skipped chapter never erases a landmark. The wake
+ * beat counts as visited — the wake screen is that beat.
+ */
+function drawnLengthFor(progress: JourneyProgress) {
+  let drawn = 0;
+
+  for (const node of orderedMainNodes) {
+    if (
+      node.beatId !== wakeBeat.id &&
+      !progress.visitedBeatIds.includes(node.beatId)
+    ) {
+      break;
+    }
+
+    drawn = spineLengthByNodeId.get(node.id) ?? drawn;
   }
 
-  let d = `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
-
-  for (let i = 0; i < points.length - 1; i += 1) {
-    const p0 = points[i - 1] ?? points[i];
-    const p1 = points[i];
-    const p2 = points[i + 1];
-    const p3 = points[i + 2] ?? p2;
-    const c1x = p1.x + (p2.x - p0.x) / 6;
-    const c1y = p1.y + (p2.y - p0.y) / 6;
-    const c2x = p2.x - (p3.x - p1.x) / 6;
-    const c2y = p2.y - (p3.y - p1.y) / 6;
-    d +=
-      ` C ${c1x.toFixed(2)} ${c1y.toFixed(2)}` +
-      ` ${c2x.toFixed(2)} ${c2y.toFixed(2)}` +
-      ` ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
-  }
-
-  return d;
+  return drawn;
 }
 
 /**
@@ -172,8 +233,103 @@ function handleNodeClick(node: JourneyMapNode) {
   }
 }
 
-function WakeScreen({ phase }: { phase: 'waking' | 'ready' }) {
+/**
+ * Types the wake question one character at a time, like the laptop screen.
+ * An external store rather than an effect: the timer runs only while a
+ * subscriber is mounted, and a remount types the line fresh.
+ */
+function createTypewriter(text: string) {
+  const listeners = new Set<() => void>();
+  let typed = 0;
+  let timer: number | null = null;
+
+  const tick = () => {
+    timer = null;
+    if (typed >= text.length) {
+      return;
+    }
+    typed += 1;
+    listeners.forEach((listener) => listener());
+    timer = window.setTimeout(tick, 46);
+  };
+
+  return {
+    read: () => typed,
+    subscribe(listener: () => void) {
+      listeners.add(listener);
+      if (timer === null && typed < text.length) {
+        timer = window.setTimeout(tick, 420);
+      }
+      return () => {
+        listeners.delete(listener);
+        if (listeners.size === 0) {
+          if (timer !== null) {
+            window.clearTimeout(timer);
+            timer = null;
+          }
+          typed = 0;
+        }
+      };
+    },
+  };
+}
+
+function useTypewriter(text: string, reducedMotion: boolean) {
+  const store = useMemo(() => createTypewriter(text), [text]);
+  const typed = useSyncExternalStore(store.subscribe, store.read, () => 0);
+
+  if (reducedMotion) {
+    return { shown: text, done: true };
+  }
+
+  return { shown: text.slice(0, typed), done: typed >= text.length };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Wake screen                                                                 */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The atlas as an attract screen: the country in hairline, the four real
+ * cities, and the route drawing itself once the display wakes. Static SVG —
+ * the camera only starts moving inside the chapters.
+ */
+function GhostAtlas({ phase }: { phase: 'waking' | 'ready' }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={styles.ghost}
+      data-phase={phase}
+      preserveAspectRatio="xMidYMid meet"
+      viewBox={`0 0 ${usMapWidth} ${usMapHeight}`}
+    >
+      <path className={styles.ghostNation} d={usNationPath} />
+      <path className={styles.ghostBorders} d={usStateBordersPath} />
+      <path className={styles.ghostRoute} d={spine.d} pathLength={1} />
+      {journeyMaps
+        .filter((map) => map.id !== 'horizon')
+        .map((map) => (
+          <circle
+            className={styles.ghostCity}
+            cx={map.place.x}
+            cy={map.place.y}
+            key={map.id}
+            r={2.6}
+          />
+        ))}
+    </svg>
+  );
+}
+
+function WakeScreen({
+  phase,
+  reducedMotion,
+}: {
+  phase: 'waking' | 'ready';
+  reducedMotion: boolean;
+}) {
   const [question, line, action] = wakeBeat.story;
+  const { shown, done } = useTypewriter(question, reducedMotion);
 
   /*
    * Waking via keyboard focus unmounts the hint button under the visitor's
@@ -201,170 +357,530 @@ function WakeScreen({ phase }: { phase: 'waking' | 'ready' }) {
     <section
       className={styles.wake}
       data-phase={phase}
+      data-typed={done ? 'true' : undefined}
       onPointerEnter={wakeJourney}
     >
-      <p className={styles.wakeEyebrow}>
-        Personal env / a short route, 4-6 min
-      </p>
-      <h1 className={styles.wakeQuestion}>{question}</h1>
-      {phase === 'ready' ? (
-        <>
-          <p className={styles.wakeLine}>{line}</p>
-          <div className={styles.wakeActions}>
-            <button
-              className={styles.primaryAction}
-              onClick={() => enterJourneyChapter()}
-              ref={primaryRef}
-              type="button"
-            >
-              {(action ?? 'Learn more.').replace(/\.$/, '')}
-            </button>
-            <button
-              className={styles.ghostAction}
-              onClick={() => enterJourneyChapter(undefined, 'read')}
-              type="button"
-            >
-              Read without playing
-            </button>
-          </div>
-        </>
-      ) : (
-        <button
-          className={styles.wakeHint}
-          onClick={wakeJourney}
-          onFocus={() => {
-            handoff.current = true;
-            wakeJourney();
-          }}
-          ref={swapFocusRef}
-          type="button"
-        >
-          Wake the display
-        </button>
-      )}
+      <GhostAtlas phase={phase} />
+      <div className={styles.wakeInner}>
+        <p className={styles.wakeEyebrow}>
+          Personal env / a short route, 4-6 min
+        </p>
+        <h1 aria-label={question} className={styles.wakeQuestion}>
+          <span aria-hidden="true">{shown}</span>
+          <span aria-hidden="true" className={styles.caret} />
+        </h1>
+        {phase === 'ready' ? (
+          <>
+            <p className={styles.wakeLine}>{line}</p>
+            <div className={styles.wakeActions}>
+              <button
+                className={styles.primaryAction}
+                onClick={() => enterJourneyChapter()}
+                ref={primaryRef}
+                type="button"
+              >
+                {(action ?? 'Learn more.').replace(/\.$/, '')}
+              </button>
+              <button
+                className={styles.ghostAction}
+                onClick={() => enterJourneyChapter(undefined, 'read')}
+                type="button"
+              >
+                Read without playing
+              </button>
+            </div>
+          </>
+        ) : (
+          <button
+            className={styles.wakeHint}
+            onClick={wakeJourney}
+            onFocus={() => {
+              handoff.current = true;
+              wakeJourney();
+            }}
+            ref={swapFocusRef}
+            type="button"
+          >
+            Wake the display
+          </button>
+        )}
+      </div>
     </section>
   );
 }
 
-function NodeButton({
+/* -------------------------------------------------------------------------- */
+/* Route map: the atlas under a moving camera                                  */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Which node the token last stood on, across mounts: the story index unmounts
+ * the map, and on return the token should travel from where it was, not
+ * teleport. Cleared with the journey.
+ */
+let lastTokenNodeId: string | null = null;
+
+function restartJourney() {
+  lastTokenNodeId = null;
+  resetAtlasMotion();
+  resetJourney();
+}
+
+function nodePoint(nodeId: string): Point {
+  const node = nodesById.get(nodeId);
+  return node
+    ? { x: node.x, y: node.y }
+    : { x: usMapWidth / 2, y: usMapHeight / 2 };
+}
+
+function NodeMarker({
+  away,
   collected,
-  currentNodeId,
+  current,
+  inert,
   node,
+  register,
   visited,
 }: {
+  away: boolean;
   collected: boolean;
-  currentNodeId: string;
+  current: boolean;
+  inert: boolean;
   node: JourneyMapNode;
+  register: (id: string, element: HTMLElement | null) => void;
   visited: boolean;
 }) {
   return (
-    <button
-      aria-current={node.id === currentNodeId ? 'location' : undefined}
-      aria-label={node.label}
-      className={node.kind === 'main' ? styles.nodeMain : styles.nodeSide}
-      data-collected={collected ? 'true' : undefined}
-      data-flip={node.x > 58 ? 'true' : undefined}
-      data-visited={visited ? 'true' : undefined}
-      onClick={() => handleNodeClick(node)}
-      style={{ left: `${node.x}%`, top: `${node.y}%` }}
-      type="button"
-    />
+    <span
+      className={styles.marker}
+      data-away={away ? 'true' : undefined}
+      ref={(element) => register(node.id, element)}
+    >
+      <button
+        aria-current={current ? 'location' : undefined}
+        aria-label={node.label}
+        className={node.kind === 'main' ? styles.nodeMain : styles.nodeSide}
+        data-collected={collected ? 'true' : undefined}
+        data-side={node.labelSide}
+        data-visited={visited ? 'true' : undefined}
+        onClick={() => handleNodeClick(node)}
+        tabIndex={inert ? -1 : undefined}
+        type="button"
+      >
+        <span aria-hidden="true" className={styles.nodeLabel}>
+          {node.label}
+        </span>
+      </button>
+    </span>
   );
+}
+
+function CityMarker({
+  current,
+  map,
+  register,
+}: {
+  current: boolean;
+  map: JourneyMap;
+  register: (id: string, element: HTMLElement | null) => void;
+}) {
+  return (
+    <span
+      aria-hidden="true"
+      className={styles.marker}
+      data-current={current ? 'true' : undefined}
+      ref={(element) => register(`city:${map.id}`, element)}
+    >
+      <span className={styles.cityRing} />
+      <span className={styles.cityLabel}>{map.place.name}</span>
+    </span>
+  );
+}
+
+/**
+ * Resolve what the atlas should show for a journey state: which camera, which
+ * node the token stands on, and how much route is lit. The ending lights the
+ * whole route and parks the token on the final chapter.
+ */
+function atlasTargets(
+  state: JourneyState,
+  progress: JourneyProgress,
+  ending: boolean,
+) {
+  if (ending) {
+    return {
+      cameraId: 'ending' as CameraId,
+      nodeId: mainNodeByBeatId.get(finalBeat.id)?.id ?? orderedMainNodes[0].id,
+      drawn: spine.total,
+    };
+  }
+
+  if (state.status !== 'chapter') {
+    return null;
+  }
+
+  return {
+    cameraId: (beatsById.get(state.beatId)?.mapId ?? 'national') as CameraId,
+    nodeId: state.nodeId,
+    drawn: drawnLengthFor(progress),
+  };
 }
 
 function RouteMap({
+  currentMapId,
   currentNodeId,
+  ending = false,
+  onPick,
+  pin = null,
   progress,
+  reducedMotion,
 }: {
+  currentMapId: JourneyMapId;
   currentNodeId: string;
+  /** The ending: whole route lit, nodes inert, the margin takes a pin. */
+  ending?: boolean;
+  onPick?: (point: Point) => void;
+  pin?: Point | null;
   progress: JourneyProgress;
+  reducedMotion: boolean;
 }) {
-  const currentNode = nodesById.get(currentNodeId);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const groupRef = useRef<SVGGElement>(null);
+  const pastRef = useRef<SVGPathElement>(null);
+  const tokenRef = useRef<HTMLSpanElement>(null);
+  const pinRef = useRef<HTMLSpanElement | null>(null);
+  const markers = useRef(new Map<string, HTMLElement>());
+  const motionRef = useRef<AtlasMotion | null>(null);
+
+  /* Latest props for the mount closure and the per-frame writer. */
+  const latest = useRef({ ending, pin, reducedMotion });
+  latest.current = { ending, pin, reducedMotion };
+
+  const map = mapsById.get(currentMapId);
 
   /*
-   * One persistent printed route: the full spine is always the dashed future
-   * path, and amber overlays only the contiguous visited prefix — amber means
-   * "travelled so far", and a skipped chapter never erases a landmark. The
-   * wake beat counts as visited: the wake screen is that beat.
+   * One DOM writer for every frame. It reads the latest pin through the ref,
+   * so the motion loop never calls a stale closure.
    */
-  const visitedPrefix: typeof orderedMainNodes = [];
-  for (const node of orderedMainNodes) {
-    if (
-      node.beatId !== wakeBeat.id &&
-      !progress.visitedBeatIds.includes(node.beatId)
-    ) {
-      break;
+  const paint = useCallback((frame: MotionFrame) => {
+    const motion = motionRef.current;
+    const root = rootRef.current;
+
+    if (!motion || !root) {
+      return;
     }
 
-    visitedPrefix.push(node);
-  }
+    const viewport = motion.viewport();
+    const scale = cameraScale(frame.camera, viewport);
 
-  return (
-    <div aria-label="Route map" className={styles.map} role="group">
-      <button
-        className={styles.backAction}
-        onClick={() => escapeJourney()}
-        type="button"
-      >
-        &lsaquo; Back
-      </button>
-      <span className={styles.mapLabelTop}>The route so far</span>
-      <span className={styles.mapLabelBottom}>
-        Arrow keys or tap a place &middot; Enter opens
-      </span>
+    groupRef.current?.setAttribute(
+      'transform',
+      cameraTransform(frame.camera, viewport),
+    );
+    pastRef.current?.setAttribute(
+      'stroke-dasharray',
+      `${frame.drawn.toFixed(2)} ${(spine.total + 1).toFixed(2)}`,
+    );
+    root.dataset.zoom = scale < FAR_ZOOM_SCALE ? 'far' : 'near';
+    root.dataset.travelling = frame.travelling ? 'true' : 'false';
 
-      <svg
-        aria-hidden="true"
-        className={styles.route}
-        preserveAspectRatio="none"
-        viewBox="0 0 100 100"
-      >
-        {sideNodes.map((side) => {
-          const anchor = side.adjacency
-            .map((id) => nodesById.get(id))
-            .find((candidate) => candidate?.kind === 'main');
+    markers.current.forEach((element, id) => {
+      const point = id.startsWith('city:')
+        ? mapsById.get(id.slice(5) as JourneyMapId)?.place
+        : nodesById.get(id);
 
-          if (!anchor) {
-            return null;
+      if (!point) {
+        return;
+      }
+
+      const pixel = project(frame.camera, viewport, point);
+      element.style.transform = `translate3d(${pixel.x.toFixed(1)}px, ${pixel.y.toFixed(1)}px, 0)`;
+    });
+
+    if (tokenRef.current) {
+      const pixel = project(frame.camera, viewport, frame.token);
+      tokenRef.current.style.transform = `translate3d(${pixel.x.toFixed(1)}px, ${pixel.y.toFixed(1)}px, 0)`;
+    }
+
+    const placed = latest.current.pin;
+    if (pinRef.current && placed) {
+      const pixel = project(frame.camera, viewport, placed);
+      pinRef.current.style.transform = `translate3d(${pixel.x.toFixed(1)}px, ${pixel.y.toFixed(1)}px, 0)`;
+    }
+  }, []);
+
+  /*
+   * All of the map's mount work in one ref callback with a cleanup (React 19
+   * — no effects): size the panel, start the motion loop, and subscribe the
+   * loop to the journey store so travel, flights, and the amber stroke follow
+   * every commit without a React render in between. Stable identity, so
+   * React runs it exactly once per mount.
+   */
+  const mountMap = useCallback(
+    (root: HTMLDivElement | null) => {
+      rootRef.current = root;
+
+      if (!root) {
+        return;
+      }
+
+      const { ending: isEnding } = latest.current;
+      const motion = createAtlasMotion({
+        spine,
+        reducedMotion: () => latest.current.reducedMotion,
+        initial: {
+          camera: cameras.national,
+          token: nodePoint(lastTokenNodeId ?? currentNodeId),
+          drawn: drawnLengthFor(readJourneyProgress()),
+        },
+      });
+      motionRef.current = motion;
+      motion.setViewport({
+        width: root.clientWidth,
+        height: root.clientHeight,
+      });
+
+      const observer = new ResizeObserver((entries) => {
+        const rect = entries[0]?.contentRect;
+        if (rect) {
+          motion.setViewport({ width: rect.width, height: rect.height });
+        }
+      });
+      observer.observe(root);
+
+      const unsubscribePaint = motion.subscribe(paint);
+
+      let cameraId: CameraId | null = null;
+      let nodeId = lastTokenNodeId ?? currentNodeId;
+      let first = true;
+
+      const sync = () => {
+        const targets = atlasTargets(
+          readJourneyState(),
+          readJourneyProgress(),
+          isEnding,
+        );
+
+        if (!targets) {
+          return;
+        }
+
+        if (targets.cameraId !== cameraId) {
+          /* A fresh journey holds the whole country before leaning in. */
+          motion.flyTo(cameras[targets.cameraId], {
+            delay: first && !motion.resumed ? 520 : 0,
+          });
+          cameraId = targets.cameraId;
+        }
+
+        if (targets.nodeId !== nodeId) {
+          const from = spineLengthByNodeId.get(nodeId);
+          const to = spineLengthByNodeId.get(targets.nodeId);
+
+          if (from !== undefined && to !== undefined) {
+            motion.travelAlong(from, to);
+          } else {
+            motion.travelTo(nodePoint(targets.nodeId));
           }
 
-          return (
-            <path
-              className={styles.sideLink}
-              d={`M ${anchor.x} ${anchor.y} L ${side.x} ${side.y}`}
-              key={side.id}
-            />
-          );
-        })}
-        <path className={styles.routeFuture} d={smoothPath(orderedMainNodes)} />
-        <path className={styles.routePast} d={smoothPath(visitedPrefix)} />
+          nodeId = targets.nodeId;
+          lastTokenNodeId = nodeId;
+        }
+
+        motion.draw(targets.drawn);
+        first = false;
+      };
+
+      sync();
+      const unsubscribeState = subscribeJourneyState(sync);
+      const unsubscribeProgress = subscribeJourneyProgress(sync);
+
+      return () => {
+        unsubscribeState();
+        unsubscribeProgress();
+        unsubscribePaint();
+        observer.disconnect();
+        motion.destroy();
+        motionRef.current = null;
+      };
+    },
+    /* Mount-only: later node changes arrive through the store subscription. */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [paint],
+  );
+
+  const register = (id: string, element: HTMLElement | null) => {
+    if (element) {
+      markers.current.set(id, element);
+    } else {
+      markers.current.delete(id);
+    }
+  };
+
+  /* A newly placed pin mounts, then paints itself into position. */
+  const mountPin = (element: HTMLSpanElement | null) => {
+    pinRef.current = element;
+    const motion = motionRef.current;
+    if (element && motion) {
+      paint(motion.snapshot());
+    }
+  };
+
+  const pick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const motion = motionRef.current;
+    const root = rootRef.current;
+
+    if (!onPick || !motion || !root) {
+      return;
+    }
+
+    /* A keyboard activation has no coordinates; give the pin open water. */
+    if (event.clientX === 0 && event.clientY === 0) {
+      onPick(defaultPin);
+      return;
+    }
+
+    const rect = root.getBoundingClientRect();
+    onPick(
+      unproject(motion.snapshot().camera, motion.viewport(), {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      }),
+    );
+  };
+
+  return (
+    <div
+      aria-label={ending ? 'The whole route' : 'Route map'}
+      className={styles.map}
+      data-ending={ending ? 'true' : undefined}
+      ref={mountMap}
+      role="group"
+    >
+      <svg aria-hidden="true" className={styles.atlas}>
+        <g ref={groupRef}>
+          <path className={styles.nation} d={usNationPath} />
+          <path className={styles.borders} d={usStateBordersPath} />
+          {sideNodes.map((side) => {
+            const anchor = side.adjacency
+              .map((id) => nodesById.get(id))
+              .find((candidate) => candidate?.kind === 'main');
+
+            if (!anchor) {
+              return null;
+            }
+
+            return (
+              <path
+                className={styles.sideLink}
+                d={`M ${anchor.x} ${anchor.y} L ${side.x} ${side.y}`}
+                key={side.id}
+              />
+            );
+          })}
+          <path className={styles.routeFuture} d={spine.d} />
+          <path
+            className={styles.routePast}
+            d={spine.d}
+            pathLength={spine.total}
+            ref={pastRef}
+          />
+        </g>
       </svg>
 
-      {currentNode ? (
-        <span
-          aria-hidden="true"
-          className={styles.token}
-          style={{ left: `${currentNode.x}%`, top: `${currentNode.y}%` }}
+      <div aria-hidden={ending ? 'true' : undefined} className={styles.layer}>
+        {journeyMaps
+          .filter((candidate) => candidate.id !== 'horizon')
+          .map((candidate) => (
+            <CityMarker
+              current={candidate.id === currentMapId}
+              key={candidate.id}
+              map={candidate}
+              register={register}
+            />
+          ))}
+
+        {journeyNodes.map((node) => (
+          <NodeMarker
+            away={node.mapId !== currentMapId}
+            collected={
+              node.kind === 'side' &&
+              progress.keepsakes.includes(node.artifactId)
+            }
+            current={node.id === currentNodeId}
+            inert={ending}
+            key={node.id}
+            node={node}
+            register={register}
+            visited={
+              node.kind === 'main' &&
+              progress.visitedBeatIds.includes(node.beatId)
+            }
+          />
+        ))}
+
+        <span aria-hidden="true" className={styles.token} ref={tokenRef}>
+          <span className={styles.tokenMark} />
+        </span>
+
+        {pin ? (
+          <span aria-hidden="true" className={styles.pin} ref={mountPin}>
+            <span className={styles.pinRipple} />
+            <span className={styles.pinMark} />
+          </span>
+        ) : null}
+      </div>
+
+      {onPick ? (
+        <button
+          aria-label="Place the next pin somewhere in the unprinted margin"
+          className={styles.pickArea}
+          onClick={pick}
+          ref={swapFocusRef}
+          type="button"
         />
       ) : null}
 
-      {journeyNodes.map((node) => (
-        <NodeButton
-          collected={
-            node.kind === 'side' && progress.keepsakes.includes(node.artifactId)
-          }
-          currentNodeId={currentNodeId}
-          key={node.id}
-          node={node}
-          visited={
-            node.kind === 'main' &&
-            progress.visitedBeatIds.includes(node.beatId)
-          }
-        />
-      ))}
+      {ending ? null : (
+        <button
+          className={styles.backAction}
+          onClick={() => escapeJourney()}
+          type="button"
+        >
+          &lsaquo; Back
+        </button>
+      )}
+      <div className={styles.mapLabelTop}>
+        <span>{ending ? 'The whole route' : 'The route so far'}</span>
+        {ending ? (
+          <span className={styles.mapHint}>
+            {pin ? 'The pin stays unlabelled' : 'Tap anywhere in the margin'}
+          </span>
+        ) : (
+          <span className={styles.mapHint}>
+            Arrow keys or tap a place &middot; Enter opens
+          </span>
+        )}
+      </div>
+
+      {map ? (
+        <div className={styles.plate} key={map.id}>
+          <span className={styles.plateName}>
+            {map.place.name}
+            <span className={styles.plateRegion}>, {map.region}</span>
+          </span>
+          <span className={styles.plateCoords}>
+            {formatCoordinates(map.place.lat, map.place.lng)}
+          </span>
+        </div>
+      ) : null}
     </div>
   );
 }
+
+/* -------------------------------------------------------------------------- */
+/* Story record                                                                */
+/* -------------------------------------------------------------------------- */
 
 function ArtifactFrame({ artifact }: { artifact: JourneyArtifact | null }) {
   if (!artifact) {
@@ -375,10 +891,16 @@ function ArtifactFrame({ artifact }: { artifact: JourneyArtifact | null }) {
     return <div aria-hidden="true" className={styles.artifactMargin} />;
   }
 
+  /* A vector mark is ink: it needs paper behind it, not the dark frame. */
+  const kind = artifact.asset?.endsWith('.svg') ? 'mark' : 'photo';
+
   return (
-    <figure className={styles.artifact}>
+    <figure
+      className={styles.artifact}
+      style={{ '--i': 3 } as React.CSSProperties}
+    >
       {artifact.asset ? (
-        <div className={styles.artifactImage}>
+        <div className={styles.artifactImage} data-kind={kind}>
           <Image
             alt={artifact.label}
             className={styles.artifactImg}
@@ -388,7 +910,10 @@ function ArtifactFrame({ artifact }: { artifact: JourneyArtifact | null }) {
           />
         </div>
       ) : (
-        <div className={styles.artifactPlaceholder}>{artifact.label}</div>
+        <div className={styles.artifactPlaceholder}>
+          <span>{artifact.label}</span>
+          <span className={styles.artifactPending}>Photo to come</span>
+        </div>
       )}
       <figcaption className={styles.artifactCaption}>
         {artifact.label}
@@ -414,6 +939,10 @@ function KeepsakeLedger({ keepsakes }: { keepsakes: string[] }) {
       )}
     </div>
   );
+}
+
+function rise(index: number) {
+  return { '--i': index } as React.CSSProperties;
 }
 
 function StoryPanel({
@@ -469,14 +998,22 @@ function StoryPanel({
       </div>
 
       <div className={styles.storyBody} key={beat.id}>
-        <p className={styles.eyebrow}>
+        <p className={styles.eyebrow} style={rise(0)}>
           {map?.placeLabel ?? beat.mapId} &middot; Chapter {number}
         </p>
-        <h2 className={styles.storyTitle}>{beat.title}</h2>
-        <p className={styles.period}>{beat.period}</p>
+        <h2 className={styles.storyTitle} style={rise(1)}>
+          {beat.title}
+        </h2>
+        <p className={styles.period} style={rise(2)}>
+          {beat.period}
+        </p>
         <ArtifactFrame artifact={artifact} />
-        {cleanStory(beat).map((paragraph) => (
-          <p className={styles.storyText} key={paragraph}>
+        {cleanStory(beat).map((paragraph, index) => (
+          <p
+            className={styles.storyText}
+            key={paragraph}
+            style={rise(4 + index)}
+          >
             {paragraph}
           </p>
         ))}
@@ -535,7 +1072,7 @@ function IndexView({ progress }: { progress: JourneyProgress }) {
         </button>
       </div>
       <ol className={styles.indexList}>
-        {orderedBeatIds.map((beatId) => {
+        {orderedBeatIds.map((beatId, index) => {
           const beat = beatsById.get(beatId);
 
           if (!beat) {
@@ -546,7 +1083,7 @@ function IndexView({ progress }: { progress: JourneyProgress }) {
           const visited = progress.visitedBeatIds.includes(beatId);
 
           return (
-            <li key={beatId}>
+            <li key={beatId} style={rise(index)}>
               <button
                 className={styles.indexRow}
                 data-visited={visited ? 'true' : undefined}
@@ -577,50 +1114,30 @@ function IndexView({ progress }: { progress: JourneyProgress }) {
 function EndingView({
   keepsakes,
   onExit,
+  progress,
+  reducedMotion,
   standalone,
 }: {
   keepsakes: string[];
   onExit?: () => void;
+  progress: JourneyProgress;
+  reducedMotion: boolean;
   standalone: boolean;
 }) {
-  const [pin, setPin] = useState<{ x: number; y: number } | null>(null);
-
-  const placePin = (event: React.MouseEvent<HTMLButtonElement>) => {
-    /* A keyboard activation has no coordinates; give the pin open water. */
-    if (event.clientX === 0 && event.clientY === 0) {
-      setPin({ x: 58, y: 34 });
-      return;
-    }
-
-    const rect = event.currentTarget.getBoundingClientRect();
-    setPin({
-      x: ((event.clientX - rect.left) / rect.width) * 100,
-      y: ((event.clientY - rect.top) / rect.height) * 100,
-    });
-  };
+  const [pin, setPin] = useState<Point | null>(null);
+  const finalNode = mainNodeByBeatId.get(finalBeat.id);
 
   return (
     <section className={styles.ending}>
-      <button
-        aria-label="Place the next pin somewhere in the unprinted margin"
-        className={styles.margin}
-        onClick={placePin}
-        ref={swapFocusRef}
-        type="button"
-      >
-        <span className={styles.mapLabelTop}>The unprinted margin</span>
-        {pin ? (
-          <span
-            aria-hidden="true"
-            className={styles.pin}
-            style={{ left: `${pin.x}%`, top: `${pin.y}%` }}
-          />
-        ) : (
-          <span className={styles.marginHint}>
-            Place the next pin &mdash; tap anywhere
-          </span>
-        )}
-      </button>
+      <RouteMap
+        currentMapId={finalBeat.mapId}
+        currentNodeId={finalNode?.id ?? orderedMainNodes[0].id}
+        ending
+        onPick={pin ? undefined : setPin}
+        pin={pin}
+        progress={progress}
+        reducedMotion={reducedMotion}
+      />
 
       <aside
         aria-label="Ending text"
@@ -635,23 +1152,31 @@ function EndingView({
             ? `Pin placed in the unprinted margin — ${finalBeat.title}`
             : `No finish line — ${finalBeat.title}`}
         </p>
-        <div className={styles.storyBody}>
-          <p className={styles.eyebrow}>
+        <div className={styles.storyBody} key={pin ? 'pinned' : 'open'}>
+          <p className={styles.eyebrow} style={rise(0)}>
             {mapsById.get(finalBeat.mapId)?.placeLabel ?? 'Horizon'} &middot; No
             finish line
           </p>
-          <h2 className={styles.storyTitle}>{finalBeat.title}</h2>
+          <h2 className={styles.storyTitle} style={rise(1)}>
+            {finalBeat.title}
+          </h2>
           {pin ? (
             <>
-              {cleanStory(finalBeat).map((paragraph) => (
-                <p className={styles.storyText} key={paragraph}>
+              {cleanStory(finalBeat).map((paragraph, index) => (
+                <p
+                  className={styles.storyText}
+                  key={paragraph}
+                  style={rise(2 + index)}
+                >
                   {paragraph}
                 </p>
               ))}
-              <p className={styles.period}>The pin stays unlabelled for now.</p>
+              <p className={styles.period} style={rise(4)}>
+                The pin stays unlabelled for now.
+              </p>
             </>
           ) : (
-            <p className={styles.storyText}>
+            <p className={styles.storyText} style={rise(2)}>
               The printed route ends here. Put one pin anywhere in the margin
               &mdash; nobody knows the label yet, including the mapmaker.
             </p>
@@ -664,7 +1189,7 @@ function EndingView({
           <div className={styles.storyFooter}>
             <button
               className={styles.pagerAction}
-              onClick={resetJourney}
+              onClick={restartJourney}
               type="button"
             >
               Start again
@@ -750,12 +1275,18 @@ export function Journey({
         {state.status === 'screen' || state.status === 'closed' ? (
           <WakeScreen
             phase={state.status === 'screen' ? state.phase : 'waking'}
+            reducedMotion={reducedMotion}
           />
         ) : null}
 
         {state.status === 'chapter' ? (
           <div className={styles.chapter} data-mode={state.mode}>
-            <RouteMap currentNodeId={state.nodeId} progress={progress} />
+            <RouteMap
+              currentMapId={beatsById.get(state.beatId)?.mapId ?? 'san-diego'}
+              currentNodeId={state.nodeId}
+              progress={progress}
+              reducedMotion={reducedMotion}
+            />
             <StoryPanel progress={progress} state={state} />
           </div>
         ) : null}
@@ -766,6 +1297,8 @@ export function Journey({
           <EndingView
             keepsakes={state.keepsakes}
             onExit={onExit}
+            progress={progress}
+            reducedMotion={reducedMotion}
             standalone={standalone}
           />
         ) : null}

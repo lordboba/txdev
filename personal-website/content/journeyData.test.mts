@@ -78,8 +78,14 @@ test('map ids, artifact links, and node graph are internally consistent', async 
 
   for (const node of journeyNodes) {
     assert.ok(mapIds.has(node.mapId), `node ${node.id} has bad map`);
-    assert.ok(node.x >= 0 && node.x <= 100, `node ${node.id} x out of range`);
-    assert.ok(node.y >= 0 && node.y <= 100, `node ${node.id} y out of range`);
+    /* Every moment sits on its real city: the offset from the projected
+     * place stays within one regional zoom, never drifting into a neighbour. */
+    const place = journeyMaps.find((map) => map.id === node.mapId)?.place;
+    assert.ok(place, `node ${node.id} has no projected place`);
+    assert.ok(
+      Math.hypot(node.x - place.x, node.y - place.y) <= 40,
+      `node ${node.id} strays too far from ${node.mapId}`,
+    );
 
     if (node.kind === 'main') {
       const beat = beatsById.get(node.beatId);

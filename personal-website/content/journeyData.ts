@@ -1,9 +1,6 @@
-export type JourneyMapId =
-  | 'san-diego'
-  | 'ucla'
-  | 'san-francisco'
-  | 'new-york'
-  | 'horizon';
+import { usPlaces, type UsPlace, type UsPlaceId } from './usMapGenerated.ts';
+
+export type JourneyMapId = UsPlaceId;
 
 export type JourneyEditorialStatus =
   | 'confirmed'
@@ -17,27 +14,31 @@ export type JourneyArtifact = {
   sourceNote: string;
 };
 
-export type JourneyMapNode =
-  | {
-      id: string;
-      mapId: JourneyMapId;
-      label: string;
-      x: number;
-      y: number;
-      kind: 'main';
-      beatId: string;
-      adjacency: string[];
-    }
-  | {
-      id: string;
-      mapId: JourneyMapId;
-      label: string;
-      x: number;
-      y: number;
-      kind: 'side';
-      artifactId: string;
-      adjacency: string[];
-    };
+/**
+ * Every node hangs off its map's real city: `dx`/`dy` are an offset from the
+ * projected city, in the atlas frame's units (see usMapGenerated.ts), so a
+ * cluster of chapters fans out around San Diego without leaving San Diego.
+ * The resolved `x`/`y` are derived at module load, never authored.
+ */
+type JourneyNodeBase = {
+  id: string;
+  mapId: JourneyMapId;
+  label: string;
+  dx: number;
+  dy: number;
+  /** Which side of the pin the label sits on, so labels never collide. */
+  labelSide: 'left' | 'right';
+  adjacency: string[];
+};
+
+export type JourneyMapNode = JourneyNodeBase & {
+  /** Atlas-frame coordinates, resolved from the map's city plus the offset. */
+  x: number;
+  y: number;
+} & ({ kind: 'main'; beatId: string } | { kind: 'side'; artifactId: string });
+
+type JourneyNodeSource = JourneyNodeBase &
+  ({ kind: 'main'; beatId: string } | { kind: 'side'; artifactId: string });
 
 export type JourneyBeatRef = { company: string } | { project: string };
 
@@ -59,6 +60,10 @@ export type JourneyMap = {
   id: JourneyMapId;
   name: string;
   placeLabel: string;
+  /** State or water the place sits in, for the map's place plate. */
+  region: string;
+  /** The real place, projected: the pin the map's chapters gather around. */
+  place: UsPlace;
 };
 
 export type JourneyWordingRule = {
@@ -306,13 +311,14 @@ export const journeyArtifacts: JourneyArtifact[] = [
   },
 ];
 
-export const journeyNodes: JourneyMapNode[] = [
+const journeyNodeSources: JourneyNodeSource[] = [
   {
     id: 'sd-wake',
     mapId: 'san-diego',
     label: 'The dark display',
-    x: 14,
-    y: 84,
+    dx: -2,
+    dy: 9,
+    labelSide: 'right',
     kind: 'main',
     beatId: '00-wake',
     adjacency: ['sd-wake-artifact', 'sd-practices'],
@@ -321,8 +327,9 @@ export const journeyNodes: JourneyMapNode[] = [
     id: 'sd-wake-artifact',
     mapId: 'san-diego',
     label: 'Portrait',
-    x: 9,
-    y: 79,
+    dx: -15,
+    dy: 3,
+    labelSide: 'left',
     kind: 'side',
     artifactId: 'portrait',
     adjacency: ['sd-wake'],
@@ -331,8 +338,9 @@ export const journeyNodes: JourneyMapNode[] = [
     id: 'sd-practices',
     mapId: 'san-diego',
     label: 'A week of practices',
-    x: 20,
-    y: 77,
+    dx: 13,
+    dy: 1,
+    labelSide: 'right',
     kind: 'main',
     beatId: '01-practices',
     adjacency: ['sd-wake', 'sd-practice-artifact', 'sd-del-norte'],
@@ -341,8 +349,9 @@ export const journeyNodes: JourneyMapNode[] = [
     id: 'sd-practice-artifact',
     mapId: 'san-diego',
     label: 'Scratch or cello',
-    x: 14,
-    y: 71,
+    dx: 10,
+    dy: 14,
+    labelSide: 'right',
     kind: 'side',
     artifactId: 'scratch-or-cello',
     adjacency: ['sd-practices'],
@@ -351,8 +360,9 @@ export const journeyNodes: JourneyMapNode[] = [
     id: 'sd-del-norte',
     mapId: 'san-diego',
     label: 'Del Norte',
-    x: 26,
-    y: 71,
+    dx: 26,
+    dy: -9,
+    labelSide: 'right',
     kind: 'main',
     beatId: '02-del-norte',
     adjacency: ['sd-practices', 'sd-track-artifact', 'sd-first-app'],
@@ -361,8 +371,9 @@ export const journeyNodes: JourneyMapNode[] = [
     id: 'sd-track-artifact',
     mapId: 'san-diego',
     label: 'Running bib',
-    x: 31,
-    y: 76,
+    dx: 33,
+    dy: -19,
+    labelSide: 'right',
     kind: 'side',
     artifactId: 'running-bib',
     adjacency: ['sd-del-norte'],
@@ -371,8 +382,9 @@ export const journeyNodes: JourneyMapNode[] = [
     id: 'sd-first-app',
     mapId: 'san-diego',
     label: 'First app',
-    x: 30,
-    y: 64,
+    dx: 17,
+    dy: -23,
+    labelSide: 'right',
     kind: 'main',
     beatId: '03-first-app',
     adjacency: ['sd-del-norte', 'sd-app-artifact', 'la-ucla'],
@@ -381,8 +393,9 @@ export const journeyNodes: JourneyMapNode[] = [
     id: 'sd-app-artifact',
     mapId: 'san-diego',
     label: 'Grow & Give',
-    x: 36,
-    y: 68,
+    dx: 3,
+    dy: -15,
+    labelSide: 'left',
     kind: 'side',
     artifactId: 'grow-and-give-app',
     adjacency: ['sd-first-app'],
@@ -391,8 +404,9 @@ export const journeyNodes: JourneyMapNode[] = [
     id: 'la-ucla',
     mapId: 'ucla',
     label: 'UCLA',
-    x: 33,
-    y: 56,
+    dx: 0,
+    dy: 0,
+    labelSide: 'right',
     kind: 'main',
     beatId: '04-ucla',
     adjacency: ['sd-first-app', 'la-ucla-artifact', 'sf-safetykit'],
@@ -401,8 +415,9 @@ export const journeyNodes: JourneyMapNode[] = [
     id: 'la-ucla-artifact',
     mapId: 'ucla',
     label: 'UCLA mark',
-    x: 38,
-    y: 60,
+    dx: -12,
+    dy: -9,
+    labelSide: 'left',
     kind: 'side',
     artifactId: 'ucla-mark',
     adjacency: ['la-ucla'],
@@ -411,8 +426,9 @@ export const journeyNodes: JourneyMapNode[] = [
     id: 'sf-safetykit',
     mapId: 'san-francisco',
     label: 'SafetyKit',
-    x: 22,
-    y: 30,
+    dx: 0,
+    dy: 0,
+    labelSide: 'right',
     kind: 'main',
     beatId: '05-safetykit',
     adjacency: ['la-ucla', 'sf-safetykit-artifact', 'ny-codex'],
@@ -421,8 +437,9 @@ export const journeyNodes: JourneyMapNode[] = [
     id: 'sf-safetykit-artifact',
     mapId: 'san-francisco',
     label: 'SafetyKit mark',
-    x: 17,
-    y: 25,
+    dx: 12,
+    dy: -12,
+    labelSide: 'right',
     kind: 'side',
     artifactId: 'safetykit-mark',
     adjacency: ['sf-safetykit'],
@@ -431,8 +448,9 @@ export const journeyNodes: JourneyMapNode[] = [
     id: 'ny-codex',
     mapId: 'new-york',
     label: 'Codex community',
-    x: 66,
-    y: 38,
+    dx: -16,
+    dy: 9,
+    labelSide: 'left',
     kind: 'main',
     beatId: '06-codex',
     adjacency: ['sf-safetykit', 'ny-codex-artifact', 'ny-ramp'],
@@ -441,8 +459,9 @@ export const journeyNodes: JourneyMapNode[] = [
     id: 'ny-codex-artifact',
     mapId: 'new-york',
     label: 'Event poster',
-    x: 62,
-    y: 44,
+    dx: -28,
+    dy: 20,
+    labelSide: 'left',
     kind: 'side',
     artifactId: 'codex-event',
     adjacency: ['ny-codex'],
@@ -451,8 +470,9 @@ export const journeyNodes: JourneyMapNode[] = [
     id: 'ny-ramp',
     mapId: 'new-york',
     label: 'Ramp',
-    x: 74,
-    y: 32,
+    dx: 0,
+    dy: 0,
+    labelSide: 'right',
     kind: 'main',
     beatId: '07-ramp',
     adjacency: ['ny-codex', 'ny-ramp-artifact', 'horizon-pin'],
@@ -461,8 +481,9 @@ export const journeyNodes: JourneyMapNode[] = [
     id: 'ny-ramp-artifact',
     mapId: 'new-york',
     label: 'New York photo',
-    x: 79,
-    y: 37,
+    dx: 10,
+    dy: 13,
+    labelSide: 'right',
     kind: 'side',
     artifactId: 'ramp-nyc-photo',
     adjacency: ['ny-ramp'],
@@ -471,8 +492,9 @@ export const journeyNodes: JourneyMapNode[] = [
     id: 'horizon-pin',
     mapId: 'horizon',
     label: 'The next pin',
-    x: 90,
-    y: 14,
+    dx: 0,
+    dy: 0,
+    labelSide: 'right',
     kind: 'main',
     beatId: '08-horizon',
     adjacency: ['ny-ramp', 'horizon-margin'],
@@ -481,13 +503,19 @@ export const journeyNodes: JourneyMapNode[] = [
     id: 'horizon-margin',
     mapId: 'horizon',
     label: 'Unprinted margin',
-    x: 95,
-    y: 8,
+    dx: 18,
+    dy: -12,
+    labelSide: 'right',
     kind: 'side',
     artifactId: 'unprinted-margin',
     adjacency: ['horizon-pin'],
   },
 ];
+
+export const journeyNodes: JourneyMapNode[] = journeyNodeSources.map((node) => {
+  const place = usPlaces[node.mapId];
+  return { ...node, x: place.x + node.dx, y: place.y + node.dy };
+});
 
 export const journeyWordingRules: JourneyWordingRule[] = [
   {
@@ -511,11 +539,41 @@ export const journeyWordingRules: JourneyWordingRule[] = [
 ];
 
 const journeyMapMeta: JourneyMap[] = [
-  { id: 'san-diego', name: 'San Diego', placeLabel: 'SAN DIEGO' },
-  { id: 'ucla', name: 'UCLA', placeLabel: 'LOS ANGELES / UCLA' },
-  { id: 'san-francisco', name: 'San Francisco', placeLabel: 'SAN FRANCISCO' },
-  { id: 'new-york', name: 'New York', placeLabel: 'NEW YORK' },
-  { id: 'horizon', name: 'Horizon', placeLabel: 'HORIZON' },
+  {
+    id: 'san-diego',
+    name: 'San Diego',
+    placeLabel: 'SAN DIEGO',
+    region: 'California',
+    place: usPlaces['san-diego'],
+  },
+  {
+    id: 'ucla',
+    name: 'UCLA',
+    placeLabel: 'LOS ANGELES / UCLA',
+    region: 'California',
+    place: usPlaces.ucla,
+  },
+  {
+    id: 'san-francisco',
+    name: 'San Francisco',
+    placeLabel: 'SAN FRANCISCO',
+    region: 'California',
+    place: usPlaces['san-francisco'],
+  },
+  {
+    id: 'new-york',
+    name: 'New York',
+    placeLabel: 'NEW YORK',
+    region: 'New York',
+    place: usPlaces['new-york'],
+  },
+  {
+    id: 'horizon',
+    name: 'Horizon',
+    placeLabel: 'HORIZON',
+    region: 'Atlantic margin',
+    place: usPlaces.horizon,
+  },
 ];
 
 export const journeyMaps: JourneyMap[] = journeyMapMeta.filter((map) =>
