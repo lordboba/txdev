@@ -86,11 +86,11 @@ export const journeyBeats: JourneyBeat[] = [
   {
     id: '00-wake',
     mapId: 'san-diego',
-    title: 'The screen wakes',
+    title: 'Start',
     period: 'Now',
     story: [
       'Tyler Xiao?',
-      'The short answer fits on this screen. The longer one starts in San Diego.',
+      'A short walk through where I have lived and what I built there. It starts in San Diego.',
       'Learn more.',
     ],
     artifactIds: ['portrait'],
@@ -106,10 +106,10 @@ export const journeyBeats: JourneyBeat[] = [
   {
     id: '01-practices',
     mapId: 'san-diego',
-    title: 'San Diego: several ways to learn',
+    title: 'San Diego: growing up',
     period: 'Around age eleven or twelve',
     story: [
-      'I grew up in San Diego. Around eleven or twelve, I made games in Scratch, then moved into Java for competitive programming. Around the same time, I went to Chinese after-school classes and math competitions. I also spent a lot of time playing cello, and before the pandemic I played water polo. Programming mattered, but it was not the whole story.',
+      'I grew up in San Diego. Around eleven or twelve I made games in Scratch, then moved to Java for competitive programming. In the same years I went to Chinese after-school classes and math competitions, played cello, and, before the pandemic, played water polo. Programming was one of several things I did.',
     ],
     artifactIds: ['scratch-or-cello'],
     interactionId: 'visit-week-practices',
@@ -124,10 +124,10 @@ export const journeyBeats: JourneyBeat[] = [
   {
     id: '02-del-norte',
     mapId: 'san-diego',
-    title: 'Del Norte: learning to set the pace',
+    title: 'Del Norte High School',
     period: 'High school',
     story: [
-      'In high school, I kept two practices running at once. Cross-country and track taught me pace; the Math and Algorithmic Coding clubs taught me how to help a group keep moving. I learned that leadership was less about having the fastest answer and more about making it easier for other people to continue.',
+      'In high school I ran cross-country and track and was president of the Math Club and the Algorithmic Coding Club. Running taught me pacing. The clubs taught me how to keep a group going: having the answer first mattered less than making it easy for other people to keep working.',
     ],
     artifactIds: ['running-bib'],
     interactionId: 'hold-team-pace',
@@ -142,10 +142,10 @@ export const journeyBeats: JourneyBeat[] = [
   {
     id: '03-first-app',
     mapId: 'san-diego',
-    title: 'The first app for someone else',
+    title: 'Grow & Give, my first app',
     period: '2022 to 2023',
     story: [
-      'Grow & Give turned focused minutes into progress inside an app and support for real nonprofits. Building it meant making choices for someone besides me: what to show, what to store, and what to make easy. A running app was only the beginning.',
+      'Grow & Give was a Swift and MongoDB app I built in 2022 and 2023. You set a focus timer, and finished sessions turned into support for real nonprofits. It was the first time I made product decisions for other people: what to show, what to store, and what to make easy. It won first place in its fair’s senior computer-science category.',
     ],
     artifactIds: ['grow-and-give-app'],
     interactionId: 'plan-focus-reflect',
@@ -160,10 +160,10 @@ export const journeyBeats: JourneyBeat[] = [
   {
     id: '04-ucla',
     mapId: 'ucla',
-    title: 'UCLA: the map gets larger',
+    title: 'UCLA',
     period: '2024 to present',
     story: [
-      'I came to UCLA in 2024 to study computer science. [One academic moment that changed how I approached the work.] [One community moment that changed who I built with.] I kept playing cello in the Symphony Orchestra, so programming was still not the only practice in my week.',
+      'I came to UCLA in 2024 to study computer science. [One academic moment that changed how I approached the work.] [One community moment that changed who I built with.] I still play cello in the Symphony Orchestra.',
     ],
     artifactIds: ['ucla-mark'],
     interactionId: 'connect-campus-nodes',
@@ -179,10 +179,10 @@ export const journeyBeats: JourneyBeat[] = [
   {
     id: '05-safetykit',
     mapId: 'san-francisco',
-    title: 'San Francisco: production starts',
+    title: 'SafetyKit, San Francisco',
     period: 'Jun 2025 to Sep 2025',
     story: [
-      'After freshman year, the route moved north. SafetyKit was my first startup-engineering summer and my first time spending months in San Francisco. I worked on trust-and-safety systems where a pipeline could fail and a reviewer could lose trust. The details mattered because people used the system.',
+      'After freshman year I spent June to September 2025 at SafetyKit in San Francisco. It was my first startup-engineering summer and my first time living in the city. I worked on trust-and-safety systems. When a pipeline failed, a reviewer lost time and stopped trusting the tool, so the details mattered.',
     ],
     artifactIds: ['safetykit-mark'],
     interactionId: 'repair-production-route',
@@ -197,10 +197,10 @@ export const journeyBeats: JourneyBeat[] = [
   {
     id: '06-codex',
     mapId: 'ucla',
-    title: 'Codex: turn the tools into a room',
+    title: 'Codex community, Los Angeles',
     period: '2025 to present',
     story: [
-      "I wanted technical work to happen in person, too. As a Codex Ambassador, I began hosting campus demos, workshops, and build sessions. Builders brought projects, compared notes, and made things together. The same thread followed me to New York, where I helped organize and judge Ramp's Builders Cup.",
+      "I also wanted the technical work to happen in person. As a Codex Ambassador I started hosting demos, workshops, and build sessions at UCLA and around Los Angeles. People brought projects, compared notes, and built together. Later, in New York, I helped organize and judge Ramp's Builders Cup.",
     ],
     artifactIds: ['codex-event'],
     interactionId: 'gather-builders',
@@ -216,10 +216,10 @@ export const journeyBeats: JourneyBeat[] = [
   {
     id: '07-ramp',
     mapId: 'new-york',
-    title: 'New York: build at a larger scale',
+    title: 'Ramp, New York',
     period: 'Summer 2026',
     story: [
-      "This summer brought me to New York and Ramp's Reimbursements team. New city, larger system, same question: what would make this workflow genuinely useful to the person depending on it? Building and gathering people started to feel like parts of the same job.",
+      "In summer 2026 I moved to New York to work on Ramp's Reimbursements team. It was a bigger system with the same question: what makes this workflow actually useful to the person who depends on it? By then, building things and organizing people felt like parts of the same job.",
     ],
     artifactIds: ['ramp-nyc-photo'],
     interactionId: 'ship-reimbursements',
@@ -234,10 +234,10 @@ export const journeyBeats: JourneyBeat[] = [
   {
     id: '08-horizon',
     mapId: 'horizon',
-    title: 'Horizon: the unlabelled map',
+    title: 'What comes next',
     period: 'Next',
     story: [
-      'One next step is already planned. The rest is not. I want to keep building AI systems that become genuinely useful inside companies, and keep bringing the people using those systems into the same room. The map ends here because the story does not.',
+      'One next step is already planned. The rest is open. I want to keep building AI systems that are genuinely useful inside companies, and keep bringing the people who use them into the same room.',
     ],
     artifactIds: ['unprinted-margin'],
     interactionId: 'place-next-pin',
@@ -260,7 +260,7 @@ export const journeyArtifacts: JourneyArtifact[] = [
   },
   {
     id: 'scratch-or-cello',
-    label: 'Scratch sprite or cello score',
+    label: 'Scratch game or cello score',
     asset: null,
     sourceNote:
       'Tyler must supply a Scratch game screenshot, a cello score, or a program from that period.',
@@ -281,14 +281,14 @@ export const journeyArtifacts: JourneyArtifact[] = [
   },
   {
     id: 'ucla-mark',
-    label: 'UCLA mark',
+    label: 'UCLA logo',
     asset: '/logos/ucla.svg',
     sourceNote:
       'Existing UCLA mark in public/; Tyler may later swap in a campus, UPE, Symphony, or project-team photo that carries an actual memory.',
   },
   {
     id: 'safetykit-mark',
-    label: 'SafetyKit mark',
+    label: 'SafetyKit logo',
     asset: '/logos/safetykit.svg',
     sourceNote:
       'Existing SafetyKit mark in public/; Tyler may later swap in an intern presentation, MCP diagram, or his own San Francisco photo.',
@@ -309,7 +309,7 @@ export const journeyArtifacts: JourneyArtifact[] = [
   },
   {
     id: 'unprinted-margin',
-    label: 'Unprinted margin',
+    label: 'Blank margin',
     asset: null,
     sourceNote:
       'Intentionally rendered as blank map margin; Tyler may later supply a small note naming the confirmed next stop.',
@@ -320,7 +320,7 @@ const journeyNodeSources: JourneyNodeSource[] = [
   {
     id: 'sd-wake',
     mapId: 'san-diego',
-    label: 'The dark display',
+    label: 'Start',
     dx: 2,
     dy: -10,
     labelSide: 'left',
@@ -342,7 +342,7 @@ const journeyNodeSources: JourneyNodeSource[] = [
   {
     id: 'sd-practices',
     mapId: 'san-diego',
-    label: 'A week of practices',
+    label: 'Growing up',
     dx: 20,
     dy: -2,
     labelSide: 'right',
@@ -397,7 +397,7 @@ const journeyNodeSources: JourneyNodeSource[] = [
   {
     id: 'sd-app-artifact',
     mapId: 'san-diego',
-    label: 'Grow & Give',
+    label: 'App screenshot',
     dx: 4,
     dy: -34,
     labelSide: 'right',
@@ -419,7 +419,7 @@ const journeyNodeSources: JourneyNodeSource[] = [
   {
     id: 'la-ucla-artifact',
     mapId: 'ucla',
-    label: 'UCLA mark',
+    label: 'UCLA logo',
     dx: -12,
     dy: -9,
     labelSide: 'left',
@@ -441,7 +441,7 @@ const journeyNodeSources: JourneyNodeSource[] = [
   {
     id: 'sf-safetykit-artifact',
     mapId: 'san-francisco',
-    label: 'SafetyKit mark',
+    label: 'SafetyKit logo',
     dx: 12,
     dy: -12,
     labelSide: 'right',
@@ -496,7 +496,7 @@ const journeyNodeSources: JourneyNodeSource[] = [
   {
     id: 'horizon-pin',
     mapId: 'horizon',
-    label: 'The next pin',
+    label: 'Next step',
     dx: 0,
     dy: 0,
     labelSide: 'right',
@@ -507,7 +507,7 @@ const journeyNodeSources: JourneyNodeSource[] = [
   {
     id: 'horizon-margin',
     mapId: 'horizon',
-    label: 'Unprinted margin',
+    label: 'Blank margin',
     dx: 18,
     dy: -12,
     labelSide: 'right',
@@ -579,9 +579,10 @@ const journeyMapMeta: JourneyMap[] = [
   },
   {
     id: 'horizon',
-    name: 'Horizon',
-    placeLabel: 'HORIZON',
-    region: 'Atlantic margin',
+    name: 'Next',
+    placeLabel: 'NEXT STOP',
+    locality: 'Next stop',
+    region: 'not on the map yet',
     place: usPlaces.horizon,
     labelSide: 'ne',
   },

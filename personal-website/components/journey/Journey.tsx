@@ -400,7 +400,7 @@ function WakeScreen({
       <GhostAtlas phase={phase} />
       <div className={styles.wakeInner}>
         <p className={styles.wakeEyebrow}>
-          Personal env / a short route, 4-6 min
+          Tyler Xiao / a short route, 4 to 6 minutes
         </p>
         <h1 aria-label={question} className={styles.wakeQuestion}>
           <span aria-hidden="true">{shown}</span>
@@ -438,7 +438,7 @@ function WakeScreen({
             ref={swapFocusRef}
             type="button"
           >
-            Wake the display
+            Wake the screen
           </button>
         )}
       </div>
@@ -876,7 +876,7 @@ function RouteMap({
 
       {onPick ? (
         <button
-          aria-label="Place the next pin somewhere in the unprinted margin"
+          aria-label="Place the next pin in the open water"
           className={styles.pickArea}
           onClick={pick}
           ref={swapFocusRef}
@@ -894,10 +894,10 @@ function RouteMap({
         </button>
       )}
       <div className={styles.mapLabelTop}>
-        <span>{ending ? 'The whole route' : 'The route so far'}</span>
+        <span>{ending ? 'Whole route' : 'Route so far'}</span>
         {ending ? (
           <span className={styles.mapHint}>
-            {pin ? 'The pin stays unlabelled' : 'Tap anywhere in the margin'}
+            {pin ? 'Pin placed' : 'Tap the open water to place the pin'}
           </span>
         ) : (
           <span className={styles.mapHint}>
@@ -971,7 +971,7 @@ function KeepsakeLedger({ keepsakes }: { keepsakes: string[] }) {
       <span className={styles.ledgerLabel}>Keepsakes</span>
       {keepsakes.length === 0 ? (
         <span className={styles.ledgerEmpty}>
-          None yet &mdash; side paths leave one.
+          None yet. Side paths add one.
         </span>
       ) : (
         <ul className={styles.ledgerList}>
@@ -1036,7 +1036,7 @@ function StoryPanel({
           onClick={openJourneyIndex}
           type="button"
         >
-          Story index
+          All chapters
         </button>
       </div>
 
@@ -1102,9 +1102,9 @@ function StoryPanel({
 
 function IndexView({ progress }: { progress: JourneyProgress }) {
   return (
-    <section aria-label="Story index" className={styles.index}>
+    <section aria-label="All chapters" className={styles.index}>
       <div className={styles.indexHead}>
-        <p className={styles.eyebrow}>Story index</p>
+        <p className={styles.eyebrow}>All chapters</p>
         <button
           className={styles.controlAction}
           onClick={closeJourneyIndex}
@@ -1192,14 +1192,14 @@ function EndingView({
             and the pin, never the whole re-rendered body. */}
         <p aria-live="polite" className={styles.srAnnounce}>
           {pin
-            ? `Pin placed in the unprinted margin — ${finalBeat.title}`
-            : `No finish line — ${finalBeat.title}`}
+            ? `Pin placed — ${finalBeat.title}`
+            : `Ending — ${finalBeat.title}`}
         </p>
         {/* No key: placing the pin adds paragraphs, it does not re-run the
             eyebrow and title. */}
         <div className={styles.storyBody}>
           <p className={styles.eyebrow} style={rise(0)}>
-            {`${mapsById.get(finalBeat.mapId)?.placeLabel ?? 'Horizon'} · No finish line`}
+            {`${mapsById.get(finalBeat.mapId)?.placeLabel ?? 'Next stop'} · Ending`}
           </p>
           <h2 className={styles.storyTitle} style={rise(1)}>
             {finalBeat.title}
@@ -1216,13 +1216,13 @@ function EndingView({
                 </p>
               ))}
               <p className={styles.period} style={rise(4)}>
-                The pin stays unlabelled for now.
+                No label on the pin yet.
               </p>
             </>
           ) : (
             <p className={styles.storyText} style={rise(2)}>
-              The printed route ends here. Put one pin anywhere in the margin
-              &mdash; nobody knows the label yet, including the mapmaker.
+              The route ends here for now. Tap the open water to place a pin for
+              the next stop.
             </p>
           )}
         </div>
@@ -1268,10 +1268,9 @@ function EndingView({
 function ErrorView() {
   return (
     <section className={styles.errorView} role="alert">
-      <p className={styles.eyebrow}>The map lost its place</p>
+      <p className={styles.eyebrow}>Something went wrong</p>
       <p className={styles.storyText}>
-        The chapter copy is safe. Pick the route back up where it still
-        resolves.
+        Your place on the map was lost. Recover to the last chapter that loaded.
       </p>
       <button
         className={styles.primaryAction}
@@ -1279,7 +1278,7 @@ function ErrorView() {
         ref={swapFocusRef}
         type="button"
       >
-        Recover the story
+        Recover
       </button>
     </section>
   );
@@ -1322,7 +1321,7 @@ export function Journey({
             &larr; tylerx.dev
           </Link>
           <span className={styles.railTitle}>Tyler Xiao / Journey</span>
-          <span className={styles.railMeta}>No fail state. No score.</span>
+          <span className={styles.railMeta}>No score, no time limit.</span>
         </header>
       ) : null}
 
