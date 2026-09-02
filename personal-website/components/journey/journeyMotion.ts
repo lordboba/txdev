@@ -231,12 +231,20 @@ export function createAtlasMotion(options: {
     },
     travelAlong(fromLength, toLength) {
       const distance = Math.abs(toLength - fromLength);
+      const own = 650 + Math.min(distance / 300, 1) * 550;
+      /*
+       * On the same clock as a flight that just began: the token and the
+       * camera arrive together, so the token never overshoots the frame and
+       * drifts back while the camera is still settling.
+       */
+      const withFlight =
+        flight && flight.start <= now() ? Math.max(own, flight.duration) : own;
       travel = {
         kind: 'spine',
         from: fromLength,
         to: toLength,
         start: now(),
-        duration: 650 + Math.min(distance / 300, 1) * 550,
+        duration: withFlight,
       };
       schedule();
     },

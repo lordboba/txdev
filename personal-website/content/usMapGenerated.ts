@@ -31,10 +31,10 @@ export type UsPlace = {
 export const usPlaces: Record<UsPlaceId, UsPlace> = {
   'san-diego': {
     name: 'San Diego',
-    lat: 32.7157,
-    lng: -117.1611,
-    x: 99.7,
-    y: 397.5,
+    lat: 33.02,
+    lng: -117.11,
+    x: 102.2,
+    y: 390.9,
   },
   ucla: {
     name: 'Los Angeles',

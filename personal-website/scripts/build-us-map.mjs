@@ -46,7 +46,9 @@ const borders = path(mesh(topology, states, (a, b) => a !== b));
 /* Real places, WGS84. The horizon is open Atlantic east of New York — the
  * unprinted margin the story ends in. */
 const places = {
-  'san-diego': { name: 'San Diego', lat: 32.7157, lng: -117.1611 },
+  /* Tyler grew up in 4S Ranch, inland north San Diego (Del Norte is here),
+   * so the San Diego chapters gather there rather than downtown. */
+  'san-diego': { name: 'San Diego', lat: 33.02, lng: -117.11 },
   ucla: { name: 'Los Angeles', lat: 34.0689, lng: -118.4452 },
   'san-francisco': { name: 'San Francisco', lat: 37.7749, lng: -122.4194 },
   'new-york': { name: 'New York', lat: 40.7128, lng: -74.006 },

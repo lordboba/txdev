@@ -41,8 +41,10 @@ import {
   enterJourneyChapter,
   escapeJourney,
   finishJourney,
+  moveJourneyInDirection,
   moveJourneyToNode,
   nextJourneyBeat,
+  openJourneyBeat,
   openJourneyIndex,
   prevJourneyBeat,
   readJourneyProgress,
@@ -187,6 +189,41 @@ function drawnLengthFor(progress: JourneyProgress) {
 function swapFocusRef(element: HTMLElement | null) {
   if (element && consumeJourneyFocus()) {
     element.focus();
+  }
+}
+
+/** A new chapter's body mounts at the top of the record, not mid-scroll. */
+function scrollToTop(element: HTMLElement | null) {
+  element?.parentElement?.scrollTo({ top: 0 });
+}
+
+const ARROWS: Record<string, [number, number]> = {
+  ArrowLeft: [-1, 0],
+  ArrowRight: [1, 0],
+  ArrowUp: [0, -1],
+  ArrowDown: [0, 1],
+};
+
+/**
+ * Waypoint travel from the keyboard: arrows step to the adjacent node in
+ * that screen direction, Enter opens whatever the token stands on. Buttons
+ * and links keep their own Enter; a move that is not adjacent falls through
+ * untouched so the page never swallows a key it did nothing with.
+ */
+function handleChapterKey(event: React.KeyboardEvent<HTMLDivElement>) {
+  const target = event.target as HTMLElement;
+  const onControl = target.closest('button, a, input, textarea, select');
+
+  if (event.key === 'Enter' && !onControl) {
+    event.preventDefault();
+    openJourneyBeat();
+    return;
+  }
+
+  const arrow = ARROWS[event.key];
+
+  if (arrow && moveJourneyInDirection(arrow[0], arrow[1])) {
+    event.preventDefault();
   }
 }
 
@@ -492,7 +529,9 @@ function CityMarker({
       ref={(element) => register(`city:${map.id}`, element)}
     >
       <span className={styles.cityRing} />
-      <span className={styles.cityLabel}>{map.place.name}</span>
+      <span className={styles.cityLabel} data-side={map.labelSide}>
+        {map.place.name}
+      </span>
     </span>
   );
 }
@@ -573,6 +612,8 @@ function RouteMap({
     const viewport = motion.viewport();
     const scale = cameraScale(frame.camera, viewport);
 
+    /* The amber stroke reads this to stay 2px wide while dashing in atlas units. */
+    root.style.setProperty('--atlas-scale', scale.toFixed(5));
     groupRef.current?.setAttribute(
       'transform',
       cameraTransform(frame.camera, viewport),
@@ -652,6 +693,8 @@ function RouteMap({
 
       let cameraId: CameraId | null = null;
       let nodeId = lastTokenNodeId ?? currentNodeId;
+      /* Record where the token stands even when this mount never travels. */
+      lastTokenNodeId = nodeId;
       let first = true;
 
       const sync = () => {
@@ -866,7 +909,7 @@ function RouteMap({
       {map ? (
         <div className={styles.plate} key={map.id}>
           <span className={styles.plateName}>
-            {map.place.name}
+            {map.locality ?? map.place.name}
             <span className={styles.plateRegion}>, {map.region}</span>
           </span>
           <span className={styles.plateCoords}>
@@ -997,7 +1040,7 @@ function StoryPanel({
         </button>
       </div>
 
-      <div className={styles.storyBody} key={beat.id}>
+      <div className={styles.storyBody} key={beat.id} ref={scrollToTop}>
         <p className={styles.eyebrow} style={rise(0)}>
           {map?.placeLabel ?? beat.mapId} &middot; Chapter {number}
         </p>
@@ -1152,10 +1195,11 @@ function EndingView({
             ? `Pin placed in the unprinted margin — ${finalBeat.title}`
             : `No finish line — ${finalBeat.title}`}
         </p>
-        <div className={styles.storyBody} key={pin ? 'pinned' : 'open'}>
+        {/* No key: placing the pin adds paragraphs, it does not re-run the
+            eyebrow and title. */}
+        <div className={styles.storyBody}>
           <p className={styles.eyebrow} style={rise(0)}>
-            {mapsById.get(finalBeat.mapId)?.placeLabel ?? 'Horizon'} &middot; No
-            finish line
+            {`${mapsById.get(finalBeat.mapId)?.placeLabel ?? 'Horizon'} · No finish line`}
           </p>
           <h2 className={styles.storyTitle} style={rise(1)}>
             {finalBeat.title}
@@ -1260,6 +1304,17 @@ export function Journey({
     <div
       className={styles.journey}
       data-reduced={reducedMotion ? 'true' : undefined}
+      /* Embedded, the Bench's escape delegate owns the key; standalone, it
+         unwinds one level here. */
+      onKeyDown={
+        standalone
+          ? (event) => {
+              if (event.key === 'Escape' && escapeJourney()) {
+                event.preventDefault();
+              }
+            }
+          : undefined
+      }
     >
       {standalone ? (
         <header className={styles.rail}>
@@ -1280,7 +1335,11 @@ export function Journey({
         ) : null}
 
         {state.status === 'chapter' ? (
-          <div className={styles.chapter} data-mode={state.mode}>
+          <div
+            className={styles.chapter}
+            data-mode={state.mode}
+            onKeyDown={handleChapterKey}
+          >
             <RouteMap
               currentMapId={beatsById.get(state.beatId)?.mapId ?? 'san-diego'}
               currentNodeId={state.nodeId}

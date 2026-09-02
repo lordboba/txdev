@@ -42,7 +42,12 @@
   line-height: 1.55;
 }
 
-.journey button {
+/*
+ * Buttons inherit the body type by default; :where() keeps this reset at
+ * zero specificity so every class-level button rule below can set its own
+ * mono label size.
+ */
+:where(.journey) button {
   font: inherit;
 }
 
@@ -145,8 +150,13 @@
   stroke: var(--amber);
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
-  stroke-width: 1.5;
-  vector-effect: non-scaling-stroke;
+  /*
+   * User-space width on purpose: with non-scaling-stroke Chromium dashes the
+   * screen-space path using the user-space pathLength scale, so the dash
+   * covered only 1/scale of the route (tail leaked before the draw, draw
+   * stopped short of New York). 1.2 user units ~= 1.5px at 1440px.
+   */
+  stroke-width: 1.2;
 }
 
 .wake[data-phase='ready'] .ghostRoute {
@@ -349,14 +359,21 @@
   vector-effect: non-scaling-stroke;
 }
 
-/* Amber overlays only the travelled prefix: dasharray is written per frame. */
+/*
+ * Amber overlays only the travelled prefix: dasharray is written per frame.
+ * Dashes are in atlas units (pathLength), so the line must scale with the
+ * group (no non-scaling-stroke, which would dash in screen space); width and
+ * glow are scaled back to screen pixels by --atlas-scale, written per frame
+ * by the motion loop.
+ */
 .routePast {
   fill: none;
   stroke: var(--amber);
   stroke-linecap: round;
-  stroke-width: 2;
-  vector-effect: non-scaling-stroke;
-  filter: drop-shadow(0 0 6px rgba(196, 165, 95, 0.35));
+  stroke-width: calc(2px / var(--atlas-scale, 1));
+  filter: drop-shadow(
+    0 0 calc(6px / var(--atlas-scale, 1)) rgba(196, 165, 95, 0.35)
+  );
 }
 
 .sideLink {
@@ -417,6 +434,12 @@
   transition:
     opacity 400ms ease,
     transform 500ms var(--ease-out);
+}
+
+/* Where the route leaves a ring north-east, its name sits below-right instead. */
+.cityLabel[data-side='se'] {
+  bottom: auto;
+  top: 15px;
 }
 
 .nodeMain,
@@ -488,6 +511,15 @@
   text-align: right;
 }
 
+/* Where the route runs level through a pin, its name hangs underneath. */
+.nodeMain[data-side='below'] .nodeLabel,
+.nodeSide[data-side='below'] .nodeLabel {
+  top: calc(100% + 9px);
+  left: 50%;
+  text-align: center;
+  transform: translateX(-50%);
+}
+
 .nodeMain[data-visited] {
   border-color: var(--amber);
 }
@@ -552,12 +584,19 @@
 }
 
 /*
- * Leaned in, the place plate already names the city and its chapters carry
- * their own labels, so the current city's ring goes quiet and only the
- * neighbouring cities keep their names as bearings.
+ * The place plate already names the city you are in, at either zoom, so the
+ * current city's ring goes quiet and only the neighbouring cities keep their
+ * names as bearings. Pulled out, the chapter you are on still keeps its
+ * label so the map always names where you are; the ending's whole-route
+ * view stays unlabelled by design.
  */
-.map[data-zoom='near'] .marker[data-current] .cityLabel {
+.marker[data-current] .cityLabel {
   opacity: 0;
+}
+
+.map[data-zoom='far']:not([data-ending]) .nodeMain[aria-current] .nodeLabel,
+.map[data-zoom='far']:not([data-ending]) .nodeSide[aria-current] .nodeLabel {
+  opacity: 1;
 }
 
 /* Chapters of another city read as dots from here: labels are for where you are. */
@@ -607,7 +646,8 @@
   width: 13px;
   height: 13px;
   background: var(--amber);
-  animation: pinDrop 700ms var(--ease-out) both;
+  /* A real drop: falls for most of the beat, lands with a small bounce. */
+  animation: pinDrop 560ms cubic-bezier(0.34, 1.3, 0.64, 1) both;
   transform: translate(-50%, -50%) rotate(45deg);
 }
 
@@ -635,12 +675,11 @@
 @keyframes pinDrop {
   from {
     opacity: 0;
-    transform: translate(-50%, -160%) rotate(45deg) scale(1.6);
+    transform: translate(-50%, -220%) rotate(45deg) scale(1.4);
   }
 
-  60% {
+  30% {
     opacity: 1;
-    transform: translate(-50%, -50%) rotate(45deg) scale(0.9);
   }
 
   to {
@@ -734,6 +773,9 @@
 
 .plateName {
   font-family: var(--serif);
+  text-shadow:
+    0 0 3px var(--screen),
+    0 0 14px var(--screen);
   font-size: clamp(26px, 2.6vw, 34px);
   letter-spacing: -0.01em;
   line-height: 1;
@@ -745,6 +787,9 @@
 
 .plateCoords {
   color: var(--faint);
+  text-shadow:
+    0 0 3px var(--screen),
+    0 0 10px var(--screen);
   font-family: var(--mono);
   font-size: 11px;
   letter-spacing: 0.1em;
@@ -787,34 +832,36 @@
 .storyControls {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 30px;
+  gap: 0 18px;
+  margin-bottom: 18px;
 }
 
+/* Text-only mono labels, so the chapter's eyebrow stays the panel's first weight. */
 .controlAction {
-  padding: 8px 11px;
-  border: 1px solid var(--rule);
-  border-radius: 2px;
+  padding: 0;
+  border: 0;
   background: transparent;
-  color: var(--muted);
+  color: var(--faint);
   cursor: pointer;
   font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.08em;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  line-height: 1.6;
   text-transform: uppercase;
-  transition:
-    border-color 200ms ease,
-    color 200ms ease;
+  transition: color 200ms ease;
 }
 
 .controlAction:hover,
 .controlAction:focus-visible {
-  border-color: var(--rule-strong);
   color: var(--paper);
 }
 
+.controlAction:focus-visible {
+  outline: 1px solid var(--rule-strong);
+  outline-offset: 3px;
+}
+
 .controlAction[aria-pressed='true'] {
-  border-color: var(--amber);
   color: var(--amber);
 }
 
@@ -1170,13 +1217,7 @@
   }
 
   .storyControls {
-    gap: 8px;
-    margin-bottom: 22px;
-  }
-
-  .controlAction {
-    padding: 7px 9px;
-    font-size: 9.5px;
+    margin-bottom: 14px;
   }
 
   .rail {
@@ -1219,6 +1260,34 @@
     inset: 14% 2%;
     width: 96%;
     height: 72%;
+  }
+
+  .ghostRoute {
+    stroke-width: 4; /* ghost scale ~0.38 at 390px -> ~1.5px */
+  }
+
+  /*
+   * At 390px the whole-route frame puts SF, LA and SD within 45px of each
+   * other, so no corner is free. Same rule as node labels at far zoom: drop
+   * the names, keep the rings; the place plate still names where you are.
+   */
+  .map[data-zoom='far'] .cityLabel {
+    opacity: 0;
+  }
+
+  /*
+   * Pulled out on a phone the route runs level with the pins, so the one
+   * label still showing (where you are) hangs under its pin, centred, where
+   * neither the amber stroke nor the panel edge can reach it.
+   */
+  .map[data-zoom='far'] .nodeMain[aria-current] .nodeLabel,
+  .map[data-zoom='far'] .nodeSide[aria-current] .nodeLabel {
+    top: calc(100% + 9px);
+    right: auto;
+    left: 50%;
+    max-width: 120px;
+    text-align: center;
+    transform: translateX(-50%);
   }
 }
 

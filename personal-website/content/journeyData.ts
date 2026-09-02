@@ -26,8 +26,8 @@ type JourneyNodeBase = {
   label: string;
   dx: number;
   dy: number;
-  /** Which side of the pin the label sits on, so labels never collide. */
-  labelSide: 'left' | 'right';
+  /** Where the label sits relative to the pin, so labels never sit on the route. */
+  labelSide: 'left' | 'right' | 'below';
   adjacency: string[];
 };
 
@@ -60,10 +60,14 @@ export type JourneyMap = {
   id: JourneyMapId;
   name: string;
   placeLabel: string;
+  /** The neighbourhood the chapters actually happen in, when finer than the city. */
+  locality?: string;
   /** State or water the place sits in, for the map's place plate. */
   region: string;
   /** The real place, projected: the pin the map's chapters gather around. */
   place: UsPlace;
+  /** Which corner of the ring the city name sits in, kept off the route at far zoom. */
+  labelSide: 'ne' | 'se';
 };
 
 export type JourneyWordingRule = {
@@ -192,7 +196,7 @@ export const journeyBeats: JourneyBeat[] = [
   },
   {
     id: '06-codex',
-    mapId: 'new-york',
+    mapId: 'ucla',
     title: 'Codex: turn the tools into a room',
     period: '2025 to present',
     story: [
@@ -204,6 +208,7 @@ export const journeyBeats: JourneyBeat[] = [
     editorialStatus: 'confirmed',
     sourceNotes: [
       'Verified: ambassador directory; UPE and BMES events; Sundays in LA; Builders Cup role.',
+      'Tyler confirmed 2026-09-01: the Codex community work started in Los Angeles, so this beat sits on the UCLA map; New York is where the Builders Cup thread landed.',
       'Boundary: Ambassador is a community-program role, not employment at the tool vendor.',
     ],
     refs: [{ company: 'Ramp' }],
@@ -316,9 +321,9 @@ const journeyNodeSources: JourneyNodeSource[] = [
     id: 'sd-wake',
     mapId: 'san-diego',
     label: 'The dark display',
-    dx: -2,
-    dy: 9,
-    labelSide: 'right',
+    dx: 2,
+    dy: -10,
+    labelSide: 'left',
     kind: 'main',
     beatId: '00-wake',
     adjacency: ['sd-wake-artifact', 'sd-practices'],
@@ -327,8 +332,8 @@ const journeyNodeSources: JourneyNodeSource[] = [
     id: 'sd-wake-artifact',
     mapId: 'san-diego',
     label: 'Portrait',
-    dx: -15,
-    dy: 3,
+    dx: 0,
+    dy: -18,
     labelSide: 'left',
     kind: 'side',
     artifactId: 'portrait',
@@ -338,8 +343,8 @@ const journeyNodeSources: JourneyNodeSource[] = [
     id: 'sd-practices',
     mapId: 'san-diego',
     label: 'A week of practices',
-    dx: 13,
-    dy: 1,
+    dx: 20,
+    dy: -2,
     labelSide: 'right',
     kind: 'main',
     beatId: '01-practices',
@@ -349,8 +354,8 @@ const journeyNodeSources: JourneyNodeSource[] = [
     id: 'sd-practice-artifact',
     mapId: 'san-diego',
     label: 'Scratch or cello',
-    dx: 10,
-    dy: 14,
+    dx: 26,
+    dy: 4,
     labelSide: 'right',
     kind: 'side',
     artifactId: 'scratch-or-cello',
@@ -360,8 +365,8 @@ const journeyNodeSources: JourneyNodeSource[] = [
     id: 'sd-del-norte',
     mapId: 'san-diego',
     label: 'Del Norte',
-    dx: 26,
-    dy: -9,
+    dx: 22,
+    dy: -14,
     labelSide: 'right',
     kind: 'main',
     beatId: '02-del-norte',
@@ -371,8 +376,8 @@ const journeyNodeSources: JourneyNodeSource[] = [
     id: 'sd-track-artifact',
     mapId: 'san-diego',
     label: 'Running bib',
-    dx: 33,
-    dy: -19,
+    dx: 28,
+    dy: -26,
     labelSide: 'right',
     kind: 'side',
     artifactId: 'running-bib',
@@ -382,8 +387,8 @@ const journeyNodeSources: JourneyNodeSource[] = [
     id: 'sd-first-app',
     mapId: 'san-diego',
     label: 'First app',
-    dx: 17,
-    dy: -23,
+    dx: 10,
+    dy: -24,
     labelSide: 'right',
     kind: 'main',
     beatId: '03-first-app',
@@ -393,9 +398,9 @@ const journeyNodeSources: JourneyNodeSource[] = [
     id: 'sd-app-artifact',
     mapId: 'san-diego',
     label: 'Grow & Give',
-    dx: 3,
-    dy: -15,
-    labelSide: 'left',
+    dx: 4,
+    dy: -34,
+    labelSide: 'right',
     kind: 'side',
     artifactId: 'grow-and-give-app',
     adjacency: ['sd-first-app'],
@@ -431,7 +436,7 @@ const journeyNodeSources: JourneyNodeSource[] = [
     labelSide: 'right',
     kind: 'main',
     beatId: '05-safetykit',
-    adjacency: ['la-ucla', 'sf-safetykit-artifact', 'ny-codex'],
+    adjacency: ['la-ucla', 'sf-safetykit-artifact', 'la-codex'],
   },
   {
     id: 'sf-safetykit-artifact',
@@ -445,26 +450,26 @@ const journeyNodeSources: JourneyNodeSource[] = [
     adjacency: ['sf-safetykit'],
   },
   {
-    id: 'ny-codex',
-    mapId: 'new-york',
+    id: 'la-codex',
+    mapId: 'ucla',
     label: 'Codex community',
-    dx: -16,
-    dy: 9,
-    labelSide: 'left',
+    dx: 15,
+    dy: -7,
+    labelSide: 'right',
     kind: 'main',
     beatId: '06-codex',
-    adjacency: ['sf-safetykit', 'ny-codex-artifact', 'ny-ramp'],
+    adjacency: ['sf-safetykit', 'la-codex-artifact', 'ny-ramp'],
   },
   {
-    id: 'ny-codex-artifact',
-    mapId: 'new-york',
+    id: 'la-codex-artifact',
+    mapId: 'ucla',
     label: 'Event poster',
-    dx: -28,
-    dy: 20,
-    labelSide: 'left',
+    dx: 27,
+    dy: 3,
+    labelSide: 'right',
     kind: 'side',
     artifactId: 'codex-event',
-    adjacency: ['ny-codex'],
+    adjacency: ['la-codex'],
   },
   {
     id: 'ny-ramp',
@@ -472,18 +477,18 @@ const journeyNodeSources: JourneyNodeSource[] = [
     label: 'Ramp',
     dx: 0,
     dy: 0,
-    labelSide: 'right',
+    labelSide: 'below',
     kind: 'main',
     beatId: '07-ramp',
-    adjacency: ['ny-codex', 'ny-ramp-artifact', 'horizon-pin'],
+    adjacency: ['la-codex', 'ny-ramp-artifact', 'horizon-pin'],
   },
   {
     id: 'ny-ramp-artifact',
     mapId: 'new-york',
     label: 'New York photo',
-    dx: 10,
-    dy: 13,
-    labelSide: 'right',
+    dx: -6,
+    dy: -14,
+    labelSide: 'left',
     kind: 'side',
     artifactId: 'ramp-nyc-photo',
     adjacency: ['ny-ramp'],
@@ -543,8 +548,10 @@ const journeyMapMeta: JourneyMap[] = [
     id: 'san-diego',
     name: 'San Diego',
     placeLabel: 'SAN DIEGO',
-    region: 'California',
+    locality: '4S Ranch',
+    region: 'San Diego, California',
     place: usPlaces['san-diego'],
+    labelSide: 'se',
   },
   {
     id: 'ucla',
@@ -552,6 +559,7 @@ const journeyMapMeta: JourneyMap[] = [
     placeLabel: 'LOS ANGELES / UCLA',
     region: 'California',
     place: usPlaces.ucla,
+    labelSide: 'ne',
   },
   {
     id: 'san-francisco',
@@ -559,6 +567,7 @@ const journeyMapMeta: JourneyMap[] = [
     placeLabel: 'SAN FRANCISCO',
     region: 'California',
     place: usPlaces['san-francisco'],
+    labelSide: 'se',
   },
   {
     id: 'new-york',
@@ -566,6 +575,7 @@ const journeyMapMeta: JourneyMap[] = [
     placeLabel: 'NEW YORK',
     region: 'New York',
     place: usPlaces['new-york'],
+    labelSide: 'ne',
   },
   {
     id: 'horizon',
@@ -573,6 +583,7 @@ const journeyMapMeta: JourneyMap[] = [
     placeLabel: 'HORIZON',
     region: 'Atlantic margin',
     place: usPlaces.horizon,
+    labelSide: 'ne',
   },
 ];
 
