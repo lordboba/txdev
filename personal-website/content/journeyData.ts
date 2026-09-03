@@ -91,7 +91,7 @@ export const journeyBeats: JourneyBeat[] = [
     story: [
       'Tyler Xiao?',
       'A short walk through where I have lived and what I built there. It starts in San Diego.',
-      'Learn more.',
+      'Start in San Diego.',
     ],
     artifactIds: ['portrait'],
     interactionId: 'wake-display',

@@ -331,30 +331,96 @@ function useTypewriter(text: string, reducedMotion: boolean) {
  * cities, and the route drawing itself once the display wakes. Static SVG —
  * the camera only starts moving inside the chapters.
  */
-function GhostAtlas({ phase }: { phase: 'waking' | 'ready' }) {
+/** The ghost atlas is drawn to fit (xMidYMid meet); this is where a point lands. */
+function ghostPixel(frame: HTMLElement, point: Point) {
+  const scale = Math.min(
+    frame.clientWidth / usMapWidth,
+    frame.clientHeight / usMapHeight,
+  );
+  return {
+    x: (frame.clientWidth - usMapWidth * scale) / 2 + point.x * scale,
+    y: (frame.clientHeight - usMapHeight * scale) / 2 + point.y * scale,
+  };
+}
+
+/**
+ * Keeps --pin-x/--pin-y on the frame pointing at San Diego so the HTML start
+ * pin sits on the drawn map and the lean pivots on it. A ref callback with a
+ * cleanup, so it follows every resize and never runs as an effect.
+ */
+function mountGhostFrame(frame: HTMLDivElement | null) {
+  if (!frame) {
+    return;
+  }
+
+  const start = journeyMaps[0].place;
+  const place = () => {
+    const pixel = ghostPixel(frame, start);
+    frame.style.setProperty('--pin-x', `${pixel.x.toFixed(1)}px`);
+    frame.style.setProperty('--pin-y', `${pixel.y.toFixed(1)}px`);
+  };
+
+  place();
+  const observer = new ResizeObserver(place);
+  observer.observe(frame);
+
+  return () => observer.disconnect();
+}
+
+/**
+ * The atlas as an attract screen: the country in hairline, the four real
+ * cities, the route drawing itself once the display wakes, and San Diego's
+ * pin as a second door into the map. Static SVG — the camera only starts
+ * moving inside the chapters.
+ */
+function GhostAtlas({
+  action,
+  onLean,
+  phase,
+}: {
+  action: string;
+  onLean: (lean: boolean) => void;
+  phase: 'waking' | 'ready';
+}) {
   return (
-    <svg
-      aria-hidden="true"
-      className={styles.ghost}
-      data-phase={phase}
-      preserveAspectRatio="xMidYMid meet"
-      viewBox={`0 0 ${usMapWidth} ${usMapHeight}`}
-    >
-      <path className={styles.ghostNation} d={usNationPath} />
-      <path className={styles.ghostBorders} d={usStateBordersPath} />
-      <path className={styles.ghostRoute} d={spine.d} pathLength={1} />
-      {journeyMaps
-        .filter((map) => map.id !== 'horizon')
-        .map((map) => (
-          <circle
-            className={styles.ghostCity}
-            cx={map.place.x}
-            cy={map.place.y}
-            key={map.id}
-            r={2.6}
-          />
-        ))}
-    </svg>
+    <div className={styles.ghostFrame} ref={mountGhostFrame}>
+      <svg
+        aria-hidden="true"
+        className={styles.ghost}
+        data-phase={phase}
+        preserveAspectRatio="xMidYMid meet"
+        viewBox={`0 0 ${usMapWidth} ${usMapHeight}`}
+      >
+        <path className={styles.ghostNation} d={usNationPath} />
+        <path className={styles.ghostBorders} d={usStateBordersPath} />
+        <path className={styles.ghostRoute} d={spine.d} pathLength={1} />
+        {journeyMaps
+          .filter((map) => map.id !== 'horizon')
+          .map((map) => (
+            <circle
+              className={styles.ghostCity}
+              cx={map.place.x}
+              cy={map.place.y}
+              key={map.id}
+              r={2.6}
+            />
+          ))}
+      </svg>
+      {/* Pointer-only twin of the primary button: keyboard users already
+          have the button, so this stays out of the tab order. */}
+      {phase === 'ready' ? (
+        <button
+          aria-hidden="true"
+          aria-label={action}
+          className={styles.startPin}
+          onClick={() => enterJourneyChapter()}
+          onPointerEnter={() => onLean(true)}
+          onPointerLeave={() => onLean(false)}
+          tabIndex={-1}
+          type="button"
+        />
+      ) : null}
+    </div>
   );
 }
 
@@ -365,8 +431,11 @@ function WakeScreen({
   phase: 'waking' | 'ready';
   reducedMotion: boolean;
 }) {
-  const [question, line, action] = wakeBeat.story;
+  const [question, line, affordance] = wakeBeat.story;
+  const action = (affordance ?? 'Start in San Diego.').replace(/\.$/, '');
   const { shown, done } = useTypewriter(question, reducedMotion);
+  /* Reaching for the door leans the atlas toward San Diego. */
+  const [lean, setLean] = useState(false);
 
   /*
    * Waking via keyboard focus unmounts the hint button under the visitor's
@@ -393,11 +462,12 @@ function WakeScreen({
   return (
     <section
       className={styles.wake}
+      data-lean={lean ? 'true' : undefined}
       data-phase={phase}
       data-typed={done ? 'true' : undefined}
       onPointerEnter={wakeJourney}
     >
-      <GhostAtlas phase={phase} />
+      <GhostAtlas action={action} onLean={setLean} phase={phase} />
       <div className={styles.wakeInner}>
         <p className={styles.wakeEyebrow}>
           Tyler Xiao / a short route, 4 to 6 minutes
@@ -412,18 +482,25 @@ function WakeScreen({
             <div className={styles.wakeActions}>
               <button
                 className={styles.primaryAction}
+                onBlur={() => setLean(false)}
                 onClick={() => enterJourneyChapter()}
+                onFocus={() => setLean(true)}
+                onPointerEnter={() => setLean(true)}
+                onPointerLeave={() => setLean(false)}
                 ref={primaryRef}
                 type="button"
               >
-                {(action ?? 'Learn more.').replace(/\.$/, '')}
+                {action}
+                <span aria-hidden="true" className={styles.primaryArrow}>
+                  &rarr;
+                </span>
               </button>
               <button
                 className={styles.ghostAction}
                 onClick={() => enterJourneyChapter(undefined, 'read')}
                 type="button"
               >
-                Read without playing
+                or read it as text
               </button>
             </div>
           </>

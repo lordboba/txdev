@@ -109,19 +109,99 @@
   text-align: center;
 }
 
-/* The country under the question: hairline land, four real cities, one route. */
-.ghost {
+/*
+ * The country under the question: hairline land, four real cities, one
+ * route. The frame reports where San Diego lands in pixels (--pin-x/--pin-y,
+ * written by its mount observer) so the start pin can sit on the map in HTML
+ * and the whole atlas can lean toward it when the visitor reaches for the door.
+ */
+.ghostFrame {
   position: absolute;
   inset: 6% 4%;
   width: 92%;
   height: 88%;
   opacity: 0.55;
-  pointer-events: none;
   transition: opacity 900ms ease;
 }
 
-.wake[data-phase='ready'] .ghost {
+.wake[data-phase='ready'] .ghostFrame {
   opacity: 1;
+}
+
+.ghost {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  transform-origin: var(--pin-x, 50%) var(--pin-y, 50%);
+  transition: transform 1100ms var(--ease-out);
+}
+
+.wake[data-lean] .ghost {
+  transform: scale(1.06);
+}
+
+/* The door on the map: San Diego's pin, pulsing amber, labelled like the button. */
+.startPin {
+  position: absolute;
+  top: var(--pin-y, 50%);
+  left: var(--pin-x, 50%);
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 1px solid var(--amber);
+  border-radius: 50%;
+  background: var(--amber);
+  cursor: pointer;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  transition: opacity 600ms ease;
+}
+
+.wake[data-phase='ready'] .startPin {
+  opacity: 1;
+}
+
+.startPin::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border: 1px solid var(--amber);
+  border-radius: 50%;
+  animation: startPulse 2400ms var(--ease-out) infinite;
+}
+
+.startPin::after {
+  content: attr(aria-label);
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 12px);
+  width: max-content;
+  color: var(--amber);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-shadow:
+    0 0 2px var(--screen),
+    0 0 6px var(--screen);
+  text-transform: uppercase;
+  transform: translateY(-50%);
+}
+
+.startPin:hover::before,
+.wake[data-lean] .startPin::before {
+  animation-duration: 1200ms;
+}
+
+@keyframes startPulse {
+  from {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(3.4);
+  }
 }
 
 .ghostNation {
@@ -234,9 +314,9 @@
 
 .wakeActions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: center;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
   margin-top: 14px;
   animation: riseIn 700ms var(--ease-out) 120ms both;
 }
@@ -263,45 +343,66 @@
   color: var(--amber);
 }
 
+/* The door: filled, named after where it goes, arrow that moves when reached for. */
 .primaryAction {
-  padding: 13px 22px;
+  display: inline-flex;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 24px;
   border: 1px solid var(--amber);
   border-radius: 2px;
-  background: transparent;
-  color: var(--amber);
+  background: var(--amber);
+  color: var(--screen);
   cursor: pointer;
   font-family: var(--mono);
   font-size: 12px;
+  font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  transition: background-color 200ms ease;
+  transition:
+    background-color 200ms ease,
+    box-shadow 300ms ease;
 }
 
 .primaryAction:hover,
 .primaryAction:focus-visible {
-  background: var(--amber-soft);
+  background: #d4b56c;
+  box-shadow: 0 0 0 6px var(--amber-soft);
 }
 
+.primaryArrow {
+  display: inline-block;
+  transition: transform 300ms var(--ease-out);
+}
+
+.primaryAction:hover .primaryArrow,
+.primaryAction:focus-visible .primaryArrow {
+  transform: translateX(5px);
+}
+
+/* The mode, not a second door: a plain underlined line under the button. */
 .ghostAction {
-  padding: 13px 22px;
-  border: 1px solid var(--rule-strong);
-  border-radius: 2px;
+  padding: 6px 2px;
+  border: 0;
   background: transparent;
-  color: var(--muted);
+  color: var(--faint);
   cursor: pointer;
   font-family: var(--mono);
-  font-size: 12px;
-  letter-spacing: 0.1em;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
   text-transform: uppercase;
+  text-underline-offset: 4px;
   transition:
-    border-color 200ms ease,
-    color 200ms ease;
+    color 200ms ease,
+    text-decoration-color 200ms ease;
 }
 
 .ghostAction:hover,
 .ghostAction:focus-visible {
-  border-color: var(--muted);
   color: var(--paper);
+  text-decoration-color: var(--paper);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -1256,10 +1357,14 @@
     display: none;
   }
 
-  .ghost {
+  .ghostFrame {
     inset: 14% 2%;
     width: 96%;
     height: 72%;
+  }
+
+  .startPin::after {
+    display: none;
   }
 
   .ghostRoute {
