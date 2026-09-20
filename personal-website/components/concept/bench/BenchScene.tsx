@@ -1941,16 +1941,18 @@ function wrapLines(
  * single card, and both canvases are rasterised at 800 texels per card unit
  * with the aspect of the plane they are mapped onto — set type stretched
  * across a plane of a different aspect is how it smears. At the profile lens
- * (1440x900, DPR 2) the 2.5-unit field plane spans ~585 device px and the
- * 1.16-unit name plane ~270, so 800/unit is ~3.4 texels per device pixel on
- * both: enough for the mip chain to land between 1x and 2x instead of
- * magnifying. The old field canvas was drawn at half resolution (1024 across
- * 585 px, 1.75x) and the value type visibly softened.
+ * (1440x900, DPR 2) the card renders ~660 device px wide, so the 2.5-unit
+ * field plane spans ~570 device px and the 1.16-unit name plane ~265: 800/unit
+ * is ~3.5 texels per device pixel on both, enough for the mip chain to land
+ * between 1x and 2x instead of magnifying. A field canvas 1024 wide is 1.8x at
+ * that lens and the value type visibly softens.
  *
  * Micro-label: 600 / 50px, 8px tracking (~0.16em, the DOM `.fieldLabel`
- * convention), 0.55 ink. Value: 600 weight, 0.92 ink; 84px in the field block,
- * 94px for the name, which is the card's headline. Label baseline to value
- * baseline is 104px on both faces.
+ * convention), 0.55 ink. Value: 600 weight, solid ink; 84px in the field
+ * block, 94px for the name, which is the card's headline. Label baseline to
+ * value baseline is 104px on both faces. The values are solid rather than
+ * 0.92 because the lit plane already lifts the ink: at 0.92 the stock bleeding
+ * through cost the 12 CSS px field values a third of their contrast.
  */
 
 /**
@@ -1980,7 +1982,7 @@ function createFieldTexture() {
     context.fillText(field.label.toUpperCase(), inset, cursor);
 
     context.letterSpacing = '0px';
-    context.fillStyle = 'rgba(20,21,23,0.92)';
+    context.fillStyle = '#141517';
     context.font = '600 84px Helvetica Neue, Arial, sans-serif';
     const lines = wrapLines(context, field.value, measure);
     lines.forEach((line, lineIndex) => {
@@ -2021,7 +2023,7 @@ function createNameTexture() {
   context.fillText('NAME', inset + 4, 58);
 
   context.letterSpacing = '-1px';
-  context.fillStyle = 'rgba(20,21,23,0.92)';
+  context.fillStyle = '#141517';
   context.font = '600 94px Helvetica Neue, Arial, sans-serif';
   context.fillText('Tyler Xiao', inset, 162, canvas.width - inset * 2);
 
