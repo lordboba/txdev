@@ -1893,10 +1893,16 @@ function createTextTexture(
 
 type SpacedContext = CanvasRenderingContext2D & { letterSpacing?: string };
 
+/**
+ * Greedy word wrap. A value that needs more than `maxLines` is cut at the last
+ * line with an ellipsis rather than silently dropping its tail, so the right
+ * margin is respected and the reader can tell something was cut.
+ */
 function wrapLines(
   context: CanvasRenderingContext2D,
   value: string,
   maxWidth: number,
+  maxLines = 2,
 ) {
   const words = value.split(' ');
   const lines: string[] = [];
@@ -1917,48 +1923,75 @@ function wrapLines(
     lines.push(current);
   }
 
-  return lines.slice(0, 2);
+  if (lines.length <= maxLines) {
+    return lines;
+  }
+
+  let tail = lines.slice(maxLines - 1).join(' ');
+
+  while (tail && context.measureText(`${tail}…`).width > maxWidth) {
+    tail = tail.replace(/\s*\S+$/, '');
+  }
+
+  return [...lines.slice(0, maxLines - 1), `${tail}…`];
 }
+
+/*
+ * The two printed faces of the badge share one type spec so they read as a
+ * single card, and both canvases are rasterised at 800 texels per card unit
+ * with the aspect of the plane they are mapped onto — set type stretched
+ * across a plane of a different aspect is how it smears. At the profile lens
+ * (1440x900, DPR 2) the 2.5-unit field plane spans ~585 device px and the
+ * 1.16-unit name plane ~270, so 800/unit is ~3.4 texels per device pixel on
+ * both: enough for the mip chain to land between 1x and 2x instead of
+ * magnifying. The old field canvas was drawn at half resolution (1024 across
+ * 585 px, 1.75x) and the value type visibly softened.
+ *
+ * Micro-label: 600 / 50px, 8px tracking (~0.16em, the DOM `.fieldLabel`
+ * convention), 0.55 ink. Value: 600 weight, 0.92 ink; 84px in the field block,
+ * 94px for the name, which is the card's headline. Label baseline to value
+ * baseline is 104px on both faces.
+ */
 
 /**
  * The badge field block: letterspaced uppercase micro-label above each value,
- * matching the DOM convention. 2048px wide so the type stays crisp at the
- * profile camera distance.
+ * a hairline rule under each row. 2000x1000 for the 2.5x1.25 plane.
  */
 function createFieldTexture() {
-  const scale = 0.5;
   const canvas = document.createElement('canvas');
-  canvas.width = 2048 * scale;
-  canvas.height = 1024 * scale;
+  canvas.width = 2000;
+  canvas.height = 1000;
   const context = canvas.getContext('2d') as SpacedContext | null;
 
   if (!context) {
     return new THREE.CanvasTexture(canvas);
   }
 
-  context.scale(scale, scale);
+  const inset = 60;
+  const measure = canvas.width - inset * 2;
+  let cursor = 76;
 
-  let cursor = 78;
+  context.textBaseline = 'alphabetic';
 
   BADGE_FIELDS.forEach((field) => {
-    context.letterSpacing = '11px';
+    context.letterSpacing = '8px';
     context.fillStyle = 'rgba(20,21,23,0.55)';
-    context.font = '600 44px Helvetica Neue, Arial, sans-serif';
-    context.textBaseline = 'alphabetic';
-    context.fillText(field.label.toUpperCase(), 60, cursor);
+    context.font = '600 50px Helvetica Neue, Arial, sans-serif';
+    context.fillText(field.label.toUpperCase(), inset, cursor);
 
     context.letterSpacing = '0px';
-    context.fillStyle = 'rgba(20,21,23,0.9)';
-    context.font = '500 74px Helvetica Neue, Arial, sans-serif';
-    const lines = wrapLines(context, field.value, 1900);
+    context.fillStyle = 'rgba(20,21,23,0.92)';
+    context.font = '600 84px Helvetica Neue, Arial, sans-serif';
+    const lines = wrapLines(context, field.value, measure);
     lines.forEach((line, lineIndex) => {
-      context.fillText(line, 60, cursor + 88 + lineIndex * 82);
+      context.fillText(line, inset, cursor + 104 + lineIndex * 98, measure);
     });
 
-    cursor += 96 + lines.length * 82 + 34;
-
+    const rule = cursor + 104 + (lines.length - 1) * 98 + 40;
     context.fillStyle = 'rgba(20,21,23,0.16)';
-    context.fillRect(60, cursor - 44, 1928, 2);
+    context.fillRect(inset, rule, measure, 2);
+
+    cursor = rule + 78;
   });
 
   const texture = new THREE.CanvasTexture(canvas);
@@ -1967,25 +2000,30 @@ function createFieldTexture() {
   return texture;
 }
 
+/** The name block: NAME micro-label over the headline. 928x232 for the 1.16x0.29 plane. */
 function createNameTexture() {
   const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 256;
+  canvas.width = 928;
+  canvas.height = 232;
   const context = canvas.getContext('2d') as SpacedContext | null;
 
   if (!context) {
     return new THREE.CanvasTexture(canvas);
   }
 
-  context.letterSpacing = '9px';
+  const inset = 8;
+
+  context.textBaseline = 'alphabetic';
+
+  context.letterSpacing = '8px';
   context.fillStyle = 'rgba(20,21,23,0.55)';
-  context.font = '600 40px Helvetica Neue, Arial, sans-serif';
-  context.fillText('NAME', 12, 62);
+  context.font = '600 50px Helvetica Neue, Arial, sans-serif';
+  context.fillText('NAME', inset + 4, 58);
 
   context.letterSpacing = '-1px';
   context.fillStyle = 'rgba(20,21,23,0.92)';
-  context.font = '600 104px Helvetica Neue, Arial, sans-serif';
-  context.fillText('Tyler Xiao', 8, 176);
+  context.font = '600 94px Helvetica Neue, Arial, sans-serif';
+  context.fillText('Tyler Xiao', inset, 162, canvas.width - inset * 2);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
