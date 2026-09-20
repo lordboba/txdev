@@ -3528,9 +3528,8 @@ function EtchedMark({
 }) {
   const source = LOGO_SOURCES[company];
   /*
-   * No brand file means the name is set as type and cut the same way — one
-   * decal path, so a fallback can never land as a printed sticker beside four
-   * engravings. The text mask is cut to TEXT_MARK_ASPECT, the aspect the
+   * No brand file means the name is set as type and cut through the same
+   * decal path. The text mask is drawn at TEXT_MARK_ASPECT, the aspect the
    * plane below is given, so nothing is stretched between the two.
    */
   const alpha = useMemo(
