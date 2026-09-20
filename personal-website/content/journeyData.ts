@@ -223,7 +223,7 @@ export const journeyBeats: JourneyBeat[] = [
     ],
     artifactIds: ['ramp-nyc-photo'],
     interactionId: 'ship-reimbursements',
-    nextId: '08-horizon',
+    nextId: '08-decagon',
     editorialStatus: 'confirmed',
     sourceNotes: [
       'Verified: user brief, Reimbursements announcement, public New York and Builders Cup posts.',
@@ -232,20 +232,38 @@ export const journeyBeats: JourneyBeat[] = [
     refs: [{ company: 'Ramp' }],
   },
   {
-    id: '08-horizon',
+    id: '08-decagon',
+    mapId: 'san-francisco',
+    title: 'Decagon, San Francisco',
+    period: 'Sep 2026 to Dec 2026',
+    story: [
+      'In September 2026 I came back to San Francisco to join Decagon as a software engineering intern working on machine learning. A year after SafetyKit it is the same city and a bigger question. [One line on what the work is and what it is teaching me.]',
+    ],
+    artifactIds: ['decagon-mark'],
+    interactionId: 'tune-the-model',
+    nextId: '09-horizon',
+    editorialStatus: 'needs-tyler',
+    sourceNotes: [
+      'Tyler confirmed 2026-09-20: Decagon, San Francisco, follows Ramp, New York.',
+      'Verified: canonical experience data, software engineering intern, machine learning, Sep 2026 to Dec 2026.',
+      'Ask Tyler: one line on the work itself to replace the bracketed placeholder.',
+    ],
+    refs: [{ company: 'Decagon AI' }],
+  },
+  {
+    id: '09-horizon',
     mapId: 'horizon',
     title: 'What comes next',
     period: 'Next',
     story: [
-      'One next step is already planned. The rest is open. I want to keep building AI systems that are genuinely useful inside companies, and keep bringing the people who use them into the same room.',
+      'What comes after that is open. I want to keep building AI systems that are genuinely useful inside companies, and keep bringing the people who use them into the same room.',
     ],
     artifactIds: ['unprinted-margin'],
     interactionId: 'place-next-pin',
     nextId: null,
-    editorialStatus: 'source-conflict',
+    editorialStatus: 'confirmed',
     sourceNotes: [
-      'Conflict: the repository names Decagon AI next; public LinkedIn still says Snowflake.',
-      'Ask Tyler: which employer, if any, should appear in the ending; the copy stays employer-neutral until resolved.',
+      'Tyler confirmed 2026-09-20: the planned next step is Decagon and has its own chapter; the ending names no employer.',
     ],
     refs: [],
   },
@@ -306,6 +324,13 @@ export const journeyArtifacts: JourneyArtifact[] = [
     asset: null,
     sourceNote:
       'Tyler must supply a Ramp New York or event photo cleared by company-safe review.',
+  },
+  {
+    id: 'decagon-mark',
+    label: 'Decagon logo',
+    asset: '/logos/decagon.svg',
+    sourceNote:
+      'Existing Decagon mark in public/; Tyler may later swap in his own San Francisco photo from that autumn.',
   },
   {
     id: 'unprinted-margin',
@@ -480,7 +505,7 @@ const journeyNodeSources: JourneyNodeSource[] = [
     labelSide: 'below',
     kind: 'main',
     beatId: '07-ramp',
-    adjacency: ['la-codex', 'ny-ramp-artifact', 'horizon-pin'],
+    adjacency: ['la-codex', 'ny-ramp-artifact', 'sf-decagon'],
   },
   {
     id: 'ny-ramp-artifact',
@@ -494,6 +519,28 @@ const journeyNodeSources: JourneyNodeSource[] = [
     adjacency: ['ny-ramp'],
   },
   {
+    id: 'sf-decagon',
+    mapId: 'san-francisco',
+    label: 'Decagon',
+    dx: 10,
+    dy: 8,
+    labelSide: 'right',
+    kind: 'main',
+    beatId: '08-decagon',
+    adjacency: ['ny-ramp', 'sf-decagon-artifact', 'horizon-pin'],
+  },
+  {
+    id: 'sf-decagon-artifact',
+    mapId: 'san-francisco',
+    label: 'Decagon logo',
+    dx: 22,
+    dy: 15,
+    labelSide: 'right',
+    kind: 'side',
+    artifactId: 'decagon-mark',
+    adjacency: ['sf-decagon'],
+  },
+  {
     id: 'horizon-pin',
     mapId: 'horizon',
     label: 'Next step',
@@ -501,8 +548,8 @@ const journeyNodeSources: JourneyNodeSource[] = [
     dy: 0,
     labelSide: 'right',
     kind: 'main',
-    beatId: '08-horizon',
-    adjacency: ['ny-ramp', 'horizon-margin'],
+    beatId: '09-horizon',
+    adjacency: ['sf-decagon', 'horizon-margin'],
   },
   {
     id: 'horizon-margin',
@@ -530,10 +577,10 @@ export const journeyWordingRules: JourneyWordingRule[] = [
     note: 'SafetyKit is the first startup-engineering summer; Scale AI came earlier.',
   },
   {
-    beatId: '08-horizon',
+    beatId: '09-horizon',
     forbidden: ['Decagon', 'Snowflake'],
     required: [],
-    note: 'The ending names no employer until the source conflict is resolved.',
+    note: 'The ending names no employer; Decagon has its own chapter.',
   },
   {
     beatId: '06-codex',

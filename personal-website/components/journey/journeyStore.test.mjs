@@ -61,7 +61,8 @@ test('full happy path reaches the ending with the collected keepsakes', () => {
     '05-safetykit',
     '06-codex',
     '07-ramp',
-    '08-horizon',
+    '08-decagon',
+    '09-horizon',
   ]);
 });
 
@@ -195,13 +196,13 @@ test('picking a chapter from the index keeps read mode', () => {
 test('Escape from the ending returns to the last visited chapter', () => {
   resetJourney();
   wakeJourney();
-  enterJourneyChapter('08-horizon');
+  enterJourneyChapter('09-horizon');
   finishJourney();
   assert.equal(readJourneyState().status, 'ending');
 
   assert.equal(escapeJourney(), true);
   assert.equal(readJourneyState().status, 'chapter');
-  assert.equal(readJourneyState().beatId, '08-horizon');
+  assert.equal(readJourneyState().beatId, '09-horizon');
 });
 
 test('reset is idempotent and a second reset notifies nobody', () => {
@@ -306,7 +307,7 @@ test('finish snapshots keepsakes and only fires from a live journey', () => {
   assert.equal(readJourneyState().status, 'screen');
 
   wakeJourney();
-  enterJourneyChapter('08-horizon');
+  enterJourneyChapter('09-horizon');
   collectJourneyKeepsake('unprinted-margin');
   finishJourney();
 
