@@ -10,6 +10,10 @@ San Diego native and UCLA CS student. Ate a head of lettuce in 1 minute and 51 s
 
 ## Experience
 
+Currently building AI DevX at Decagon. Previously Scale AI, SafetyKit, and Ramp.
+
+- **Decagon — Software Engineer (Sep 2026 – Dec 2026, current):** Building AI developer experience.
+- **Ramp — Software Engineering Intern (Jun 2026 – Sep 2026):** Built agents for reimbursements.
 - **SafetyKit — Member of Technical Staff (May 2025 – Sep 2025):** First intern helping ship automated trust & safety review workflows.
 - **Scale AI — Technical Advisor Intern (Nov 2024 – May 2025):** Trained generative AI systems on complex coding and reasoning tasks.
 - **Upsilon Pi Epsilon @ UCLA — Induction & Membership Chair (May 2025 – Present):** Scaled onboarding and built Discord automation for the honor society.

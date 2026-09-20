@@ -51,15 +51,23 @@ export type CompanyTag = {
 
 export const experiences: Experience[] = [
   {
-    role: 'Software Engineering Intern',
+    role: 'Software Engineer',
     company: 'Decagon AI',
     start: 'Sep 2026',
     end: 'Dec 2026',
     period: 'Sep 2026 to Dec 2026',
-    status: 'upcoming',
-    summary: 'Machine learning engineering',
-    proof: 'Incoming software engineering role focused on machine learning.',
-    focus: ['Machine Learning', 'Software Engineering'],
+    status: 'current',
+    summary: 'Building AI developer experience',
+    proof:
+      'Current software engineering role building AI developer experience at Decagon.',
+    focus: ['AI DevX', 'Developer Tools'],
+    bench: {
+      order: 0,
+      mark: 'Decagon',
+      logo: '/logos/decagon.svg',
+      run: '2026',
+      detail: 'AI developer experience',
+    },
   },
   {
     role: 'Software Engineering Intern',
@@ -67,12 +75,12 @@ export const experiences: Experience[] = [
     start: 'Jun 2026',
     end: 'Sep 2026',
     period: 'Jun 2026 to Sep 2026',
-    status: 'upcoming',
+    status: 'past',
     summary: 'Build Agents for reimbursements',
     proof: 'Incoming agent workflow role for reimbursement automation.',
     focus: ['Workflow Systems', 'Backend Systems'],
     bench: {
-      order: 2,
+      order: 3,
       mark: 'Ramp',
       logo: '/logos/ramp.svg',
       run: '2026',
@@ -92,7 +100,7 @@ export const experiences: Experience[] = [
       'Owned agentic review workflows in a trust and safety production context.',
     focus: ['Workflow Systems', 'Trust & Safety'],
     bench: {
-      order: 1,
+      order: 2,
       mark: 'SafetyKit',
       logo: '/logos/safetykit.svg',
       run: '2025',
@@ -112,7 +120,7 @@ export const experiences: Experience[] = [
       'Runs membership systems and automation for UCLA computer science honor society onboarding.',
     focus: ['Leadership', 'Automation'],
     bench: {
-      order: 3,
+      order: 4,
       mark: 'UCLA',
       logo: '/logos/ucla.svg',
       run: null,
@@ -132,7 +140,7 @@ export const experiences: Experience[] = [
       'Designed coding and reasoning evaluation loops for generative AI training quality.',
     focus: ['Evaluation Systems', 'Quality'],
     bench: {
-      order: 0,
+      order: 1,
       mark: 'Scale AI',
       logo: '/logos/scale-ai.svg',
       run: '2024—25',

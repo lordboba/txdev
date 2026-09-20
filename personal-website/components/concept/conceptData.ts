@@ -41,7 +41,8 @@ export const conceptViews: ConceptView[] = [
     label: 'Things shipped',
     shortLabel: 'Work',
     heading: 'Hi, I’m Tyler Xiao.',
-    description: "I've worked at Scale AI, SafetyKit, and Ramp.",
+    description:
+      'Currently building AI DevX at Decagon. Previously Scale AI, SafetyKit, and Ramp.',
   },
   {
     id: 'signals',
