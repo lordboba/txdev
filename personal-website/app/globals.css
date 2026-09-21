@@ -24,6 +24,14 @@
   --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-spring: cubic-bezier(0.2, 0.8, 0.2, 1);
 
+  /* Mono label scale: size / tracking. 10px is the floor at every breakpoint. */
+  --label-xs: 10px;
+  --label-xs-tracking: 0.1em;
+  --label-sm: 11px;
+  --label-sm-tracking: 0.08em;
+  --label-md: 12px;
+  --label-md-tracking: 0.06em;
+
   /* Terminal-specific */
   --terminal-bg: #0a0d14;
   --terminal-bar: #11141c;

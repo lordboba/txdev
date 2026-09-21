@@ -55,7 +55,7 @@ export const experiences: Experience[] = [
     company: 'Decagon AI',
     start: 'Sep 2026',
     end: 'Dec 2026',
-    period: 'Sep 2026 to Dec 2026',
+    period: 'Sep–Dec 2026',
     status: 'current',
     summary: 'Building AI developer experience',
     proof:
@@ -74,7 +74,7 @@ export const experiences: Experience[] = [
     company: 'Ramp',
     start: 'Jun 2026',
     end: 'Sep 2026',
-    period: 'Jun 2026 to Sep 2026',
+    period: 'Jun–Sep 2026',
     status: 'past',
     summary: 'Build Agents for reimbursements',
     proof: 'Incoming agent workflow role for reimbursement automation.',
@@ -92,7 +92,7 @@ export const experiences: Experience[] = [
     company: 'SafetyKit',
     start: 'Jun 2025',
     end: 'Sep 2025',
-    period: 'Jun 2025 to Sep 2025',
+    period: 'Jun–Sep 2025',
     status: 'past',
     summary:
       'First intern owning trust and safety review workflows, helping the team ship automation that humans actually trusted.',
@@ -112,7 +112,7 @@ export const experiences: Experience[] = [
     company: 'Upsilon Pi Epsilon @ UCLA',
     start: 'May 2025',
     end: 'Present',
-    period: 'May 2025 to Present',
+    period: 'May 2025–Present',
     status: 'current',
     summary:
       'Scaled onboarding for the honor society and built Discord automation to keep events organized for a fast-growing membership base.',
@@ -132,7 +132,7 @@ export const experiences: Experience[] = [
     company: 'Scale AI',
     start: 'Nov 2024',
     end: 'May 2025',
-    period: 'Nov 2024 to May 2025',
+    period: 'Nov 2024–May 2025',
     status: 'past',
     summary:
       'Trained generative AI systems on complex coding and reasoning tasks, designing eval loops that kept quality high while throughput scaled.',
@@ -143,7 +143,7 @@ export const experiences: Experience[] = [
       order: 1,
       mark: 'Scale AI',
       logo: '/logos/scale-ai.svg',
-      run: '2024—25',
+      run: '2024–2025',
       detail: 'Coding and reasoning evaluation loops',
     },
   },
