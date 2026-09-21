@@ -2,14 +2,14 @@
 
 import {
   ContactShadows,
-  Environment,
   Lightformer,
   RoundedBox,
   useTexture,
 } from '@react-three/drei';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, createPortal, useFrame, useThree } from '@react-three/fiber';
 import {
   memo,
+  type ReactNode,
   Suspense,
   useLayoutEffect,
   useMemo,
@@ -2084,10 +2084,16 @@ function createNameTexture() {
  * The eight cells are not decoration — they are the eight side projects, each
  * showing its own capture, and the count under the title is read off the same
  * array the hang is built from.
+ *
+ * Laid out in a 1024×1400 design space and rasterised at half that. The
+ * screen stands ~230 CSS px tall on the bench, so 700 texels down is still
+ * 1.5× oversampled at a DPR of 2; the extra level only cost upload and memory.
  */
 let tabletScreenTexture: THREE.Texture | null = null;
 
-const TABLET_SCREEN_ASPECT = 1024 / 1400;
+const TABLET_SCREEN_DESIGN_W = 1024;
+const TABLET_SCREEN_DESIGN_H = 1400;
+const TABLET_SCREEN_ASPECT = TABLET_SCREEN_DESIGN_W / TABLET_SCREEN_DESIGN_H;
 
 function getTabletScreenTexture() {
   if (tabletScreenTexture) {
@@ -2095,8 +2101,8 @@ function getTabletScreenTexture() {
   }
 
   const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 1400;
+  canvas.width = TABLET_SCREEN_DESIGN_W / 2;
+  canvas.height = TABLET_SCREEN_DESIGN_H / 2;
   const context = canvas.getContext('2d') as SpacedContext | null;
   /*
    * Built before the drawing rather than after it: the eight thumbnails paint
@@ -2107,8 +2113,9 @@ function getTabletScreenTexture() {
   texture.anisotropy = 8;
 
   if (context) {
+    context.scale(0.5, 0.5);
     context.fillStyle = '#f4f4f3';
-    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillRect(0, 0, TABLET_SCREEN_DESIGN_W, TABLET_SCREEN_DESIGN_H);
     context.textBaseline = 'alphabetic';
 
     context.letterSpacing = '16px';
@@ -2802,6 +2809,11 @@ function createPaletteTexture(palette: string) {
  *
  * The canvas follows the physical panel's height-to-width ratio. If those
  * ratios diverge, Three stretches the texture and every glyph reads too wide.
+ *
+ * Laid out in a 1024-wide design space and rasterised at half that: the card
+ * is never more than ~260 CSS px wide on screen, so 512 texels across is
+ * still 2× oversampled at a DPR of 2 and the sampler only ever reads the
+ * same mip level it did before.
  */
 function createEraPlacardTexture(
   era: { commit: string; date: string; label: string; palette: string },
@@ -2809,7 +2821,7 @@ function createEraPlacardTexture(
   heightToWidth: number,
 ) {
   const canvas = document.createElement('canvas');
-  canvas.width = 1024;
+  canvas.width = 512;
   canvas.height = Math.round(canvas.width * heightToWidth);
   const context = canvas.getContext('2d') as SpacedContext | null;
 
@@ -2817,6 +2829,7 @@ function createEraPlacardTexture(
     return new THREE.CanvasTexture(canvas);
   }
 
+  context.scale(0.5, 0.5);
   context.textBaseline = 'alphabetic';
 
   context.letterSpacing = '10px';
@@ -4311,13 +4324,63 @@ function CompanyTagRack({
   );
 }
 
+/**
+ * A lightformer rig baked once into `scene.environment`.
+ *
+ * Drei's `<Environment>` hands the renderer a live cube target and lets
+ * three's `WebGLCubeUVMaps` prefilter it on demand — which keeps the 512 cube,
+ * the PMREM output *and* the generator's same-size ping-pong target alive for
+ * the life of the renderer, ~63 MB of half-float texture for a rig that never
+ * changes. This does the same prefilter with the same generator on the same
+ * 512 cube, then keeps only the output: the cube target and the generator are
+ * released the moment the PMREM exists. Same math, same texels, a third of
+ * the memory.
+ */
+function BakedEnvironment({
+  children,
+  resolution,
+}: {
+  children: ReactNode;
+  resolution: number;
+}) {
+  const get = useThree((state) => state.get);
+  const virtualScene = useMemo(() => new THREE.Scene(), []);
+
+  useLayoutEffect(() => {
+    const { gl, scene } = get();
+    const cubeTarget = new THREE.WebGLCubeRenderTarget(resolution);
+    cubeTarget.texture.type = THREE.HalfFloatType;
+    const cubeCamera = new THREE.CubeCamera(0.1, 1000, cubeTarget);
+
+    const autoClear = gl.autoClear;
+    gl.autoClear = true;
+    cubeCamera.update(gl, virtualScene);
+    gl.autoClear = autoClear;
+
+    const generator = new THREE.PMREMGenerator(gl);
+    const prefiltered = generator.fromCubemap(cubeTarget.texture);
+    generator.dispose();
+    cubeTarget.dispose();
+
+    const previous = scene.environment;
+    scene.environment = prefiltered.texture;
+
+    return () => {
+      scene.environment = previous;
+      prefiltered.dispose();
+    };
+  }, [get, resolution, virtualScene]);
+
+  return createPortal(children, virtualScene);
+}
+
 function StudioEnvironment() {
   if (isAblated('env')) {
     return null;
   }
 
   return (
-    <Environment frames={1} resolution={512}>
+    <BakedEnvironment resolution={512}>
       {/*
        * The studio shell — the single most consequential value in the file.
        *
@@ -4604,7 +4667,7 @@ function StudioEnvironment() {
         position={[0, 0.9, -7.4]}
         scale={[16, 2.2, 1]}
       />
-    </Environment>
+    </BakedEnvironment>
   );
 }
 
@@ -8625,9 +8688,10 @@ function Scene({
        * the old -0.0002 / 0.09 pair — tuned to keep PCF acne off the laptop
        * gap and the history stand tops — has nothing to correct and only ever
        * peter-pans the contact. `radius` and `blurSamples` are the softness
-       * dials that replace them: 2.75 over a 1024 map is a penumbra a little
-       * under the apparent size of the overhead softbox, which is the whole
-       * point of the change.
+       * dials that replace them: 1.375 over a 512 map (the same penumbra in
+       * world units as 2.75 over 1024 — VSM's radius is in texels) is a
+       * little under the apparent size of the overhead softbox, which is the
+       * whole point of the change.
        */}
       <directionalLight
         castShadow={!isAblated('keyshadow')}
@@ -8641,9 +8705,9 @@ function Scene({
         shadow-camera-near={2}
         shadow-camera-right={7}
         shadow-camera-top={6}
-        shadow-mapSize={[1024, 1024]}
+        shadow-mapSize={[512, 512]}
         shadow-normalBias={0.02}
-        shadow-radius={2.75}
+        shadow-radius={1.375}
       />
       {/*
        * Fill, camera-right and slightly below the key's elevation, at roughly a

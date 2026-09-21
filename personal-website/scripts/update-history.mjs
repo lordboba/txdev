@@ -79,6 +79,15 @@ const SPAN_DAYS = 14;
 /** Viewport the archive is photographed at. 16:9 — the card's own aspect. */
 const SHOT_WIDTH = 1280;
 const SHOT_HEIGHT = 720;
+/**
+ * Device pixels per CSS pixel for the shot, so the file lands at 640×360. The
+ * page still lays out at 1280×720 — this is a half-resolution photograph of
+ * the desktop composition, not a mobile viewport. The card the capture is
+ * mapped to is ~230 CSS px wide on the bench, so 640 texels across is already
+ * more than the sampler reads at a DPR of 2; the old 1280 file only ever fed
+ * a mip level that was thrown away.
+ */
+const SHOT_SCALE = 0.5;
 
 /** Below this a PNG is a blank frame, not a capture, and is thrown away. */
 const MIN_SHOT_BYTES = 3_000;
@@ -489,7 +498,7 @@ function openCamera(browser) {
         {
           width: SHOT_WIDTH,
           height: SHOT_HEIGHT,
-          deviceScaleFactor: 1,
+          deviceScaleFactor: SHOT_SCALE,
           mobile: false,
         },
         session,
