@@ -1899,7 +1899,7 @@ function createTextTexture(lines: string[], aspect = TEXT_MARK_ASPECT) {
   const measure = canvas.width * (1 - TEXT_MARK_INSET * 2);
   const rows = Math.max(1, lines.length);
   const setFont = (size: number) => {
-    context.font = `600 ${size}px Helvetica Neue, Arial, sans-serif`;
+    context.font = `600 ${size}px ${benchFontStack()}`;
     context.letterSpacing = `${(-0.02 * size).toFixed(1)}px`;
   };
   let size = Math.floor((canvas.height * 0.78) / rows);
@@ -2016,12 +2016,12 @@ function createFieldTexture() {
   BADGE_FIELDS.forEach((field) => {
     context.letterSpacing = '8px';
     context.fillStyle = 'rgba(20,21,23,0.55)';
-    context.font = '600 50px Helvetica Neue, Arial, sans-serif';
+    context.font = `600 50px ${benchFontStack()}`;
     context.fillText(field.label.toUpperCase(), inset, cursor);
 
     context.letterSpacing = '0px';
     context.fillStyle = '#141517';
-    context.font = '600 84px Helvetica Neue, Arial, sans-serif';
+    context.font = `500 84px ${benchFontStack()}`;
     const lines = wrapLines(context, field.value, measure);
     lines.forEach((line, lineIndex) => {
       context.fillText(line, inset, cursor + 104 + lineIndex * 98, measure);
@@ -2057,12 +2057,12 @@ function createNameTexture() {
 
   context.letterSpacing = '8px';
   context.fillStyle = 'rgba(20,21,23,0.55)';
-  context.font = '600 50px Helvetica Neue, Arial, sans-serif';
+  context.font = `600 50px ${benchFontStack()}`;
   context.fillText('NAME', inset + 4, 58);
 
   context.letterSpacing = '-1px';
   context.fillStyle = '#141517';
-  context.font = '600 94px Helvetica Neue, Arial, sans-serif';
+  context.font = `600 94px ${benchFontStack()}`;
   context.fillText('Tyler Xiao', inset, 162, canvas.width - inset * 2);
 
   const texture = new THREE.CanvasTexture(canvas);
@@ -2095,7 +2095,8 @@ const TABLET_SCREEN_DESIGN_W = 1024;
 const TABLET_SCREEN_DESIGN_H = 1400;
 const TABLET_SCREEN_ASPECT = TABLET_SCREEN_DESIGN_W / TABLET_SCREEN_DESIGN_H;
 
-function getTabletScreenTexture() {
+/** `repaint` asks for a frame each time a thumbnail lands on the canvas. */
+function getTabletScreenTexture(repaint: () => void) {
   if (tabletScreenTexture) {
     return tabletScreenTexture;
   }
@@ -2120,12 +2121,12 @@ function getTabletScreenTexture() {
 
     context.letterSpacing = '16px';
     context.fillStyle = 'rgba(20,21,23,0.5)';
-    context.font = '600 42px Helvetica Neue, Arial, sans-serif';
+    context.font = `600 42px ${benchFontStack()}`;
     context.fillText('GALLERY', 82, 168);
 
     context.letterSpacing = '-3px';
     context.fillStyle = 'rgba(20,21,23,0.94)';
-    context.font = '600 126px Helvetica Neue, Arial, sans-serif';
+    context.font = `600 126px ${benchFontStack()}`;
     context.fillText('Side', 78, 320);
     context.fillText('Projects', 78, 446);
 
@@ -2134,7 +2135,7 @@ function getTabletScreenTexture() {
 
     context.letterSpacing = '0px';
     context.fillStyle = 'rgba(20,21,23,0.62)';
-    context.font = '500 50px Helvetica Neue, Arial, sans-serif';
+    context.font = `500 50px ${benchFontStack()}`;
     context.fillText(
       `${sideProjects.length} pieces, not the shipped four`,
       82,
@@ -2194,6 +2195,7 @@ function getTabletScreenTexture() {
         );
         context.restore();
         texture.needsUpdate = true;
+        repaint();
       };
       image.src = piece.image;
     });
@@ -2203,10 +2205,10 @@ function getTabletScreenTexture() {
 
     context.letterSpacing = '13px';
     context.fillStyle = 'rgba(20,21,23,0.88)';
-    context.font = '600 54px Helvetica Neue, Arial, sans-serif';
+    context.font = `600 54px ${benchFontStack()}`;
     context.fillText('OPEN', 82, 1194);
     context.letterSpacing = '0px';
-    context.font = '500 60px Helvetica Neue, Arial, sans-serif';
+    context.font = `500 60px ${benchFontStack()}`;
     context.fillText('→', 322, 1196);
   }
 
@@ -2284,6 +2286,166 @@ function journeyFontStack(cssVariable: string, fallback: string) {
     .getPropertyValue(cssVariable)
     .trim();
   return family ? `${family}, ${fallback}` : fallback;
+}
+
+/**
+ * The one sans face every plate rasterizes with: the page's IBM Plex Sans,
+ * resolved the same way as the journey faces so a plate and the HUD beside it
+ * draw the identical glyphs on every OS. The tail is the body's generic tail.
+ */
+function benchFontStack() {
+  return journeyFontStack('--font-sans', 'system-ui, sans-serif');
+}
+
+const BENCH_FONT_WEIGHTS = ['400', '500', '600'];
+/** How long a plate waits on the sans faces before drawing regardless. */
+const BENCH_FONT_WAIT_MS = 1500;
+
+let benchFontsPromise: Promise<void> | null = null;
+let benchFontsReady = false;
+/**
+ * Which set of faces the type plates were drawn with. 0 is the first pass;
+ * it steps to 1 exactly once, if the gate below released on the timer and the
+ * real faces landed afterwards, and every type plate re-rasterizes on it.
+ */
+let benchFontGeneration = 0;
+const benchFontListeners = new Set<() => void>();
+
+function notifyBenchFonts() {
+  benchFontListeners.forEach((notify) => notify());
+}
+
+/**
+ * Resolves once the sans weights the plates draw with are loaded, so the
+ * first rasterization never bakes a fallback face into a texture. Bounded: a
+ * font that never arrives releases the gate after BENCH_FONT_WAIT_MS rather
+ * than holding the scene — and if the faces do arrive after that, the plates
+ * that drew with a fallback are thrown away and drawn again, once, when
+ * document.fonts.ready settles.
+ */
+export function ensureBenchFonts(): Promise<void> {
+  if (typeof document === 'undefined' || !('fonts' in document)) {
+    return Promise.resolve();
+  }
+
+  if (!benchFontsPromise) {
+    // Await the lead face only: fonts.load() rejects the whole list if the
+    // local() fallback face that follows it is missing on this machine.
+    const [family] = benchFontStack().split(',');
+    let fontsLoaded = false;
+    const loaded = Promise.all(
+      BENCH_FONT_WEIGHTS.map((weight) =>
+        document.fonts.load(`${weight} 16px ${family.trim()}`),
+      ),
+    ).then(() => {
+      fontsLoaded = true;
+    });
+    const released = new Promise<void>((resolve) => {
+      setTimeout(resolve, BENCH_FONT_WAIT_MS);
+    });
+    benchFontsPromise = Promise.race([loaded, released])
+      .catch(() => undefined)
+      .then(() => {
+        benchFontsReady = true;
+        notifyBenchFonts();
+
+        if (fontsLoaded) {
+          return;
+        }
+
+        void loaded
+          .then(() => document.fonts.ready)
+          .then(() => {
+            if (benchFontGeneration !== 0) {
+              return;
+            }
+
+            resetBenchTypeTextures();
+            benchFontGeneration = 1;
+            notifyBenchFonts();
+          })
+          .catch(() => undefined);
+      });
+  }
+
+  return benchFontsPromise;
+}
+
+/**
+ * Drop every cached type plate so the next read draws it with the loaded
+ * faces. The journey screen repaints in place on its next tick; the memoized
+ * plates re-run on the generation their components subscribe to.
+ */
+function resetBenchTypeTextures() {
+  for (const cache of [placeholderCache, frameTitleCache, placardCache]) {
+    cache.forEach((texture) => texture.dispose());
+    cache.clear();
+  }
+
+  tabletScreenTexture?.dispose();
+  tabletScreenTexture = null;
+
+  if (journeyScreen) {
+    journeyScreen.dirty = true;
+  }
+}
+
+/** External-store view of ensureBenchFonts for the scene's mount gate. */
+function subscribeBenchFonts(listener: () => void) {
+  benchFontListeners.add(listener);
+  void ensureBenchFonts();
+  return () => {
+    benchFontListeners.delete(listener);
+  };
+}
+
+function readBenchFontsReady() {
+  return benchFontsReady;
+}
+
+function readBenchFontsServer() {
+  return false;
+}
+
+function readBenchFontGeneration() {
+  return benchFontGeneration;
+}
+
+/**
+ * useMemo for a type plate. Beyond its own deps the memo re-runs on the face
+ * generation, so a first pass that drew with a fallback face is replaced once
+ * the real faces land.
+ */
+function useTypePlate<T>(draw: () => T, deps: unknown[]): T {
+  const fonts = useSyncExternalStore(
+    subscribeBenchFonts,
+    readBenchFontGeneration,
+    readBenchFontGeneration,
+  );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const plate = useMemo(draw, [fonts, ...deps]);
+  const drawn = useRef({ fonts, plate });
+
+  useLayoutEffect(() => {
+    const last = drawn.current;
+
+    if (last.fonts !== fonts && last.plate !== plate) {
+      disposePlate(last.plate);
+    }
+
+    drawn.current = { fonts, plate };
+  }, [fonts, plate]);
+
+  return plate;
+}
+
+/** Releases a superseded plate's GPU texture(s); cached plates are shared. */
+function disposePlate(plate: unknown) {
+  if (plate instanceof THREE.Texture) {
+    plate.dispose();
+  } else if (Array.isArray(plate)) {
+    plate.forEach(disposePlate);
+  }
 }
 
 /** The near-dark field both states share: #0F1113 with a faint panel lift. */
@@ -2475,7 +2637,7 @@ function tickJourneyScreen(delta: number) {
  * 1440x900 DPR-2 frame the display is ~930 device px wide, so the type is
  * rasterised at 2.2x its on-screen size. Every run is measured against the
  * margin and wrapped — the title by word, the tech row by item — because
- * fillText's maxWidth condenses glyphs to fit, and condensed Helvetica is the
+ * fillText's maxWidth condenses glyphs to fit, and condensed Plex is the
  * one thing this plate must never show. The inks are darker than the
  * placard's: the screen shader's gain and the cover glass both lift the darks,
  * and at the tech row's size anti-aliasing takes a further bite, so the
@@ -2523,7 +2685,7 @@ function getPlaceholderTexture(title: string, tech: string[]) {
      */
     const hairlineY = 584;
     context.letterSpacing = '-3px';
-    context.font = '600 144px Helvetica Neue, Arial, sans-serif';
+    context.font = `600 144px ${benchFontStack()}`;
     context.fillStyle = 'rgba(20,21,23,0.94)';
     const titleLines = wrapLines(context, title, measure);
     titleLines.forEach((line, index) => {
@@ -2539,7 +2701,7 @@ function getPlaceholderTexture(title: string, tech: string[]) {
 
     /* Tech row, broken between items when the join runs past the measure. */
     context.letterSpacing = '1px';
-    context.font = '600 84px Helvetica Neue, Arial, sans-serif';
+    context.font = `600 84px ${benchFontStack()}`;
     const techLines: string[] = [];
     let row = '';
 
@@ -2566,7 +2728,7 @@ function getPlaceholderTexture(title: string, tech: string[]) {
     /* Footnote, in the set's micro-label voice: 600, tracked 0.16em, caps. */
     context.letterSpacing = '10px';
     context.fillStyle = 'rgba(20,21,23,0.9)';
-    context.font = '600 62px Helvetica Neue, Arial, sans-serif';
+    context.font = `600 62px ${benchFontStack()}`;
     context.fillText(
       'SOURCE ONLY · NO CAPTURE',
       PLACEHOLDER_MARGIN,
@@ -2624,7 +2786,7 @@ function getFrameTitleTexture(title: string) {
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     context.letterSpacing = '5px';
-    context.font = '700 62px Helvetica Neue, Arial, sans-serif';
+    context.font = `600 62px ${benchFontStack()}`;
     context.fillText(
       title.toUpperCase(),
       canvas.width / 2,
@@ -2678,12 +2840,12 @@ function getPlacardTexture(piece: SideProject) {
 
     context.letterSpacing = '14px';
     context.fillStyle = 'rgba(20,21,23,0.52)';
-    context.font = '600 34px Helvetica Neue, Arial, sans-serif';
+    context.font = `600 34px ${benchFontStack()}`;
     context.fillText(piece.role.toUpperCase(), 62, 116);
 
     context.letterSpacing = '-1px';
     context.fillStyle = 'rgba(20,21,23,0.92)';
-    context.font = '600 76px Helvetica Neue, Arial, sans-serif';
+    context.font = `600 76px ${benchFontStack()}`;
     context.fillText(piece.title, 60, 232, 1080);
 
     context.fillStyle = 'rgba(20,21,23,0.16)';
@@ -2691,12 +2853,12 @@ function getPlacardTexture(piece: SideProject) {
 
     context.letterSpacing = '2px';
     context.fillStyle = 'rgba(20,21,23,0.68)';
-    context.font = '500 38px Helvetica Neue, Arial, sans-serif';
+    context.font = `500 38px ${benchFontStack()}`;
     context.fillText(piece.tech.join('   ·   '), 62, 380, 1076);
 
     context.letterSpacing = '0px';
     context.fillStyle = 'rgba(20,21,23,0.46)';
-    context.font = '400 34px Helvetica Neue, Arial, sans-serif';
+    context.font = `400 34px ${benchFontStack()}`;
     context.fillText(linkHost(piece.link), 62, 460, 1076);
   }
 
@@ -2737,7 +2899,7 @@ const PLATE_LABEL_SIZE = 100;
 const PLATE_TITLE_SIZE = 208;
 const PLATE_TITLE_LEADING = 236;
 const PLATE_MAX_LINES = 4;
-/* Helvetica / Arial cap height, as a fraction of the font size. */
+/* Plate face cap height, as a fraction of the font size. */
 const CAP_HEIGHT = 0.72;
 
 function createExperimentPlateTexture(status: string, title: string) {
@@ -2759,12 +2921,12 @@ function createExperimentPlateTexture(status: string, title: string) {
   context.textBaseline = 'alphabetic';
 
   context.letterSpacing = '30px';
-  context.font = `600 ${PLATE_LABEL_SIZE}px Helvetica Neue, Arial, sans-serif`;
+  context.font = `600 ${PLATE_LABEL_SIZE}px ${benchFontStack()}`;
   context.fillText(status.toUpperCase(), PLATE_MARGIN, labelBaseline, measure);
   context.fillRect(PLATE_MARGIN, ruleTop, measure, ruleHeight);
 
   context.letterSpacing = '-2px';
-  context.font = `500 ${PLATE_TITLE_SIZE}px Helvetica Neue, Arial, sans-serif`;
+  context.font = `500 ${PLATE_TITLE_SIZE}px ${benchFontStack()}`;
   const lines = wrapLines(context, title, measure, PLATE_MAX_LINES);
 
   const fieldTop = ruleTop + ruleHeight;
@@ -2849,12 +3011,12 @@ function createEraPlacardTexture(
 
   context.letterSpacing = '10px';
   context.fillStyle = 'rgba(20,21,23,0.5)';
-  context.font = '600 40px Helvetica Neue, Arial, sans-serif';
+  context.font = `600 40px ${benchFontStack()}`;
   context.fillText(era.date.toUpperCase(), 30, 62);
 
   context.letterSpacing = '4px';
   context.fillStyle = 'rgba(20,21,23,0.42)';
-  context.font = '500 38px IBM Plex Mono, Menlo, monospace';
+  context.font = `500 38px ${journeyFontStack('--font-mono', 'monospace')}`;
   context.fillText(era.commit, 30, 128);
 
   context.fillStyle = 'rgba(20,21,23,0.16)';
@@ -2862,19 +3024,19 @@ function createEraPlacardTexture(
 
   context.letterSpacing = '-2px';
   context.fillStyle = 'rgba(20,21,23,0.92)';
-  context.font = '600 106px Helvetica Neue, Arial, sans-serif';
+  context.font = `600 106px ${benchFontStack()}`;
   context.fillText(era.label, 26, 292, 968);
 
   context.letterSpacing = '0px';
   context.fillStyle = 'rgba(20,21,23,0.72)';
-  context.font = '500 50px Helvetica Neue, Arial, sans-serif';
+  context.font = `500 50px ${benchFontStack()}`;
   wrapLines(context, visualLanguage, 964).forEach((line, index) => {
     context.fillText(line, 30, 386 + index * 62);
   });
 
   context.letterSpacing = '8px';
   context.fillStyle = 'rgba(20,21,23,0.45)';
-  context.font = '600 34px Helvetica Neue, Arial, sans-serif';
+  context.font = `600 34px ${benchFontStack()}`;
   context.fillText(era.palette.toUpperCase(), 30, 540, 964);
 
   const texture = new THREE.CanvasTexture(canvas);
@@ -3600,7 +3762,7 @@ function EtchedMark({
    * decal path. The text mask is drawn at TEXT_MARK_ASPECT, the aspect the
    * plane below is given, so nothing is stretched between the two.
    */
-  const alpha = useMemo(
+  const alpha = useTypePlate(
     () =>
       source
         ? getLogoAlpha(source.file, source.aspect)
@@ -5827,7 +5989,11 @@ function SideProjectsTablet({
 }: {
   tabletRef: (node: THREE.Group | null) => void;
 }) {
-  const screen = useMemo(() => getTabletScreenTexture(), []);
+  const invalidate = useThree((state) => state.invalidate);
+  const screen = useTypePlate(
+    () => getTabletScreenTexture(invalidate),
+    [invalidate],
+  );
   const bezel = useMemo(
     () =>
       getBezelRing(
@@ -5970,8 +6136,8 @@ function ProfileBadge({
     upright.needsUpdate = true;
     return upright;
   }, [portrait]);
-  const fields = useMemo(() => createFieldTexture(), []);
-  const name = useMemo(() => createNameTexture(), []);
+  const fields = useTypePlate(() => createFieldTexture(), []);
+  const name = useTypePlate(() => createNameTexture(), []);
   const shading = useMemo(() => getCardFalloff(), []);
 
   return (
@@ -6500,7 +6666,7 @@ function ExperimentBlank({
   const experiment = experiments[index];
   const seat = SIGNAL_SEATS[index];
   const measuring = index === 1;
-  const plate = useMemo(
+  const plate = useTypePlate(
     () => createExperimentPlateTexture(experiment.status, experiment.title),
     [experiment.status, experiment.title],
   );
@@ -6848,7 +7014,7 @@ function HistoryArtifact({
     () => createPaletteTexture(era.palette),
     [era.palette],
   );
-  const placard = useMemo(
+  const placard = useTypePlate(
     () =>
       createEraPlacardTexture(
         era,
@@ -7229,7 +7395,10 @@ function GalleryFrame({
   frameRef: (node: THREE.Group | null) => void;
   screenRef: (node: THREE.ShaderMaterial | null) => void;
 }) {
-  const title = useMemo(() => getFrameTitleTexture(piece.title), [piece.title]);
+  const title = useTypePlate(
+    () => getFrameTitleTexture(piece.title),
+    [piece.title],
+  );
   /*
    * This frame's place on the wall's value ramp. Everything the key touches
    * comes off it: the moulding, the backing board, the wire, and the display's
@@ -7339,7 +7508,7 @@ function GalleryPlacard({
   placardRef: (node: THREE.Group | null) => void;
   piece: SideProject | null;
 }) {
-  const texture = useMemo(
+  const texture = useTypePlate(
     () => (piece ? getPlacardTexture(piece) : null),
     [piece],
   );
@@ -7408,7 +7577,7 @@ function GalleryHang({ reducedMotion }: { reducedMotion: boolean }) {
     [],
   );
 
-  const textures = useMemo(() => {
+  const textures = useTypePlate(() => {
     let cursor = 0;
 
     return sideProjects.map((piece) =>
@@ -8894,6 +9063,11 @@ export function BenchScene({
 }) {
   usePointerListener(setBenchPointer);
   useLayoutEffect(() => () => setBenchRenderInvalidator(null), []);
+  const fontsReady = useSyncExternalStore(
+    subscribeBenchFonts,
+    readBenchFontsReady,
+    readBenchFontsServer,
+  );
 
   return (
     <div className={className}>
@@ -8950,11 +9124,13 @@ export function BenchScene({
          */
         shadows={{ type: THREE.VSMShadowMap }}
       >
-        <Scene
-          initialView={initialView}
-          mobile={mobile}
-          reducedMotion={reducedMotion}
-        />
+        {fontsReady ? (
+          <Scene
+            initialView={initialView}
+            mobile={mobile}
+            reducedMotion={reducedMotion}
+          />
+        ) : null}
       </Canvas>
     </div>
   );

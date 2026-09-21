@@ -163,7 +163,7 @@ export const journeyBeats: JourneyBeat[] = [
     id: '03-first-app',
     mapId: 'san-diego',
     title: 'Grow & Give, my first app',
-    period: '2022 to 2023',
+    period: '2022–2023',
     story: [
       'I built Grow & Give in 2022 and 2023 with Swift and MongoDB. You set a focus timer, and every session you finished counted toward support for real nonprofits. I entered it in my fair and took first place in the senior computer-science category.',
       'Shipping Grow & Give was a turning point for me: I fought through the hoops and abstractions of iOS development and got Swift code over the line, before AI. I am still proud of that.',
@@ -182,7 +182,7 @@ export const journeyBeats: JourneyBeat[] = [
     id: '04-ucla',
     mapId: 'ucla',
     title: 'UCLA',
-    period: '2024 to present',
+    period: '2024–Present',
     story: [
       'I came to UCLA in 2024 to study computer science, with a strong foundation from competitive programming. In my first year I applied to about 300 internships and did not hear back from many of them.',
       'In the meantime I explored and built: I competed in ACM ICPC, tutored, did evaluation work for Scale AI, led the DocuPilot team, ran with Jogging Club, and kept playing cello in the Symphony Orchestra. I joined several clubs, including Creative Labs, and failed to get into a few others. I settled on two: VEST at UCLA and Upsilon Pi Epsilon at UCLA.',
@@ -201,7 +201,7 @@ export const journeyBeats: JourneyBeat[] = [
     id: '05-safetykit',
     mapId: 'san-francisco',
     title: 'SafetyKit, San Francisco',
-    period: 'Jun 2025 to Sep 2025',
+    period: 'Jun–Sep 2025',
     story: [
       'I went through a brutal application season, and SafetyKit took the chance on me. I spent June to September 2025 with them in San Francisco: my first startup-engineering summer and my first time living in the city.',
       'There I learned and built in the agentic-AI space for the first time. I learned how a real software-engineering company works, with real principles and real tools; I ran cloud systems at scale on AWS; and I made changes that affected hundreds of thousands of dollars in real time.',
@@ -221,7 +221,7 @@ export const journeyBeats: JourneyBeat[] = [
     id: '06-codex',
     mapId: 'ucla',
     title: 'Codex community, Los Angeles',
-    period: '2025 to present',
+    period: '2025–Present',
     story: [
       "As a Codex Ambassador I started hosting demos, workshops, and build sessions at UCLA and around Los Angeles. Through the Codex community I found my way into the LA tech scene on the community side, and I now host Sundays in LA. Later, in New York, I helped organize and judge Ramp's Builders Cup.",
     ],
@@ -261,7 +261,7 @@ export const journeyBeats: JourneyBeat[] = [
     id: '08-decagon',
     mapId: 'san-francisco',
     title: 'Decagon, San Francisco',
-    period: 'Sep 2026 to Dec 2026',
+    period: 'Sep–Dec 2026',
     story: [
       'From September to December 2026 I am back in San Francisco as a Software Engineering Intern at Decagon, working on AI DevX: making AI more productive for developers and building the infrastructure behind it.',
     ],

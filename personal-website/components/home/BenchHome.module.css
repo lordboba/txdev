@@ -214,7 +214,7 @@
   z-index: 1;
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 0.62em;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.02em;
 }
 
