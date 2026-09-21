@@ -75,7 +75,6 @@ import {
 } from './benchStore';
 import { historyEras, historyShots } from './historyEras';
 
-const INK = '#141517';
 /*
  * Aluminum stock, lifted with the shell's drop. A metalness-1 surface has no
  * albedo — its colour is a tint on whatever the room hands it — so taking the
@@ -1874,35 +1873,58 @@ function useConfiguredTextures(paths: string[]) {
   );
 }
 
-function createTextTexture(
-  lines: string[],
-  options?: { background?: string; color?: string; size?: number },
-) {
+/**
+ * The typeset stand-in for a mark that has no brand file: the name set as a
+ * wordmark, in the same white-on-clear mask format `getLogoAlpha` yields, so
+ * `EngravedDecal` cuts it with the identical groove and ink as the real logos.
+ *
+ * The canvas is cut to the plane's own aspect and the wordmark is fitted
+ * inside it by measure — the size steps down until the longest line clears the
+ * side margins — never by `fillText`'s maxWidth, which condenses the glyphs.
+ */
+const TEXT_MARK_ASPECT = 3;
+const TEXT_MARK_H = 512;
+const TEXT_MARK_INSET = 0.08;
+
+function createTextTexture(lines: string[], aspect = TEXT_MARK_ASPECT) {
   const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 256;
-  const context = canvas.getContext('2d');
+  canvas.width = Math.round(TEXT_MARK_H * aspect);
+  canvas.height = TEXT_MARK_H;
+  const context = canvas.getContext('2d') as SpacedContext | null;
 
   if (!context) {
     return new THREE.CanvasTexture(canvas);
   }
 
-  if (options?.background) {
-    context.fillStyle = options.background;
-    context.fillRect(0, 0, canvas.width, canvas.height);
+  const measure = canvas.width * (1 - TEXT_MARK_INSET * 2);
+  const rows = Math.max(1, lines.length);
+  const setFont = (size: number) => {
+    context.font = `600 ${size}px Helvetica Neue, Arial, sans-serif`;
+    context.letterSpacing = `${(-0.02 * size).toFixed(1)}px`;
+  };
+  let size = Math.floor((canvas.height * 0.78) / rows);
+  setFont(size);
+
+  while (
+    size > 8 &&
+    Math.max(...lines.map((line) => context.measureText(line).width)) > measure
+  ) {
+    size -= 2;
+    setFont(size);
   }
 
-  context.fillStyle = options?.color ?? INK;
-  context.font = `500 ${options?.size ?? 40}px Helvetica Neue, Arial, sans-serif`;
+  context.fillStyle = '#ffffff';
+  context.textAlign = 'center';
   context.textBaseline = 'middle';
 
+  const leading = size * 1.12;
+  const top = canvas.height / 2 - (leading * (rows - 1)) / 2;
+
   lines.forEach((line, index) => {
-    const rowHeight = canvas.height / lines.length;
-    context.fillText(line, 32, rowHeight * (index + 0.5), canvas.width - 64);
+    context.fillText(line, canvas.width / 2, top + leading * index);
   });
 
   const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = 8;
   return texture;
 }
@@ -2441,8 +2463,22 @@ function tickJourneyScreen(delta: number) {
  * in the same micro-label voice every other field name uses. Still no invented
  * screenshot — a portfolio gallery may never do that — but the wall now shows
  * a designed plate where it has nothing to photograph.
+ *
+ * Set at 2048x1152, the display's own 16:9. At the gallery focus camera on a
+ * 1440x900 DPR-2 frame the display is ~930 device px wide, so the type is
+ * rasterised at 2.2x its on-screen size. Every run is measured against the
+ * margin and wrapped — the title by word, the tech row by item — because
+ * fillText's maxWidth condenses glyphs to fit, and condensed Helvetica is the
+ * one thing this plate must never show. The inks are darker than the
+ * placard's: the screen shader's gain and the cover glass both lift the darks,
+ * and at the tech row's size anti-aliasing takes a further bite, so the
+ * rendered glyph has to start well above the 4.5:1 it needs to land at.
  */
 const placeholderCache = new Map<string, THREE.Texture>();
+const PLACEHOLDER_W = 2048;
+const PLACEHOLDER_H = 1152;
+const PLACEHOLDER_MARGIN = 164;
+const PLACEHOLDER_TECH_JOIN = '   ·   ';
 
 function getPlaceholderTexture(title: string, tech: string[]) {
   const cached = placeholderCache.get(title);
@@ -2452,11 +2488,13 @@ function getPlaceholderTexture(title: string, tech: string[]) {
   }
 
   const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 576;
+  canvas.width = PLACEHOLDER_W;
+  canvas.height = PLACEHOLDER_H;
   const context = canvas.getContext('2d') as SpacedContext | null;
 
   if (context) {
+    const measure = canvas.width - PLACEHOLDER_MARGIN * 2;
+
     /* The page's own studio ramp, raking the way the studio key does. */
     const ground = context.createLinearGradient(
       0,
@@ -2469,25 +2507,64 @@ function getPlaceholderTexture(title: string, tech: string[]) {
     context.fillStyle = ground;
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.textBaseline = 'alphabetic';
+    context.textAlign = 'left';
 
-    context.letterSpacing = '0px';
-    context.fillStyle = 'rgba(20,21,23,0.18)';
-    context.fillRect(84, 300, canvas.width - 168, 2);
+    /*
+     * Title: the subject, wrapped by word to at most two lines and stacked
+     * upward from the hairline, so the rule and the tech row hold their seat
+     * whatever the title's length.
+     */
+    const hairlineY = 584;
+    context.letterSpacing = '-3px';
+    context.font = '600 144px Helvetica Neue, Arial, sans-serif';
+    context.fillStyle = 'rgba(20,21,23,0.94)';
+    const titleLines = wrapLines(context, title, measure);
+    titleLines.forEach((line, index) => {
+      context.fillText(
+        line,
+        PLACEHOLDER_MARGIN,
+        hairlineY - 58 - 156 * (titleLines.length - 1 - index),
+      );
+    });
 
-    context.letterSpacing = '-1px';
+    context.fillStyle = 'rgba(20,21,23,0.22)';
+    context.fillRect(PLACEHOLDER_MARGIN, hairlineY, measure, 4);
+
+    /* Tech row, broken between items when the join runs past the measure. */
+    context.letterSpacing = '1px';
+    context.font = '600 84px Helvetica Neue, Arial, sans-serif';
+    const techLines: string[] = [];
+    let row = '';
+
+    tech.forEach((item) => {
+      const candidate = row ? `${row}${PLACEHOLDER_TECH_JOIN}${item}` : item;
+
+      if (row && context.measureText(candidate).width > measure) {
+        techLines.push(row);
+        row = item;
+      } else {
+        row = candidate;
+      }
+    });
+
+    if (row) {
+      techLines.push(row);
+    }
+
     context.fillStyle = 'rgba(20,21,23,0.9)';
-    context.font = '600 74px Helvetica Neue, Arial, sans-serif';
-    context.fillText(title, 84, 268, canvas.width - 168);
+    techLines.slice(0, 2).forEach((line, index) => {
+      context.fillText(line, PLACEHOLDER_MARGIN, hairlineY + 118 + 102 * index);
+    });
 
-    context.letterSpacing = '2px';
-    context.fillStyle = 'rgba(20,21,23,0.6)';
-    context.font = '500 36px Helvetica Neue, Arial, sans-serif';
-    context.fillText(tech.join('   ·   '), 84, 366, canvas.width - 168);
-
-    context.letterSpacing = '14px';
-    context.fillStyle = 'rgba(20,21,23,0.42)';
-    context.font = '600 28px Helvetica Neue, Arial, sans-serif';
-    context.fillText('SOURCE ONLY · NO CAPTURE', 84, 494);
+    /* Footnote, in the set's micro-label voice: 600, tracked 0.16em, caps. */
+    context.letterSpacing = '10px';
+    context.fillStyle = 'rgba(20,21,23,0.9)';
+    context.font = '600 62px Helvetica Neue, Arial, sans-serif';
+    context.fillText(
+      'SOURCE ONLY · NO CAPTURE',
+      PLACEHOLDER_MARGIN,
+      canvas.height - PLACEHOLDER_MARGIN,
+    );
   }
 
   const texture = new THREE.CanvasTexture(canvas);
@@ -3490,29 +3567,18 @@ function EtchedMark({
   cutMetalness?: number;
 }) {
   const source = LOGO_SOURCES[company];
+  /*
+   * No brand file means the name is set as type and cut through the same
+   * decal path. The text mask is drawn at TEXT_MARK_ASPECT, the aspect the
+   * plane below is given, so nothing is stretched between the two.
+   */
   const alpha = useMemo(
-    () => (source ? getLogoAlpha(source.file, source.aspect) : null),
-    [source],
-  );
-  const fallback = useMemo(
-    () => (source ? null : createTextTexture([company], { size: 72 })),
+    () =>
+      source
+        ? getLogoAlpha(source.file, source.aspect)
+        : createTextTexture([company]),
     [company, source],
   );
-
-  if (!source || !alpha) {
-    return (
-      <mesh position={position} rotation={rotation}>
-        <planeGeometry args={[height * 3, height]} />
-        <meshStandardMaterial
-          envMapIntensity={envMapIntensity}
-          map={fallback}
-          metalness={metalness}
-          roughness={roughness}
-          transparent
-        />
-      </mesh>
-    );
-  }
 
   return (
     <EngravedDecal
@@ -3529,7 +3595,7 @@ function EtchedMark({
       position={position}
       rotation={rotation}
       roughness={roughness}
-      width={height * source.aspect}
+      width={height * (source ? source.aspect : TEXT_MARK_ASPECT)}
     />
   );
 }
