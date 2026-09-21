@@ -17,7 +17,12 @@
  *
  * USAGE
  *   node scripts/journey-idle-check.mjs [--url http://localhost:3000]
+ *                                       [--reveal-timeout 20000]
  *   CHROME_PATH=/path/to/chrome   override browser discovery
+ *   --reveal-timeout=<ms>         ceiling for the overlay reveal and the
+ *                                 camera transits around it (default 20000;
+ *                                 software GL needs ~180000). The watchdog
+ *                                 stretches with it.
  *
  * Prints one JSON result object to stdout; exits 0 on pass, 1 on fail.
  */
@@ -29,21 +34,43 @@ import { join } from 'node:path';
 
 /* ---- argv ----------------------------------------------------------------- */
 
-function readUrlArg() {
+function readArg(name) {
   const argv = process.argv.slice(2);
-  const eq = argv.find((a) => a.startsWith('--url='));
+  const eq = argv.find((a) => a.startsWith(`${name}=`));
 
   if (eq) {
-    return eq.slice('--url='.length);
+    return eq.slice(name.length + 1);
   }
 
-  const at = argv.indexOf('--url');
+  const at = argv.indexOf(name);
 
   if (at !== -1 && argv[at + 1]) {
     return argv[at + 1];
   }
 
-  return 'http://localhost:3000';
+  return null;
+}
+
+function readUrlArg() {
+  return readArg('--url') ?? 'http://localhost:3000';
+}
+
+function readRevealTimeoutArg(fallback) {
+  const raw = readArg('--reveal-timeout');
+
+  if (raw === null) {
+    return fallback;
+  }
+
+  const ms = Number(raw);
+
+  if (!Number.isInteger(ms) || ms <= 0) {
+    throw new Error(
+      `--reveal-timeout must be a positive integer of ms, got ${raw}`,
+    );
+  }
+
+  return ms;
 }
 
 const ORIGIN = readUrlArg().replace(/\/$/, '');
@@ -53,7 +80,8 @@ const ORIGIN = readUrlArg().replace(/\/$/, '');
 /** Ceiling for the initial load + intro settle on software GL. */
 const LOAD_SETTLE_MS = 60_000;
 /** Ceiling for the journey entry/exit camera transits to land. */
-const TRANSIT_SETTLE_MS = 20_000;
+const DEFAULT_TRANSIT_SETTLE_MS = 20_000;
+const TRANSIT_SETTLE_MS = readRevealTimeoutArg(DEFAULT_TRANSIT_SETTLE_MS);
 /** The idle window: the overlay open, zero input, frame counter watched. */
 const IDLE_HOLD_MS = 5_000;
 /**
@@ -66,8 +94,13 @@ const QUIESCE_MS = 800;
 const POLL_MS = 250;
 /** Escape presses before the unwind is declared stuck. */
 const MAX_ESCAPES = 8;
-/** Whole-run watchdog: past this the browser is killed and the run fails. */
-const WATCHDOG_MS = 150_000;
+/**
+ * Whole-run watchdog: past this the browser is killed and the run fails.
+ * Grows with the transit ceiling (three transit waits) so a longer
+ * --reveal-timeout is not cut short by the watchdog.
+ */
+const WATCHDOG_MS =
+  150_000 + 3 * Math.max(0, TRANSIT_SETTLE_MS - DEFAULT_TRANSIT_SETTLE_MS);
 
 /* ---- browser discovery (update-history.mjs pattern) ----------------------- */
 

@@ -154,7 +154,11 @@
   transform: scale(1.06);
 }
 
-/* The door on the map: San Diego's pin, pulsing amber, labelled like the button. */
+/*
+ * The door on the map: San Diego's pin, pulsing amber, labelled like the
+ * button. The pulse runs twice and rests on its last frame so an idle wake
+ * screen costs nothing.
+ */
 .startPin {
   position: absolute;
   top: var(--pin-y, 50%);
@@ -181,7 +185,7 @@
   inset: -1px;
   border: 1px solid var(--amber);
   border-radius: 50%;
-  animation: startPulse 2400ms var(--ease-out) infinite;
+  animation: startPulse 2400ms var(--ease-out) 2 forwards;
 }
 
 .startPin::after {
@@ -298,7 +302,7 @@
   opacity: 0.42;
 }
 
-/* The typing caret: a thin amber bar that blinks once the line is set. */
+/* The typing caret: a thin amber bar that blinks a few times once the line is set. */
 .caret {
   display: inline-block;
   width: 0.05em;
@@ -309,7 +313,7 @@
 }
 
 .wake[data-typed] .caret {
-  animation: blink 1100ms steps(2, start) infinite;
+  animation: blink 1100ms steps(2, start) 3 forwards;
 }
 
 @keyframes blink {
@@ -1528,6 +1532,12 @@
   animation-delay: 0ms !important;
   animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
+}
+
+/* The collapsed pulse and blink rest on their static look, not their last frame. */
+.journey[data-reduced='true'] .startPin::before,
+.journey[data-reduced='true'] .caret {
+  animation-fill-mode: none;
 }
 
 /* -------------------------------------------------------------------------- */
