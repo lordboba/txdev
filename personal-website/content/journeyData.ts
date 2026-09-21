@@ -127,7 +127,7 @@ export const journeyBeats: JourneyBeat[] = [
     period: 'Childhood',
     story: [
       'I grew up in San Diego. Around eleven or twelve I made games in Scratch, then moved to Java for competitive programming. In the same years I went to Chinese after-school classes and math competitions, played cello, and, before the pandemic, played water polo. Programming was one of several things I did.',
-      'The video is my very first cello game scene. It is one of the first things I did, and I think I still enjoy it if I have a cello around me and the time to do it.',
+      'This is one of the first recorded cello performances I have. It’s one of the first things I did, and I still enjoy it when I have a cello around and the time.',
     ],
     artifactIds: ['scratch-or-cello'],
     interactionId: 'visit-week-practices',
@@ -135,7 +135,7 @@ export const journeyBeats: JourneyBeat[] = [
     editorialStatus: 'confirmed',
     sourceNotes: [
       'Tyler confirmed: Scratch games, then Java competitive programming around age eleven or twelve; Chinese after-school and math competitions in the same period; cello; water polo before the pandemic.',
-      'Tyler, 2026-09-21 session: the artifact is his YouTube cello performance of a game score (not a Scratch game), in his words "Very first cello game scene. One of the first things I did, and I think I still enjoy it if I have a cello around me and the time to do it."',
+      'Tyler, 2026-09-21 session: the artifact is one of his first recorded cello performances (YouTube), in his words "This is one of the first recorded cello performances I have. It’s one of the first things I did, and I still enjoy it when I have a cello around and the time."',
       'Public support: San Diego upbringing; USACO Silver in eighth grade and Gold in ninth; cello continues through UCLA.',
     ],
     refs: [],
@@ -306,13 +306,13 @@ export const journeyArtifacts: JourneyArtifact[] = [
   },
   {
     id: 'scratch-or-cello',
-    label: 'Cello duet',
-    alt: 'Tyler Xiao 8Yrs Old Cello Duet (YouTube)',
+    label: 'Early cello performance',
+    alt: 'Tyler playing cello, one of his first recorded performances',
     asset: '/journey/cello-duet-poster.jpg',
     kind: 'youtube',
     embedUrl: 'https://www.youtube-nocookie.com/embed/AIJTxXDWExM',
     sourceNote:
-      'Tyler, 2026-09-21 session: https://www.youtube.com/watch?v=AIJTxXDWExM, his very first cello game scene. The alt text is the video’s own title; the still is its YouTube thumbnail. The artifact id is kept so node ids and the store tests stay unchanged.',
+      'Tyler, 2026-09-21 session: https://www.youtube.com/watch?v=AIJTxXDWExM, one of his first recorded cello performances. The still is its YouTube thumbnail. The artifact id is kept so node ids and the store tests stay unchanged.',
   },
   {
     id: 'running-bib',
@@ -451,7 +451,7 @@ const journeyNodeSources: JourneyNodeSource[] = [
   {
     id: 'sd-practice-artifact',
     mapId: 'san-diego',
-    label: 'Cello duet',
+    label: 'Early cello performance',
     dx: 26,
     dy: 4,
     labelSide: 'right',
