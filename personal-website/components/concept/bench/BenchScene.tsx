@@ -4051,7 +4051,7 @@ function tagFocusSeat(index: number, seat: Transform) {
 }
 
 /*
- * One geometry per part, shared by all four tags. Four plates that differ only
+ * One geometry per part, shared by all tags. Plates that differ only
  * in the mark cut into them have no business owning four box geometries.
  */
 let tagPlateGeometry: THREE.BoxGeometry | null = null;
@@ -4319,7 +4319,7 @@ type TagMotion = {
 };
 
 /**
- * The rack: one rail on two drops, four tags, and the only per-frame work in
+ * The rack: one rail on two drops, the company tags, and the only per-frame work in
  * the object.
  *
  * The loop early-outs on any tag that is already sitting exactly on its
