@@ -209,6 +209,15 @@
   text-transform: none;
 }
 
+/*
+ * The intro eyebrow reads off the ground through the veil rather than off a
+ * plate, so it takes full ink: at 10px mono the muted alpha drops under 4.5:1
+ * where the set runs dark beneath it.
+ */
+.intro .fieldLabel {
+  color: var(--ink);
+}
+
 .intro h1 {
   margin: 0.5rem 0 0.8rem;
   color: var(--ink);

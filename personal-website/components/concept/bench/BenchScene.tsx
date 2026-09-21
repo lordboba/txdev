@@ -2095,7 +2095,8 @@ const TABLET_SCREEN_DESIGN_W = 1024;
 const TABLET_SCREEN_DESIGN_H = 1400;
 const TABLET_SCREEN_ASPECT = TABLET_SCREEN_DESIGN_W / TABLET_SCREEN_DESIGN_H;
 
-function getTabletScreenTexture() {
+/** `repaint` asks for a frame each time a thumbnail lands on the canvas. */
+function getTabletScreenTexture(repaint: () => void) {
   if (tabletScreenTexture) {
     return tabletScreenTexture;
   }
@@ -2194,6 +2195,7 @@ function getTabletScreenTexture() {
         );
         context.restore();
         texture.needsUpdate = true;
+        repaint();
       };
       image.src = piece.image;
     });
@@ -2300,12 +2302,26 @@ const BENCH_FONT_WEIGHTS = ['400', '500', '600'];
 const BENCH_FONT_WAIT_MS = 1500;
 
 let benchFontsPromise: Promise<void> | null = null;
+let benchFontsReady = false;
+/**
+ * Which set of faces the type plates were drawn with. 0 is the first pass;
+ * it steps to 1 exactly once, if the gate below released on the timer and the
+ * real faces landed afterwards, and every type plate re-rasterizes on it.
+ */
+let benchFontGeneration = 0;
+const benchFontListeners = new Set<() => void>();
+
+function notifyBenchFonts() {
+  benchFontListeners.forEach((notify) => notify());
+}
 
 /**
  * Resolves once the sans weights the plates draw with are loaded, so the
  * first rasterization never bakes a fallback face into a texture. Bounded: a
  * font that never arrives releases the gate after BENCH_FONT_WAIT_MS rather
- * than holding the scene.
+ * than holding the scene — and if the faces do arrive after that, the plates
+ * that drew with a fallback are thrown away and drawn again, once, when
+ * document.fonts.ready settles.
  */
 export function ensureBenchFonts(): Promise<void> {
   if (typeof document === 'undefined' || !('fonts' in document)) {
@@ -2313,31 +2329,71 @@ export function ensureBenchFonts(): Promise<void> {
   }
 
   if (!benchFontsPromise) {
-    const family = benchFontStack();
+    // Await the lead face only: fonts.load() rejects the whole list if the
+    // local() fallback face that follows it is missing on this machine.
+    const [family] = benchFontStack().split(',');
+    let fontsLoaded = false;
     const loaded = Promise.all(
       BENCH_FONT_WEIGHTS.map((weight) =>
-        document.fonts.load(`${weight} 16px ${family}`),
+        document.fonts.load(`${weight} 16px ${family.trim()}`),
       ),
-    ).then(() => undefined);
+    ).then(() => {
+      fontsLoaded = true;
+    });
     const released = new Promise<void>((resolve) => {
       setTimeout(resolve, BENCH_FONT_WAIT_MS);
     });
-    benchFontsPromise = Promise.race([loaded, released]).catch(() => undefined);
+    benchFontsPromise = Promise.race([loaded, released])
+      .catch(() => undefined)
+      .then(() => {
+        benchFontsReady = true;
+        notifyBenchFonts();
+
+        if (fontsLoaded) {
+          return;
+        }
+
+        void loaded
+          .then(() => document.fonts.ready)
+          .then(() => {
+            if (benchFontGeneration !== 0) {
+              return;
+            }
+
+            resetBenchTypeTextures();
+            benchFontGeneration = 1;
+            notifyBenchFonts();
+          })
+          .catch(() => undefined);
+      });
   }
 
   return benchFontsPromise;
 }
 
-let benchFontsReady = false;
-const benchFontListeners = new Set<() => void>();
+/**
+ * Drop every cached type plate so the next read draws it with the loaded
+ * faces. The journey screen repaints in place on its next tick; the memoized
+ * plates re-run on the generation their components subscribe to.
+ */
+function resetBenchTypeTextures() {
+  for (const cache of [placeholderCache, frameTitleCache, placardCache]) {
+    cache.forEach((texture) => texture.dispose());
+    cache.clear();
+  }
+
+  tabletScreenTexture?.dispose();
+  tabletScreenTexture = null;
+
+  if (journeyScreen) {
+    journeyScreen.dirty = true;
+  }
+}
 
 /** External-store view of ensureBenchFonts for the scene's mount gate. */
 function subscribeBenchFonts(listener: () => void) {
   benchFontListeners.add(listener);
-  void ensureBenchFonts().then(() => {
-    benchFontsReady = true;
-    benchFontListeners.forEach((notify) => notify());
-  });
+  void ensureBenchFonts();
   return () => {
     benchFontListeners.delete(listener);
   };
@@ -2349,6 +2405,47 @@ function readBenchFontsReady() {
 
 function readBenchFontsServer() {
   return false;
+}
+
+function readBenchFontGeneration() {
+  return benchFontGeneration;
+}
+
+/**
+ * useMemo for a type plate. Beyond its own deps the memo re-runs on the face
+ * generation, so a first pass that drew with a fallback face is replaced once
+ * the real faces land.
+ */
+function useTypePlate<T>(draw: () => T, deps: unknown[]): T {
+  const fonts = useSyncExternalStore(
+    subscribeBenchFonts,
+    readBenchFontGeneration,
+    readBenchFontGeneration,
+  );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const plate = useMemo(draw, [fonts, ...deps]);
+  const drawn = useRef({ fonts, plate });
+
+  useLayoutEffect(() => {
+    const last = drawn.current;
+
+    if (last.fonts !== fonts && last.plate !== plate) {
+      disposePlate(last.plate);
+    }
+
+    drawn.current = { fonts, plate };
+  }, [fonts, plate]);
+
+  return plate;
+}
+
+/** Releases a superseded plate's GPU texture(s); cached plates are shared. */
+function disposePlate(plate: unknown) {
+  if (plate instanceof THREE.Texture) {
+    plate.dispose();
+  } else if (Array.isArray(plate)) {
+    plate.forEach(disposePlate);
+  }
 }
 
 /** The near-dark field both states share: #0F1113 with a faint panel lift. */
@@ -3665,7 +3762,7 @@ function EtchedMark({
    * decal path. The text mask is drawn at TEXT_MARK_ASPECT, the aspect the
    * plane below is given, so nothing is stretched between the two.
    */
-  const alpha = useMemo(
+  const alpha = useTypePlate(
     () =>
       source
         ? getLogoAlpha(source.file, source.aspect)
@@ -5892,7 +5989,11 @@ function SideProjectsTablet({
 }: {
   tabletRef: (node: THREE.Group | null) => void;
 }) {
-  const screen = useMemo(() => getTabletScreenTexture(), []);
+  const invalidate = useThree((state) => state.invalidate);
+  const screen = useTypePlate(
+    () => getTabletScreenTexture(invalidate),
+    [invalidate],
+  );
   const bezel = useMemo(
     () =>
       getBezelRing(
@@ -6035,8 +6136,8 @@ function ProfileBadge({
     upright.needsUpdate = true;
     return upright;
   }, [portrait]);
-  const fields = useMemo(() => createFieldTexture(), []);
-  const name = useMemo(() => createNameTexture(), []);
+  const fields = useTypePlate(() => createFieldTexture(), []);
+  const name = useTypePlate(() => createNameTexture(), []);
   const shading = useMemo(() => getCardFalloff(), []);
 
   return (
@@ -6565,7 +6666,7 @@ function ExperimentBlank({
   const experiment = experiments[index];
   const seat = SIGNAL_SEATS[index];
   const measuring = index === 1;
-  const plate = useMemo(
+  const plate = useTypePlate(
     () => createExperimentPlateTexture(experiment.status, experiment.title),
     [experiment.status, experiment.title],
   );
@@ -6913,7 +7014,7 @@ function HistoryArtifact({
     () => createPaletteTexture(era.palette),
     [era.palette],
   );
-  const placard = useMemo(
+  const placard = useTypePlate(
     () =>
       createEraPlacardTexture(
         era,
@@ -7294,7 +7395,10 @@ function GalleryFrame({
   frameRef: (node: THREE.Group | null) => void;
   screenRef: (node: THREE.ShaderMaterial | null) => void;
 }) {
-  const title = useMemo(() => getFrameTitleTexture(piece.title), [piece.title]);
+  const title = useTypePlate(
+    () => getFrameTitleTexture(piece.title),
+    [piece.title],
+  );
   /*
    * This frame's place on the wall's value ramp. Everything the key touches
    * comes off it: the moulding, the backing board, the wire, and the display's
@@ -7404,7 +7508,7 @@ function GalleryPlacard({
   placardRef: (node: THREE.Group | null) => void;
   piece: SideProject | null;
 }) {
-  const texture = useMemo(
+  const texture = useTypePlate(
     () => (piece ? getPlacardTexture(piece) : null),
     [piece],
   );
@@ -7473,7 +7577,7 @@ function GalleryHang({ reducedMotion }: { reducedMotion: boolean }) {
     [],
   );
 
-  const textures = useMemo(() => {
+  const textures = useTypePlate(() => {
     let cursor = 0;
 
     return sideProjects.map((piece) =>

@@ -22,6 +22,25 @@ test('formatPeriod writes one range convention', () => {
   assert.equal(formatPeriod('Nov 2024', '2025'), 'Nov 2024–2025');
 });
 
+test('formatPeriod rejects input it cannot read as a date', () => {
+  for (const [start, end] of [
+    ['Summer 2026', 'Present'],
+    ['', 'Present'],
+    ['Jun 2025', ''],
+    ['Jun 2025', 'Fall 2025'],
+    ['June 2025', 'Sep 2025'],
+    ['Jun 25', 'Sep 2025'],
+    ['Present', 'Present'],
+    ['Jun 2025', 'present'],
+  ]) {
+    assert.throws(
+      () => formatPeriod(start, end),
+      RangeError,
+      `${JSON.stringify(start)} → ${JSON.stringify(end)}`,
+    );
+  }
+});
+
 test('formatPeriod never uses spaces around the dash or the word "to"', () => {
   for (const value of [
     formatPeriod('Jun 2025', 'Sep 2025'),

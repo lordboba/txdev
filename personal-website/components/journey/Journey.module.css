@@ -927,6 +927,28 @@
   white-space: pre;
 }
 
+/*
+ * The read-mode dim takes the map's labels down with it, so they carry full
+ * ink there: paper at 0.6 still clears 4.5:1 on the screen, faint and muted
+ * do not. Neighbouring city names drop their near-zoom fade for the same
+ * reason; the current city's stays hidden.
+ */
+.chapter[data-mode='read'] .mapLabelTop,
+.chapter[data-mode='read'] .mapHint,
+.chapter[data-mode='read'] .backAction,
+.chapter[data-mode='read'] .nodeLabel,
+.chapter[data-mode='read'] .cityLabel,
+.chapter[data-mode='read'] .plateCoords {
+  color: var(--paper);
+}
+
+.chapter[data-mode='read']
+  .map[data-zoom='near']
+  .marker:not([data-current])
+  .cityLabel {
+  opacity: 1;
+}
+
 /* -------------------------------------------------------------------------- */
 /* Story record                                                                */
 /* -------------------------------------------------------------------------- */

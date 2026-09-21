@@ -32,27 +32,31 @@ function label(point: Point) {
   return point.month ? `${point.month} ${point.year}` : point.year;
 }
 
+function requirePoint(name: 'start' | 'end', value: string): Point {
+  const point = parsePoint(value);
+
+  if (!point) {
+    throw new RangeError(
+      `formatPeriod: ${name} ${JSON.stringify(value)} is not "Mon YYYY" or "YYYY"`,
+    );
+  }
+
+  return point;
+}
+
 /**
  * Formats a `start`/`end` pair, each `Mon YYYY` or `YYYY`, with `end` also
- * accepting "Present". Anything else is passed through joined by the en dash,
- * so a phrase that is not a date is never mangled.
+ * accepting "Present". Anything else throws: the data is static, so a phrase
+ * that is not a date fails the build rather than rendering as half a range.
  */
 export function formatPeriod(start: string, end: string): string {
-  const from = parsePoint(start);
-
-  if (!from) {
-    return `${start}${EN_DASH}${end}`;
-  }
+  const from = requirePoint('start', start);
 
   if (end === PRESENT) {
     return `${label(from)}${EN_DASH}${PRESENT}`;
   }
 
-  const to = parsePoint(end);
-
-  if (!to) {
-    return `${label(from)}${EN_DASH}${end}`;
-  }
+  const to = requirePoint('end', end);
 
   if (from.year === to.year) {
     if (from.month && to.month) {
