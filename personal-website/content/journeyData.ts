@@ -261,7 +261,7 @@ export const journeyBeats: JourneyBeat[] = [
     id: '08-decagon',
     mapId: 'san-francisco',
     title: 'Decagon, San Francisco',
-    period: 'Sep 2026 to Dec 2026',
+    period: 'Sep–Dec 2026',
     story: [
       'From September to December 2026 I am back in San Francisco as a Software Engineering Intern at Decagon, working on AI DevX: making AI more productive for developers and building the infrastructure behind it.',
     ],
