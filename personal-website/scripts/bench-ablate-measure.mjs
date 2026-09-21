@@ -273,8 +273,17 @@ const GL_COUNTER_SOURCE = `(() => {
     null;
 
   // texture -> { levels: Map('level:face' -> bytes), width, height, mipmapped, storage }
-  const textures = new WeakMap();
+  const textures = new Map();
   const renderbuffers = new WeakMap();
+  state.inventory = () =>
+    [...textures.values()]
+      .map((entry) => ({
+        width: entry.width,
+        height: entry.height,
+        faces: [...entry.levels.keys()].filter((key) => key.startsWith('0:')).length,
+        bytes: Math.round(totalOf(entry)),
+      }))
+      .sort((a, b) => b.bytes - a.bytes);
 
   const record = (texture) => {
     let entry = textures.get(texture);
@@ -767,6 +776,7 @@ const glInfo = await evaluate(`(() => {
     gpuTextureCount: counter ? counter.textureCount : null,
     gpuRenderbufferBytes: counter ? Math.round(counter.renderbufferBytes) : null,
     gpuRenderbufferCount: counter ? counter.renderbufferCount : null,
+    gpuTextures: counter ? counter.inventory() : null,
   };
 })()`);
 
