@@ -51,7 +51,7 @@ export type CompanyTag = {
 
 export const experiences: Experience[] = [
   {
-    role: 'Software Engineer',
+    role: 'Software Engineering Intern',
     company: 'Decagon AI',
     start: 'Sep 2026',
     end: 'Dec 2026',
@@ -59,7 +59,7 @@ export const experiences: Experience[] = [
     status: 'current',
     summary: 'Building AI developer experience',
     proof:
-      'Current software engineering role building AI developer experience at Decagon.',
+      'Current software engineering internship building AI developer experience at Decagon.',
     focus: ['AI DevX', 'Developer Tools'],
     bench: {
       order: 0,
