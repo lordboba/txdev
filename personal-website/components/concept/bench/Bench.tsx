@@ -1066,7 +1066,7 @@ export function Bench({ actions, initialView, visitorCount }: BenchProps = {}) {
           {inGallery
             ? 'Games, bots, benchmarks, and small tools. Open any project for the repo or live version.'
             : inTagRecord
-              ? 'Four tags on one rail: the run in the order it happened, and the credential at the end. The record for each is underneath.'
+              ? 'These tags are places where I have worked at!'
               : inSignalRecord
                 ? 'One of the three open questions, opened up. These are drafts I am still editing, not conclusions.'
                 : inEraRecord
