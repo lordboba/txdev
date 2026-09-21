@@ -89,8 +89,7 @@
 .ghostAction:focus-visible,
 .controlAction:focus-visible,
 .nextAction:focus-visible,
-.pagerAction:focus-visible,
-.overlayClose:focus-visible {
+.pagerAction:focus-visible {
   outline: 2px solid var(--paper);
   outline-offset: 4px;
 }
@@ -1452,4 +1451,10 @@
 .overlayClose:focus-visible {
   border-color: #c4a55f;
   color: #c4a55f;
+}
+
+/* Same ring as the journey's controls, in the literal --paper value. */
+.overlayClose:focus-visible {
+  outline: 2px solid #e3e5e7;
+  outline-offset: 4px;
 }
