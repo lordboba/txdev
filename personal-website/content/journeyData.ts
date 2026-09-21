@@ -263,7 +263,7 @@ export const journeyBeats: JourneyBeat[] = [
     title: 'Decagon, San Francisco',
     period: 'Sep 2026 to Dec 2026',
     story: [
-      'From September to December 2026 I am back in San Francisco as a Software Engineering Intern at Decagon, building AI developer experience.',
+      'From September to December 2026 I am back in San Francisco as a Software Engineering Intern at Decagon, working on AI DevX: making AI more productive for developers and building the infrastructure behind it.',
     ],
     artifactIds: ['decagon-ribbon'],
     interactionId: 'build-ai-devx',
@@ -272,6 +272,7 @@ export const journeyBeats: JourneyBeat[] = [
     sourceNotes: [
       'Verified: experienceData.ts (after PR #9): Software Engineering Intern, Decagon AI, Sep 2026 to Dec 2026, building AI developer experience, focus AI DevX and Developer Tools.',
       "Tyler, 2026-09-21 session: \"decagon should be second to last, but keep a 'what's next?' question page\"; Decagon is SF-based; the ribbon video is the artifact.",
+      'Tyler, 2026-09-21 session: "i\'m working on AI DevX to enhance AI productivity and build infra".',
     ],
     refs: [{ company: 'Decagon AI' }],
   },
