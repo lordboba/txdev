@@ -474,7 +474,8 @@ function WakeScreen({
         </p>
         <h1 aria-label={question} className={styles.wakeQuestion}>
           <span aria-hidden="true">{shown}</span>
-          <span aria-hidden="true" className={styles.caret} />
+          {/* Keyed on the phase so waking the screen blinks the caret afresh. */}
+          <span aria-hidden="true" className={styles.caret} key={phase} />
         </h1>
         {phase === 'ready' ? (
           <>

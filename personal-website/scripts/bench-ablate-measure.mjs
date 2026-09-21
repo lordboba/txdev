@@ -155,6 +155,28 @@ log('DevTools connected');
 let nextId = 1;
 const pending = new Map();
 const eventWaiters = [];
+/** Page console errors/warnings and uncaught exceptions, for the mount-timeout report. */
+const consoleIssues = [];
+
+function recordConsoleIssue(message) {
+  if (message.method === 'Runtime.consoleAPICalled') {
+    const { type, args } = message.params;
+    if (type !== 'error' && type !== 'warning') return;
+    const text = (args ?? [])
+      .map((arg) => arg.value ?? arg.description ?? '')
+      .join(' ');
+    consoleIssues.push(`console.${type}: ${text}`);
+  } else if (message.method === 'Runtime.exceptionThrown') {
+    const { exceptionDetails } = message.params;
+    const text =
+      exceptionDetails.exception?.description ?? exceptionDetails.text;
+    consoleIssues.push(`uncaught: ${text}`);
+  } else if (message.method === 'Log.entryAdded') {
+    const { level, source, text, url } = message.params.entry;
+    if (level !== 'error' && level !== 'warning') return;
+    consoleIssues.push(`${source} ${level}: ${text}${url ? ` (${url})` : ''}`);
+  }
+}
 
 ws.onmessage = (event) => {
   const message = JSON.parse(event.data);
@@ -164,6 +186,7 @@ ws.onmessage = (event) => {
     if (message.error) reject(new Error(JSON.stringify(message.error)));
     else resolve(message.result);
   } else if (message.method) {
+    recordConsoleIssue(message);
     for (let i = eventWaiters.length - 1; i >= 0; i--) {
       if (eventWaiters[i].method === message.method) {
         eventWaiters[i].resolve(message.params);
@@ -191,6 +214,7 @@ const { sessionId } = await send('Target.attachToTarget', {
 
 await send('Page.enable', {}, sessionId);
 await send('Runtime.enable', {}, sessionId);
+await send('Log.enable', {}, sessionId).catch(() => {});
 await send('Performance.enable', {}, sessionId);
 
 const evaluate = async (expression) => {
@@ -218,6 +242,40 @@ const sampler = setInterval(() => {
   } catch {}
 }, 500);
 
+/**
+ * Why the scene did not mount: does the route answer, what did the page log,
+ * and did `?bench-debug=1` (which gates `window.__benchGL`) reach the page.
+ */
+async function mountDiagnostics() {
+  let routeStatus;
+  try {
+    const response = await fetch(pageUrl, {
+      signal: AbortSignal.timeout(15_000),
+    });
+    routeStatus = `${response.status} ${response.statusText}`.trim();
+  } catch (error) {
+    routeStatus = `unreachable: ${error.message}`;
+  }
+
+  const page = await evaluate(`({
+    href: location.href,
+    readyState: document.readyState,
+    benchDebug: new URLSearchParams(location.search).get('bench-debug'),
+    canvases: document.querySelectorAll('canvas').length,
+  })`).catch((error) => ({ error: error.message }));
+
+  const lines = [
+    `  route: GET ${pageUrl} -> ${routeStatus}`,
+    `  page: ${JSON.stringify(page)}`,
+    `  bench-debug flag reached the page: ${page.benchDebug === '1' ? 'yes' : 'no'}`,
+    `  console issues (${consoleIssues.length}):`,
+    ...(consoleIssues.length
+      ? consoleIssues.slice(-20).map((issue) => `    ${issue}`)
+      : ['    (none)']),
+  ];
+  return lines.join('\n');
+}
+
 // Navigate and wait for scene to mount (skip Page.loadEventFired which doesn't fire in headless)
 await send('Page.navigate', { url: pageUrl }, sessionId);
 log('page navigation started');
@@ -229,7 +287,9 @@ for (let i = 0; i < 120; i++) {
 }
 const sceneMounted = await evaluate('Boolean(window.__benchGL)');
 if (!sceneMounted) {
-  fail('bench scene did not mount within 60 seconds');
+  fail(
+    `bench scene did not mount within 60 seconds\n${await mountDiagnostics()}`,
+  );
 }
 log('bench scene mounted');
 
