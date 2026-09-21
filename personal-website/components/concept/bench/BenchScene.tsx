@@ -947,8 +947,8 @@ const TAG_PLATE_DIM_COLOR = new THREE.Color(TAG_PLATE_DIM);
  * Tightened, the same four angles still give every plate its own value off the
  * cubemap, inside about a 4-value band.
  */
-const TAG_REST_YAW = [0.032, -0.026, 0.017, -0.03];
-const TAG_REST_ROLL = [-0.011, 0.007, -0.005, 0.013];
+const TAG_REST_YAW = [0.032, -0.026, 0.017, -0.03, 0.022];
+const TAG_REST_ROLL = [-0.011, 0.007, -0.005, 0.013, -0.008];
 
 /** Badge fields, label above value, straight out of the real personal notes. */
 const BADGE_FIELDS = [
@@ -8061,11 +8061,12 @@ function Scene({
      * A camera move to the left slides every subject to the right, and the one
      * thing sitting on the right of the intro plate is the hero subhead. At the
      * full −0.34 the left MacBook's lid corner arrived on top of the last word
-     * of "I've worked at Scale AI, SafetyKit, and Ramp." — the page's second
-     * line of copy, crossed by a hard chassis edge. Floored at −0.16 the lid
-     * stops a clear margin short of the text box and the sweep to camera-right,
-     * where there is nothing to hit, keeps its full travel. Nobody can measure
-     * a parallax range; everybody can see a headline with a laptop through it.
+     * of the work subhead ("... Previously Scale AI, SafetyKit, and Ramp.") —
+     * the page's second line of copy, crossed by a hard chassis edge. Floored
+     * at −0.16 the lid stops a clear margin short of the text box and the
+     * sweep to camera-right, where there is nothing to hit, keeps its full
+     * travel. Nobody can measure a parallax range; everybody can see a
+     * headline with a laptop through it.
      *
      * −0.10 is measured, not chosen. The lid's near edge travels 22px across
      * the full −0.245 sweep this viewport produces, and the subhead's last
