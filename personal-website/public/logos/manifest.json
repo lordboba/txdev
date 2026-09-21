@@ -53,5 +53,27 @@
     "viewBox": "0 0 250 81.851547",
     "colors": ["#2774ae"],
     "notes": "Official UCLA wordmark in UCLA Blue, single path fill. For Upsilon Pi Epsilon @ UCLA. University trademark: use at small credential scale only."
+  },
+  {
+    "company": "UPE at UCLA",
+    "file": "upe.png",
+    "format": "png",
+    "source_url": "https://upe.seas.ucla.edu/static/img/logo%402x.png",
+    "status": "ok",
+    "dark_on_light_safe": true,
+    "viewBox": "0 0 66 124",
+    "colors": ["#1f2326"],
+    "notes": "Upsilon Pi Epsilon key mark from the UPE @ UCLA site header (only raster the site serves, 66x124). The original is white on transparent; recoloured to near-ink so it reads on paper. Metadata stripped."
+  },
+  {
+    "company": "VEST at UCLA",
+    "file": "vest.svg",
+    "format": "svg",
+    "source_url": "https://www.vestucla.com/",
+    "status": "ok",
+    "dark_on_light_safe": true,
+    "viewBox": "0 0 2000 2000",
+    "colors": ["currentColor"],
+    "notes": "V shield mark extracted from the vestucla.com header (inline nav logo). Paths use fill=currentColor: renders black via <img>. vest.ucla.edu does not resolve; vestucla.com is the club's live site."
   }
 ]

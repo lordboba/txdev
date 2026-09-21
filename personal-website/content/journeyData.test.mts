@@ -25,8 +25,8 @@ test('beat, node, and artifact ids are unique', async () => {
   const { journeyArtifacts, journeyBeats, journeyNodes } =
     await loadJourneyData();
 
-  assert.equal(new Set(journeyBeats.map((beat) => beat.id)).size, 9);
-  assert.equal(journeyBeats.length, 9);
+  assert.equal(new Set(journeyBeats.map((beat) => beat.id)).size, 10);
+  assert.equal(journeyBeats.length, 10);
   assert.equal(
     new Set(journeyNodes.map((node) => node.id)).size,
     journeyNodes.length,
@@ -196,6 +196,7 @@ test('canonical references resolve against experiences and projects', async () =
   );
   assert.ok(referenced.includes('SafetyKit'));
   assert.ok(referenced.includes('Ramp'));
+  assert.ok(referenced.includes('Decagon AI'));
   assert.ok(referenced.includes('Grow & Give'));
 });
 
@@ -244,13 +245,14 @@ test('editorial statuses match the workshop chapter badges', async () => {
     [
       ['00-wake', 'confirmed'],
       ['01-practices', 'confirmed'],
-      ['02-del-norte', 'needs-tyler'],
-      ['03-first-app', 'needs-tyler'],
-      ['04-ucla', 'needs-tyler'],
+      ['02-del-norte', 'confirmed'],
+      ['03-first-app', 'confirmed'],
+      ['04-ucla', 'confirmed'],
       ['05-safetykit', 'confirmed'],
       ['06-codex', 'confirmed'],
       ['07-ramp', 'confirmed'],
-      ['08-horizon', 'source-conflict'],
+      ['08-decagon', 'confirmed'],
+      ['09-horizon', 'confirmed'],
     ],
   );
 });
@@ -281,7 +283,7 @@ test('wording rules hold for the published copy', async () => {
 
   const safetykit = beatsById.get('05-safetykit');
   const codex = beatsById.get('06-codex');
-  const horizon = beatsById.get('08-horizon');
+  const horizon = beatsById.get('09-horizon');
   assert.ok(safetykit && codex && horizon);
   assert.ok(!safetykit.story.join(' ').includes('first internship'));
   assert.ok(!horizon.story.join(' ').includes('Decagon'));

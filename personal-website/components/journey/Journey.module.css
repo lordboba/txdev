@@ -1054,6 +1054,61 @@
   background: var(--paper);
 }
 
+/* A portrait clip stands taller than a photo, still short of a full screen. */
+.artifactImage[data-kind='video'] {
+  height: 300px;
+}
+
+/* A YouTube frame keeps its own shape; the box follows it. */
+.artifactImage[data-kind='youtube'] {
+  height: auto;
+  aspect-ratio: 16 / 9;
+}
+
+.artifactVideo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #101214;
+}
+
+.artifactIframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/*
+ * Two or three artifacts share one row so the words stay a scroll away, not a
+ * screen away. A third frame wraps under the first two only on a phone.
+ */
+.artifactSet {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 24px;
+}
+
+.artifactSet[data-count='3'] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.artifactSet .artifact {
+  min-width: 0;
+  margin: 0;
+}
+
+.artifactSet .artifactImage {
+  height: 210px;
+}
+
+.artifactSet .artifactImg {
+  padding: 10px;
+}
+
 /*
  * Never rotated, never flipped: the frame shows the file exactly as saved,
  * with the camera's own orientation tag honoured.
@@ -1094,6 +1149,28 @@
   color: var(--muted);
   font-size: 15px;
   line-height: 1.65;
+}
+
+/* An outbound link the story names: mono, amber on hover, opens a new tab. */
+.storyLink {
+  margin: 0 0 14px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.storyLink a {
+  color: var(--paper);
+  text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
+  text-underline-offset: 3px;
+  transition: color 200ms ease;
+}
+
+.storyLink a:hover,
+.storyLink a:focus-visible {
+  color: var(--amber);
+  text-decoration-color: var(--amber);
 }
 
 .ledger {
@@ -1328,6 +1405,18 @@
 
   .story {
     padding: 20px 18px 24px;
+  }
+
+  .artifactSet[data-count='3'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .artifactSet .artifactImage {
+    height: 180px;
+  }
+
+  .artifactImage[data-kind='video'] {
+    height: 260px;
   }
 
   .nodeMain::before,
