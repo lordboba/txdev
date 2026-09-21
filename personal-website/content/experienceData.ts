@@ -1,3 +1,5 @@
+import { formatPeriod } from '../lib/formatPeriod.ts';
+
 export type ExperienceStatus = 'upcoming' | 'current' | 'past';
 
 export type BenchExperienceData = {
@@ -49,13 +51,12 @@ export type CompanyTag = {
   focus: string[];
 };
 
-export const experiences: Experience[] = [
+const experienceEntries: Omit<Experience, 'period'>[] = [
   {
     role: 'Software Engineering Intern',
     company: 'Decagon AI',
     start: 'Sep 2026',
     end: 'Dec 2026',
-    period: 'Sep–Dec 2026',
     status: 'current',
     summary: 'Building AI developer experience',
     proof:
@@ -74,7 +75,6 @@ export const experiences: Experience[] = [
     company: 'Ramp',
     start: 'Jun 2026',
     end: 'Sep 2026',
-    period: 'Jun–Sep 2026',
     status: 'past',
     summary: 'Build Agents for reimbursements',
     proof: 'Incoming agent workflow role for reimbursement automation.',
@@ -92,7 +92,6 @@ export const experiences: Experience[] = [
     company: 'SafetyKit',
     start: 'Jun 2025',
     end: 'Sep 2025',
-    period: 'Jun–Sep 2025',
     status: 'past',
     summary:
       'First intern owning trust and safety review workflows, helping the team ship automation that humans actually trusted.',
@@ -112,7 +111,6 @@ export const experiences: Experience[] = [
     company: 'Upsilon Pi Epsilon @ UCLA',
     start: 'May 2025',
     end: 'Present',
-    period: 'May 2025–Present',
     status: 'current',
     summary:
       'Scaled onboarding for the honor society and built Discord automation to keep events organized for a fast-growing membership base.',
@@ -132,7 +130,6 @@ export const experiences: Experience[] = [
     company: 'Scale AI',
     start: 'Nov 2024',
     end: 'May 2025',
-    period: 'Nov 2024–May 2025',
     status: 'past',
     summary:
       'Trained generative AI systems on complex coding and reasoning tasks, designing eval loops that kept quality high while throughput scaled.',
@@ -148,6 +145,11 @@ export const experiences: Experience[] = [
     },
   },
 ];
+
+export const experiences: Experience[] = experienceEntries.map((entry) => ({
+  ...entry,
+  period: formatPeriod(entry.start, entry.end),
+}));
 
 const experienceGroupMeta: Omit<ExperienceGroup, 'items'>[] = [
   {

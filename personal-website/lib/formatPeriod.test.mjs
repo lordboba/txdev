@@ -32,11 +32,19 @@ test('formatPeriod never uses spaces around the dash or the word "to"', () => {
   }
 });
 
-test('experience periods are the formatter output for their start/end', () => {
+test('experience periods are derived from start/end in the shared convention', () => {
+  const expected = {
+    'Decagon AI': 'Sep–Dec 2026',
+    Ramp: 'Jun–Sep 2026',
+    SafetyKit: 'Jun–Sep 2025',
+    'Upsilon Pi Epsilon @ UCLA': 'May 2025–Present',
+    'Scale AI': 'Nov 2024–May 2025',
+  };
+
   for (const experience of experiences) {
     assert.equal(
       experience.period,
-      formatPeriod(experience.start, experience.end),
+      expected[experience.company],
       `${experience.company} period`,
     );
   }
