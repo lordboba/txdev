@@ -282,7 +282,7 @@ export const journeyBeats: JourneyBeat[] = [
     title: 'What’s next?',
     period: 'Next',
     story: [
-      'I do not know yet, and I am keeping that an open question. I am stopping the route here for now and leaving the margin blank on purpose.',
+      'The future is bright, but it is still open and up for grabs. Stay tuned :)',
     ],
     artifactIds: ['unprinted-margin'],
     interactionId: 'place-next-pin',
