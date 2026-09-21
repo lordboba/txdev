@@ -2712,61 +2712,76 @@ function getPlacardTexture(piece: SideProject) {
  * letterspaced micro-label over the experiment title. White is the mask, not
  * the colour — EngravedDecal supplies the groove and lip out of the host metal,
  * so this can never read as a printed sticker.
+ *
+ * The canvas takes the decal plane's own aspect, derived from the same
+ * constants ExperimentBlank hands to EngravedDecal, so the two cannot drift
+ * apart and stretch the type. At the Signals focus camera the decal stands
+ * ~750 device px tall on a 1440x900 DPR-2 frame; 1564 tall keeps the title at
+ * 2x, the same standard the frame titles are held to.
+ *
+ * One margin governs the whole plate: the label's cap line, the rule and the
+ * title measure all sit at PLATE_MARGIN from the edge, and the same margin
+ * closes the field at the foot. The title's ink block — cap line of the first
+ * line to baseline of the last, not the line boxes — is centred in the field
+ * under the rule, then lifted a hair, since the optical centre of a block of
+ * type sits above its geometric one.
  */
+const SIGNAL_DECAL_W = 1.86;
+const SIGNAL_DECAL_H = 1.42;
+const PLATE_CANVAS_W = 2048;
+const PLATE_CANVAS_H = Math.round(
+  (PLATE_CANVAS_W * SIGNAL_DECAL_H) / SIGNAL_DECAL_W,
+);
+const PLATE_MARGIN = 96;
+const PLATE_LABEL_SIZE = 100;
+const PLATE_TITLE_SIZE = 208;
+const PLATE_TITLE_LEADING = 236;
+const PLATE_MAX_LINES = 4;
+/* Helvetica / Arial cap height, as a fraction of the font size. */
+const CAP_HEIGHT = 0.72;
+
 function createExperimentPlateTexture(status: string, title: string) {
   const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  /* 1024 x 782 is the decal's own 1.86 x 1.42 aspect; anything else stretches. */
-  canvas.height = 782;
+  canvas.width = PLATE_CANVAS_W;
+  canvas.height = PLATE_CANVAS_H;
   const context = canvas.getContext('2d') as SpacedContext | null;
 
   if (!context) {
     return new THREE.CanvasTexture(canvas);
   }
 
+  const measure = canvas.width - PLATE_MARGIN * 2;
+  const labelBaseline = PLATE_MARGIN + PLATE_LABEL_SIZE * CAP_HEIGHT;
+  const ruleTop = labelBaseline + 56;
+  const ruleHeight = 8;
+
   context.fillStyle = '#ffffff';
   context.textBaseline = 'alphabetic';
 
-  context.letterSpacing = '15px';
-  context.font = '600 50px Helvetica Neue, Arial, sans-serif';
-  context.fillText(status.toUpperCase(), 40, 84);
-  context.fillRect(40, 126, 944, 4);
+  context.letterSpacing = '30px';
+  context.font = `600 ${PLATE_LABEL_SIZE}px Helvetica Neue, Arial, sans-serif`;
+  context.fillText(status.toUpperCase(), PLATE_MARGIN, labelBaseline, measure);
+  context.fillRect(PLATE_MARGIN, ruleTop, measure, ruleHeight);
 
-  context.letterSpacing = '-1px';
-  context.font = '500 92px Helvetica Neue, Arial, sans-serif';
-  const words = title.split(' ');
-  const lines: string[] = [];
-  let current = '';
+  context.letterSpacing = '-2px';
+  context.font = `500 ${PLATE_TITLE_SIZE}px Helvetica Neue, Arial, sans-serif`;
+  const lines = wrapLines(context, title, measure, PLATE_MAX_LINES);
 
-  words.forEach((word) => {
-    const candidate = current ? `${current} ${word}` : word;
+  const fieldTop = ruleTop + ruleHeight;
+  const fieldHeight = canvas.height - PLATE_MARGIN - fieldTop;
+  const capHeight = PLATE_TITLE_SIZE * CAP_HEIGHT;
+  const inkHeight = (lines.length - 1) * PLATE_TITLE_LEADING + capHeight;
+  const opticalLift = fieldHeight * 0.03;
+  const firstBaseline =
+    fieldTop + (fieldHeight - inkHeight) / 2 + capHeight - opticalLift;
 
-    if (context.measureText(candidate).width > 944 && current) {
-      lines.push(current);
-      current = word;
-    } else {
-      current = candidate;
-    }
-  });
-
-  if (current) {
-    lines.push(current);
-  }
-
-  /*
-   * The title block is centred in the field under the rule rather than hung
-   * from a fixed baseline: the three titles wrap to two, three and three lines
-   * respectively, and a fixed start left the two-line plate top-heavy with a
-   * third of its pocket empty.
-   */
-  const kept = lines.slice(0, 4);
-  const leading = 104;
-  const top = 150;
-  const block = kept.length * leading;
-  const first = top + (canvas.height - top - block) / 2 + 74;
-
-  kept.forEach((line, index) => {
-    context.fillText(line, 40, first + index * leading);
+  lines.forEach((line, index) => {
+    context.fillText(
+      line,
+      PLATE_MARGIN,
+      firstBaseline + index * PLATE_TITLE_LEADING,
+      measure,
+    );
   });
 
   const texture = new THREE.CanvasTexture(canvas);
@@ -6679,13 +6694,13 @@ function ExperimentBlank({
             cutColor="#1e1f21"
             cutMetalness={0}
             envMapIntensity={0.85}
-            height={POCKET_HEIGHT - 0.12}
+            height={SIGNAL_DECAL_H}
             hostColor="#9fa1a3"
             lipMix={0.42}
             offset={0.0026}
             position={[0, SIGNAL_POCKET_OFFSET + 0.01, 0.081]}
             roughness={0.55}
-            width={1.86}
+            width={SIGNAL_DECAL_W}
           />
 
           {/*
