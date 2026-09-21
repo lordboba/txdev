@@ -126,7 +126,7 @@ export const journeyBeats: JourneyBeat[] = [
     title: 'San Diego: growing up',
     period: 'Childhood',
     story: [
-      'I grew up in San Diego. Around eleven or twelve I made games in Scratch, then moved to Java for competitive programming. In the same years I went to Chinese after-school classes and math competitions, played cello, and, before the pandemic, played water polo. Programming was one of several things I did.',
+      'I grew up in San Diego. Around eleven or twelve I made games in Scratch, then moved to Java for competitive programming. In the same years I went to Chinese after-school classes and math competitions, played cello, and, before the pandemic, played water polo. I did a lot of things, and programming was one of them.',
       'This is one of the first recorded cello performances I have. It’s one of the first things I did, and I still enjoy it when I have a cello around and the time.',
     ],
     artifactIds: ['scratch-or-cello'],
@@ -146,8 +146,8 @@ export const journeyBeats: JourneyBeat[] = [
     title: 'Del Norte High School',
     period: 'High school',
     story: [
-      'In high school I ran cross-country and track. Cross-country taught me how to be a team player and a team leader. It trained mental fortitude and resilience: I learned I could train through the pain and push the limits of what I was capable of. More than anything, it taught me to take a process seriously and to train myself with discipline.',
-      'I was also president of the Math Club and the Algorithmic Coding Club. The clubs taught me leadership: bringing people together, hosting events, making people feel welcome. In hindsight I built foundations for both clubs, but my impact at the time left more to be desired. It was not for naught. The failed events, the things that did not work out, and the efforts that never materialized taught me how not to host events and how not to lead.',
+      'In high school I ran cross-country and track. Running cross-country, I learned to be a teammate and a leader, and I found out I could train through pain and push past what I thought I could do. Mostly I learned to take a process seriously and hold myself to it.',
+      'I was also president of the Math Club and the Algorithmic Coding Club. Running them, I learned to bring people together, host events, and make people feel welcome. Looking back, I built foundations for both clubs, but honestly my impact then left more to be desired. I still learned a lot from the events that flopped and the plans that never happened, about how not to host and how not to lead.',
     ],
     artifactIds: ['running-bib'],
     interactionId: 'hold-team-pace',
@@ -165,8 +165,8 @@ export const journeyBeats: JourneyBeat[] = [
     title: 'Grow & Give, my first app',
     period: '2022 to 2023',
     story: [
-      'Grow & Give was a Swift and MongoDB app I built in 2022 and 2023. You set a focus timer, and finished sessions turned into support for real nonprofits. It won first place in its fair’s senior computer-science category.',
-      'It was a turning point because app development was so difficult. I had to jump through so many hoops and work through so many different abstractions. I am proud that I pushed through and wrote the code in Swift, before AI, to ship it over the line.',
+      'I built Grow & Give in 2022 and 2023 with Swift and MongoDB. You set a focus timer, and every session you finished counted toward support for real nonprofits. I entered it in my fair and took first place in the senior computer-science category.',
+      'Shipping Grow & Give was a turning point for me: I fought through the hoops and abstractions of iOS development and got Swift code over the line, before AI. I am still proud of that.',
     ],
     artifactIds: ['grow-and-give-app'],
     interactionId: 'plan-focus-reflect',
@@ -184,8 +184,8 @@ export const journeyBeats: JourneyBeat[] = [
     title: 'UCLA',
     period: '2024 to present',
     story: [
-      'I came to UCLA in 2024 to study computer science with a strong foundation from competitive programming. In my first year I applied to about 300 internships and did not hear back from many of them.',
-      'I explored and built in the meantime: ACM ICPC, tutoring, evaluation work for Scale AI, leading the DocuPilot team, and Jogging Club, and I kept playing cello in the Symphony Orchestra. I joined several clubs, including Creative Labs, and failed to get into a few others. I settled on two: VEST at UCLA and Upsilon Pi Epsilon at UCLA.',
+      'I came to UCLA in 2024 to study computer science, with a strong foundation from competitive programming. In my first year I applied to about 300 internships and did not hear back from many of them.',
+      'In the meantime I explored and built: I competed in ACM ICPC, tutored, did evaluation work for Scale AI, led the DocuPilot team, ran with Jogging Club, and kept playing cello in the Symphony Orchestra. I joined several clubs, including Creative Labs, and failed to get into a few others. I settled on two: VEST at UCLA and Upsilon Pi Epsilon at UCLA.',
     ],
     artifactIds: ['vest-mark', 'upe-mark'],
     interactionId: 'connect-campus-nodes',
@@ -203,8 +203,8 @@ export const journeyBeats: JourneyBeat[] = [
     title: 'SafetyKit, San Francisco',
     period: 'Jun 2025 to Sep 2025',
     story: [
-      'It was a brutal application season, and SafetyKit was the company that took the chance on me. I spent June to September 2025 with them in San Francisco. It was my first startup-engineering summer and my first time living in the city.',
-      'It was the first time I learned and built in the agentic-AI space. I learned the principles of working at a real software-engineering company with real tools, ran cloud systems at scale on AWS, and made changes that affected hundreds of thousands of dollars in real time.',
+      'I went through a brutal application season, and SafetyKit took the chance on me. I spent June to September 2025 with them in San Francisco: my first startup-engineering summer and my first time living in the city.',
+      'There I learned and built in the agentic-AI space for the first time. I learned how a real software-engineering company works, with real principles and real tools; I ran cloud systems at scale on AWS; and I made changes that affected hundreds of thousands of dollars in real time.',
     ],
     artifactIds: ['safetykit-mark'],
     interactionId: 'repair-production-route',
@@ -223,7 +223,7 @@ export const journeyBeats: JourneyBeat[] = [
     title: 'Codex community, Los Angeles',
     period: '2025 to present',
     story: [
-      "As a Codex Ambassador I started hosting demos, workshops, and build sessions at UCLA and around Los Angeles. The Codex community brought me into the tech scene on the community side. I am now a host of Sundays in LA. Later, in New York, I helped organize and judge Ramp's Builders Cup.",
+      "As a Codex Ambassador I started hosting demos, workshops, and build sessions at UCLA and around Los Angeles. Through the Codex community I found my way into the LA tech scene on the community side, and I now host Sundays in LA. Later, in New York, I helped organize and judge Ramp's Builders Cup.",
     ],
     artifactIds: ['codex-matcha', 'codex-demo'],
     interactionId: 'gather-builders',
@@ -244,7 +244,7 @@ export const journeyBeats: JourneyBeat[] = [
     title: 'Ramp, New York',
     period: 'Summer 2026',
     story: [
-      "In summer 2026 I moved to New York to work at Ramp. I scaled the Reimbursements team's software, but a lot of the primary work was building tools for the internal talent team: improving event coordination, custom software for the intern expo, and more.",
+      "In summer 2026 I moved to New York to work at Ramp. I scaled the Reimbursements team's software, and I spent much of my time building tools for the internal talent team: better event coordination, custom software for the intern expo, and more.",
     ],
     artifactIds: ['ramp-boat', 'ramp-construction'],
     interactionId: 'ship-reimbursements',
@@ -282,7 +282,7 @@ export const journeyBeats: JourneyBeat[] = [
     title: 'What’s next?',
     period: 'Next',
     story: [
-      'That is an open question. The route ends here for now, and the margin is unprinted on purpose.',
+      'I do not know yet, and I am keeping that an open question. I am stopping the route here for now and leaving the margin blank on purpose.',
     ],
     artifactIds: ['unprinted-margin'],
     interactionId: 'place-next-pin',
