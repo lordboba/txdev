@@ -3,57 +3,31 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import {
-  getOrbitalSectionHref,
-  setOrbitalSectionId,
-  useOrbitalSectionId,
-} from '@/components/runtime/orbitalSectionStore';
 import { ThemeToggle } from './ThemeToggle';
 
 const navLinks = [
-  { label: 'Home', href: '/', sectionId: null },
-  { label: 'About', href: '/#about', sectionId: 'about' },
-  { label: 'Projects', href: '/#projects', sectionId: 'projects' },
-  { label: 'Blog', href: '/blog', sectionId: null },
-  { label: 'Experience', href: '/past-experience', sectionId: null },
-  { label: 'Schedule a Call', href: '/schedule-a-call', sectionId: null },
+  { label: 'Home', href: '/' },
+  { label: 'About', href: '/#profile' },
+  { label: 'Projects', href: '/#work' },
+  { label: 'Blog', href: '/blog' },
+  { label: 'Experience', href: '/past-experience' },
+  { label: 'Schedule a Call', href: '/schedule-a-call' },
 ] as const;
 
 export const NavBar = () => {
   const pathname = usePathname();
-  const homeSection = useOrbitalSectionId();
   const [mobileMenuState, setMobileMenuState] = useState({
     open: false,
     pathname,
   });
 
   const normalizedPath = pathname.startsWith('/blog') ? '/blog' : pathname;
-  const activeHref =
-    pathname === '/' ? getOrbitalSectionHref(homeSection) : normalizedPath;
+  const activeHref = normalizedPath;
   const mobileOpen =
     mobileMenuState.pathname === pathname && mobileMenuState.open;
 
-  const handleNavClick = (
-    event: React.MouseEvent<HTMLAnchorElement>,
-    href: string,
-    sectionId: string | null,
-  ) => {
+  const handleNavClick = () => {
     setMobileMenuState({ open: false, pathname });
-
-    if (pathname !== '/') {
-      return;
-    }
-
-    if (href === '/') {
-      event.preventDefault();
-      setOrbitalSectionId('home');
-      return;
-    }
-
-    if (sectionId === 'about' || sectionId === 'projects') {
-      event.preventDefault();
-      setOrbitalSectionId(sectionId);
-    }
   };
 
   return (
@@ -62,7 +36,7 @@ export const NavBar = () => {
         <Link
           href="/"
           prefetch={false}
-          onClick={(event) => handleNavClick(event, '/', null)}
+          onClick={handleNavClick}
           className="inline-flex items-center rounded-sm px-2 py-1 text-sm font-[var(--font-display)] font-semibold tracking-tight text-foreground transition-colors duration-200 hover:text-accent"
         >
           TYLER XIAO
@@ -80,9 +54,7 @@ export const NavBar = () => {
                   key={link.label}
                   href={link.href}
                   prefetch={shouldDisablePrefetch ? false : undefined}
-                  onClick={(event) =>
-                    handleNavClick(event, link.href, link.sectionId)
-                  }
+                  onClick={handleNavClick}
                   className={`relative z-10 rounded-sm px-3 py-1.5 text-xs font-medium transition-colors duration-200 sm:text-sm ${
                     isActive
                       ? 'bg-accent text-accent-ink'
@@ -155,9 +127,7 @@ export const NavBar = () => {
                 key={link.label}
                 href={link.href}
                 prefetch={shouldDisablePrefetch ? false : undefined}
-                onClick={(event) =>
-                  handleNavClick(event, link.href, link.sectionId)
-                }
+                onClick={handleNavClick}
                 className={`rounded-sm px-4 py-2.5 text-[12px] font-[var(--font-mono)] font-medium transition-colors duration-200 ${
                   isActive
                     ? 'bg-accent-muted text-accent'

@@ -1,14 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
-import { experienceGroups, projects } from '@/lib/siteData';
+import { projects } from '@/content/projectData';
+import { experienceGroups } from '@/content/experienceData';
 import { NavBar } from '@/components/NavBar';
 import { ThemeBar } from '@/components/ThemeBar';
 
 export const metadata: Metadata = {
-  title: 'Experience — Tyler Xiao',
-  description:
-    "Detailed look at Tyler Xiao's upcoming, current, and past work with related project proof.",
+  title: 'Experience - Tyler Xiao',
+  description: 'Detailed look at my upcoming, current, and past work.',
 };
 
 const focusAreas = Array.from(
@@ -36,11 +36,11 @@ export default function PastExperiencePage() {
           Experience
         </p>
         <h1 className="max-w-3xl font-[var(--font-display)] text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
-          Timeline of upcoming, current, and shipped responsibility.
+          Experience across past, current, and upcoming roles.
         </h1>
         <p className="max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
-          Role history grouped by time, with proof signals for systems work,
-          agent workflows, and infrastructure ownership.
+          Role history grouped by time, covering the work, responsibilities, and
+          systems behind each role.
         </p>
         <div className="h-px bg-divider/80" />
       </header>
@@ -127,8 +127,8 @@ export default function PastExperiencePage() {
             Projects
           </h2>
           <p className="mt-2 text-sm text-muted">
-            Each entry pairs a shipped surface or system signal with the stack
-            behind it.
+            Each project includes its implementation stack and a link to the
+            live product or source.
           </p>
           <div className="mt-3 h-px bg-divider/80" />
         </div>

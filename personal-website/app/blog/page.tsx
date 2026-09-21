@@ -5,7 +5,7 @@ import { getAllPostMeta } from '@/lib/blog';
 export const metadata: Metadata = {
   title: 'Blog | Tyler Xiao',
   description:
-    'Personal technical blog on AI agents, backend systems, and product engineering.',
+    'Personal technical blog on software, backend systems, and product engineering.',
 };
 
 export default async function BlogIndexPage() {
@@ -22,7 +22,7 @@ export default async function BlogIndexPage() {
             Blog
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
-            Technical notes on AI agents, backend systems, and product
+            Technical notes on software, backend systems, and product
             engineering.
           </p>
         </div>

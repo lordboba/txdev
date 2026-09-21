@@ -36,11 +36,11 @@ export const metadata: Metadata = {
   ),
   title: "Tyler Xiao's Portfolio",
   description:
-    "Personal portfolio for Tyler Xiao — UCLA CS '27 focused on agentic AI, backend systems, and trust & safety automation.",
+    'Personal portfolio for Tyler Xiao, a UCLA computer science student building products, backend systems, and developer tools.',
   openGraph: {
     title: "Tyler Xiao's Portfolio",
     description:
-      "Explore Tyler Xiao's experience, projects, and ways to collaborate on AI agents and backend systems.",
+      "Explore Tyler Xiao's experience, projects, writing, and contact information.",
     siteName: 'Tyler Xiao',
     images: [
       {
@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "Tyler Xiao's Portfolio",
     description:
-      "Explore Tyler Xiao's experience, projects, and ways to collaborate on AI agents and backend systems.",
+      "Explore Tyler Xiao's experience, projects, writing, and contact information.",
     images: ['https://tylerx.dev/lordboba.png'],
   },
   icons: {

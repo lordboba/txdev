@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { headers } from 'next/headers';
 import { createClient } from 'redis';
 
 type RedisClient = ReturnType<typeof createClient>;
@@ -62,4 +63,14 @@ export async function incrementVisitorCount() {
 
   const count = await redis.incr(USER_COUNT_KEY);
   return normalizeCount(count);
+}
+
+export async function getInitialVisitorCount() {
+  const requestHeaders = await headers();
+  const isPrefetch =
+    requestHeaders.get('purpose') === 'prefetch' ||
+    requestHeaders.get('next-router-prefetch') === '1' ||
+    requestHeaders.get('x-middleware-prefetch') === '1';
+
+  return isPrefetch ? getVisitorCount() : incrementVisitorCount();
 }

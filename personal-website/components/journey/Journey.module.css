@@ -1,0 +1,1600 @@
+/*
+ * The journey screen is deliberately dark in both themes — it is the inside of
+ * a machine, not a page of the site — so the palette is self-contained literal
+ * spec values and consumes zero global theme tokens.
+ *
+ * Graphite and signal amber, per the workshop mockup:
+ * screen #0F1113 · surface #171A1D · rules #30353A / #4A5056 ·
+ * type #E3E5E7 / #A6AAAE / #858B90 · accent #C4A55F.
+ *
+ * Motion has one rule: move the route, not the text. The camera flies, the
+ * token travels, the amber draws; copy dissolves in once and then holds still.
+ */
+
+.journey {
+  --screen: #0f1113;
+  --surface: #171a1d;
+  --surface-raised: #1d2023;
+  --land: #161a1d;
+  --rule: #30353a;
+  --rule-strong: #4a5056;
+  --paper: #e3e5e7;
+  --muted: #a6aaae;
+  --faint: #858b90;
+  --amber: #c4a55f;
+  --amber-soft: rgba(196, 165, 95, 0.13);
+  --amber-glow: rgba(196, 165, 95, 0.32);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --mono:
+    var(--font-mono, 'IBM Plex Mono'), 'SFMono-Regular', Consolas, monospace;
+  --serif:
+    var(--font-display, 'Cormorant Garamond'), 'Iowan Old Style', Georgia, serif;
+
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  background: var(--screen);
+  color: var(--paper);
+  color-scheme: dark;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.55;
+}
+
+/*
+ * Buttons inherit the body type by default; :where() keeps this reset at
+ * zero specificity so every class-level button rule below can set its own
+ * mono label size.
+ */
+:where(.journey) button {
+  font: inherit;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Standalone chrome                                                           */
+/* -------------------------------------------------------------------------- */
+
+.rail {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 52px;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--rule);
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: var(--label-sm);
+  letter-spacing: var(--label-sm-tracking);
+  text-transform: uppercase;
+}
+
+.railLink {
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 200ms ease;
+}
+
+.railLink:hover,
+.railLink:focus-visible {
+  color: var(--paper);
+}
+
+/*
+ * Every text control shares the pins' designed ring: the UA's `outline: auto`
+ * reads as a browser default against the dark page.
+ */
+.railLink:focus-visible,
+.ghostAction:focus-visible,
+.controlAction:focus-visible,
+.nextAction:focus-visible,
+.pagerAction:focus-visible {
+  outline: 2px solid var(--paper);
+  outline-offset: 4px;
+}
+
+.railTitle {
+  color: var(--paper);
+}
+
+.stage {
+  display: grid;
+  flex: 1;
+  min-height: 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Wake screen                                                                 */
+/* -------------------------------------------------------------------------- */
+
+.wake {
+  position: relative;
+  display: grid;
+  overflow: hidden;
+  place-items: center;
+  padding: 32px 20px;
+  background: radial-gradient(
+    ellipse 58% 46% at 50% 52%,
+    var(--amber-soft),
+    transparent 72%
+  );
+  text-align: center;
+}
+
+/*
+ * The country under the question: hairline land, four real cities, one
+ * route. The frame reports where San Diego lands in pixels (--pin-x/--pin-y,
+ * written by its mount observer) so the start pin can sit on the map in HTML
+ * and the whole atlas can lean toward it when the visitor reaches for the door.
+ */
+.ghostFrame {
+  position: absolute;
+  inset: 6% 4%;
+  width: 92%;
+  height: 88%;
+  opacity: 0.55;
+  transition: opacity 900ms ease;
+}
+
+.wake[data-phase='ready'] .ghostFrame {
+  opacity: 1;
+}
+
+.ghost {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  transform-origin: var(--pin-x, 50%) var(--pin-y, 50%);
+  transition: transform 1100ms var(--ease-out);
+}
+
+.wake[data-lean] .ghost {
+  transform: scale(1.06);
+}
+
+/*
+ * The door on the map: San Diego's pin, pulsing amber, labelled like the
+ * button. The pulse runs twice and rests on its last frame so an idle wake
+ * screen costs nothing.
+ */
+.startPin {
+  position: absolute;
+  top: var(--pin-y, 50%);
+  left: var(--pin-x, 50%);
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 1px solid var(--amber);
+  border-radius: 50%;
+  background: var(--amber);
+  cursor: pointer;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  transition: opacity 600ms ease;
+}
+
+.wake[data-phase='ready'] .startPin {
+  opacity: 1;
+}
+
+.startPin::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border: 1px solid var(--amber);
+  border-radius: 50%;
+  animation: startPulse 2400ms var(--ease-out) 2 forwards;
+}
+
+.startPin::after {
+  content: attr(aria-label);
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 12px);
+  width: max-content;
+  color: var(--amber);
+  font-family: var(--mono);
+  font-size: var(--label-xs);
+  letter-spacing: var(--label-xs-tracking);
+  text-shadow:
+    0 0 2px var(--screen),
+    0 0 6px var(--screen);
+  text-transform: uppercase;
+  transform: translateY(-50%);
+}
+
+.startPin:hover::before,
+.wake[data-lean] .startPin::before {
+  animation-duration: 1200ms;
+}
+
+@keyframes startPulse {
+  from {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(3.4);
+  }
+}
+
+.ghostNation {
+  fill: rgba(22, 26, 29, 0.9);
+  stroke: rgba(74, 80, 86, 0.8);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.ghostBorders {
+  fill: none;
+  stroke: rgba(74, 80, 86, 0.3);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.ghostCity {
+  fill: var(--screen);
+  stroke: var(--muted);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.ghostRoute {
+  fill: none;
+  stroke: var(--amber);
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  /*
+   * User-space width on purpose: with non-scaling-stroke Chromium dashes the
+   * screen-space path using the user-space pathLength scale, so the dash
+   * covered only 1/scale of the route (tail leaked before the draw, draw
+   * stopped short of New York). 1.2 user units ~= 1.5px at 1440px.
+   */
+  stroke-width: 1.2;
+}
+
+.wake[data-phase='ready'] .ghostRoute {
+  animation: drawRoute 3600ms var(--ease-in-out) 500ms forwards;
+}
+
+@keyframes drawRoute {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.wakeInner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  align-items: center;
+}
+
+.wakeEyebrow {
+  margin: 0;
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: var(--label-sm);
+  letter-spacing: var(--label-sm-tracking);
+  text-transform: uppercase;
+}
+
+.wakeQuestion {
+  display: inline-flex;
+  align-items: baseline;
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(52px, 9vw, 108px);
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+  text-shadow: 0 0 60px rgba(196, 165, 95, 0.12);
+  transition: opacity 700ms ease;
+}
+
+.wake[data-phase='waking'] .wakeQuestion {
+  opacity: 0.42;
+}
+
+/* The typing caret: a thin amber bar that blinks a few times once the line is set. */
+.caret {
+  display: inline-block;
+  width: 0.05em;
+  height: 0.78em;
+  margin-left: 0.06em;
+  background: var(--amber);
+  transform: translateY(0.08em);
+}
+
+.wake[data-typed] .caret {
+  animation: blink 1100ms steps(2, start) 3 forwards;
+}
+
+@keyframes blink {
+  to {
+    visibility: hidden;
+  }
+}
+
+.wakeLine {
+  max-width: 34em;
+  margin: 0;
+  color: var(--muted);
+  font-size: clamp(16px, 2vw, 19px);
+  animation: riseIn 700ms var(--ease-out) both;
+}
+
+.wakeActions {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+  margin-top: 14px;
+  animation: riseIn 700ms var(--ease-out) 120ms both;
+}
+
+.wakeHint {
+  padding: 12px 18px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--faint);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: var(--label-sm);
+  letter-spacing: var(--label-sm-tracking);
+  text-transform: uppercase;
+  transition:
+    border-color 200ms ease,
+    color 200ms ease;
+}
+
+.wakeHint:hover,
+.wakeHint:focus-visible {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+/* The door: filled, named after where it goes, arrow that moves when reached for. */
+.primaryAction {
+  display: inline-flex;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 24px;
+  border: 1px solid var(--amber);
+  border-radius: 2px;
+  background: var(--amber);
+  color: var(--screen);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: var(--label-md);
+  font-weight: 500;
+  letter-spacing: var(--label-md-tracking);
+  text-transform: uppercase;
+  transition:
+    background-color 200ms ease,
+    box-shadow 300ms ease;
+}
+
+.primaryAction:hover,
+.primaryAction:focus-visible {
+  background: #d4b56c;
+  box-shadow: 0 0 0 6px var(--amber-soft);
+}
+
+.primaryArrow {
+  display: inline-block;
+  transition: transform 300ms var(--ease-out);
+}
+
+.primaryAction:hover .primaryArrow,
+.primaryAction:focus-visible .primaryArrow {
+  transform: translateX(5px);
+}
+
+/* The mode, not a second door: a plain underlined line under the button. */
+.ghostAction {
+  padding: 6px 2px;
+  border: 0;
+  background: transparent;
+  color: var(--faint);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: var(--label-sm);
+  letter-spacing: var(--label-sm-tracking);
+  text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
+  text-transform: uppercase;
+  text-underline-offset: 4px;
+  transition:
+    color 200ms ease,
+    text-decoration-color 200ms ease;
+}
+
+.ghostAction:hover,
+.ghostAction:focus-visible {
+  color: var(--paper);
+  text-decoration-color: var(--paper);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Chapter: atlas + story record                                               */
+/* -------------------------------------------------------------------------- */
+
+.chapter,
+.ending {
+  display: grid;
+  grid-template-columns: minmax(0, 68fr) minmax(360px, 32fr);
+  min-height: 0;
+}
+
+.map {
+  position: relative;
+  overflow: hidden;
+  min-height: 460px;
+  border-right: 1px solid var(--rule);
+  background: var(--screen);
+}
+
+/* Read mode keeps the map as context, never as a gate. */
+.chapter[data-mode='read'] .map {
+  opacity: 0.6;
+  transition: opacity 400ms ease;
+}
+
+.atlas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.nation {
+  fill: var(--land);
+  stroke: rgba(106, 113, 120, 0.9);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.borders {
+  fill: none;
+  stroke: rgba(74, 80, 86, 0.55);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.routeFuture {
+  fill: none;
+  stroke: var(--rule-strong);
+  stroke-dasharray: 3 5;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+/*
+ * Amber overlays only the travelled prefix: dasharray is written per frame.
+ * Dashes are in atlas units (pathLength), so the line must scale with the
+ * group (no non-scaling-stroke, which would dash in screen space); width and
+ * glow are scaled back to screen pixels by --atlas-scale, written per frame
+ * by the motion loop.
+ */
+.routePast {
+  fill: none;
+  stroke: var(--amber);
+  stroke-linecap: round;
+  stroke-width: calc(2px / var(--atlas-scale, 1));
+  filter: drop-shadow(
+    0 0 calc(6px / var(--atlas-scale, 1)) rgba(196, 165, 95, 0.35)
+  );
+}
+
+.sideLink {
+  fill: none;
+  stroke: var(--rule-strong);
+  stroke-dasharray: 2 4;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Every marker is positioned by the motion loop: transform only, never layout. */
+.layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.marker {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+}
+
+.marker[data-away] {
+  opacity: 0.5;
+  transition: opacity 600ms ease;
+}
+
+/* The real city: a hollow ring the chapters gather around. */
+.cityRing {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--muted);
+  border-radius: 50%;
+  background: transparent;
+  transform: translate(-50%, -50%);
+  transition:
+    width 500ms var(--ease-out),
+    height 500ms var(--ease-out),
+    border-color 400ms ease;
+}
+
+.cityLabel {
+  position: absolute;
+  bottom: 15px;
+  left: 14px;
+  width: max-content;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: var(--label-sm);
+  letter-spacing: var(--label-sm-tracking);
+  text-shadow:
+    0 0 2px var(--screen),
+    0 0 6px var(--screen);
+  text-transform: uppercase;
+  transition:
+    opacity 400ms ease,
+    transform 500ms var(--ease-out);
+}
+
+/* Where the route leaves a ring north-east, its name sits below-right instead. */
+.cityLabel[data-side='se'] {
+  bottom: auto;
+  top: 15px;
+}
+
+.nodeMain,
+.nodeSide {
+  position: absolute;
+  padding: 0;
+  border: 1px solid var(--muted);
+  border-radius: 0;
+  background: var(--screen);
+  cursor: pointer;
+  pointer-events: auto;
+  transform: translate(-50%, -50%);
+  transition:
+    width 400ms var(--ease-out),
+    height 400ms var(--ease-out),
+    border-color 300ms ease,
+    background-color 300ms ease,
+    opacity 400ms ease;
+}
+
+.nodeMain {
+  width: 13px;
+  height: 13px;
+}
+
+.nodeSide {
+  width: 9px;
+  height: 9px;
+  border-color: var(--rule-strong);
+}
+
+/* Generous invisible hit area so the visual mark can stay a small pin. */
+.nodeMain::before,
+.nodeSide::before {
+  content: '';
+  position: absolute;
+  inset: -14px;
+}
+
+.nodeLabel {
+  position: absolute;
+  top: 50%;
+  width: max-content;
+  max-width: 150px;
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: var(--label-xs);
+  letter-spacing: var(--label-xs-tracking);
+  line-height: 1.3;
+  text-shadow:
+    0 0 2px var(--screen),
+    0 0 6px var(--screen);
+  text-transform: uppercase;
+  transform: translateY(-50%);
+  transition:
+    color 300ms ease,
+    opacity 300ms ease;
+}
+
+.nodeMain[data-side='right'] .nodeLabel,
+.nodeSide[data-side='right'] .nodeLabel {
+  left: calc(100% + 11px);
+  text-align: left;
+}
+
+.nodeMain[data-side='left'] .nodeLabel,
+.nodeSide[data-side='left'] .nodeLabel {
+  right: calc(100% + 11px);
+  text-align: right;
+}
+
+/* Where the route runs level through a pin, its name hangs underneath. */
+.nodeMain[data-side='below'] .nodeLabel,
+.nodeSide[data-side='below'] .nodeLabel {
+  top: calc(100% + 9px);
+  left: 50%;
+  text-align: center;
+  transform: translateX(-50%);
+}
+
+/*
+ * A side pin is a pin, not a second label: the place already carries its name
+ * on the main node, and the story names the side beat when you land on it.
+ * The button keeps its aria-label, so the name still reads to a screen reader.
+ */
+.nodeSide .nodeLabel {
+  display: none;
+}
+
+.nodeMain[data-visited] {
+  border-color: var(--amber);
+}
+
+/* "You are here" is a location, not a toggle: styled off aria-current. */
+.nodeMain[aria-current],
+.nodeSide[aria-current] {
+  border-color: var(--amber);
+  background: var(--amber);
+}
+
+.nodeSide[data-collected] {
+  border-color: var(--amber);
+  background: var(--amber-soft);
+}
+
+.nodeMain[aria-current] .nodeLabel,
+.nodeSide[aria-current] .nodeLabel {
+  color: var(--paper);
+}
+
+.nodeMain:hover,
+.nodeSide:hover {
+  border-color: var(--amber);
+}
+
+.nodeMain:hover .nodeLabel,
+.nodeSide:hover .nodeLabel {
+  color: var(--muted);
+}
+
+.nodeMain:focus-visible,
+.nodeSide:focus-visible,
+.pickArea:focus-visible {
+  outline: 2px solid var(--paper);
+  outline-offset: 4px;
+}
+
+/*
+ * Pulled out to the whole country, the clusters are a few pixels wide: the
+ * chapter pins shrink to dots and their labels lift away; the cities carry
+ * the map instead.
+ */
+.map[data-zoom='far'] .nodeMain,
+.map[data-zoom='far'] .nodeSide {
+  width: 5px;
+  height: 5px;
+}
+
+.map[data-zoom='far'] .nodeLabel {
+  opacity: 0;
+}
+
+.map[data-zoom='far'] .cityRing {
+  width: 14px;
+  height: 14px;
+  border-color: var(--paper);
+}
+
+.map[data-zoom='near'] .cityLabel {
+  opacity: 0.7;
+}
+
+/*
+ * The place plate already names the city you are in, at either zoom, so the
+ * current city's ring goes quiet and only the neighbouring cities keep their
+ * names as bearings. Pulled out, the chapter you are on still keeps its
+ * label so the map always names where you are; the ending's whole-route
+ * view stays unlabelled by design.
+ */
+.marker[data-current] .cityLabel {
+  opacity: 0;
+}
+
+.map[data-zoom='far']:not([data-ending]) .nodeMain[aria-current] .nodeLabel,
+.map[data-zoom='far']:not([data-ending]) .nodeSide[aria-current] .nodeLabel {
+  opacity: 1;
+}
+
+/* Pulled out, a current side beat is the only thing that can name its cluster. */
+.map[data-zoom='far']:not([data-ending]) .nodeSide[aria-current] .nodeLabel {
+  display: block;
+}
+
+/* Chapters of another city read as dots from here: labels are for where you are. */
+.marker[data-away] .nodeLabel {
+  opacity: 0;
+}
+
+/*
+ * The "you are here" token. Travel is the page's motion budget: the square
+ * rides the route while the story copy itself stays still.
+ */
+.token {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: 0;
+  will-change: transform;
+}
+
+.tokenMark {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--amber);
+  box-shadow: 0 0 0 0 var(--amber-glow);
+  transform: translate(-50%, -50%);
+  transition:
+    box-shadow 500ms ease,
+    transform 500ms var(--ease-out);
+}
+
+.map[data-travelling='true'] .tokenMark {
+  box-shadow: 0 0 0 7px var(--amber-glow);
+  transform: translate(-50%, -50%) scale(0.86);
+}
+
+/* The next pin, placed by hand in the margin. */
+.pin {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  left: 0;
+}
+
+.pinMark {
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  background: var(--amber);
+  /* A real drop: falls for most of the beat, lands with a small bounce. */
+  animation: pinDrop 560ms cubic-bezier(0.34, 1.3, 0.64, 1) both;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.pinMark::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 100%;
+  width: 68px;
+  border-top: 1px dashed var(--rule-strong);
+  transform: rotate(24deg);
+  transform-origin: right center;
+}
+
+.pinRipple {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--amber);
+  border-radius: 50%;
+  animation: ripple 1400ms var(--ease-out) 150ms both;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes pinDrop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -220%) rotate(45deg) scale(1.4);
+  }
+
+  30% {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(45deg) scale(1);
+  }
+}
+
+@keyframes ripple {
+  from {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(6);
+  }
+}
+
+/* The ending's whole panel takes the pin; nodes underneath go inert. */
+.pickArea {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: crosshair;
+}
+
+.backAction {
+  position: absolute;
+  z-index: 5;
+  top: 16px;
+  left: 18px;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: var(--label-sm);
+  letter-spacing: var(--label-sm-tracking);
+  text-transform: uppercase;
+  transition: color 200ms ease;
+}
+
+.backAction:hover,
+.backAction:focus-visible {
+  color: var(--paper);
+}
+
+.mapLabelTop {
+  position: absolute;
+  z-index: 5;
+  top: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: var(--label-sm);
+  letter-spacing: var(--label-sm-tracking);
+  pointer-events: none;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.mapHint {
+  color: var(--faint);
+  font-size: var(--label-xs);
+}
+
+/* The place plate: the real place, its state, its coordinates. */
+.plate {
+  position: absolute;
+  z-index: 5;
+  bottom: 22px;
+  left: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: riseIn 600ms var(--ease-out) both;
+  pointer-events: none;
+}
+
+.plateName {
+  font-family: var(--serif);
+  text-shadow:
+    0 0 3px var(--screen),
+    0 0 14px var(--screen);
+  font-size: clamp(26px, 2.6vw, 34px);
+  font-weight: 500;
+  font-optical-sizing: auto;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.plateRegion {
+  color: var(--muted);
+}
+
+.plateCoords {
+  color: var(--faint);
+  text-shadow:
+    0 0 3px var(--screen),
+    0 0 10px var(--screen);
+  font-family: var(--mono);
+  font-size: var(--label-sm);
+  letter-spacing: var(--label-sm-tracking);
+  white-space: pre;
+}
+
+/*
+ * The read-mode dim takes the map's labels down with it, so they carry full
+ * ink there: paper at 0.6 still clears 4.5:1 on the screen, faint and muted
+ * do not. Neighbouring city names drop their near-zoom fade for the same
+ * reason; the current city's stays hidden.
+ */
+.chapter[data-mode='read'] .mapLabelTop,
+.chapter[data-mode='read'] .mapHint,
+.chapter[data-mode='read'] .backAction,
+.chapter[data-mode='read'] .nodeLabel,
+.chapter[data-mode='read'] .cityLabel,
+.chapter[data-mode='read'] .plateCoords {
+  color: var(--paper);
+}
+
+.chapter[data-mode='read']
+  .map[data-zoom='near']
+  .marker:not([data-current])
+  .cityLabel {
+  opacity: 1;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Story record                                                                */
+/* -------------------------------------------------------------------------- */
+
+.story {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 26px 32px 28px;
+  background: var(--surface);
+}
+
+/*
+ * The panel's screen-reader-only live summary: visually hidden but still
+ * rendered, so a chapter change announces one line instead of the whole body.
+ */
+.srAnnounce {
+  position: absolute;
+  overflow: hidden;
+  clip-path: inset(50%);
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* The panel is focusable so overflowing copy scrolls by keyboard. */
+.story:focus-visible {
+  outline: 2px solid var(--paper);
+  outline-offset: -2px;
+}
+
+.storyControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 18px;
+  margin-bottom: 18px;
+}
+
+/* Text-only mono labels, so the chapter's eyebrow stays the panel's first weight. */
+.controlAction {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--faint);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: var(--label-sm);
+  letter-spacing: var(--label-sm-tracking);
+  line-height: 1.6;
+  text-transform: uppercase;
+  transition: color 200ms ease;
+}
+
+.controlAction:hover,
+.controlAction:focus-visible {
+  color: var(--paper);
+}
+
+.controlAction[aria-pressed='true'] {
+  color: var(--amber);
+}
+
+/*
+ * Each block of a chapter rises in once, staggered by its --i index, then
+ * holds perfectly still. Six pixels and 480ms: felt, not watched.
+ */
+.storyBody > *,
+.storyBody .artifact {
+  animation: riseIn 520ms var(--ease-out) calc(var(--i, 0) * 70ms) both;
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.eyebrow {
+  margin: 0 0 12px;
+  color: var(--amber);
+  font-family: var(--mono);
+  font-size: var(--label-sm);
+  letter-spacing: var(--label-sm-tracking);
+  text-transform: uppercase;
+}
+
+.storyTitle {
+  margin: 0 0 10px;
+  font-family: var(--serif);
+  font-size: clamp(34px, 3vw, 42px);
+  font-weight: 500;
+  font-optical-sizing: auto;
+  letter-spacing: -0.02em;
+  line-height: 1.04;
+  text-wrap: balance;
+}
+
+.period {
+  margin: 0 0 22px;
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: var(--label-sm);
+  letter-spacing: var(--label-sm-tracking);
+}
+
+.artifact {
+  margin: 0 0 24px;
+  border: 1px solid var(--rule-strong);
+  background: var(--surface-raised);
+}
+
+.artifactImage {
+  position: relative;
+  height: 200px;
+  background: #101214;
+}
+
+/* Ink on paper: vector marks get the light plate they were drawn for. */
+.artifactImage[data-kind='mark'] {
+  background: var(--paper);
+}
+
+/* A portrait clip stands taller than a photo, still short of a full screen. */
+.artifactImage[data-kind='video'] {
+  height: 300px;
+}
+
+/* A YouTube frame keeps its own shape; the box follows it. */
+.artifactImage[data-kind='youtube'] {
+  height: auto;
+  aspect-ratio: 16 / 9;
+}
+
+.artifactVideo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #101214;
+}
+
+.artifactIframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/*
+ * Two or three artifacts share one row so the words stay a scroll away, not a
+ * screen away. A third frame wraps under the first two only on a phone.
+ */
+.artifactSet {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 24px;
+}
+
+.artifactSet[data-count='3'] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.artifactSet .artifact {
+  min-width: 0;
+  margin: 0;
+}
+
+.artifactSet .artifactImage {
+  height: 210px;
+}
+
+.artifactSet .artifactImg {
+  padding: 10px;
+}
+
+/*
+ * Never rotated, never flipped: the frame shows the file exactly as saved,
+ * with the camera's own orientation tag honoured.
+ */
+.artifactImg {
+  object-fit: contain;
+  padding: 16px;
+  image-orientation: from-image;
+  transform: none;
+}
+
+.artifactCaption {
+  padding: 10px 12px;
+  border-top: 1px solid var(--rule);
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: var(--label-xs);
+  letter-spacing: var(--label-xs-tracking);
+  text-transform: uppercase;
+}
+
+.artifactMargin {
+  height: 120px;
+  margin: 0 0 24px;
+  border: 1px solid var(--rule);
+  background:
+    linear-gradient(rgba(48, 53, 58, 0.4) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(48, 53, 58, 0.4) 1px, transparent 1px), #101214;
+  background-size:
+    28px 28px,
+    28px 28px,
+    auto;
+}
+
+.storyText {
+  max-inline-size: 62ch;
+  margin: 0 0 0.9em;
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+.storyText:last-child {
+  margin-bottom: 0;
+}
+
+/* An outbound link the story names: mono, amber on hover, opens a new tab. */
+.storyLink {
+  margin: 0 0 14px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.storyLink a {
+  color: var(--paper);
+  text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
+  text-underline-offset: 3px;
+  transition: color 200ms ease;
+}
+
+.storyLink a:hover,
+.storyLink a:focus-visible {
+  color: var(--amber);
+  text-decoration-color: var(--amber);
+}
+
+.ledger {
+  margin-top: auto;
+  padding-top: 18px;
+  border-top: 1px solid var(--rule);
+}
+
+.ledgerLabel {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: var(--label-xs);
+  letter-spacing: var(--label-xs-tracking);
+  text-transform: uppercase;
+}
+
+.ledgerEmpty {
+  color: var(--faint);
+  font-size: 12.5px;
+}
+
+.ledgerList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ledgerList li {
+  padding: 5px 9px;
+  border: 1px solid var(--amber);
+  border-radius: 2px;
+  color: var(--paper);
+  font-family: var(--mono);
+  font-size: var(--label-xs);
+  letter-spacing: var(--label-xs-tracking);
+  text-transform: uppercase;
+  animation: riseIn 420ms var(--ease-out) both;
+}
+
+.storyFooter {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--rule);
+}
+
+.progressLabel {
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: var(--label-sm);
+  letter-spacing: var(--label-sm-tracking);
+}
+
+.nextAction {
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  color: var(--amber);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: var(--label-sm);
+  letter-spacing: var(--label-sm-tracking);
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color 200ms ease;
+}
+
+.nextAction:hover,
+.nextAction:focus-visible {
+  color: var(--paper);
+}
+
+.pagerAction {
+  padding: 8px 11px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: var(--label-sm);
+  letter-spacing: var(--label-sm-tracking);
+  text-transform: uppercase;
+  transition:
+    border-color 200ms ease,
+    color 200ms ease;
+}
+
+.pagerAction:hover:enabled,
+.pagerAction:focus-visible {
+  border-color: var(--rule-strong);
+  color: var(--paper);
+}
+
+.pagerAction:disabled {
+  opacity: 0.4;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Story index                                                                 */
+/* -------------------------------------------------------------------------- */
+
+.index {
+  width: min(760px, 100%);
+  margin: 0 auto;
+  overflow-y: auto;
+  padding: clamp(28px, 6vw, 64px) 22px;
+}
+
+.indexHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.indexList {
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--rule-strong);
+  list-style: none;
+}
+
+.indexList > li {
+  animation: riseIn 480ms var(--ease-out) calc(var(--i, 0) * 45ms) both;
+}
+
+.indexRow {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: baseline;
+  width: 100%;
+  padding: 18px 4px;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.indexTitle {
+  display: block;
+  font-family: var(--serif);
+  font-size: clamp(21px, 2.4vw, 27px);
+  font-weight: 500;
+  font-optical-sizing: auto;
+  line-height: 1.1;
+  transition: color 200ms ease;
+}
+
+.indexRow:hover .indexTitle,
+.indexRow:focus-visible .indexTitle {
+  color: var(--amber);
+}
+
+.indexNumber {
+  color: var(--amber);
+  font-family: var(--mono);
+  font-size: var(--label-md);
+  letter-spacing: var(--label-md-tracking);
+}
+
+.indexMeta {
+  display: block;
+  margin-top: 4px;
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: var(--label-sm);
+  letter-spacing: var(--label-sm-tracking);
+}
+
+.indexMark {
+  color: var(--faint);
+  font-size: 12px;
+}
+
+.indexRow[data-visited] .indexMark {
+  color: var(--amber);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Error view                                                                  */
+/* -------------------------------------------------------------------------- */
+
+.errorView {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Mobile: stacked, map above story, larger touch targets                      */
+/* -------------------------------------------------------------------------- */
+
+@media (max-width: 700px) {
+  .chapter,
+  .ending {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(300px, 46dvh) minmax(0, 1fr);
+  }
+
+  .map {
+    min-height: 300px;
+    border-right: 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .storyControls {
+    margin-bottom: 14px;
+  }
+
+  .rail {
+    gap: 10px;
+    padding: 0 14px;
+  }
+
+  .railMeta {
+    display: none;
+  }
+
+  .story {
+    padding: 20px 18px 24px;
+  }
+
+  .artifactSet[data-count='3'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .artifactSet .artifactImage {
+    height: 180px;
+  }
+
+  .artifactImage[data-kind='video'] {
+    height: 260px;
+  }
+
+  .nodeMain::before,
+  .nodeSide::before {
+    inset: -16px;
+  }
+
+  .nodeLabel {
+    max-width: 96px;
+    font-size: var(--label-xs);
+  }
+
+  .plate {
+    bottom: 16px;
+    left: 16px;
+  }
+
+  .plateName {
+    font-size: 22px;
+  }
+
+  .storyText {
+    font-size: 16px;
+  }
+
+  .mapHint {
+    display: none;
+  }
+
+  .ghostFrame {
+    inset: 14% 2%;
+    width: 96%;
+    height: 72%;
+  }
+
+  .startPin::after {
+    display: none;
+  }
+
+  .ghostRoute {
+    stroke-width: 4; /* ghost scale ~0.38 at 390px -> ~1.5px */
+  }
+
+  /*
+   * At 390px the whole-route frame puts SF, LA and SD within 45px of each
+   * other, so no corner is free. Same rule as node labels at far zoom: drop
+   * the names, keep the rings; the place plate still names where you are.
+   */
+  .map[data-zoom='far'] .cityLabel {
+    opacity: 0;
+  }
+
+  /*
+   * Pulled out on a phone the route runs level with the pins, so the one
+   * label still showing (where you are) hangs under its pin, centred, where
+   * neither the amber stroke nor the panel edge can reach it.
+   */
+  .map[data-zoom='far'] .nodeMain[aria-current] .nodeLabel,
+  .map[data-zoom='far'] .nodeSide[aria-current] .nodeLabel {
+    top: calc(100% + 9px);
+    right: auto;
+    left: 50%;
+    max-width: 120px;
+    text-align: center;
+    transform: translateX(-50%);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Reduced motion: cut, do not travel                                          */
+/* -------------------------------------------------------------------------- */
+
+.journey[data-reduced='true'] *,
+.journey[data-reduced='true'] *::before,
+.journey[data-reduced='true'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-delay: 0ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* The collapsed pulse and blink rest on their static look, not their last frame. */
+.journey[data-reduced='true'] .startPin::before,
+.journey[data-reduced='true'] .caret {
+  animation-fill-mode: none;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Bench overlay chrome                                                        */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Full-viewport host for the embedded journey. Under the site's grain film
+ * (z-index 999) so the page keeps one uniform texture; opaque so nothing —
+ * pointer or paint — reaches the bench behind it. The journey's own screen
+ * chrome fills the frame; this box only pins and scrolls it.
+ */
+.overlay {
+  position: fixed;
+  z-index: 990;
+  inset: 0;
+  overflow: auto;
+  background: #0f1113;
+  overscroll-behavior: contain;
+}
+
+.overlay:focus {
+  outline: none;
+}
+
+/*
+ * The overlay's always-present dismiss. Outside the .journey scope, so the
+ * colors are the same literal spec values the palette block documents. Fixed
+ * so it stays pinned while the overlay scrolls, and above the journey's own
+ * chrome (its deepest layer is z-index 5).
+ */
+.overlayClose {
+  position: fixed;
+  z-index: 6;
+  top: 14px;
+  right: 16px;
+  padding: 9px 14px;
+  border: 1px solid #4a5056;
+  border-radius: 2px;
+  background: rgba(15, 17, 19, 0.85);
+  color: #a6aaae;
+  cursor: pointer;
+  font-family:
+    var(--font-mono, 'IBM Plex Mono'), 'SFMono-Regular', Consolas, monospace;
+  font-size: var(--label-sm);
+  letter-spacing: var(--label-sm-tracking);
+  text-transform: uppercase;
+}
+
+.overlayClose:hover,
+.overlayClose:focus-visible {
+  border-color: #c4a55f;
+  color: #c4a55f;
+}
+
+/* Same ring as the journey's controls, in the literal --paper value. */
+.overlayClose:focus-visible {
+  outline: 2px solid #e3e5e7;
+  outline-offset: 4px;
+}

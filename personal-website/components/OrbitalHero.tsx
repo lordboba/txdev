@@ -221,11 +221,12 @@ export function OrbitalHero({
                   reducedMotion={reducedMotion}
                 />
               </div>
+              <Link href="/" className="terminal-toggle-btn">
+                <span aria-hidden="true">←</span>
+                Bench
+              </Link>
               <Link href="/terminal" className="terminal-toggle-btn">
                 Terminal
-                <span className="terminal-toggle-arrow" aria-hidden="true">
-                  ↗
-                </span>
               </Link>
             </div>
           </div>
