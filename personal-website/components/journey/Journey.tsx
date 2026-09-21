@@ -1003,7 +1003,95 @@ function RouteMap({
 /* Story record                                                                */
 /* -------------------------------------------------------------------------- */
 
-function ArtifactFrame({ artifact }: { artifact: JourneyArtifact | null }) {
+/**
+ * A clip Tyler supplied, kept quiet: muted, looping, inline, and only the
+ * poster until the beat is on screen. Under reduced motion it never starts,
+ * so the poster is the artifact. The frame unmounts with its beat (the story
+ * body is keyed by beat id), so nothing keeps playing behind another chapter.
+ */
+function ArtifactClip({
+  artifact,
+  reducedMotion,
+}: {
+  artifact: JourneyArtifact & { asset: string };
+  reducedMotion: boolean;
+}) {
+  return (
+    <figure
+      className={styles.artifact}
+      style={{ '--i': 3 } as React.CSSProperties}
+    >
+      <div className={styles.artifactImage} data-kind="video">
+        <video
+          aria-label={artifact.alt ?? artifact.label}
+          autoPlay={!reducedMotion}
+          className={styles.artifactVideo}
+          loop
+          muted
+          playsInline
+          poster={artifact.poster}
+          preload="metadata"
+          src={artifact.asset}
+        />
+      </div>
+      {artifact.caption ? (
+        <figcaption className={styles.artifactCaption}>
+          {artifact.caption}
+        </figcaption>
+      ) : null}
+    </figure>
+  );
+}
+
+/**
+ * A YouTube clip in a 16:9 box. The privacy-enhanced host, a lazy iframe so
+ * nothing loads until the beat is visible, and no autoplay: the visitor
+ * presses play. The still behind the frame is the video's own thumbnail.
+ */
+function ArtifactEmbed({
+  artifact,
+}: {
+  artifact: JourneyArtifact & { asset: string; embedUrl: string };
+}) {
+  return (
+    <figure
+      className={styles.artifact}
+      style={{ '--i': 3 } as React.CSSProperties}
+    >
+      <div className={styles.artifactImage} data-kind="youtube">
+        <Image
+          alt=""
+          className={styles.artifactImg}
+          fill
+          sizes="(max-width: 700px) 92vw, 30vw"
+          src={artifact.asset}
+        />
+        <iframe
+          allow="encrypted-media; fullscreen; picture-in-picture"
+          allowFullScreen
+          className={styles.artifactIframe}
+          loading="lazy"
+          referrerPolicy="strict-origin-when-cross-origin"
+          src={artifact.embedUrl}
+          title={artifact.alt ?? artifact.label}
+        />
+      </div>
+      {artifact.caption ? (
+        <figcaption className={styles.artifactCaption}>
+          {artifact.caption}
+        </figcaption>
+      ) : null}
+    </figure>
+  );
+}
+
+function ArtifactFrame({
+  artifact,
+  reducedMotion = false,
+}: {
+  artifact: JourneyArtifact | null;
+  reducedMotion?: boolean;
+}) {
   if (!artifact) {
     return null;
   }
@@ -1012,34 +1100,95 @@ function ArtifactFrame({ artifact }: { artifact: JourneyArtifact | null }) {
     return <div aria-hidden="true" className={styles.artifactMargin} />;
   }
 
+  if (artifact.kind === 'video' && artifact.asset) {
+    return (
+      <ArtifactClip
+        artifact={{ ...artifact, asset: artifact.asset }}
+        reducedMotion={reducedMotion}
+      />
+    );
+  }
+
+  if (artifact.kind === 'youtube' && artifact.asset && artifact.embedUrl) {
+    return (
+      <ArtifactEmbed
+        artifact={{
+          ...artifact,
+          asset: artifact.asset,
+          embedUrl: artifact.embedUrl,
+        }}
+      />
+    );
+  }
+
+  /* No asset yet: the record keeps its rhythm, nothing announces an absence. */
+  if (!artifact.asset) {
+    return null;
+  }
+
   /* A vector mark is ink: it needs paper behind it, not the dark frame. */
-  const kind = artifact.asset?.endsWith('.svg') ? 'mark' : 'photo';
+  const kind =
+    artifact.kind ?? (artifact.asset.endsWith('.svg') ? 'mark' : 'photo');
 
   return (
     <figure
       className={styles.artifact}
       style={{ '--i': 3 } as React.CSSProperties}
     >
-      {artifact.asset ? (
-        <div className={styles.artifactImage} data-kind={kind}>
-          <Image
-            alt={artifact.label}
-            className={styles.artifactImg}
-            fill
-            sizes="(max-width: 700px) 92vw, 30vw"
-            src={artifact.asset}
-          />
-        </div>
-      ) : (
-        <div className={styles.artifactPlaceholder}>
-          <span>{artifact.label}</span>
-          <span className={styles.artifactPending}>Photo to come</span>
-        </div>
-      )}
-      <figcaption className={styles.artifactCaption}>
-        {artifact.label}
-      </figcaption>
+      <div className={styles.artifactImage} data-kind={kind}>
+        <Image
+          alt={artifact.alt ?? artifact.label}
+          className={styles.artifactImg}
+          fill
+          sizes="(max-width: 700px) 92vw, 30vw"
+          src={artifact.asset}
+        />
+      </div>
+      {artifact.caption ? (
+        <figcaption className={styles.artifactCaption}>
+          {artifact.caption}
+        </figcaption>
+      ) : null}
     </figure>
+  );
+}
+
+/**
+ * A beat's artifacts, one frame or a row of two or three. The row is a grid
+ * so the panel keeps a single scroll: the frames share the width rather than
+ * stacking a screen of photos above the words.
+ */
+function ArtifactSet({
+  artifactIds,
+  reducedMotion,
+}: {
+  artifactIds: string[];
+  reducedMotion: boolean;
+}) {
+  const artifacts = artifactIds.flatMap((id) => {
+    const artifact = artifactsById.get(id);
+    return artifact ? [artifact] : [];
+  });
+
+  if (artifacts.length <= 1) {
+    return (
+      <ArtifactFrame
+        artifact={artifacts[0] ?? null}
+        reducedMotion={reducedMotion}
+      />
+    );
+  }
+
+  return (
+    <div className={styles.artifactSet} data-count={artifacts.length}>
+      {artifacts.map((artifact) => (
+        <ArtifactFrame
+          artifact={artifact}
+          key={artifact.id}
+          reducedMotion={reducedMotion}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -1068,14 +1217,15 @@ function rise(index: number) {
 
 function StoryPanel({
   progress,
+  reducedMotion,
   state,
 }: {
   progress: JourneyProgress;
+  reducedMotion: boolean;
   state: Extract<JourneyState, { status: 'chapter' }>;
 }) {
   const beat = beatsById.get(state.beatId) ?? wakeBeat;
   const map = mapsById.get(beat.mapId);
-  const artifact = artifactsById.get(beat.artifactIds[0]) ?? null;
   const reading = state.mode === 'read';
   const number = chapterNumber(beat.id);
   const isFirst = orderedBeatIds.indexOf(beat.id) <= 0;
@@ -1128,7 +1278,10 @@ function StoryPanel({
         <p className={styles.period} style={rise(2)}>
           {beat.period}
         </p>
-        <ArtifactFrame artifact={artifact} />
+        <ArtifactSet
+          artifactIds={beat.artifactIds}
+          reducedMotion={reducedMotion}
+        />
         {cleanStory(beat).map((paragraph, index) => (
           <p
             className={styles.storyText}
@@ -1136,6 +1289,17 @@ function StoryPanel({
             style={rise(4 + index)}
           >
             {paragraph}
+          </p>
+        ))}
+        {beat.links?.map((link, index) => (
+          <p
+            className={styles.storyLink}
+            key={link.href}
+            style={rise(4 + beat.story.length + index)}
+          >
+            <a href={link.href} rel="noopener noreferrer" target="_blank">
+              {link.label} &middot; {new URL(link.href).host} &rarr;
+            </a>
           </p>
         ))}
       </div>
@@ -1423,7 +1587,11 @@ export function Journey({
               progress={progress}
               reducedMotion={reducedMotion}
             />
-            <StoryPanel progress={progress} state={state} />
+            <StoryPanel
+              progress={progress}
+              reducedMotion={reducedMotion}
+              state={state}
+            />
           </div>
         ) : null}
 

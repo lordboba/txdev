@@ -1,264 +1,229 @@
 #!/usr/bin/env node
-/*
- * pixdiff.mjs — compares two PNG screenshots with no dependencies.
+/**
+ * Pixel comparison for two same-size PNG screenshots, dependency free.
  *
- * A pixel counts as changed when any channel differs by more than --tol
- * (default 8 of 255). Prints one JSON object with the changed-pixel share;
- * exits 1 when --max-pct is given and the share is above it, or when the
- * images differ in size.
+ *   node scripts/pixdiff.mjs before.png after.png [--threshold=8] [--out=diff.png]
  *
- * USAGE
- *   node scripts/pixdiff.mjs base.png head.png [--tol 8] [--max-pct 0.5]
+ * Reports the share of pixels whose max channel delta exceeds the threshold
+ * (default 8/255), the mean absolute channel delta and the max delta, as
+ * JSON on stdout. With --out the differing pixels are written as a red-on-
+ * grey heat map so a reviewer can see where the two frames disagree.
  *
- * Decodes 8-bit and 16-bit greyscale/RGB PNGs with or without alpha,
- * non-interlaced — which is what Chrome's captureScreenshot writes.
+ * Handles 8-bit non-interlaced RGB and RGBA PNGs, which is what Chrome's
+ * Page.captureScreenshot produces.
  */
 
-import { readFileSync } from 'node:fs';
-import { inflateSync } from 'node:zlib';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { deflateSync, inflateSync } from 'node:zlib';
 
-/* ---- argv ----------------------------------------------------------------- */
-
-function parseArgs(argv) {
-  const files = [];
-  const flags = {};
-
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i];
-
-    if (!arg.startsWith('--')) {
-      files.push(arg);
-      continue;
-    }
-
-    const [key, inline] = arg.slice(2).split('=');
-    const value = inline ?? argv[++i];
-
-    if (value === undefined) {
-      throw new Error(`--${key} needs a value`);
-    }
-
-    flags[key] = value;
+const positional = [];
+const options = {};
+for (const arg of process.argv.slice(2)) {
+  if (arg.startsWith('--')) {
+    const [key, ...rest] = arg.slice(2).split('=');
+    options[key] = rest.join('=') || 'true';
+  } else {
+    positional.push(arg);
   }
-
-  return { files, flags };
 }
 
-function readNumber(raw, name, fallback) {
-  if (raw === undefined) {
-    return fallback;
-  }
-
-  const value = Number(raw);
-
-  if (!Number.isFinite(value) || value < 0) {
-    throw new Error(`--${name} must be a non-negative number, got ${raw}`);
-  }
-
-  return value;
+const [beforePath, afterPath] = positional;
+if (!beforePath || !afterPath) {
+  console.error(
+    'usage: pixdiff.mjs before.png after.png [--threshold=8] [--out=diff.png]',
+  );
+  process.exit(2);
 }
-
-/* ---- PNG ------------------------------------------------------------------ */
+const THRESHOLD = Number(options.threshold ?? 8);
+const OUT_PATH = options.out ?? null;
 
 const SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
-const CHANNELS = { 0: 1, 2: 3, 4: 2, 6: 4 };
 
-function paeth(a, b, c) {
-  const p = a + b - c;
-  const pa = Math.abs(p - a);
-  const pb = Math.abs(p - b);
-  const pc = Math.abs(p - c);
-
-  if (pa <= pb && pa <= pc) {
-    return a;
-  }
-
-  return pb <= pc ? b : c;
+const CRC_TABLE = new Int32Array(256);
+for (let n = 0; n < 256; n++) {
+  let c = n;
+  for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+  CRC_TABLE[n] = c;
 }
+const crc32 = (buffer) => {
+  let crc = -1;
+  for (const byte of buffer) crc = CRC_TABLE[(crc ^ byte) & 0xff] ^ (crc >>> 8);
+  return (crc ^ -1) >>> 0;
+};
 
-/** Decodes a PNG into 8-bit RGBA samples. */
+/** Decode to { width, height, channels, data } with data laid out row-major. */
 function decodePng(path) {
   const file = readFileSync(path);
-
   if (!file.subarray(0, 8).equals(SIGNATURE)) {
     throw new Error(`${path}: not a PNG`);
   }
-
+  let offset = 8;
   let width = 0;
   let height = 0;
   let bitDepth = 0;
   let colorType = 0;
+  let interlace = 0;
   const idat = [];
-
-  for (let offset = 8; offset < file.length; ) {
+  while (offset < file.length) {
     const length = file.readUInt32BE(offset);
-    const type = file.toString('latin1', offset + 4, offset + 8);
-    const data = file.subarray(offset + 8, offset + 8 + length);
-
+    const type = file.toString('ascii', offset + 4, offset + 8);
+    const body = file.subarray(offset + 8, offset + 8 + length);
     if (type === 'IHDR') {
-      width = data.readUInt32BE(0);
-      height = data.readUInt32BE(4);
-      bitDepth = data[8];
-      colorType = data[9];
-
-      if (data[12] !== 0) {
-        throw new Error(`${path}: interlaced PNGs are not supported`);
-      }
-
-      if (!(colorType in CHANNELS) || (bitDepth !== 8 && bitDepth !== 16)) {
-        throw new Error(
-          `${path}: unsupported PNG (colour type ${colorType}, ${bitDepth}-bit)`,
-        );
-      }
+      width = body.readUInt32BE(0);
+      height = body.readUInt32BE(4);
+      bitDepth = body[8];
+      colorType = body[9];
+      interlace = body[12];
     } else if (type === 'IDAT') {
-      idat.push(data);
+      idat.push(body);
     } else if (type === 'IEND') {
       break;
     }
-
     offset += 12 + length;
   }
-
-  const channels = CHANNELS[colorType];
-  const bytesPerSample = bitDepth / 8;
-  const bpp = channels * bytesPerSample;
-  const stride = width * bpp;
-  const raw = inflateSync(Buffer.concat(idat));
-  const pixels = new Uint8Array(width * height * 4);
-  let previous = new Uint8Array(stride);
-
-  for (let y = 0; y < height; y++) {
-    const start = y * (stride + 1);
-    const filter = raw[start];
-    const line = Uint8Array.prototype.slice.call(
-      raw,
-      start + 1,
-      start + 1 + stride,
+  const channels = { 2: 3, 6: 4, 0: 1, 4: 2 }[colorType];
+  if (bitDepth !== 8 || !channels || interlace !== 0) {
+    throw new Error(
+      `${path}: only 8-bit non-interlaced RGB/RGBA/grey PNGs are supported`,
     );
-
+  }
+  const raw = inflateSync(Buffer.concat(idat));
+  const stride = width * channels;
+  const data = Buffer.alloc(stride * height);
+  let source = 0;
+  for (let y = 0; y < height; y++) {
+    const filter = raw[source++];
+    const rowStart = y * stride;
+    const previousStart = rowStart - stride;
     for (let x = 0; x < stride; x++) {
-      const a = x >= bpp ? line[x - bpp] : 0;
-      const b = previous[x];
-      const c = x >= bpp ? previous[x - bpp] : 0;
-
+      const value = raw[source++];
+      const left = x >= channels ? data[rowStart + x - channels] : 0;
+      const up = y > 0 ? data[previousStart + x] : 0;
+      const upLeft =
+        y > 0 && x >= channels ? data[previousStart + x - channels] : 0;
+      let predictor = 0;
       switch (filter) {
         case 1:
-          line[x] = (line[x] + a) & 255;
+          predictor = left;
           break;
         case 2:
-          line[x] = (line[x] + b) & 255;
+          predictor = up;
           break;
         case 3:
-          line[x] = (line[x] + ((a + b) >> 1)) & 255;
+          predictor = (left + up) >> 1;
           break;
-        case 4:
-          line[x] = (line[x] + paeth(a, b, c)) & 255;
+        case 4: {
+          const p = left + up - upLeft;
+          const pa = Math.abs(p - left);
+          const pb = Math.abs(p - up);
+          const pc = Math.abs(p - upLeft);
+          predictor = pa <= pb && pa <= pc ? left : pb <= pc ? up : upLeft;
           break;
+        }
         default:
-          break;
+          predictor = 0;
       }
+      data[rowStart + x] = (value + predictor) & 0xff;
     }
-
-    for (let x = 0; x < width; x++) {
-      const at = x * bpp;
-      /* 16-bit samples keep their high byte. */
-      const sample = (index) => line[at + index * bytesPerSample];
-      const out = (y * width + x) * 4;
-
-      if (channels < 3) {
-        pixels[out] = pixels[out + 1] = pixels[out + 2] = sample(0);
-        pixels[out + 3] = channels === 2 ? sample(1) : 255;
-      } else {
-        pixels[out] = sample(0);
-        pixels[out + 1] = sample(1);
-        pixels[out + 2] = sample(2);
-        pixels[out + 3] = channels === 4 ? sample(3) : 255;
-      }
-    }
-
-    previous = line;
   }
-
-  return { width, height, pixels };
+  return { width, height, channels, data };
 }
 
-/* ---- diff ------------------------------------------------------------------ */
-
-function diff(base, head, tolerance) {
-  const total = base.width * base.height;
-  let changed = 0;
-  let maxDelta = 0;
-
-  for (let i = 0; i < total * 4; i += 4) {
-    let delta = 0;
-
-    for (let channel = 0; channel < 4; channel++) {
-      delta = Math.max(
-        delta,
-        Math.abs(base.pixels[i + channel] - head.pixels[i + channel]),
-      );
-    }
-
-    if (delta > tolerance) {
-      changed += 1;
-    }
-
-    maxDelta = Math.max(maxDelta, delta);
+function encodePng({ width, height, data }) {
+  const stride = width * 3;
+  const raw = Buffer.alloc((stride + 1) * height);
+  for (let y = 0; y < height; y++) {
+    raw[y * (stride + 1)] = 0;
+    data.copy(raw, y * (stride + 1) + 1, y * stride, (y + 1) * stride);
   }
-
-  return { total, changed, maxDelta, pct: (changed / total) * 100 };
-}
-
-/* ---- main ----------------------------------------------------------------- */
-
-function main() {
-  const { files, flags } = parseArgs(process.argv.slice(2));
-
-  if (files.length !== 2) {
-    throw new Error(
-      'usage: node scripts/pixdiff.mjs base.png head.png [--tol 8] [--max-pct 0.5]',
-    );
-  }
-
-  const tolerance = readNumber(flags.tol, 'tol', 8);
-  const maxPct = readNumber(flags['max-pct'], 'max-pct', null);
-  const [basePath, headPath] = files;
-  const base = decodePng(basePath);
-  const head = decodePng(headPath);
-  const result = {
-    base: basePath,
-    head: headPath,
-    width: base.width,
-    height: base.height,
-    tol: tolerance,
-    total: null,
-    changed: null,
-    changedPct: null,
-    maxDelta: null,
-    pass: false,
-    error: null,
+  const chunk = (type, body) => {
+    const header = Buffer.alloc(8);
+    header.writeUInt32BE(body.length, 0);
+    header.write(type, 4, 'ascii');
+    const crc = Buffer.alloc(4);
+    crc.writeUInt32BE(crc32(Buffer.concat([header.subarray(4), body])), 0);
+    return Buffer.concat([header, body, crc]);
   };
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0);
+  ihdr.writeUInt32BE(height, 4);
+  ihdr[8] = 8;
+  ihdr[9] = 2;
+  return Buffer.concat([
+    SIGNATURE,
+    chunk('IHDR', ihdr),
+    chunk('IDAT', deflateSync(raw)),
+    chunk('IEND', Buffer.alloc(0)),
+  ]);
+}
 
-  if (base.width !== head.width || base.height !== head.height) {
-    result.error = `size mismatch: ${base.width}x${base.height} vs ${head.width}x${head.height}`;
-    console.log(JSON.stringify(result, null, 2));
-    process.exit(1);
+const before = decodePng(beforePath);
+const after = decodePng(afterPath);
+if (before.width !== after.width || before.height !== after.height) {
+  console.error(
+    `size mismatch: ${before.width}x${before.height} vs ${after.width}x${after.height}`,
+  );
+  process.exit(2);
+}
+
+const { width, height } = before;
+const pixels = width * height;
+const heat = OUT_PATH ? Buffer.alloc(pixels * 3) : null;
+let overThreshold = 0;
+let sumAbs = 0;
+let maxDelta = 0;
+let histogram = new Array(9).fill(0); // buckets of 8: 0-7, 8-15, ... 64+
+
+for (let i = 0; i < pixels; i++) {
+  const b = i * before.channels;
+  const a = i * after.channels;
+  let pixelMax = 0;
+  for (let c = 0; c < 3; c++) {
+    const delta = Math.abs(before.data[b + c] - after.data[a + c]);
+    sumAbs += delta;
+    if (delta > pixelMax) pixelMax = delta;
   }
-
-  const { total, changed, maxDelta, pct } = diff(base, head, tolerance);
-  result.total = total;
-  result.changed = changed;
-  result.changedPct = Number(pct.toFixed(4));
-  result.maxDelta = maxDelta;
-  result.pass = maxPct === null ? true : pct < maxPct;
-
-  console.log(JSON.stringify(result, null, 2));
-  process.exit(result.pass ? 0 : 1);
+  if (pixelMax > maxDelta) maxDelta = pixelMax;
+  if (pixelMax > THRESHOLD) overThreshold += 1;
+  histogram[Math.min(8, pixelMax >> 3)] += 1;
+  if (heat) {
+    const grey = Math.round(
+      (before.data[b] * 0.2126 +
+        before.data[b + 1] * 0.7152 +
+        before.data[b + 2] * 0.0722) *
+        0.35,
+    );
+    if (pixelMax > THRESHOLD) {
+      heat[i * 3] = 255;
+      heat[i * 3 + 1] = Math.max(0, 96 - pixelMax);
+      heat[i * 3 + 2] = Math.max(0, 96 - pixelMax);
+    } else {
+      heat[i * 3] = grey;
+      heat[i * 3 + 1] = grey;
+      heat[i * 3 + 2] = grey;
+    }
+  }
 }
 
-try {
-  main();
-} catch (error) {
-  console.error(error.message);
-  process.exit(1);
+if (heat) {
+  writeFileSync(OUT_PATH, encodePng({ width, height, data: heat }));
 }
+
+console.log(
+  JSON.stringify(
+    {
+      before: beforePath,
+      after: afterPath,
+      size: [width, height],
+      threshold: THRESHOLD,
+      pixelsOverThreshold: overThreshold,
+      percentOverThreshold: Number(((overThreshold / pixels) * 100).toFixed(4)),
+      meanAbsDelta: Number((sumAbs / (pixels * 3)).toFixed(4)),
+      maxDelta,
+      histogramBy8: histogram,
+      heatmap: OUT_PATH,
+    },
+    null,
+    2,
+  ),
+);

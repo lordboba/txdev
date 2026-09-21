@@ -2,14 +2,14 @@
 
 import {
   ContactShadows,
-  Environment,
   Lightformer,
   RoundedBox,
   useTexture,
 } from '@react-three/drei';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, createPortal, useFrame, useThree } from '@react-three/fiber';
 import {
   memo,
+  type ReactNode,
   Suspense,
   useLayoutEffect,
   useMemo,
@@ -75,7 +75,6 @@ import {
 } from './benchStore';
 import { historyEras, historyShots } from './historyEras';
 
-const INK = '#141517';
 /*
  * Aluminum stock, lifted with the shell's drop. A metalness-1 surface has no
  * albedo — its colour is a tint on whatever the room hands it — so taking the
@@ -1874,35 +1873,58 @@ function useConfiguredTextures(paths: string[]) {
   );
 }
 
-function createTextTexture(
-  lines: string[],
-  options?: { background?: string; color?: string; size?: number },
-) {
+/**
+ * The typeset stand-in for a mark that has no brand file: the name set as a
+ * wordmark, in the same white-on-clear mask format `getLogoAlpha` yields, so
+ * `EngravedDecal` cuts it with the identical groove and ink as the real logos.
+ *
+ * The canvas is cut to the plane's own aspect and the wordmark is fitted
+ * inside it by measure — the size steps down until the longest line clears the
+ * side margins — never by `fillText`'s maxWidth, which condenses the glyphs.
+ */
+const TEXT_MARK_ASPECT = 3;
+const TEXT_MARK_H = 512;
+const TEXT_MARK_INSET = 0.08;
+
+function createTextTexture(lines: string[], aspect = TEXT_MARK_ASPECT) {
   const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 256;
-  const context = canvas.getContext('2d');
+  canvas.width = Math.round(TEXT_MARK_H * aspect);
+  canvas.height = TEXT_MARK_H;
+  const context = canvas.getContext('2d') as SpacedContext | null;
 
   if (!context) {
     return new THREE.CanvasTexture(canvas);
   }
 
-  if (options?.background) {
-    context.fillStyle = options.background;
-    context.fillRect(0, 0, canvas.width, canvas.height);
+  const measure = canvas.width * (1 - TEXT_MARK_INSET * 2);
+  const rows = Math.max(1, lines.length);
+  const setFont = (size: number) => {
+    context.font = `600 ${size}px Helvetica Neue, Arial, sans-serif`;
+    context.letterSpacing = `${(-0.02 * size).toFixed(1)}px`;
+  };
+  let size = Math.floor((canvas.height * 0.78) / rows);
+  setFont(size);
+
+  while (
+    size > 8 &&
+    Math.max(...lines.map((line) => context.measureText(line).width)) > measure
+  ) {
+    size -= 2;
+    setFont(size);
   }
 
-  context.fillStyle = options?.color ?? INK;
-  context.font = `500 ${options?.size ?? 40}px Helvetica Neue, Arial, sans-serif`;
+  context.fillStyle = '#ffffff';
+  context.textAlign = 'center';
   context.textBaseline = 'middle';
 
+  const leading = size * 1.12;
+  const top = canvas.height / 2 - (leading * (rows - 1)) / 2;
+
   lines.forEach((line, index) => {
-    const rowHeight = canvas.height / lines.length;
-    context.fillText(line, 32, rowHeight * (index + 0.5), canvas.width - 64);
+    context.fillText(line, canvas.width / 2, top + leading * index);
   });
 
   const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = 8;
   return texture;
 }
@@ -2062,10 +2084,16 @@ function createNameTexture() {
  * The eight cells are not decoration — they are the eight side projects, each
  * showing its own capture, and the count under the title is read off the same
  * array the hang is built from.
+ *
+ * Laid out in a 1024×1400 design space and rasterised at half that. The
+ * screen stands ~230 CSS px tall on the bench, so 700 texels down is still
+ * 1.5× oversampled at a DPR of 2; the extra level only cost upload and memory.
  */
 let tabletScreenTexture: THREE.Texture | null = null;
 
-const TABLET_SCREEN_ASPECT = 1024 / 1400;
+const TABLET_SCREEN_DESIGN_W = 1024;
+const TABLET_SCREEN_DESIGN_H = 1400;
+const TABLET_SCREEN_ASPECT = TABLET_SCREEN_DESIGN_W / TABLET_SCREEN_DESIGN_H;
 
 function getTabletScreenTexture() {
   if (tabletScreenTexture) {
@@ -2073,8 +2101,8 @@ function getTabletScreenTexture() {
   }
 
   const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 1400;
+  canvas.width = TABLET_SCREEN_DESIGN_W / 2;
+  canvas.height = TABLET_SCREEN_DESIGN_H / 2;
   const context = canvas.getContext('2d') as SpacedContext | null;
   /*
    * Built before the drawing rather than after it: the eight thumbnails paint
@@ -2085,8 +2113,9 @@ function getTabletScreenTexture() {
   texture.anisotropy = 8;
 
   if (context) {
+    context.scale(0.5, 0.5);
     context.fillStyle = '#f4f4f3';
-    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillRect(0, 0, TABLET_SCREEN_DESIGN_W, TABLET_SCREEN_DESIGN_H);
     context.textBaseline = 'alphabetic';
 
     context.letterSpacing = '16px';
@@ -2441,8 +2470,22 @@ function tickJourneyScreen(delta: number) {
  * in the same micro-label voice every other field name uses. Still no invented
  * screenshot — a portfolio gallery may never do that — but the wall now shows
  * a designed plate where it has nothing to photograph.
+ *
+ * Set at 2048x1152, the display's own 16:9. At the gallery focus camera on a
+ * 1440x900 DPR-2 frame the display is ~930 device px wide, so the type is
+ * rasterised at 2.2x its on-screen size. Every run is measured against the
+ * margin and wrapped — the title by word, the tech row by item — because
+ * fillText's maxWidth condenses glyphs to fit, and condensed Helvetica is the
+ * one thing this plate must never show. The inks are darker than the
+ * placard's: the screen shader's gain and the cover glass both lift the darks,
+ * and at the tech row's size anti-aliasing takes a further bite, so the
+ * rendered glyph has to start well above the 4.5:1 it needs to land at.
  */
 const placeholderCache = new Map<string, THREE.Texture>();
+const PLACEHOLDER_W = 2048;
+const PLACEHOLDER_H = 1152;
+const PLACEHOLDER_MARGIN = 164;
+const PLACEHOLDER_TECH_JOIN = '   ·   ';
 
 function getPlaceholderTexture(title: string, tech: string[]) {
   const cached = placeholderCache.get(title);
@@ -2452,11 +2495,13 @@ function getPlaceholderTexture(title: string, tech: string[]) {
   }
 
   const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 576;
+  canvas.width = PLACEHOLDER_W;
+  canvas.height = PLACEHOLDER_H;
   const context = canvas.getContext('2d') as SpacedContext | null;
 
   if (context) {
+    const measure = canvas.width - PLACEHOLDER_MARGIN * 2;
+
     /* The page's own studio ramp, raking the way the studio key does. */
     const ground = context.createLinearGradient(
       0,
@@ -2469,25 +2514,64 @@ function getPlaceholderTexture(title: string, tech: string[]) {
     context.fillStyle = ground;
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.textBaseline = 'alphabetic';
+    context.textAlign = 'left';
 
-    context.letterSpacing = '0px';
-    context.fillStyle = 'rgba(20,21,23,0.18)';
-    context.fillRect(84, 300, canvas.width - 168, 2);
+    /*
+     * Title: the subject, wrapped by word to at most two lines and stacked
+     * upward from the hairline, so the rule and the tech row hold their seat
+     * whatever the title's length.
+     */
+    const hairlineY = 584;
+    context.letterSpacing = '-3px';
+    context.font = '600 144px Helvetica Neue, Arial, sans-serif';
+    context.fillStyle = 'rgba(20,21,23,0.94)';
+    const titleLines = wrapLines(context, title, measure);
+    titleLines.forEach((line, index) => {
+      context.fillText(
+        line,
+        PLACEHOLDER_MARGIN,
+        hairlineY - 58 - 156 * (titleLines.length - 1 - index),
+      );
+    });
 
-    context.letterSpacing = '-1px';
+    context.fillStyle = 'rgba(20,21,23,0.22)';
+    context.fillRect(PLACEHOLDER_MARGIN, hairlineY, measure, 4);
+
+    /* Tech row, broken between items when the join runs past the measure. */
+    context.letterSpacing = '1px';
+    context.font = '600 84px Helvetica Neue, Arial, sans-serif';
+    const techLines: string[] = [];
+    let row = '';
+
+    tech.forEach((item) => {
+      const candidate = row ? `${row}${PLACEHOLDER_TECH_JOIN}${item}` : item;
+
+      if (row && context.measureText(candidate).width > measure) {
+        techLines.push(row);
+        row = item;
+      } else {
+        row = candidate;
+      }
+    });
+
+    if (row) {
+      techLines.push(row);
+    }
+
     context.fillStyle = 'rgba(20,21,23,0.9)';
-    context.font = '600 74px Helvetica Neue, Arial, sans-serif';
-    context.fillText(title, 84, 268, canvas.width - 168);
+    techLines.slice(0, 2).forEach((line, index) => {
+      context.fillText(line, PLACEHOLDER_MARGIN, hairlineY + 118 + 102 * index);
+    });
 
-    context.letterSpacing = '2px';
-    context.fillStyle = 'rgba(20,21,23,0.6)';
-    context.font = '500 36px Helvetica Neue, Arial, sans-serif';
-    context.fillText(tech.join('   ·   '), 84, 366, canvas.width - 168);
-
-    context.letterSpacing = '14px';
-    context.fillStyle = 'rgba(20,21,23,0.42)';
-    context.font = '600 28px Helvetica Neue, Arial, sans-serif';
-    context.fillText('SOURCE ONLY · NO CAPTURE', 84, 494);
+    /* Footnote, in the set's micro-label voice: 600, tracked 0.16em, caps. */
+    context.letterSpacing = '10px';
+    context.fillStyle = 'rgba(20,21,23,0.9)';
+    context.font = '600 62px Helvetica Neue, Arial, sans-serif';
+    context.fillText(
+      'SOURCE ONLY · NO CAPTURE',
+      PLACEHOLDER_MARGIN,
+      canvas.height - PLACEHOLDER_MARGIN,
+    );
   }
 
   const texture = new THREE.CanvasTexture(canvas);
@@ -2628,61 +2712,76 @@ function getPlacardTexture(piece: SideProject) {
  * letterspaced micro-label over the experiment title. White is the mask, not
  * the colour — EngravedDecal supplies the groove and lip out of the host metal,
  * so this can never read as a printed sticker.
+ *
+ * The canvas takes the decal plane's own aspect, derived from the same
+ * constants ExperimentBlank hands to EngravedDecal, so the two cannot drift
+ * apart and stretch the type. At the Signals focus camera the decal stands
+ * ~750 device px tall on a 1440x900 DPR-2 frame; 1564 tall keeps the title at
+ * 2x, the same standard the frame titles are held to.
+ *
+ * One margin governs the whole plate: the label's cap line, the rule and the
+ * title measure all sit at PLATE_MARGIN from the edge, and the same margin
+ * closes the field at the foot. The title's ink block — cap line of the first
+ * line to baseline of the last, not the line boxes — is centred in the field
+ * under the rule, then lifted a hair, since the optical centre of a block of
+ * type sits above its geometric one.
  */
+const SIGNAL_DECAL_W = 1.86;
+const SIGNAL_DECAL_H = 1.42;
+const PLATE_CANVAS_W = 2048;
+const PLATE_CANVAS_H = Math.round(
+  (PLATE_CANVAS_W * SIGNAL_DECAL_H) / SIGNAL_DECAL_W,
+);
+const PLATE_MARGIN = 96;
+const PLATE_LABEL_SIZE = 100;
+const PLATE_TITLE_SIZE = 208;
+const PLATE_TITLE_LEADING = 236;
+const PLATE_MAX_LINES = 4;
+/* Helvetica / Arial cap height, as a fraction of the font size. */
+const CAP_HEIGHT = 0.72;
+
 function createExperimentPlateTexture(status: string, title: string) {
   const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  /* 1024 x 782 is the decal's own 1.86 x 1.42 aspect; anything else stretches. */
-  canvas.height = 782;
+  canvas.width = PLATE_CANVAS_W;
+  canvas.height = PLATE_CANVAS_H;
   const context = canvas.getContext('2d') as SpacedContext | null;
 
   if (!context) {
     return new THREE.CanvasTexture(canvas);
   }
 
+  const measure = canvas.width - PLATE_MARGIN * 2;
+  const labelBaseline = PLATE_MARGIN + PLATE_LABEL_SIZE * CAP_HEIGHT;
+  const ruleTop = labelBaseline + 56;
+  const ruleHeight = 8;
+
   context.fillStyle = '#ffffff';
   context.textBaseline = 'alphabetic';
 
-  context.letterSpacing = '15px';
-  context.font = '600 50px Helvetica Neue, Arial, sans-serif';
-  context.fillText(status.toUpperCase(), 40, 84);
-  context.fillRect(40, 126, 944, 4);
+  context.letterSpacing = '30px';
+  context.font = `600 ${PLATE_LABEL_SIZE}px Helvetica Neue, Arial, sans-serif`;
+  context.fillText(status.toUpperCase(), PLATE_MARGIN, labelBaseline, measure);
+  context.fillRect(PLATE_MARGIN, ruleTop, measure, ruleHeight);
 
-  context.letterSpacing = '-1px';
-  context.font = '500 92px Helvetica Neue, Arial, sans-serif';
-  const words = title.split(' ');
-  const lines: string[] = [];
-  let current = '';
+  context.letterSpacing = '-2px';
+  context.font = `500 ${PLATE_TITLE_SIZE}px Helvetica Neue, Arial, sans-serif`;
+  const lines = wrapLines(context, title, measure, PLATE_MAX_LINES);
 
-  words.forEach((word) => {
-    const candidate = current ? `${current} ${word}` : word;
+  const fieldTop = ruleTop + ruleHeight;
+  const fieldHeight = canvas.height - PLATE_MARGIN - fieldTop;
+  const capHeight = PLATE_TITLE_SIZE * CAP_HEIGHT;
+  const inkHeight = (lines.length - 1) * PLATE_TITLE_LEADING + capHeight;
+  const opticalLift = fieldHeight * 0.03;
+  const firstBaseline =
+    fieldTop + (fieldHeight - inkHeight) / 2 + capHeight - opticalLift;
 
-    if (context.measureText(candidate).width > 944 && current) {
-      lines.push(current);
-      current = word;
-    } else {
-      current = candidate;
-    }
-  });
-
-  if (current) {
-    lines.push(current);
-  }
-
-  /*
-   * The title block is centred in the field under the rule rather than hung
-   * from a fixed baseline: the three titles wrap to two, three and three lines
-   * respectively, and a fixed start left the two-line plate top-heavy with a
-   * third of its pocket empty.
-   */
-  const kept = lines.slice(0, 4);
-  const leading = 104;
-  const top = 150;
-  const block = kept.length * leading;
-  const first = top + (canvas.height - top - block) / 2 + 74;
-
-  kept.forEach((line, index) => {
-    context.fillText(line, 40, first + index * leading);
+  lines.forEach((line, index) => {
+    context.fillText(
+      line,
+      PLATE_MARGIN,
+      firstBaseline + index * PLATE_TITLE_LEADING,
+      measure,
+    );
   });
 
   const texture = new THREE.CanvasTexture(canvas);
@@ -2725,6 +2824,11 @@ function createPaletteTexture(palette: string) {
  *
  * The canvas follows the physical panel's height-to-width ratio. If those
  * ratios diverge, Three stretches the texture and every glyph reads too wide.
+ *
+ * Laid out in a 1024-wide design space and rasterised at half that: the card
+ * is never more than ~260 CSS px wide on screen, so 512 texels across is
+ * still 2× oversampled at a DPR of 2 and the sampler only ever reads the
+ * same mip level it did before.
  */
 function createEraPlacardTexture(
   era: { commit: string; date: string; label: string; palette: string },
@@ -2732,7 +2836,7 @@ function createEraPlacardTexture(
   heightToWidth: number,
 ) {
   const canvas = document.createElement('canvas');
-  canvas.width = 1024;
+  canvas.width = 512;
   canvas.height = Math.round(canvas.width * heightToWidth);
   const context = canvas.getContext('2d') as SpacedContext | null;
 
@@ -2740,6 +2844,7 @@ function createEraPlacardTexture(
     return new THREE.CanvasTexture(canvas);
   }
 
+  context.scale(0.5, 0.5);
   context.textBaseline = 'alphabetic';
 
   context.letterSpacing = '10px';
@@ -3490,29 +3595,18 @@ function EtchedMark({
   cutMetalness?: number;
 }) {
   const source = LOGO_SOURCES[company];
+  /*
+   * No brand file means the name is set as type and cut through the same
+   * decal path. The text mask is drawn at TEXT_MARK_ASPECT, the aspect the
+   * plane below is given, so nothing is stretched between the two.
+   */
   const alpha = useMemo(
-    () => (source ? getLogoAlpha(source.file, source.aspect) : null),
-    [source],
-  );
-  const fallback = useMemo(
-    () => (source ? null : createTextTexture([company], { size: 72 })),
+    () =>
+      source
+        ? getLogoAlpha(source.file, source.aspect)
+        : createTextTexture([company]),
     [company, source],
   );
-
-  if (!source || !alpha) {
-    return (
-      <mesh position={position} rotation={rotation}>
-        <planeGeometry args={[height * 3, height]} />
-        <meshStandardMaterial
-          envMapIntensity={envMapIntensity}
-          map={fallback}
-          metalness={metalness}
-          roughness={roughness}
-          transparent
-        />
-      </mesh>
-    );
-  }
 
   return (
     <EngravedDecal
@@ -3529,7 +3623,7 @@ function EtchedMark({
       position={position}
       rotation={rotation}
       roughness={roughness}
-      width={height * source.aspect}
+      width={height * (source ? source.aspect : TEXT_MARK_ASPECT)}
     />
   );
 }
@@ -4245,13 +4339,63 @@ function CompanyTagRack({
   );
 }
 
+/**
+ * A lightformer rig baked once into `scene.environment`.
+ *
+ * Drei's `<Environment>` hands the renderer a live cube target and lets
+ * three's `WebGLCubeUVMaps` prefilter it on demand — which keeps the 512 cube,
+ * the PMREM output *and* the generator's same-size ping-pong target alive for
+ * the life of the renderer, ~63 MB of half-float texture for a rig that never
+ * changes. This does the same prefilter with the same generator on the same
+ * 512 cube, then keeps only the output: the cube target and the generator are
+ * released the moment the PMREM exists. Same math, same texels, a third of
+ * the memory.
+ */
+function BakedEnvironment({
+  children,
+  resolution,
+}: {
+  children: ReactNode;
+  resolution: number;
+}) {
+  const get = useThree((state) => state.get);
+  const virtualScene = useMemo(() => new THREE.Scene(), []);
+
+  useLayoutEffect(() => {
+    const { gl, scene } = get();
+    const cubeTarget = new THREE.WebGLCubeRenderTarget(resolution);
+    cubeTarget.texture.type = THREE.HalfFloatType;
+    const cubeCamera = new THREE.CubeCamera(0.1, 1000, cubeTarget);
+
+    const autoClear = gl.autoClear;
+    gl.autoClear = true;
+    cubeCamera.update(gl, virtualScene);
+    gl.autoClear = autoClear;
+
+    const generator = new THREE.PMREMGenerator(gl);
+    const prefiltered = generator.fromCubemap(cubeTarget.texture);
+    generator.dispose();
+    cubeTarget.dispose();
+
+    const previous = scene.environment;
+    scene.environment = prefiltered.texture;
+
+    return () => {
+      scene.environment = previous;
+      prefiltered.dispose();
+    };
+  }, [get, resolution, virtualScene]);
+
+  return createPortal(children, virtualScene);
+}
+
 function StudioEnvironment() {
   if (isAblated('env')) {
     return null;
   }
 
   return (
-    <Environment frames={1} resolution={512}>
+    <BakedEnvironment resolution={512}>
       {/*
        * The studio shell — the single most consequential value in the file.
        *
@@ -4538,7 +4682,7 @@ function StudioEnvironment() {
         position={[0, 0.9, -7.4]}
         scale={[16, 2.2, 1]}
       />
-    </Environment>
+    </BakedEnvironment>
   );
 }
 
@@ -6550,13 +6694,13 @@ function ExperimentBlank({
             cutColor="#1e1f21"
             cutMetalness={0}
             envMapIntensity={0.85}
-            height={POCKET_HEIGHT - 0.12}
+            height={SIGNAL_DECAL_H}
             hostColor="#9fa1a3"
             lipMix={0.42}
             offset={0.0026}
             position={[0, SIGNAL_POCKET_OFFSET + 0.01, 0.081]}
             roughness={0.55}
-            width={1.86}
+            width={SIGNAL_DECAL_W}
           />
 
           {/*
@@ -8559,9 +8703,10 @@ function Scene({
        * the old -0.0002 / 0.09 pair — tuned to keep PCF acne off the laptop
        * gap and the history stand tops — has nothing to correct and only ever
        * peter-pans the contact. `radius` and `blurSamples` are the softness
-       * dials that replace them: 2.75 over a 1024 map is a penumbra a little
-       * under the apparent size of the overhead softbox, which is the whole
-       * point of the change.
+       * dials that replace them: 1.375 over a 512 map (the same penumbra in
+       * world units as 2.75 over 1024 — VSM's radius is in texels) is a
+       * little under the apparent size of the overhead softbox, which is the
+       * whole point of the change.
        */}
       <directionalLight
         castShadow={!isAblated('keyshadow')}
@@ -8575,9 +8720,9 @@ function Scene({
         shadow-camera-near={2}
         shadow-camera-right={7}
         shadow-camera-top={6}
-        shadow-mapSize={[1024, 1024]}
+        shadow-mapSize={[512, 512]}
         shadow-normalBias={0.02}
-        shadow-radius={2.75}
+        shadow-radius={1.375}
       />
       {/*
        * Fill, camera-right and slightly below the key's elevation, at roughly a

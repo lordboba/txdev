@@ -32,6 +32,18 @@ Most shared visual decisions flow through [`app/globals.css`](./app/globals.css)
 - [`content/experienceData.ts`](./content/experienceData.ts) — canonical experience records and derived groups and Bench tags
 - [`components/concept/conceptData.ts`](./components/concept/conceptData.ts)
 - [`lib/siteData.ts`](./lib/siteData.ts) — shared profile, contact, and scheduling content
+- [`content/journeyData.ts`](./content/journeyData.ts) — canonical `/journey` beats, artifacts, and route graph
+
+### Journey assets
+
+`public/journey/` holds Tyler's own photos and clips for `/journey`, re-encoded
+and stripped of EXIF (no GPS or camera metadata) before commit; the folder stays
+under 4 MB. Each artifact record in `journeyData.ts` names its source in
+`sourceNote`. Company and club marks live in `public/logos/` with their origin
+recorded in [`public/logos/manifest.json`](./public/logos/manifest.json). The
+cello clip is a YouTube embed (`youtube-nocookie.com`, lazy, no autoplay); the
+Decagon ribbon is a muted, looping inline `<video>` with a poster that stands in
+under reduced motion.
 
 ## Local Development
 
