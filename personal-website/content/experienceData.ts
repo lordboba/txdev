@@ -77,7 +77,8 @@ const experienceEntries: Omit<Experience, 'period'>[] = [
     end: 'Sep 2026',
     status: 'past',
     summary: 'Build Agents for reimbursements',
-    proof: 'Incoming agent workflow role for reimbursement automation.',
+    proof:
+      'Scaled the Reimbursements team’s software and built internal talent-team tooling.',
     focus: ['Workflow Systems', 'Backend Systems'],
     bench: {
       order: 3,
