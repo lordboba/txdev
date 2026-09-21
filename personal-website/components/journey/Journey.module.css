@@ -722,6 +722,11 @@
   opacity: 1;
 }
 
+/* Pulled out, a current side beat is the only thing that can name its cluster. */
+.map[data-zoom='far']:not([data-ending]) .nodeSide[aria-current] .nodeLabel {
+  display: block;
+}
+
 /* Chapters of another city read as dots from here: labels are for where you are. */
 .marker[data-away] .nodeLabel {
   opacity: 0;

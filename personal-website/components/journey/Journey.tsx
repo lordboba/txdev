@@ -1017,7 +1017,7 @@ function ArtifactFrame({ artifact }: { artifact: JourneyArtifact | null }) {
   }
 
   /* A vector mark is ink: it needs paper behind it, not the dark frame. */
-  const kind = artifact.asset?.endsWith('.svg') ? 'mark' : 'photo';
+  const kind = artifact.asset.endsWith('.svg') ? 'mark' : 'photo';
 
   return (
     <figure
