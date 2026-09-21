@@ -1011,6 +1011,11 @@ function ArtifactFrame({ artifact }: { artifact: JourneyArtifact | null }) {
     return <div aria-hidden="true" className={styles.artifactMargin} />;
   }
 
+  /* No asset yet: the record keeps its rhythm, nothing announces an absence. */
+  if (!artifact.asset) {
+    return null;
+  }
+
   /* A vector mark is ink: it needs paper behind it, not the dark frame. */
   const kind = artifact.asset?.endsWith('.svg') ? 'mark' : 'photo';
 
@@ -1019,25 +1024,20 @@ function ArtifactFrame({ artifact }: { artifact: JourneyArtifact | null }) {
       className={styles.artifact}
       style={{ '--i': 3 } as React.CSSProperties}
     >
-      {artifact.asset ? (
-        <div className={styles.artifactImage} data-kind={kind}>
-          <Image
-            alt={artifact.label}
-            className={styles.artifactImg}
-            fill
-            sizes="(max-width: 700px) 92vw, 30vw"
-            src={artifact.asset}
-          />
-        </div>
-      ) : (
-        <div className={styles.artifactPlaceholder}>
-          <span>{artifact.label}</span>
-          <span className={styles.artifactPending}>Photo to come</span>
-        </div>
-      )}
-      <figcaption className={styles.artifactCaption}>
-        {artifact.label}
-      </figcaption>
+      <div className={styles.artifactImage} data-kind={kind}>
+        <Image
+          alt={artifact.label}
+          className={styles.artifactImg}
+          fill
+          sizes="(max-width: 700px) 92vw, 30vw"
+          src={artifact.asset}
+        />
+      </div>
+      {artifact.caption ? (
+        <figcaption className={styles.artifactCaption}>
+          {artifact.caption}
+        </figcaption>
+      ) : null}
     </figure>
   );
 }
