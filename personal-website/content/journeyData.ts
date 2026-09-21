@@ -11,6 +11,8 @@ export type JourneyArtifact = {
   id: string;
   label: string;
   asset: string | null;
+  /** Printed under the image only when it says more than the image does. */
+  caption?: string;
   sourceNote: string;
 };
 

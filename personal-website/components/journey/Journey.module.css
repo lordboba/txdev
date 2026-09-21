@@ -81,6 +81,19 @@
   color: var(--paper);
 }
 
+/*
+ * Every text control shares the pins' designed ring: the UA's `outline: auto`
+ * reads as a browser default against the dark page.
+ */
+.railLink:focus-visible,
+.ghostAction:focus-visible,
+.controlAction:focus-visible,
+.nextAction:focus-visible,
+.pagerAction:focus-visible {
+  outline: 2px solid var(--paper);
+  outline-offset: 4px;
+}
+
 .railTitle {
   color: var(--paper);
 }
@@ -621,6 +634,15 @@
   transform: translateX(-50%);
 }
 
+/*
+ * A side pin is a pin, not a second label: the place already carries its name
+ * on the main node, and the story names the side beat when you land on it.
+ * The button keeps its aria-label, so the name still reads to a screen reader.
+ */
+.nodeSide .nodeLabel {
+  display: none;
+}
+
 .nodeMain[data-visited] {
   border-color: var(--amber);
 }
@@ -698,6 +720,11 @@
 .map[data-zoom='far']:not([data-ending]) .nodeMain[aria-current] .nodeLabel,
 .map[data-zoom='far']:not([data-ending]) .nodeSide[aria-current] .nodeLabel {
   opacity: 1;
+}
+
+/* Pulled out, a current side beat is the only thing that can name its cluster. */
+.map[data-zoom='far']:not([data-ending]) .nodeSide[aria-current] .nodeLabel {
+  display: block;
 }
 
 /* Chapters of another city read as dots from here: labels are for where you are. */
@@ -855,7 +882,7 @@
 }
 
 .mapHint {
-  color: var(--rule-strong);
+  color: var(--faint);
   font-size: 10px;
 }
 
@@ -957,11 +984,6 @@
   color: var(--paper);
 }
 
-.controlAction:focus-visible {
-  outline: 1px solid var(--rule-strong);
-  outline-offset: 3px;
-}
-
 .controlAction[aria-pressed='true'] {
   color: var(--amber);
 }
@@ -1041,32 +1063,6 @@
   padding: 16px;
   image-orientation: from-image;
   transform: none;
-}
-
-/* An artifact still to come: a quiet reserved plate, not a glaring blank. */
-.artifactPlaceholder {
-  display: grid;
-  gap: 8px;
-  place-items: center;
-  min-height: 160px;
-  padding: 16px;
-  background:
-    repeating-linear-gradient(
-      -45deg,
-      transparent 0 9px,
-      rgba(74, 80, 86, 0.18) 9px 10px
-    ),
-    #101214;
-  color: var(--muted);
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-align: center;
-  text-transform: uppercase;
-}
-
-.artifactPending {
-  color: var(--faint);
 }
 
 .artifactCaption {
@@ -1460,4 +1456,10 @@
 .overlayClose:focus-visible {
   border-color: #c4a55f;
   color: #c4a55f;
+}
+
+/* Same ring as the journey's controls, in the literal --paper value. */
+.overlayClose:focus-visible {
+  outline: 2px solid #e3e5e7;
+  outline-offset: 4px;
 }
