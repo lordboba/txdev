@@ -7,10 +7,23 @@ export type JourneyEditorialStatus =
   | 'needs-tyler'
   | 'source-conflict';
 
+export type JourneyArtifactKind = 'photo' | 'mark' | 'video' | 'youtube';
+
 export type JourneyArtifact = {
   id: string;
   label: string;
+  /** Image description for assistive tech; the label is used when omitted. */
+  alt?: string;
+  /** Public path. For a YouTube artifact this is the still shown behind the frame. */
   asset: string | null;
+  /** Rendering branch; inferred from the asset extension when omitted. */
+  kind?: JourneyArtifactKind;
+  /** Video only: the still shown before play, and instead of play under reduced motion. */
+  poster?: string;
+  /** YouTube only: the privacy-enhanced embed URL. */
+  embedUrl?: string;
+  /** Adds place, date, or who; omitted when it would only restate the image. */
+  caption?: string;
   sourceNote: string;
 };
 
@@ -42,6 +55,9 @@ type JourneyNodeSource = JourneyNodeBase &
 
 export type JourneyBeatRef = { company: string } | { project: string };
 
+/** An outbound link the story names, shown under the paragraphs. */
+export type JourneyBeatLink = { label: string; href: string };
+
 export type JourneyBeat = {
   id: string;
   mapId: JourneyMapId;
@@ -54,6 +70,7 @@ export type JourneyBeat = {
   editorialStatus: JourneyEditorialStatus;
   sourceNotes: string[];
   refs: JourneyBeatRef[];
+  links?: JourneyBeatLink[];
 };
 
 export type JourneyMap = {
@@ -107,9 +124,10 @@ export const journeyBeats: JourneyBeat[] = [
     id: '01-practices',
     mapId: 'san-diego',
     title: 'San Diego: growing up',
-    period: 'Around age eleven or twelve',
+    period: 'Childhood',
     story: [
       'I grew up in San Diego. Around eleven or twelve I made games in Scratch, then moved to Java for competitive programming. In the same years I went to Chinese after-school classes and math competitions, played cello, and, before the pandemic, played water polo. Programming was one of several things I did.',
+      'The video is my very first cello game scene. It is one of the first things I did, and I think I still enjoy it if I have a cello around me and the time to do it.',
     ],
     artifactIds: ['scratch-or-cello'],
     interactionId: 'visit-week-practices',
@@ -117,6 +135,7 @@ export const journeyBeats: JourneyBeat[] = [
     editorialStatus: 'confirmed',
     sourceNotes: [
       'Tyler confirmed: Scratch games, then Java competitive programming around age eleven or twelve; Chinese after-school and math competitions in the same period; cello; water polo before the pandemic.',
+      'Tyler, 2026-09-21 session: the artifact is his YouTube cello performance of a game score (not a Scratch game), in his words "Very first cello game scene. One of the first things I did, and I think I still enjoy it if I have a cello around me and the time to do it."',
       'Public support: San Diego upbringing; USACO Silver in eighth grade and Gold in ninth; cello continues through UCLA.',
     ],
     refs: [],
@@ -127,15 +146,16 @@ export const journeyBeats: JourneyBeat[] = [
     title: 'Del Norte High School',
     period: 'High school',
     story: [
-      'In high school I ran cross-country and track and was president of the Math Club and the Algorithmic Coding Club. Running taught me pacing. The clubs taught me how to keep a group going: having the answer first mattered less than making it easy for other people to keep working.',
+      'In high school I ran cross-country and track. Cross-country taught me how to be a team player and a team leader. It trained mental fortitude and resilience: I learned I could train through the pain and push the limits of what I was capable of. More than anything, it taught me to take a process seriously and to train myself with discipline.',
+      'I was also president of the Math Club and the Algorithmic Coding Club. The clubs taught me leadership: bringing people together, hosting events, making people feel welcome. In hindsight I built foundations for both clubs, but my impact at the time left more to be desired. It was not for naught. The failed events, the things that did not work out, and the efforts that never materialized taught me how not to host events and how not to lead.',
     ],
     artifactIds: ['running-bib'],
     interactionId: 'hold-team-pace',
     nextId: '03-first-app',
-    editorialStatus: 'needs-tyler',
+    editorialStatus: 'confirmed',
     sourceNotes: [
       'Verified: Del Norte, cross-country and track, president of both clubs.',
-      'Ask Tyler: exact team leadership title and whether this interpretation feels true.',
+      'Tyler, 2026-09-21 session: cross-country as team player and team leader, mental fortitude and resilience, training through pain, taking a process seriously with discipline; clubs as leadership, hosting, making people welcome; candid that his impact then left more to be desired and that the failures taught him how not to host and how not to lead.',
     ],
     refs: [],
   },
@@ -145,15 +165,16 @@ export const journeyBeats: JourneyBeat[] = [
     title: 'Grow & Give, my first app',
     period: '2022 to 2023',
     story: [
-      'Grow & Give was a Swift and MongoDB app I built in 2022 and 2023. You set a focus timer, and finished sessions turned into support for real nonprofits. It was the first time I made product decisions for other people: what to show, what to store, and what to make easy. It won first place in its fair’s senior computer-science category.',
+      'Grow & Give was a Swift and MongoDB app I built in 2022 and 2023. You set a focus timer, and finished sessions turned into support for real nonprofits. It won first place in its fair’s senior computer-science category.',
+      'It was a turning point because app development was so difficult. I had to jump through so many hoops and work through so many different abstractions. I am proud that I pushed through and wrote the code in Swift, before AI, to ship it over the line.',
     ],
     artifactIds: ['grow-and-give-app'],
     interactionId: 'plan-focus-reflect',
     nextId: '04-ucla',
-    editorialStatus: 'needs-tyler',
+    editorialStatus: 'confirmed',
     sourceNotes: [
       "Verified: Swift and MongoDB app, 2022-2023, first place in the fair's senior computer-science category.",
-      'Ask Tyler: is Grow & Give the app you mean, or should this beat use RideHop?',
+      'Tyler, 2026-09-21 session: Grow & Give is the app; the turning point was how difficult app development was (hoops, abstractions) and the pride of pushing through in Swift, pre-AI, to ship it.',
     ],
     refs: [{ project: 'Grow & Give' }],
   },
@@ -163,16 +184,16 @@ export const journeyBeats: JourneyBeat[] = [
     title: 'UCLA',
     period: '2024 to present',
     story: [
-      'I came to UCLA in 2024 to study computer science. [One academic moment that changed how I approached the work.] [One community moment that changed who I built with.] I still play cello in the Symphony Orchestra.',
+      'I came to UCLA in 2024 to study computer science with a strong foundation from competitive programming. In my first year I applied to about 300 internships and did not hear back from many of them.',
+      'I explored and built in the meantime: ACM ICPC, tutoring, evaluation work for Scale AI, leading the DocuPilot team, and Jogging Club, and I kept playing cello in the Symphony Orchestra. I joined several clubs, including Creative Labs, and failed to get into a few others. I settled on two: VEST at UCLA and Upsilon Pi Epsilon at UCLA.',
     ],
-    artifactIds: ['ucla-mark'],
+    artifactIds: ['vest-mark', 'upe-mark'],
     interactionId: 'connect-campus-nodes',
     nextId: '05-safetykit',
-    editorialStatus: 'needs-tyler',
+    editorialStatus: 'confirmed',
     sourceNotes: [
-      'Verified: degree and coursework; ACM ICPC, UPE, VEST, Symphony Orchestra, tutoring, Jogging Club.',
-      'Ask Tyler: one academic moment and one community moment to replace the bracketed placeholders.',
-      'Optional beat: Scale AI evaluation work or DocuPilot team leadership during freshman year.',
+      'Verified: degree and coursework; ACM ICPC, UPE, VEST, Symphony Orchestra, tutoring, Jogging Club; Scale AI evaluation work and DocuPilot team leadership during freshman year.',
+      'Tyler, 2026-09-21 session: strong CS foundation from competitive programming; about 300 internship applications in year one with few replies; joined several clubs including Creative Labs, failed to get into a few, settled on VEST at UCLA and UPE at UCLA.',
     ],
     refs: [],
   },
@@ -182,7 +203,8 @@ export const journeyBeats: JourneyBeat[] = [
     title: 'SafetyKit, San Francisco',
     period: 'Jun 2025 to Sep 2025',
     story: [
-      'After freshman year I spent June to September 2025 at SafetyKit in San Francisco. It was my first startup-engineering summer and my first time living in the city. I worked on trust-and-safety systems. When a pipeline failed, a reviewer lost time and stopped trusting the tool, so the details mattered.',
+      'It was a brutal application season, and SafetyKit was the company that took the chance on me. I spent June to September 2025 with them in San Francisco. It was my first startup-engineering summer and my first time living in the city.',
+      'It was the first time I learned and built in the agentic-AI space. I learned the principles of working at a real software-engineering company with real tools, ran cloud systems at scale on AWS, and made changes that affected hundreds of thousands of dollars in real time.',
     ],
     artifactIds: ['safetykit-mark'],
     interactionId: 'repair-production-route',
@@ -190,6 +212,7 @@ export const journeyBeats: JourneyBeat[] = [
     editorialStatus: 'confirmed',
     sourceNotes: [
       'Verified: SafetyKit reflection, June to September 2025, first engineering intern, months in San Francisco.',
+      'Tyler, 2026-09-21 session: brutal application season, SafetyKit took the chance; first time building in agentic AI; real software-engineering principles and tools; AWS at scale; changes affecting hundreds of thousands of dollars in real time.',
       'Wording rule: this is the first startup-engineering summer, never the first internship overall; Scale AI appears earlier.',
     ],
     refs: [{ company: 'SafetyKit' }],
@@ -200,15 +223,17 @@ export const journeyBeats: JourneyBeat[] = [
     title: 'Codex community, Los Angeles',
     period: '2025 to present',
     story: [
-      "I also wanted the technical work to happen in person. As a Codex Ambassador I started hosting demos, workshops, and build sessions at UCLA and around Los Angeles. People brought projects, compared notes, and built together. Later, in New York, I helped organize and judge Ramp's Builders Cup.",
+      "As a Codex Ambassador I started hosting demos, workshops, and build sessions at UCLA and around Los Angeles. The Codex community brought me into the tech scene on the community side. I am now a host of Sundays in LA. Later, in New York, I helped organize and judge Ramp's Builders Cup.",
     ],
-    artifactIds: ['codex-event'],
+    artifactIds: ['codex-matcha', 'codex-demo'],
     interactionId: 'gather-builders',
     nextId: '07-ramp',
     editorialStatus: 'confirmed',
+    links: [{ label: 'Sundays in LA', href: 'https://sundays.rsvp' }],
     sourceNotes: [
       'Verified: ambassador directory; UPE and BMES events; Sundays in LA; Builders Cup role.',
       'Tyler confirmed 2026-09-01: the Codex community work started in Los Angeles, so this beat sits on the UCLA map; New York is where the Builders Cup thread landed.',
+      'Tyler, 2026-09-21 session: cover the Codex community and Sundays in LA; it brought him into the tech scene on the community side; he is now a host of Sundays in LA (link sundays.rsvp); two photos supplied.',
       'Boundary: Ambassador is a community-program role, not employment at the tool vendor.',
     ],
     refs: [{ company: 'Ramp' }],
@@ -219,33 +244,52 @@ export const journeyBeats: JourneyBeat[] = [
     title: 'Ramp, New York',
     period: 'Summer 2026',
     story: [
-      "In summer 2026 I moved to New York to work on Ramp's Reimbursements team. It was a bigger system with the same question: what makes this workflow actually useful to the person who depends on it? By then, building things and organizing people felt like parts of the same job.",
+      "In summer 2026 I moved to New York to work at Ramp. I scaled the Reimbursements team's software, but a lot of the primary work was building tools for the internal talent team: improving event coordination, custom software for the intern expo, and more.",
     ],
-    artifactIds: ['ramp-nyc-photo'],
+    artifactIds: ['ramp-boat', 'ramp-construction'],
     interactionId: 'ship-reimbursements',
-    nextId: '08-horizon',
+    nextId: '08-decagon',
     editorialStatus: 'confirmed',
     sourceNotes: [
       'Verified: user brief, Reimbursements announcement, public New York and Builders Cup posts.',
+      'Tyler, 2026-09-21 session: he did scale the Reimbursements software, but the primary work also came as tools for the internal talent team (event coordination, intern expo software, and more); two photos supplied.',
       'Repo cleanup: canonical site data still marks Ramp as incoming, which is stale for August 2026.',
     ],
     refs: [{ company: 'Ramp' }],
   },
   {
-    id: '08-horizon',
+    id: '08-decagon',
+    mapId: 'san-francisco',
+    title: 'Decagon, San Francisco',
+    period: 'Sep 2026 to Dec 2026',
+    story: [
+      'From September to December 2026 I am back in San Francisco as a Software Engineering Intern at Decagon, building AI developer experience.',
+    ],
+    artifactIds: ['decagon-ribbon'],
+    interactionId: 'build-ai-devx',
+    nextId: '09-horizon',
+    editorialStatus: 'confirmed',
+    sourceNotes: [
+      'Verified: experienceData.ts (after PR #9): Software Engineering Intern, Decagon AI, Sep 2026 to Dec 2026, building AI developer experience, focus AI DevX and Developer Tools.',
+      "Tyler, 2026-09-21 session: \"decagon should be second to last, but keep a 'what's next?' question page\"; Decagon is SF-based; the ribbon video is the artifact.",
+    ],
+    refs: [{ company: 'Decagon AI' }],
+  },
+  {
+    id: '09-horizon',
     mapId: 'horizon',
-    title: 'What comes next',
+    title: 'What’s next?',
     period: 'Next',
     story: [
-      'One next step is already planned. The rest is open. I want to keep building AI systems that are genuinely useful inside companies, and keep bringing the people who use them into the same room.',
+      'That is an open question. The route ends here for now, and the margin is unprinted on purpose.',
     ],
     artifactIds: ['unprinted-margin'],
     interactionId: 'place-next-pin',
     nextId: null,
-    editorialStatus: 'source-conflict',
+    editorialStatus: 'confirmed',
     sourceNotes: [
-      'Conflict: the repository names Decagon AI next; public LinkedIn still says Snowflake.',
-      'Ask Tyler: which employer, if any, should appear in the ending; the copy stays employer-neutral until resolved.',
+      'Tyler, 2026-09-21 session: keep the ending as a "what\'s next?" question page, employer-neutral, with the unprinted margin and the pin interaction unchanged.',
+      'Resolved: the former source conflict is moot now that Decagon has its own beat (08-decagon); the ending names no employer by design.',
     ],
     refs: [],
   },
@@ -256,56 +300,109 @@ export const journeyArtifacts: JourneyArtifact[] = [
     id: 'portrait',
     label: 'Portrait',
     asset: '/pfp.JPG',
+    kind: 'photo',
     sourceNote: 'Existing site portrait already shipped in public/.',
   },
   {
     id: 'scratch-or-cello',
-    label: 'Scratch game or cello score',
-    asset: null,
+    label: 'Cello duet',
+    alt: 'Tyler Xiao 8Yrs Old Cello Duet (YouTube)',
+    asset: '/journey/cello-duet-poster.jpg',
+    kind: 'youtube',
+    embedUrl: 'https://www.youtube-nocookie.com/embed/AIJTxXDWExM',
     sourceNote:
-      'Tyler must supply a Scratch game screenshot, a cello score, or a program from that period.',
+      'Tyler, 2026-09-21 session: https://www.youtube.com/watch?v=AIJTxXDWExM, his very first cello game scene. The alt text is the video’s own title; the still is its YouTube thumbnail. The artifact id is kept so node ids and the store tests stay unchanged.',
   },
   {
     id: 'running-bib',
-    label: 'Running bib or team photo',
-    asset: null,
+    label: 'Cross-country race',
+    alt: 'Tyler mid-race on a dirt cross-country course, wearing bib 1224, with runners and spectators behind him',
+    asset: '/journey/del-norte-xc.jpg',
+    kind: 'photo',
+    caption: 'Cross-country, Del Norte years.',
     sourceNote:
-      'Tyler must supply a running bib or a cross-country or track team photo from Del Norte.',
+      'Tyler, 2026-09-21 session: supplied running photo (1024×682), bib 1224, cross-country race. Re-encoded, EXIF stripped.',
   },
   {
     id: 'grow-and-give-app',
     label: 'Grow & Give screenshot',
     asset: '/projects/grow-and-give.png',
+    kind: 'photo',
     sourceNote:
       'Existing Grow & Give screenshot from the project gallery in public/.',
   },
   {
-    id: 'ucla-mark',
-    label: 'UCLA logo',
-    asset: '/logos/ucla.svg',
+    id: 'vest-mark',
+    label: 'VEST at UCLA mark',
+    asset: '/logos/vest.svg',
+    kind: 'mark',
+    caption: 'VEST at UCLA',
     sourceNote:
-      'Existing UCLA mark in public/; Tyler may later swap in a campus, UPE, Symphony, or project-team photo that carries an actual memory.',
+      'Tyler, 2026-09-21 session: settled on VEST at UCLA. Official mark from vestucla.com; see public/logos/manifest.json.',
+  },
+  {
+    id: 'upe-mark',
+    label: 'Upsilon Pi Epsilon at UCLA key',
+    asset: '/logos/upe.png',
+    kind: 'mark',
+    caption: 'Upsilon Pi Epsilon, UCLA',
+    sourceNote:
+      'Tyler, 2026-09-21 session: settled on UPE at UCLA. Official key mark from upe.seas.ucla.edu (PNG, the only raster the site serves); see public/logos/manifest.json.',
   },
   {
     id: 'safetykit-mark',
     label: 'SafetyKit logo',
     asset: '/logos/safetykit.svg',
+    kind: 'mark',
     sourceNote:
       'Existing SafetyKit mark in public/; Tyler may later swap in an intern presentation, MCP diagram, or his own San Francisco photo.',
   },
   {
-    id: 'codex-event',
-    label: 'Codex event photo or poster',
-    asset: null,
+    id: 'codex-matcha',
+    label: 'Codex matcha',
+    alt: 'A matcha latte and a cupcake, each topped with the Codex mark, beside Codex and OpenAI stickers on a wooden table',
+    asset: '/journey/codex-matcha.jpg',
+    kind: 'photo',
     sourceNote:
-      'Tyler must supply a Codex event photo or poster from UCLA, Sundays in LA, or Builders Cup.',
+      'Tyler, 2026-09-21 session: supplied Codex matcha and cupcake photo (682×1024). Re-encoded, EXIF stripped.',
   },
   {
-    id: 'ramp-nyc-photo',
-    label: 'Ramp New York photo',
-    asset: null,
+    id: 'codex-demo',
+    label: 'Codex demo',
+    alt: 'Tyler presenting outdoors beside a screen showing a Codex Agentic Loop slide, with an audience in front of him',
+    asset: '/journey/codex-demo.jpg',
+    kind: 'photo',
     sourceNote:
-      'Tyler must supply a Ramp New York or event photo cleared by company-safe review.',
+      'Tyler, 2026-09-21 session: supplied photo of him presenting in front of a "Codex Agentic Loop" poster (682×1024). Re-encoded, EXIF stripped.',
+  },
+  {
+    id: 'ramp-boat',
+    label: 'Ramp boat trip',
+    alt: 'Nine people in Ramp tees posing on a boat deck at sunset with the water behind them',
+    asset: '/journey/ramp-boat.jpg',
+    kind: 'photo',
+    caption: 'New York, summer 2026.',
+    sourceNote:
+      'Tyler, 2026-09-21 session: supplied group-on-a-boat photo (1024×696). Re-encoded, EXIF stripped.',
+  },
+  {
+    id: 'ramp-construction',
+    label: 'Ramp for construction',
+    alt: 'Two people in yellow hard hats holding a yellow “ramp for construction” sign above their heads in a bar',
+    asset: '/journey/ramp-construction.jpg',
+    kind: 'photo',
+    sourceNote:
+      'Tyler, 2026-09-21 session: supplied "ramp for construction" sign photo (768×1024). Re-encoded, EXIF stripped.',
+  },
+  {
+    id: 'decagon-ribbon',
+    label: 'Decagon ribbon',
+    alt: 'A silver ribbon folds into the Decagon mark, then a card reads Fall 2026, committed: Tyler Xiao, Software Engineering Intern, Decagon',
+    asset: '/journey/decagon-ribbon.mp4',
+    kind: 'video',
+    poster: '/journey/decagon-ribbon-poster.jpg',
+    sourceNote:
+      'Tyler, 2026-09-21 session: supplied decagon-v6-ribbon.mp4 (720×1280, 21 s). Remuxed without metadata; poster frame extracted with ffmpeg.',
   },
   {
     id: 'unprinted-margin',
@@ -353,7 +450,7 @@ const journeyNodeSources: JourneyNodeSource[] = [
   {
     id: 'sd-practice-artifact',
     mapId: 'san-diego',
-    label: 'Scratch or cello',
+    label: 'Cello duet',
     dx: 26,
     dy: 4,
     labelSide: 'right',
@@ -375,7 +472,7 @@ const journeyNodeSources: JourneyNodeSource[] = [
   {
     id: 'sd-track-artifact',
     mapId: 'san-diego',
-    label: 'Running bib',
+    label: 'Cross-country',
     dx: 28,
     dy: -26,
     labelSide: 'right',
@@ -419,12 +516,12 @@ const journeyNodeSources: JourneyNodeSource[] = [
   {
     id: 'la-ucla-artifact',
     mapId: 'ucla',
-    label: 'UCLA logo',
+    label: 'VEST and UPE',
     dx: -12,
     dy: -9,
     labelSide: 'left',
     kind: 'side',
-    artifactId: 'ucla-mark',
+    artifactId: 'vest-mark',
     adjacency: ['la-ucla'],
   },
   {
@@ -463,12 +560,12 @@ const journeyNodeSources: JourneyNodeSource[] = [
   {
     id: 'la-codex-artifact',
     mapId: 'ucla',
-    label: 'Event poster',
+    label: 'Codex demo',
     dx: 27,
     dy: 3,
     labelSide: 'right',
     kind: 'side',
-    artifactId: 'codex-event',
+    artifactId: 'codex-demo',
     adjacency: ['la-codex'],
   },
   {
@@ -480,18 +577,40 @@ const journeyNodeSources: JourneyNodeSource[] = [
     labelSide: 'below',
     kind: 'main',
     beatId: '07-ramp',
-    adjacency: ['la-codex', 'ny-ramp-artifact', 'horizon-pin'],
+    adjacency: ['la-codex', 'ny-ramp-artifact', 'sf-decagon'],
   },
   {
     id: 'ny-ramp-artifact',
     mapId: 'new-york',
-    label: 'New York photo',
+    label: 'On the water',
     dx: -6,
     dy: -14,
     labelSide: 'left',
     kind: 'side',
-    artifactId: 'ramp-nyc-photo',
+    artifactId: 'ramp-boat',
     adjacency: ['ny-ramp'],
+  },
+  {
+    id: 'sf-decagon',
+    mapId: 'san-francisco',
+    label: 'Decagon',
+    dx: -14,
+    dy: 10,
+    labelSide: 'left',
+    kind: 'main',
+    beatId: '08-decagon',
+    adjacency: ['ny-ramp', 'sf-decagon-artifact', 'horizon-pin'],
+  },
+  {
+    id: 'sf-decagon-artifact',
+    mapId: 'san-francisco',
+    label: 'Ribbon',
+    dx: -24,
+    dy: 18,
+    labelSide: 'left',
+    kind: 'side',
+    artifactId: 'decagon-ribbon',
+    adjacency: ['sf-decagon'],
   },
   {
     id: 'horizon-pin',
@@ -501,8 +620,8 @@ const journeyNodeSources: JourneyNodeSource[] = [
     dy: 0,
     labelSide: 'right',
     kind: 'main',
-    beatId: '08-horizon',
-    adjacency: ['ny-ramp', 'horizon-margin'],
+    beatId: '09-horizon',
+    adjacency: ['sf-decagon', 'horizon-margin'],
   },
   {
     id: 'horizon-margin',
@@ -530,10 +649,10 @@ export const journeyWordingRules: JourneyWordingRule[] = [
     note: 'SafetyKit is the first startup-engineering summer; Scale AI came earlier.',
   },
   {
-    beatId: '08-horizon',
+    beatId: '09-horizon',
     forbidden: ['Decagon', 'Snowflake'],
     required: [],
-    note: 'The ending names no employer until the source conflict is resolved.',
+    note: 'The ending is an open question and names no employer; Decagon has its own beat.',
   },
   {
     beatId: '06-codex',
