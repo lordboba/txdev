@@ -1284,7 +1284,7 @@ export function createFestivalRuntime(
       time: () => wind.time(),
       state: () => sim?.state ?? null,
       view: () => view,
-      moon: () => moonState,
+      moon: () => ({ ...moonState, night: moonNight }),
       gusts: () => wind.gusts(),
       strip: () => shadowStrip?.userData ?? null,
     };

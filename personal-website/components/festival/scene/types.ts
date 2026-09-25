@@ -566,7 +566,8 @@ export interface FestivalDebugApi {
   time(): number;
   state(): SimState | null;
   view(): unknown;
-  moon(): MoonState;
+  /** The moon state plus its own day/night blend (`night`, 0..1). */
+  moon(): MoonState & { night: number };
   gusts(): readonly GustSpec[];
   /** The 走马灯 strip's `userData` (font string, titles) once built, for T5. */
   strip(): Record<string, unknown> | null;
