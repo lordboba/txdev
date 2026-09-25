@@ -178,11 +178,11 @@ y0   ┌ ☾ moon 120px x100-220 y40-160 ──── H1 x384-1056 y34-108 ─�
 ```
 
 - Lanterns: **A** 56 px at x300 (body x272–328, y66–114; 56 px left of the H1) and **C hero** 64 px at x1330 (x1298–1362, y120–175), hung from the tools pill's underside (anchor y66) so the cord never crosses the pill. Two; the star owns the centre.
-- Moon 120 px at x100–220 y40–160; never right of x384 above y110. Poem column x128–150 y176–302 (left of the rings' x170 edge by 20 px); colophon column x106–118; translation left-aligned at x128 y314–330 (the one left-aligned lockup on the site, because the moon is left here; ends x≈358, over ring strokes that paint above it — acceptable, strokes are 1 px on transparent).
+- Moon 120 px at x100–220 y40–160; never right of x384 above y110. Poem column x128–150 y176–302 (left of the rings' x170 edge by 20 px); colophon column x106–118; translation left-aligned at x128 y314–330 (the one left-aligned lockup on the site, because the moon is left here; ends x≈390, over ring strokes that paint above it — acceptable, strokes are 1 px on transparent).
 - Florets: 30, full width, behind `.orb-shell`.
 - No slip on this route (no lantern B). The 走马灯 and the poem are its text.
 
-Mobile: 0 lanterns, no moon, no text, 12 florets behind `.orb-shell`. (Pre-existing `.orb-hero-tools`-over-H1 bug at ≤ 760 px is fixed in the typography PR, B6.)
+Mobile: 0 lanterns, no moon, no text, 12 florets behind `.orb-shell`, emitted only below the dek (band y ≥ 216, 8 px feather: the H1 at y16–135 and the dek at y148–195 are transparent text over the layer, so florets showed through the letters; the rings and the index still get the fall, V10). (Pre-existing `.orb-hero-tools`-over-H1 bug at ≤ 760 px is fixed in the typography PR, B6.)
 
 ### 3.3 `/blog`
 
@@ -204,8 +204,8 @@ y0   ┌────────────────────────
 ```
 
 - Lanterns: **A hero** 88 px at x96 (x52–140, y118–194; T 2.8 s); **B** 56 px at x214 (x186–242, y176–224; T 2.4 s) with the slip; **C** 60 px at x1395 (x1365–1425, y196–248; T 2.1 s), cord x1395, 45 px clear of the moon disc. A's pool (282 px) reaches x237, 67 px short of the column.
-- Moon 150 px at x1200–1350, y110–260 (35 px below the nav band). Poem column under its lower-left limb; colophon column to the poem's left; translation right-aligned to x1420 (x≈1190–1420) at y412, clear of the post card (x ≤ 1136) and of C's tassel (ends y272).
-- Florets: 36, both gutters plus the top band y75–150 (they cross only the eyebrow row; the H1 starts at y158).
+- Moon 150 px at x1200–1350, y110–260 (35 px below the nav band). Poem column under its lower-left limb; colophon column to the poem's left; translation right-aligned to x1420 (x≈1158–1420: the 17 px italic line measures 261 px, so its rect is 262 wide) at y412, clear of the post card (x ≤ 1136) and of C's tassel (ends y272).
+- Florets: 36, both gutters plus the top band y75–112 (above the JOURNAL eyebrow at y125–137; the H1 starts at y158). On `/blog/[slug]` the breadcrumb links own that row, so the post page has gutters only (the count stays 36).
 
 Mobile 390×844: **1 lantern** 44 px at x335 (x313–357, body y74–118; free block x200–374 y62–140), cord from y62 (nav bottom); **no moon, no slip, no text**; 12 florets; scroll-lift when `scrollY > 120` (lift 24 px + fade 260 ms), return below 40.
 
@@ -222,15 +222,15 @@ Desktop. Container x176–1264 (inset nav y56–131 at load, pinned 0–75); gut
      │▓██▓ A hero 72px x64 body y112-174 (走马灯)                              x1290-1420  │
      │ ⌇                                                                        y90-220    │
      │          ║            EXPERIENCE                                        丙 千        │
-     │         ▓█▓ B 52px x150 body y210-255                                   午 里 colophon x1254-1266 y240-336
+     │         ▓█▓ B 52px x138 body y210-255                                   午 里 colophon x1254-1266 y240-336
      │          ⌇            H1 x176-944 y277-397                              年 共 poem x1272-1294 y240-366
-     │         ▯ slip x131-169 y268-420                                        八 婵
+     │         ▯ slip x119-157 y268-420                                        八 婵
      │                                                                         月 娟
      │                                                                         十
      │                                                                         五   translation right-aligned x1420 y378-395
 ```
 
-- Lanterns: **A hero** 72 px at x64 (x28–100, y112–174) and **B** 52 px at x150 (x124–176, y210–255) with the slip. **No lantern C** (§0.4).
+- Lanterns: **A hero** 72 px at x64 (x28–100, y112–174) and **B** 52 px at x138 (x112–164, y210–255; slip x119–157) with the slip: 12 px clear of the container edge at x176, so the slip's swing at a gust (0.8·8° over its 152 px strip ≈ ±17 px at the foot) never crosses the H1 or the '← Back to home' bar (at x150 the body abutted the bar and the tilted strip touched the 'E' of Experience). **No lantern C** (§0.4).
 - Moon 130 px at x1290–1420 y90–220; poem column x1272–1294 (8 px right of the container edge; the H1 ends at x944, the Focus Areas card starts at y470); colophon x1254–1266; translation right-aligned to x1420 at y378.
 - Florets: 30, gutters only (x < 176, x > 1264). Mobile: 0 lanterns, no moon, no text, **florets off** (decided, not gated: a 20 px gutter cannot carry a 6–10 px floret without it touching the copy column, and `/schedule-a-call` mobile is already off for the same reason).
 
@@ -410,7 +410,7 @@ Atlas 1024×512 `CanvasTexture`, `SRGBColorSpace`, mipmaps, four tiles (three sp
 | Osmanthus leaf          | long-elliptic 3.2 : 1, entire margin, glossy: a 30% white streak along one side                                                                            | 22–34 px            | descent 8–12 s, flutter 18–28 px, spin 1–3 rad/s, 20% tumble      | `#789262` top, `#8fa37a` underside (DoubleSide flips it)                                     |
 | Ginkgo fan              | bilobed fan with a central notch, no midrib, dichotomous veins as 7 forking strokes from the petiole, petiole 0.6× blade                                   | 26–40 px            | descent 9–13 s, flutter 20–28 px, mostly side-to-side, 10% tumble | `#d3b17d` mixed 40–70% with `#9aa66f`: late September, still turning                         |
 
-Per-instance attributes set once: `seed`, `species`, `band`, `speed`, `flutterHz`, `flutterAmp`, `spinRate`, `tumble`, `phase`, colour. Matrices composed on the CPU per frame with one shared `Matrix4/Quaternion/Vector3`. Emitter bounds per route (§3) are px rectangles; instances outside them respawn at the top of their band. Nothing falls over the Calendly iframe, the H1s or the Bench plates.
+Per-instance attributes set once: `seed`, `species`, `band`, `speed`, `flutterHz`, `flutterAmp`, `spinRate`, `tumble`, `phase`, colour. Matrices composed on the CPU per frame with one shared `Matrix4/Quaternion/Vector3`. Emitter bounds per route (§3) are px rectangles; instances outside them respawn at the top of their band. Nothing falls over the Calendly iframe, the H1s or the Bench plates, and `layout.ts` adds the moon disc (+12 px) and the verse, colophon and translation rects (+6 px) to every route's floret exclusions at resolve time, so the fall passes beside the moon (§2.3's cool tint is on florets _near_ it) and never through the 55–70% verse ink.
 
 ### 5.3 The moon
 

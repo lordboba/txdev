@@ -221,11 +221,19 @@ function rect(x1: number, y1: number, x2: number, y2: number): Rect {
   return { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
 }
 
-/** Translation lockup: 17 px italic, ≈ 230 px wide, right-aligned to x1420. */
+/**
+ * Translation lockup: 17 px Cormorant italic, right-aligned to x1420. The
+ * rendered line measures 261 px, so the rect is 262 wide (the earlier 230 px
+ * estimate left 31 px of the line outside the rect V8 checks).
+ */
+const TRANSLATION_WIDTH_PX = 262;
 const TRANSLATION_RIGHT = (y: number): TextEntry => ({
-  rect: rect(1190, y, 1420, y + 17),
+  rect: rect(1420 - TRANSLATION_WIDTH_PX, y, 1420, y + 17),
   anchor: 'container-right',
 });
+/** Florets keep this far from the moon disc and from the verse lockups. */
+const MOON_FLORET_PAD_PX = 12;
+const TEXT_FLORET_PAD_PX = 6;
 
 // ---------------------------------------------------------------------------
 // Desktop tables (§3.1–3.6)
@@ -365,7 +373,10 @@ const ORBITAL: RouteTable = {
     poem: { rect: rect(128, 176, 150, 302), anchor: 'left' },
     colophon: { rect: rect(106, 176, 118, 272), anchor: 'left' },
     colophonOrientation: 'vertical',
-    translation: { rect: rect(128, 314, 358, 330), anchor: 'left' },
+    translation: {
+      rect: rect(128, 314, 128 + TRANSLATION_WIDTH_PX, 330),
+      anchor: 'left',
+    },
     translationAlign: 'left',
   },
   exclusions: [
@@ -447,7 +458,9 @@ const BLOG: RouteTable = {
     emitters: [
       { kind: 'gutter', side: 'left', clearance: 0, top: 75 },
       { kind: 'gutter', side: 'right', clearance: 0, top: 75 },
-      { kind: 'container', top: 75, bottom: 150 },
+      // The top band ends above the JOURNAL eyebrow (y125–137): a floret on
+      // the 'A' of JOURNAL is text under a festival object (§6.A).
+      { kind: 'container', top: 75, bottom: 112 },
     ],
     exclusions: [
       {
@@ -487,6 +500,12 @@ const BLOG: RouteTable = {
 const BLOG_SLUG: RouteTable = {
   ...BLOG,
   lanterns: BLOG.lanterns.map((lantern) => ({ ...lantern, slip: false })),
+  // The breadcrumb links ('← All posts / Home') own the top band on a post:
+  // gutters only; the count stays 36 and the gutters absorb them.
+  florets: {
+    ...BLOG.florets,
+    emitters: BLOG.florets.emitters.filter((e) => e.kind !== 'container'),
+  },
   exclusions: [NAV_BAND_FULL, COPY_COLUMN],
   textExclusions: [NAV_BAND_FULL],
   moonScrollDim: true,
@@ -511,7 +530,10 @@ const PAST_EXPERIENCE: RouteTable = {
       id: 'B',
       hero: false,
       body: 52,
-      x: 150,
+      // x138 (body x112–164, slip x119–157): 12 px clear of the container at
+      // x176, so the slip's ±17 px gust swing never crosses the H1 or the
+      // '← Back to home' bar (at x150 the body abutted the bar).
+      x: 138,
       bodyTop: 210,
       cord: VIEWPORT_TOP,
       period: PENDULUM.periods.mid,
@@ -684,10 +706,21 @@ const HOME_MOBILE: RouteTable = {
 const ORBITAL_MOBILE: RouteTable = {
   ...MOBILE_OFF,
   zIndex: 2,
+  // The H1 (y16–135) and dek (y148–195) are transparent text over the layer
+  // (z 2 under `.orb-shell`), so florets showed through the letters (V10).
+  // The band starts under the dek; the rings and the index still get the fall.
   florets: {
     ...NO_FLORETS,
     count: 12,
-    emitters: [{ kind: 'viewport' }],
+    emitters: [
+      {
+        kind: 'rect',
+        rect: rect(0, 216, 390, 844),
+        anchor: 'left',
+        stretch: 'right',
+      },
+    ],
+    featherPx: 8,
   },
 };
 
@@ -1156,6 +1189,22 @@ function resolveMoon(
   return { centre: { x: disc.x + r, y: disc.y + r }, diameter: moon.diameter };
 }
 
+function padRect(r: Rect, pad: number): Rect {
+  return { x: r.x - pad, y: r.y - pad, w: r.w + 2 * pad, h: r.h + 2 * pad };
+}
+
+/** The moon's disc as a rect. */
+export function moonDisc(moon: MoonAnchor): Rect {
+  const r = moon.diameter / 2;
+
+  return {
+    x: moon.centre.x - r,
+    y: moon.centre.y - r,
+    w: moon.diameter,
+    h: moon.diameter,
+  };
+}
+
 /** Every cord x must be ≥ 30 px outside the moon disc (§8). */
 export function cordClearsMoon(
   spec: LanternSpec,
@@ -1239,14 +1288,24 @@ export function routeLayout(
     translationAlign: table.text.translationAlign,
   };
 
+  // Florets never cross the moon disc (a floret on the 0.8-Y disc reads as
+  // dirt, not 桂子 rain) or the verse, colophon and translation (they showed
+  // through the 55–70% ink); `fieldAlpha()` fades them out over these rects.
+  const floretExclusions = [
+    ...table.florets.exclusions
+      .map((entry) => resolveRectEntry(entry, frame, live))
+      .filter((r): r is Rect => r !== null),
+    ...(moon ? [padRect(moonDisc(moon), MOON_FLORET_PAD_PX)] : []),
+    ...[text.poem, text.colophon, text.translation]
+      .filter((r): r is Rect => r !== null)
+      .map((r) => padRect(r, TEXT_FLORET_PAD_PX)),
+  ];
   const florets: FloretLayout = {
     count: table.florets.count,
     emitters: table.florets.emitters
       .map((entry) => resolveRectEntry(entry, frame, live))
       .filter((r): r is Rect => r !== null && r.w > 0 && r.h > 0),
-    exclusions: table.florets.exclusions
-      .map((entry) => resolveRectEntry(entry, frame, live))
-      .filter((r): r is Rect => r !== null),
+    exclusions: floretExclusions,
     featherPx: table.florets.featherPx,
     alphaMax: table.florets.alphaMax,
     alphaRampY: table.florets.alphaRampY,

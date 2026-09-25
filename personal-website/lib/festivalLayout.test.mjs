@@ -129,8 +129,12 @@ test('§3.2 `/orbital`: hero C from the tools pill, moon left, left-aligned lock
   assert.deepEqual(layout.moon, { centre: { x: 160, y: 100 }, diameter: 120 });
   assert.deepEqual(span(layout.text.poem), [128, 150, 176, 302]);
   assert.deepEqual(span(layout.text.colophon), [106, 118, 176, 272]);
-  assert.deepEqual(span(layout.text.translation), [128, 358, 314, 330]);
+  assert.deepEqual(span(layout.text.translation), [128, 390, 314, 330]);
   assert.equal(layout.text.translationAlign, 'left');
+  // Florets never cross the moon disc (+12) or the verse lockups (+6).
+  assert.deepEqual(span(layout.florets.exclusions[0]), [88, 232, 28, 172]);
+  assert.deepEqual(span(layout.florets.exclusions[1]), [122, 156, 170, 308]);
+  assert.equal(layout.florets.exclusions.length, 4);
 
   const live = desktop('/orbital', {
     elements: {
@@ -152,13 +156,21 @@ test('§3.3 `/blog`: three lanterns, slip on B, moon anchor (1275, 185, 150)', (
   assert.deepEqual(layout.moon, { centre: { x: 1275, y: 185 }, diameter: 150 });
   assert.deepEqual(span(layout.text.poem), [1178, 1200, 276, 402]);
   assert.deepEqual(span(layout.text.colophon), [1160, 1172, 276, 372]);
-  assert.deepEqual(span(layout.text.translation), [1190, 1420, 412, 429]);
+  assert.deepEqual(span(layout.text.translation), [1158, 1420, 412, 429]);
   assert.equal(layout.navBottom, 75);
   assert.equal(layout.riddlePool, 'post');
   assert.deepEqual(layout.florets.emitters.map(span), [
     [0, 304, 75, 900],
     [1136, 1440, 75, 900],
-    [304, 1136, 75, 150],
+    [304, 1136, 75, 112],
+  ]);
+  // H1, moon disc (+12), poem, colophon, translation (+6).
+  assert.deepEqual(layout.florets.exclusions.map(span), [
+    [304, 400, 158, 206],
+    [1188, 1362, 98, 272],
+    [1172, 1206, 270, 408],
+    [1154, 1178, 270, 378],
+    [1152, 1426, 406, 435],
   ]);
 });
 
@@ -167,6 +179,12 @@ test('§3.4 `/blog/[slug]`: same shell, no slip, moon dims on scroll', () => {
 
   assert.equal(lantern(layout, 'B').slip, false);
   assert.equal(lantern(layout, 'B').slipRect, null);
+  // The breadcrumb owns the top band: gutters only, count unchanged.
+  assert.deepEqual(layout.florets.emitters.map(span), [
+    [0, 304, 75, 900],
+    [1136, 1440, 75, 900],
+  ]);
+  assert.equal(layout.florets.count, 36);
   assert.deepEqual(layout.moonScrollDim, {
     afterScrollY: 400,
     to: 0.6,
@@ -175,16 +193,17 @@ test('§3.4 `/blog/[slug]`: same shell, no slip, moon dims on scroll', () => {
   assert.equal(layout.riddlePool, null);
 });
 
-test('§3.5 `/past-experience`: two lanterns, B flush at x176, no C', () => {
+test('§3.5 `/past-experience`: two lanterns, B 12 px clear of x176, no C', () => {
   const layout = desktop('/past-experience');
 
   assert.deepEqual(span(lantern(layout, 'A').bodyRect), [28, 100, 112, 174]);
-  assert.deepEqual(span(lantern(layout, 'B').bodyRect), [124, 176, 210, 255]);
+  assert.deepEqual(span(lantern(layout, 'B').bodyRect), [112, 164, 210, 255]);
+  assert.deepEqual(span(lantern(layout, 'B').slipRect), [119, 157, 269, 421]);
   assert.equal(lantern(layout, 'C'), undefined);
   assert.deepEqual(layout.moon, { centre: { x: 1355, y: 155 }, diameter: 130 });
   assert.deepEqual(span(layout.text.poem), [1272, 1294, 240, 366]);
   assert.deepEqual(span(layout.text.colophon), [1254, 1266, 240, 336]);
-  assert.deepEqual(span(layout.text.translation), [1190, 1420, 378, 395]);
+  assert.deepEqual(span(layout.text.translation), [1158, 1420, 378, 395]);
   assert.equal(layout.navBottom, 131);
   assert.equal(layout.routeSeed, 0);
   assert.deepEqual(layout.florets.emitters.map(span), [
@@ -224,6 +243,11 @@ test('mobile 390×844: florets only, one lantern on /blog*, nothing on the inset
   assert.equal(mobile('/').zIndex, 1);
   assert.equal(mobile('/orbital').florets.count, 12);
   assert.equal(mobile('/orbital').moon, null);
+  // Only below the dek (y148–195): the H1 and dek are transparent text over the layer.
+  assert.deepEqual(mobile('/orbital').florets.emitters.map(span), [
+    [0, 390, 216, 844],
+  ]);
+  assert.equal(mobile('/orbital').florets.featherPx, 8);
 
   const blog = mobile('/blog');
   assert.equal(blog.lanterns.length, 1);
