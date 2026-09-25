@@ -555,53 +555,64 @@ a:hover {
 }
 
 /* ═══ Blog Prose ═══ */
+/* The reading column: a 66ch measure centred in the card. */
 .blog-prose {
-  font-size: 1.06rem;
-  line-height: 1.86;
+  max-width: 66ch;
+  margin-inline: auto;
+  font-size: 1.0625rem;
+  line-height: 1.6;
   color: var(--foreground);
+  text-wrap: pretty;
+  hanging-punctuation: first last;
+}
+
+@media (max-width: 480px) {
+  .blog-prose {
+    hyphens: auto;
+  }
 }
 
 .blog-prose > * + * {
   margin-top: 1.1rem;
 }
 
-.blog-prose h1,
+/*
+ * Markdown headings are demoted one level by the renderer (`#` → h2), so the
+ * post title is the only h1. Sections take display-3; sub-sections are Plex.
+ */
 .blog-prose h2,
-.blog-prose h3 {
+.blog-prose h3,
+.blog-prose h4 {
   margin-top: 2.5rem;
   margin-bottom: 0.85rem;
   color: var(--foreground);
   text-wrap: balance;
 }
 
-/* Display recipe (see `.display`): sections at display-2, sub-sections at 3. */
-.blog-prose h1,
 .blog-prose h2 {
   font-family:
     var(--font-display), 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
-  font-kerning: normal;
-  font-variant-numeric: lining-nums;
-}
-
-.blog-prose h1 {
-  font-size: var(--display-2);
-  font-weight: 500;
-  letter-spacing: 0;
-  line-height: 1.05;
-}
-
-.blog-prose h2 {
   font-size: var(--display-3);
   font-weight: 600;
+  font-kerning: normal;
+  font-variant-numeric: lining-nums;
   letter-spacing: 0.005em;
   line-height: 1.15;
 }
 
-.blog-prose h3 {
+.blog-prose h3,
+.blog-prose h4 {
   font-family: var(--font-sans), system-ui, sans-serif;
-  font-size: 1.125rem;
   font-weight: 600;
   line-height: 1.3;
+}
+
+.blog-prose h3 {
+  font-size: 1.125rem;
+}
+
+.blog-prose h4 {
+  font-size: 1rem;
 }
 
 .blog-prose p {

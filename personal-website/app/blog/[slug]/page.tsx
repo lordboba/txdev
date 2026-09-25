@@ -85,17 +85,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         </header>
 
         <div
-          className="blog-prose mt-10
-          [&_h1]:font-display
-          [&_h2]:font-display
-          [&_h3]:font-display
-          [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground
-          [&_h1]:font-semibold [&_h2]:font-semibold [&_h3]:font-semibold
-          [&_p]:text-[1rem] [&_p]:leading-8 [&_p]:text-muted
-          [&_a]:font-medium [&_a]:text-accent hover:[&_a]:underline [&_a]:underline-offset-4
-          [&_blockquote]:rounded-sm [&_blockquote]:bg-accent-muted [&_blockquote]:px-4 [&_blockquote]:py-3 [&_blockquote]:text-muted
-          [&_code]:rounded-sm [&_code]:border [&_code]:border-divider [&_code]:bg-surface-raised [&_code]:px-1.5 [&_code]:py-0.5
-          [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:border [&_pre]:border-divider [&_pre]:bg-surface-raised [&_pre]:p-4"
+          className="blog-prose mt-10"
           dangerouslySetInnerHTML={{ __html: articleHtml }}
         />
       </article>
