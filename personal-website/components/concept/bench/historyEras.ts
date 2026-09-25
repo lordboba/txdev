@@ -63,6 +63,3 @@ export const historyEras: HistoryEra[] = [
 export const historyShots: string[] = historyEras
   .map((era) => era.shot)
   .filter((shot): shot is string => shot !== null);
-
-/** The date the generated half was last refreshed, for the view's own footer. */
-export const historyGeneratedAt: string = generated.generatedAt;
