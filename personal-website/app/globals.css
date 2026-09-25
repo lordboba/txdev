@@ -544,55 +544,6 @@ button {
 }
 
 /* ═══ Motion Utilities ═══ */
-.reveal-on-scroll {
-  opacity: 0;
-  transform: translate3d(var(--reveal-x, 0), var(--reveal-y, 18px), 0);
-  transition:
-    opacity var(--motion-slow) var(--ease-standard),
-    transform var(--motion-slow) var(--ease-standard);
-}
-
-.reveal-on-scroll.is-visible {
-  opacity: 1;
-  transform: translate3d(0, 0, 0);
-}
-
-.reveal-slide-left {
-  --reveal-x: -22px;
-  --reveal-y: 0;
-}
-
-.reveal-slide-right {
-  --reveal-x: 22px;
-  --reveal-y: 0;
-}
-
-.hero-stage {
-  opacity: 0;
-  transform: translateY(18px);
-  animation: heroStage var(--motion-slow) var(--ease-standard) forwards;
-}
-
-.hero-stage-1 {
-  animation-delay: 110ms;
-}
-.hero-stage-2 {
-  animation-delay: 220ms;
-}
-.hero-stage-3 {
-  animation-delay: 330ms;
-}
-.hero-stage-4 {
-  animation-delay: 440ms;
-}
-
-@keyframes heroStage {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .profile-halo-shell {
   --profile-pointer-x: 50%;
   --profile-pointer-y: 40%;
@@ -1146,34 +1097,6 @@ button {
   mix-blend-mode: multiply;
 }
 
-/* 3D reveal variants */
-.reveal-3d {
-  opacity: 0;
-  transform: perspective(800px) rotateX(8deg) translateY(30px) scale(0.97);
-  transform-origin: bottom center;
-  transition:
-    opacity 700ms var(--ease-standard),
-    transform 700ms var(--ease-spring);
-}
-
-.reveal-3d.is-visible {
-  opacity: 1;
-  transform: perspective(800px) rotateX(0deg) translateY(0) scale(1);
-}
-
-.reveal-flip {
-  opacity: 0;
-  transform: perspective(600px) rotateY(-12deg) translateX(-20px);
-  transition:
-    opacity 600ms var(--ease-standard),
-    transform 600ms var(--ease-spring);
-}
-
-.reveal-flip.is-visible {
-  opacity: 1;
-  transform: perspective(600px) rotateY(0deg) translateX(0);
-}
-
 /* Hero text extrusion */
 .hero-text-highlight {
   position: relative;
@@ -1321,17 +1244,6 @@ button {
     scroll-behavior: auto;
   }
 
-  .hero-stage {
-    opacity: 1;
-  }
-
-  .hero-stage,
-  .reveal-on-scroll,
-  .reveal-on-scroll.is-visible,
-  .reveal-3d,
-  .reveal-3d.is-visible,
-  .reveal-flip,
-  .reveal-flip.is-visible,
   .profile-halo-shell,
   .profile-badge,
   .timeline-entry,
@@ -1353,12 +1265,6 @@ button {
     animation: none !important;
     transition: none !important;
     transform: none !important;
-  }
-
-  .reveal-on-scroll,
-  .reveal-3d,
-  .reveal-flip {
-    opacity: 1;
   }
 }
 
