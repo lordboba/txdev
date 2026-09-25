@@ -74,6 +74,19 @@ html[data-festival='mid-autumn'][data-theme='light'] {
   --festival-night: 0;
   --festival-verse-ink: var(--muted);
   --festival-translation-ink: var(--muted);
+  /*
+   * The bare light accent draws a 3.40:1 ring on the page, and only 2.9:1
+   * where the pool tint is warmest — under the 3:1 a focus indicator owes
+   * (WCAG 2.4.11), with nothing left for the tint. Three parts accent to
+   * one part page ink keeps the accent's hue (and follows every colour
+   * theme, which only moves --accent) while taking the ring to 5.3:1 on
+   * the page and 4.5:1 through the strongest pool.
+   */
+  --festival-underline: color-mix(
+    in srgb,
+    var(--accent) 70%,
+    var(--foreground)
+  );
 }
 
 /*

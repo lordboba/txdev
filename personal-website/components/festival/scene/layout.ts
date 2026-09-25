@@ -1383,7 +1383,13 @@ export function routeLayout(
     navBottom: navBand ? navBand.y + navBand.h : 0,
     navBand,
     halo: !home,
-    poolPeak: home ? light.pool.peakHome : light.pool.peakDark,
+    // A phone has no gutter for the pool to land in (§2.2 / V10): see
+    // `light.pool.peakMobile`.
+    poolPeak: home
+      ? light.pool.peakHome
+      : mobile
+        ? light.pool.peakMobile
+        : light.pool.peakDark,
     ignoresTheme: home,
     scrollLift: table.scrollLift ? CHOREOGRAPHY.mobileScrollLift : null,
     moonScrollDim: table.moonScrollDim

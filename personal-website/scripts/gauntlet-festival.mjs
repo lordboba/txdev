@@ -28,6 +28,12 @@
  *               run at sim speed and stop being SKIPPED. Pixels are then
  *               not stable run to run; use it for the motion rows.
  *   --only      comma list of route substrings to run (default: all)
+ *   --prod      the target is a production build, so the payload rows
+ *               (`perf:festivalChunkBytes`, `perf:heapDeltaMB`) are
+ *               asserted. Without it the script sniffs the target: a
+ *               `next dev` server serves unminified, uncompressed chunks
+ *               behind the HMR client, so those two rows are SKIPPED with a
+ *               note instead of failing against numbers that mean nothing.
  *   --quick     skip the 20 s period sampling, the pointer sweep, the colour
  *               themes and the GPU timing pass (smoke run)
  *   --timing    gpu | off (default gpu: a second, non-SwiftShader browser is
@@ -90,6 +96,8 @@ const PERF_OUT = resolve(
   args['perf-out'] ?? join(SCRATCH, 'shots', 'festival-perf.json'),
 );
 const ONLY = args.only ? args.only.split(',').map((s) => s.trim()) : null;
+/** `--prod`: the target is a production build, so the payload rows count. */
+const PROD = args.prod === '1';
 const QUICK = args.quick === '1';
 const GPU = args.gpu === '1';
 const TIMING = QUICK ? 'off' : (args.timing ?? 'gpu');
@@ -239,6 +247,42 @@ function perfRow(metric, route, measured, budget, ok, note) {
   if (ok === null) skip(`perf:${metric}@${route}`, metric, note);
   else check(ok, `perf:${metric}@${route}`, metric, measured, budget, note);
 }
+
+/**
+ * Is the page served by `next dev`? The two payload rows
+ * (`festivalChunkBytes`, `heapDeltaMB`) measure the shipped bundle, and a
+ * dev server ships unminified, uncompressed chunks behind an HMR client:
+ * the numbers come out ~5× over budget and mean nothing. Dev is recognised
+ * by its unhashed chunk names (`webpack.js`, `main-app.js` — production
+ * hashes every one), the `/_next/static/development/` prefix and the dev
+ * overlay element. `--prod` asserts the target is a production build for a
+ * deployment the heuristic cannot read.
+ */
+async function isDevTarget(page) {
+  if (PROD) return false;
+  try {
+    return await page.evaluate(() => {
+      const srcs = [...document.querySelectorAll('script[src]')].map(
+        (s) => s.getAttribute('src') ?? '',
+      );
+      return (
+        srcs.some((s) =>
+          /\/_next\/static\/(chunks\/(webpack|main-app)\.js|development\/)/.test(
+            s,
+          ),
+        ) ||
+        !!document.querySelector('nextjs-portal') ||
+        'webpackHotUpdate' in window
+      );
+    });
+  } catch {
+    return false;
+  }
+}
+
+const DEV_NOTE =
+  'dev server: unminified, uncompressed bundles behind the HMR client — ' +
+  'measure on a production build (next build && next start, then --prod)';
 
 /** Runs a step; any throw becomes a FAIL for `id` instead of a crash. */
 async function guarded(id, fn) {
@@ -932,7 +976,18 @@ function crossingPeriod(times, values) {
     .slice(1)
     .map((t, k) => t - crossings[k])
     .sort((a, b) => a - b);
-  return gaps[Math.floor(gaps.length / 2)];
+  const median = (g) => g[Math.floor(g.length / 2)];
+  // A stalled frame hides one upward crossing and the two half-cycles merge
+  // into a gap of roughly 2 T. The M4 window runs four 5 s screenshots
+  // alongside the sampler, so a stall or two is normal, and the raw median
+  // then drifts upward: a 2.1 s lantern has read 2.35 s this way, close
+  // enough to its 2.4 s neighbour to look like a physics bug when the sim
+  // is exact (ω = √(g'/L) with g' = 4π²L/T², so ω = 2π/T whatever the cord
+  // length). Merged gaps are dropped; if too many of them are merged the
+  // window is not worth a number, so null hands the row to the DFT.
+  const clean = gaps.filter((g) => g < 1.5 * median(gaps));
+  if (clean.length < 3 || clean.length < gaps.length * 0.6) return null;
+  return median(clean);
 }
 
 /** Subtracts a centred moving mean of `windowS` seconds from `values`. */
@@ -3779,24 +3834,24 @@ async function a11yChecks({ page, live, id, route, theme }) {
       'button with name, after <main>',
     );
     if (a.slip) {
-      await page
-        .locator('[data-festival-root] button[aria-expanded]')
-        .first()
-        .focus();
-      await page.keyboard.press('Enter');
-      await page.waitForTimeout(250);
-      const open = await page.evaluate(() =>
-        document
-          .querySelector('[data-festival-root] button[aria-expanded]')
-          ?.getAttribute('aria-expanded'),
-      );
-      // The disclosure toggles: a second Enter folds the card, a third opens it.
+      // The slip opens on FOCUS by design (RiddleSlip `onFocus → openAs
+      // ('focus')`), so the sequence a keyboard user actually walks is
+      // focus → open, Enter → closed, Enter → open, Escape → closed with
+      // focus back on the strip. The old probe pressed Enter before reading
+      // the first state, which put the whole expectation off by one and
+      // failed a slip that behaves exactly as specified.
       const expanded = () =>
         page.evaluate(() =>
           document
             .querySelector('[data-festival-root] button[aria-expanded]')
             ?.getAttribute('aria-expanded'),
         );
+      await page
+        .locator('[data-festival-root] button[aria-expanded]')
+        .first()
+        .focus();
+      await page.waitForTimeout(250);
+      const onFocus = await expanded();
       await page.keyboard.press('Enter');
       await page.waitForTimeout(250);
       const toggledOff = await expanded();
@@ -3804,21 +3859,31 @@ async function a11yChecks({ page, live, id, route, theme }) {
       await page.waitForTimeout(250);
       const toggledOn = await expanded();
       check(
-        open === 'true' && toggledOff === 'false' && toggledOn === 'true',
+        onFocus === 'true' && toggledOff === 'false' && toggledOn === 'true',
         id('A.toggle'),
-        'Enter on the open slip folds it; Enter again unfolds it',
-        `${open} → ${toggledOff} → ${toggledOn}`,
+        'focus opens the slip; Enter folds it; Enter again unfolds it',
+        `focus=${onFocus} → ${toggledOff} → ${toggledOn}`,
         'true → false → true',
       );
       await page.keyboard.press('Escape');
       await page.waitForTimeout(250);
-      const closed = await expanded();
+      const afterEsc = await page.evaluate(() => {
+        const b = document.querySelector(
+          '[data-festival-root] button[aria-expanded]',
+        );
+        return {
+          expanded: b?.getAttribute('aria-expanded'),
+          onPull: document.activeElement === b,
+        };
+      });
       check(
-        open === 'true' && closed === 'false',
+        toggledOn === 'true' &&
+          afterEsc.expanded === 'false' &&
+          afterEsc.onPull,
         id('A.escape'),
-        'Enter opens the slip, Escape closes it',
-        `open=${open} closed=${closed}`,
-        'true → false',
+        'Escape closes the open slip and leaves focus on the strip',
+        `open=${toggledOn} closed=${afterEsc.expanded} focus on strip=${afterEsc.onPull}`,
+        'true → false, strip focused',
       );
       // Escape from the 谜底 link returns focus to the strip button (the
       // disclosure's trigger) without re-opening it.
@@ -3928,30 +3993,56 @@ async function a11yChecks({ page, live, id, route, theme }) {
       'aria-label "Full moon, …"',
     );
     // Focus rings on the moon button and the poem figure: page-side ink,
-    // ≥ 3:1 against the page in both themes (WCAG 2.4.11). A keyboard event
-    // first so the scripted focus counts as :focus-visible.
-    await page.keyboard.press('Tab');
-    const rings = await page.evaluate(() => {
-      const root = document.querySelector('[data-festival-root]');
-      const moon = root?.querySelector('button[aria-label^="Full moon"]');
-      const figure = root?.querySelector('figure');
-      const column = figure?.querySelector('[class*="column"]');
-      const parse = (c) =>
-        c
-          .match(/[\d.]+/g)
-          ?.slice(0, 3)
-          .map(Number) ?? null;
-      const ring = (el, target) => {
+    // ≥ 3:1 against the page in both themes (WCAG 2.4.11).
+    //
+    // Two things make this probe delicate, and the old one got both wrong:
+    // `getComputedStyle` hands back a LIVE declaration, so reading
+    // `outlineStyle` after `el.blur()` read the unfocused value ('none') and
+    // every row failed with "no outline while focused"; and :focus-visible
+    // follows the input modality, so blurring back to <body> drops the
+    // keyboard modality and the next scripted `.focus()` draws no ring
+    // either. Each element is therefore probed on its own: a real key press
+    // first, then `focus({ focusVisible: true })` (ignored by engines that
+    // do not support the option — the key press already covers them), then
+    // every value snapshotted before anything else touches focus. Nothing
+    // is blurred; moving to the next element is the only focus change.
+    const ringOf = async (which) => {
+      await page.keyboard.press('Tab');
+      return page.evaluate((which) => {
+        const root = document.querySelector('[data-festival-root]');
+        const el =
+          which === 'moon'
+            ? root?.querySelector('button[aria-label^="Full moon"]')
+            : root?.querySelector('figure');
+        const target =
+          which === 'moon' ? el : el?.querySelector('[class*="column"]');
         if (!el || !target) return null;
-        el.focus();
+        el.focus({ focusVisible: true });
         const s = getComputedStyle(target);
-        const colour = parse(s.outlineColor);
+        // Snapshot while the element still holds focus.
+        const style = s.outlineStyle;
         const width = parseFloat(s.outlineWidth);
-        el.blur();
-        return s.outlineStyle !== 'none' && width > 0 ? colour : null;
-      };
-      return { moon: ring(moon, moon), figure: ring(figure, column) };
-    });
+        const raw = s.outlineColor;
+        const m =
+          raw
+            .match(/[\d.]+/g)
+            ?.slice(0, 3)
+            .map(Number) ?? null;
+        // A `color-mix()` ring computes to `color(srgb r g b)` with 0..1
+        // channels; read as 0..255 it looks near-black and every ring would
+        // pass on a false contrast. Same rule as the census parser above.
+        const colour = m
+          ? /^color\(srgb/.test(raw)
+            ? m.map((v) => Math.round(v * 255))
+            : m
+          : null;
+        return style !== 'none' && width > 0 ? colour : null;
+      }, which);
+    };
+    const rings = {
+      moon: await ringOf('moon'),
+      figure: await ringOf('figure'),
+    };
     for (const [name, colour] of Object.entries(rings)) {
       if (!colour) {
         fail(
@@ -4191,13 +4282,16 @@ async function perfChecks({ page, live, vp, route, responses, layout }) {
     );
     const chunkBytes = chunks.reduce((a, c) => a + c.bytes, 0);
     const compressed = chunks.every((c) => c.encoding !== 'identity');
+    const dev = await isDevTarget(page);
     perfRow(
       'festivalChunkBytes',
       r,
       chunkBytes,
       '≤ 46080 gz (excl. three)',
-      chunks.length && compressed ? chunkBytes <= 46080 : null,
-      `${chunks.length} chunks, ${compressed ? 'compressed' : 'dev/uncompressed: recorded, not asserted'}`,
+      dev || !chunks.length || !compressed ? null : chunkBytes <= 46080,
+      dev
+        ? `${chunks.length} chunks, ${chunkBytes} B — ${DEV_NOTE}`
+        : `${chunks.length} chunks, ${compressed ? 'compressed' : 'uncompressed: recorded, not asserted'}`,
     );
   }
 }
@@ -4216,14 +4310,20 @@ async function baselineComparisons({ browser }) {
       if (flag === '1') await waitForLayer(page);
       await waitSettled(page, 6000);
       await page.waitForTimeout(1500);
-      return page.evaluate(readOverlay);
+      const overlay = await page.evaluate(readOverlay);
+      return { ...overlay, dev: await isDevTarget(page) };
     } finally {
       await ctx.close();
     }
   };
   const on = await load('1');
   const off = await load('0');
-  if (on.heap !== null && off.heap !== null) {
+  if (on.dev) {
+    // Unminified modules and the HMR client dominate the heap on `next dev`
+    // (≈ 35 MB against a 12 MB budget); the row only means something on a
+    // production build.
+    perfRow('heapDeltaMB', '/blog', null, '≤ 12', null, DEV_NOTE);
+  } else if (on.heap !== null && off.heap !== null) {
     const delta = (on.heap - off.heap) / 1048576;
     perfRow(
       'heapDeltaMB',

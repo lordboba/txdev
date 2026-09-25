@@ -1190,6 +1190,11 @@ export const createLanternObjects: LanternObjectsFactory = (renderer) => {
       const poolPeak =
         light.pool.peakLight +
         (frame.layout.poolPeak - light.pool.peakLight) * night;
+      // A phone's lantern lives in a 174×78 px free block with copy right
+      // under it, so its halo is sized to die inside that block (§3.3, V10).
+      const haloWidthFactor = frame.layout.mobile
+        ? light.halo.widthFactorMobile
+        : light.halo.widthFactor;
 
       for (let i = 0; i < specs.length; i += 1) {
         const spec = specs[i];
@@ -1242,13 +1247,9 @@ export const createLanternObjects: LanternObjectsFactory = (renderer) => {
         _b.set(0, CORD_END_Y, 0).applyMatrix4(_matrix);
         writeCord(i, _a, _b, alpha);
 
-        // Halo: centred on the body, 2.8× width, under the paper.
+        // Halo: centred on the body, 2.8× width (2.1× on a phone), under the paper.
         _quaternion.identity();
-        _scale.set(
-          width * light.halo.widthFactor,
-          width * light.halo.widthFactor,
-          1,
-        );
+        _scale.set(width * haloWidthFactor, width * haloWidthFactor, 1);
         _matrix.compose(_position, _quaternion, _scale);
         halos.setMatrixAt(i, _matrix);
         haloColor.setXYZ(i, haloTint.x, haloTint.y, haloTint.z);

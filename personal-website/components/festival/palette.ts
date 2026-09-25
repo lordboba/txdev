@@ -96,8 +96,24 @@ export const floretSpeciesMix = [
 
 /** Light and alpha numbers (§2.2, §2.3, §3.1, §5.3). Dimensionless. */
 export const light = {
-  /** Halo: additive billboard under the paper. */
-  halo: { widthFactor: 2.8, falloffPow: 2.4, peakDark: 0.35, peakLight: 0 },
+  /**
+   * Halo: additive billboard under the paper.
+   *
+   * `widthFactorMobile` is the phone's own figure (§3.3, V10). The lantern
+   * there hangs in a 174×78 px free block (x200–374, y62–140 on 390×844)
+   * with the article's copy immediately under it, not a gutter. A radial
+   * `pow(1 − r, 2.4)` at peak 0.35 still moves an 8-bit channel out to 88%
+   * of its radius, so 2.8× on the 44 px body reached 54 px below the body
+   * centre (y147) and washed the H1's rect. 2.1× dies 41 px out, at y134,
+   * inside the block's lower edge.
+   */
+  halo: {
+    widthFactor: 2.8,
+    widthFactorMobile: 2.1,
+    falloffPow: 2.4,
+    peakDark: 0.35,
+    peakLight: 0,
+  },
   /**
    * Pool: NormalBlending ellipse on the page at lantern z − 0.2, centred
    * `centreDropBodyHeights` below the lantern's bottom collar, falloff
@@ -105,6 +121,14 @@ export const light = {
    * 0.041 onto the copy column on the 176 / 240 px gutters, over V2's 0.02).
    * On the grey Bench set (`/`) it is the only light cue, so it peaks at
    * 0.22 in the saturated `paperHot` (a grey wall needs chroma, not just alpha).
+   *
+   * `peakMobile` is 0: the pool is light landing on the PAGE 0.4 body
+   * heights below the bottom collar, and on a phone that page is the
+   * article. §2.2 measures pool alpha < 0.02 at the nearest copy edge; on
+   * mobile `/blog*` that edge is 28 px below the lantern, so the ellipse
+   * (visible 79 px below its centre, down to y206) cannot both fit and
+   * read. The phone keeps the halo — light in the air around the paper —
+   * and drops the pool.
    */
   pool: {
     widthFactor: 3.2,
@@ -114,6 +138,7 @@ export const light = {
     falloffPow: 2.0,
     peakDark: 0.14,
     peakHome: 0.22,
+    peakMobile: 0,
     homeTint: palette.paperHot,
     peakLight: 0,
     zOffset: -0.2,
