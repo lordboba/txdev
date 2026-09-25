@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, type AnimationEvent, type MouseEvent } from 'react';
+import { useId, useState, type AnimationEvent, type MouseEvent } from 'react';
 import { Bench } from '@/components/concept/bench/Bench';
 import { usePrefersReducedMotion } from '@/components/concept/shared/runtime';
 import styles from './BenchHome.module.css';
@@ -11,6 +11,10 @@ export function BenchHome({ visitorCount }: { visitorCount: number | null }) {
   const router = useRouter();
   const prefersReducedMotion = usePrefersReducedMotion();
   const [launching, setLaunching] = useState(false);
+  /* SVG ids are document-global; a literal one would collide the moment two
+   * BenchHomes share a page (a preview strip, a comparison board) and leave
+   * both moons pointing at the first mask. */
+  const moonPhaseMaskId = useId();
 
   /**
    * Plain left-clicks (and keyboard activation, which arrives as a click)
@@ -112,7 +116,7 @@ export function BenchHome({ visitorCount }: { visitorCount: number | null }) {
                   aria-hidden="true"
                   focusable="false"
                 >
-                  <mask id="benchDockMoonPhase">
+                  <mask id={moonPhaseMaskId}>
                     <rect x="0" y="0" width="24" height="24" fill="#fff" />
                     <circle
                       className={styles.moonShadow}
@@ -127,7 +131,7 @@ export function BenchHome({ visitorCount }: { visitorCount: number | null }) {
                     cx="12"
                     cy="12"
                     r="8"
-                    mask="url(#benchDockMoonPhase)"
+                    mask={`url(#${moonPhaseMaskId})`}
                   />
                 </svg>
               </Link>
