@@ -13,9 +13,10 @@
  *     --poem-x (column left)     --poem-y (column top)  --poem-theta (deg)
  *     --colophon-x / --colophon-y (block left / top; plus --colophon-w on `/`)
  *     --translation-x / --translation-y (block left / top; plus --translation-w)
- *     --moon-x / --moon-y (disc centre) / --moon-d (diameter)
- *   The slip is the only per-frame mover and is pinned with a transform, so
- *   a frame never dirties layout.
+ *     --moon-x / --moon-y (disc centre) / --moon-d (diameter): the anchor,
+ *     written by the glide; --moon-dx / --moon-dy: the pointer parallax
+ *   The slip and the moon's parallax are the only per-frame movers and both
+ *   are transforms, so a frame never dirties layout.
  * - Glyph reveals read `--glyph-start`, `--glyph-stagger` and `--glyph-ms`
  *   from the element (defaults are the §4.1 mount numbers; the layer sets the
  *   §4.2 route numbers on re-entry) and each glyph span carries `--i`.
@@ -561,6 +562,8 @@
   cursor: default;
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
+  /* The §4.5 parallax (0.85 of the pointer offset), a transform: no layout per frame. */
+  transform: translate3d(var(--moon-dx, 0px), var(--moon-dy, 0px), 0);
 }
 
 .moon:focus-visible {

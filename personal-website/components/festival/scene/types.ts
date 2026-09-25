@@ -563,10 +563,18 @@ export const FESTIVAL_DATA_ATTRS = {
 
 /** CSS custom properties written on the overlay root once per frame. */
 export const FESTIVAL_CSS_VARS = {
-  /** Moon centre and diameter, px, for the sky tint and the moon button. */
+  /**
+   * Moon centre and diameter, px, for the sky tint and the moon button:
+   * the anchor only, written by the glide and a resize. The pointer parallax
+   * goes into `--moon-dx/-dy` (a transform on both), never here: the sky
+   * gradient's `circle at` re-rasters the whole layer and the button's
+   * `left/top` re-lay out on every value change.
+   */
   moonX: '--moon-x',
   moonY: '--moon-y',
   moonD: '--moon-d',
+  moonDx: '--moon-dx',
+  moonDy: '--moon-dy',
   /** `uNight` 0..1; multiplies the sky-tint opacity. */
   night: '--festival-night',
   /** Slip pin: the bottom-collar point of lantern B and 0.8× its θ (deg). */

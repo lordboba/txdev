@@ -1032,9 +1032,13 @@ export function createFestivalRuntime(
     const v = pins.values;
 
     v.night = theme.night * sky;
-    v.moonX = moonOn ? m.centre.x + parallax.x * moonParallax : null;
-    v.moonY = moonOn ? m.centre.y + parallax.y * moonParallax : null;
+    v.moonX = moonOn ? m.centre.x : null;
+    v.moonY = moonOn ? m.centre.y : null;
     v.moonD = moonOn ? m.diameter : null;
+    // Parallax as a translate on the sky and the button (§4.5): compositor
+    // only, while a moving `--moon-x/y` repainted the gradient and laid out.
+    v.moonDx = moonOn ? parallax.x * moonParallax : null;
+    v.moonDy = moonOn ? parallax.y * moonParallax : null;
     v.slipX = slipX;
     v.slipY = slipY;
     v.slipTheta = slipTheta;
