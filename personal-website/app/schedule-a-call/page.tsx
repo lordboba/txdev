@@ -25,9 +25,7 @@ export default function ScheduleCallPage() {
       </Link>
 
       <header className="rounded-sm border border-divider bg-surface p-6 sm:p-8">
-        <p className="font-mono text-xs font-medium uppercase tracking-[0.22em] text-muted">
-          {'// schedule a call'}
-        </p>
+        <p className="eyebrow">{'// schedule a call'}</p>
         <h1 className="mt-4 max-w-3xl font-display text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
           Book a 15-minute chat.
         </h1>

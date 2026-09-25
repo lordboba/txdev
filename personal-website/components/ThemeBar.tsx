@@ -134,7 +134,7 @@ export function ThemeBar({ compact = false }: { compact?: boolean }) {
   return (
     <footer className="mt-auto border-t border-divider bg-surface/95 backdrop-blur">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-        <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.18em] text-muted">
+        <div className="label-md flex items-center gap-2 uppercase text-muted">
           <span>Theme controls</span>
           <span className="size-1 rounded-full bg-muted/60" />
         </div>

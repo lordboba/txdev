@@ -175,13 +175,34 @@ a:hover {
 }
 
 /* ═══ Utility Classes ═══ */
-.eyebrow {
-  font-family: var(--font-mono), monospace;
-  font-size: 0.72rem;
-  font-weight: 400;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: var(--muted);
+/*
+ * One label scale. `.eyebrow` is the site eyebrow (--label-xs); `.label-sm`
+ * carries datelines, read-times and tags; `.label-md` the footer controls.
+ * Sizes and tracking come only from the --label-* tokens in :root. They live
+ * in the components layer so a Tailwind colour utility can still recolour one.
+ */
+@layer components {
+  .eyebrow {
+    font-family: var(--font-mono), monospace;
+    font-size: var(--label-xs);
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: var(--label-xs-tracking);
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .label-sm {
+    font-family: var(--font-mono), monospace;
+    font-size: var(--label-sm);
+    letter-spacing: var(--label-sm-tracking);
+  }
+
+  .label-md {
+    font-family: var(--font-mono), monospace;
+    font-size: var(--label-md);
+    letter-spacing: var(--label-md-tracking);
+  }
 }
 
 /*
@@ -2014,6 +2035,8 @@ button {
   display: inline-flex;
   align-items: baseline;
   gap: 0.5em;
+  /* No-op on Plex Sans (its default figures are already tabular, measured);
+     kept so a face with proportional defaults picks it up. */
   font-variant-numeric: tabular-nums;
 }
 

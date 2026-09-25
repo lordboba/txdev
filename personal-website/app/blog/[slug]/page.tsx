@@ -63,7 +63,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
       <article className="rounded-sm border border-divider bg-surface p-5 sm:p-8">
         <header className="space-y-5 border-b border-divider pb-8">
-          <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-muted">
+          <div className="label-sm flex flex-wrap items-center gap-2 text-muted">
             <span>{post.formattedDate}</span>
             <span className="size-1.5 rounded-full bg-divider" />
             <span className="text-accent">{post.readTime}</span>
@@ -78,7 +78,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             {post.tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-sm border border-divider px-2.5 py-1 text-[11px] font-mono text-accent transition-colors duration-200"
+                className="label-sm rounded-sm border border-divider px-2.5 py-1 text-accent transition-colors duration-200"
               >
                 {tag}
               </span>
