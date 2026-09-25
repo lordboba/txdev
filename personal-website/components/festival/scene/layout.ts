@@ -81,6 +81,13 @@ export const CARD_GAP_PX = 8;
 export const CARD_MAX_PX = 236;
 export const CARD_HEIGHT_PX = 150;
 export const CARD_CLEARANCE_PX = 8;
+/**
+ * The card hangs level from the strip's swinging foot (it counter-rotates
+ * the strip's 0.8× θ), so it translates sideways with the foot: the 152 px
+ * strip at 0.8 × 8.6° (a 2.2 gust) moves it ≈ 18 px. The column side is
+ * inset by that much so the 8 px rule holds at the peak.
+ */
+export const CARD_SWING_INSET_PX = 18;
 
 /** Tailwind container of each NavBar route: `max-w-*` minus `lg:px-8`. */
 const CONTAINERS: Partial<
@@ -1140,7 +1147,8 @@ function resolveLantern(
 
 /**
  * The riddle card under a slip: centred on the strip, then shifted into the
- * gutter (between the viewport edge and the copy column, 8 px clear of both)
+ * gutter (between the viewport edge and the copy column: 8 px clear of the
+ * edge, 8 + 18 px clear of the column so a gust's swing never reaches it)
  * and narrowed to the gutter when 28ch does not fit; dropped when it still
  * meets an exclusion rect (H1, nav, Calendly).
  */
@@ -1152,11 +1160,10 @@ function resolveCard(
   const { viewport, container } = frame;
   const centre = slip.x + slip.w / 2;
   const onLeft = !container || centre < viewport.w / 2;
-  const lo = onLeft
-    ? CARD_CLEARANCE_PX
-    : (container?.right ?? 0) + CARD_CLEARANCE_PX;
+  const columnSide = CARD_CLEARANCE_PX + CARD_SWING_INSET_PX;
+  const lo = onLeft ? CARD_CLEARANCE_PX : (container?.right ?? 0) + columnSide;
   const hi = onLeft
-    ? (container?.left ?? viewport.w) - CARD_CLEARANCE_PX
+    ? (container?.left ?? viewport.w) - columnSide
     : viewport.w - CARD_CLEARANCE_PX;
   const w = Math.min(CARD_MAX_PX, hi - lo);
 

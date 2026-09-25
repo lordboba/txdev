@@ -216,7 +216,13 @@
   hanging-punctuation: first;
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-4px);
+  /*
+   * The strip swings 0.8× θ about the collar; the card counter-rotates and
+   * hangs level from the foot (it only translates with it, ≈ ±18 px at a
+   * gust), so a 235 px placard of italic never tilts into the copy column.
+   */
+  transform: translateY(-4px) rotate(calc(-1 * var(--slip-theta, 0deg)));
+  transform-origin: 50% 0;
   transition:
     opacity 220ms var(--festival-ease-enter),
     transform 220ms var(--festival-ease-enter),
@@ -227,7 +233,7 @@
   pointer-events: auto;
   opacity: 1;
   visibility: visible;
-  transform: none;
+  transform: rotate(calc(-1 * var(--slip-theta, 0deg)));
   transition:
     opacity 220ms var(--festival-ease-enter),
     transform 220ms var(--festival-ease-enter),

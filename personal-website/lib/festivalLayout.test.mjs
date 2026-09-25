@@ -167,8 +167,9 @@ test('§3.3 `/blog`: three lanterns, slip on B, moon anchor (1268, 185, 150)', (
   assert.deepEqual(span(lantern(layout, 'A').bodyRect), [52, 140, 118, 194]);
   assert.deepEqual(span(lantern(layout, 'B').bodyRect), [186, 242, 176, 224]);
   assert.deepEqual(span(lantern(layout, 'B').slipRect), [195, 233, 238, 390]);
-  // The card hangs 8 px under the strip, inside the gutter (8 px clear of x304).
-  assert.deepEqual(span(lantern(layout, 'B').cardRect), [60, 296, 398, 548]);
+  // The card hangs 8 px under the strip, inside the gutter: 8 + 18 px clear
+  // of x304 so its gust swing (≈ 18 px at the foot) never reaches the column.
+  assert.deepEqual(span(lantern(layout, 'B').cardRect), [42, 278, 398, 548]);
   assert.deepEqual(span(lantern(layout, 'C').bodyRect), [1357, 1413, 196, 244]);
   assert.deepEqual(layout.moon, { centre: { x: 1268, y: 185 }, diameter: 150 });
   assert.deepEqual(span(layout.text.poem), [1178, 1200, 276, 402]);
@@ -343,9 +344,9 @@ test('px ↔ world: 100 px per unit at z 0, camera z 16.79 at 900 px tall', () =
 
 test('§6.A3 the riddle card never leaves the gutter: inside the viewport, clear of the copy column and every exclusion', () => {
   const expected = {
-    '/blog': [60, 296, 398, 548],
-    '/past-experience': [8, 168, 429, 579],
-    '/schedule-a-call': [8, 232, 418, 568],
+    '/blog': [42, 278, 398, 548],
+    '/past-experience': [8, 150, 429, 579],
+    '/schedule-a-call': [8, 214, 418, 568],
   };
 
   for (const [path, rect] of Object.entries(expected)) {
@@ -361,8 +362,8 @@ test('§6.A3 the riddle card never leaves the gutter: inside the viewport, clear
 
     assert.ok(container, `${path} has a copy-column exclusion`);
     assert.ok(
-      slip.cardRect.x + slip.cardRect.w <= container.x - 8,
-      `${path} card ends ≥ 8 px before the copy column`,
+      slip.cardRect.x + slip.cardRect.w <= container.x - 8 - 18,
+      `${path} card ends ≥ 8 px before the copy column at the peak of an 18 px swing`,
     );
     assert.ok(slip.cardRect.x >= 8, `${path} card ≥ 8 px from the edge`);
     for (const e of layout.exclusions) {
