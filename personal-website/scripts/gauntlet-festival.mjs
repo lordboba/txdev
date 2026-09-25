@@ -976,7 +976,18 @@ function crossingPeriod(times, values) {
     .slice(1)
     .map((t, k) => t - crossings[k])
     .sort((a, b) => a - b);
-  return gaps[Math.floor(gaps.length / 2)];
+  const median = (g) => g[Math.floor(g.length / 2)];
+  // A stalled frame hides one upward crossing and the two half-cycles merge
+  // into a gap of roughly 2 T. The M4 window runs four 5 s screenshots
+  // alongside the sampler, so a stall or two is normal, and the raw median
+  // then drifts upward: a 2.1 s lantern has read 2.35 s this way, close
+  // enough to its 2.4 s neighbour to look like a physics bug when the sim
+  // is exact (ω = √(g'/L) with g' = 4π²L/T², so ω = 2π/T whatever the cord
+  // length). Merged gaps are dropped; if too many of them are merged the
+  // window is not worth a number, so null hands the row to the DFT.
+  const clean = gaps.filter((g) => g < 1.5 * median(gaps));
+  if (clean.length < 3 || clean.length < gaps.length * 0.6) return null;
+  return median(clean);
 }
 
 /** Subtracts a centred moving mean of `windowS` seconds from `values`. */
