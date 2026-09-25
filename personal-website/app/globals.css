@@ -365,10 +365,18 @@ a:hover {
 }
 
 /* ═══ Blog Prose ═══ */
-/* The reading column: a 66ch measure centred in the card. */
-.blog-prose {
+/*
+ * The reading column: a 66ch measure centred in the card. The column wraps
+ * the article header as well as the prose, so title, rule and body share one
+ * left edge; its font-size is the body size so `ch` measures the same width.
+ */
+.blog-column {
   max-width: 66ch;
   margin-inline: auto;
+  font-size: 1.0625rem;
+}
+
+.blog-prose {
   font-size: 1.0625rem;
   line-height: 1.6;
   color: var(--foreground);

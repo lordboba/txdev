@@ -62,32 +62,34 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       </div>
 
       <article className="rounded-sm border border-divider bg-surface p-5 sm:p-8">
-        <header className="space-y-5 border-b border-divider pb-8">
-          <div className="label-sm flex flex-wrap items-center gap-2 text-muted">
-            <span>{post.formattedDate}</span>
-            <span className="size-1.5 rounded-full bg-divider" />
-            <span className="text-accent">{post.readTime}</span>
-          </div>
-          <h1 className="display display-2 text-foreground">{post.title}</h1>
-          <p className="text-base leading-8 text-muted sm:text-lg">
-            {post.excerpt}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {post.tags.map((tag) => (
-              <span
-                key={tag}
-                className="label-sm rounded-sm border border-divider px-2.5 py-1 text-accent transition-colors duration-200"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        </header>
+        <div className="blog-column">
+          <header className="space-y-5 border-b border-divider pb-8">
+            <div className="label-sm flex flex-wrap items-center gap-2 text-muted">
+              <span>{post.formattedDate}</span>
+              <span className="size-1.5 rounded-full bg-divider" />
+              <span className="text-accent">{post.readTime}</span>
+            </div>
+            <h1 className="display display-2 text-foreground">{post.title}</h1>
+            <p className="text-base leading-8 text-muted sm:text-lg">
+              {post.excerpt}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {post.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="label-sm rounded-sm border border-divider px-2.5 py-1 text-accent transition-colors duration-200"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </header>
 
-        <div
-          className="blog-prose mt-10"
-          dangerouslySetInnerHTML={{ __html: articleHtml }}
-        />
+          <div
+            className="blog-prose mt-10"
+            dangerouslySetInnerHTML={{ __html: articleHtml }}
+          />
+        </div>
       </article>
     </div>
   );
