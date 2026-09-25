@@ -39,6 +39,8 @@
   /* Display scale (Cormorant). Cormorant's floor is 20px; 1 is the Bench H1. */
   --display-1: clamp(2.6rem, 4.4vw, 4.35rem); /* page H1 */
   --display-2: clamp(1.75rem, 2.6vw, 2.25rem); /* section H2, post title */
+  /* Post section H2: between 2 and 3, tuned against the 17px reading column. */
+  --display-2b: clamp(1.5rem, 2vw, 1.75rem);
   --display-3: 1.25rem; /* card H2/H3 */
 
   /* Terminal-specific */
@@ -401,7 +403,9 @@ a:hover {
 
 /*
  * Markdown headings are demoted one level by the renderer (`#` → h2), so the
- * post title is the only h1. Sections take display-3; sub-sections are Plex.
+ * post title is the only h1. Sections take display-2b: display-3 (20px) is
+ * tuned for cards with 14px copy, and Cormorant's low x-height made it read
+ * smaller than the 17px body. Sub-sections are Plex.
  */
 .blog-prose h2,
 .blog-prose h3,
@@ -414,12 +418,12 @@ a:hover {
 
 .blog-prose h2 {
   font-family: var(--font-display-stack);
-  font-size: var(--display-3);
-  font-weight: 600;
+  font-size: var(--display-2b);
+  font-weight: 500;
   font-kerning: normal;
   font-variant-numeric: lining-nums;
-  letter-spacing: 0.005em;
-  line-height: 1.15;
+  letter-spacing: 0;
+  line-height: 1.1;
 }
 
 .blog-prose h3,
