@@ -1,9 +1,9 @@
 /**
  * Falling things (bible §5.2, §2.3): one InstancedMesh, one atlas, one draw
- * call. The sim owns motion and respawn; this module paints the atlas,
- * composes matrices and colours from `FallInstance`s, and exposes the
- * species-colour rules so whoever assigns colours (sim, integrator, tests)
- * uses one source.
+ * call. The sim owns motion and respawn (absolute CSS px); this module paints
+ * the atlas, composes matrices and colours from `FallInstance`s, and exposes
+ * the warm species-colour rule (the moon cooling lives in palette.ts so the
+ * sim and this file share one source).
  *
  * Atlas encoding (1024×512, four 256-px columns, sRGB):
  *   R = shade multiplier on the instance colour (1 = the species colour)
@@ -17,9 +17,9 @@
 import * as THREE from 'three';
 
 import {
+  coolTowardMoon,
   floretSpeciesMix,
   hexToRgb01,
-  light,
   palette,
   type Rgb01,
 } from '../palette.ts';
@@ -72,11 +72,18 @@ export function cellUvRect(
   ];
 }
 
+/** The four UV rects, computed once (the update loop allocates nothing). */
+const CELL_UVS: readonly (readonly [number, number, number, number])[] = [
+  cellUvRect(0),
+  cellUvRect(1),
+  cellUvRect(2),
+  cellUvRect(3),
+];
+
 // ---------------------------------------------------------------------------
 // Colours (§2.3)
 // ---------------------------------------------------------------------------
 
-const FROST = hexToRgb01(palette.frost);
 const LEAF_TOP = hexToRgb01(palette.leafGreen.top);
 const LEAF_UNDER = hexToRgb01(palette.leafGreen.underside);
 const GINKGO_FROM = hexToRgb01(palette.ginkgo.from);
@@ -121,29 +128,8 @@ export function speciesColor(species: FallSpecies, u: number, v = u): Rgb01 {
   return FLORET_MIX[0].color;
 }
 
-/**
- * Cools a warm colour toward `frost` by moon proximity (§2.3): florets
- * nearer the moon than any lantern take its light. The bible writes the
- * ratio as `dMoon / (dMoon + dLantern)`, which would cool florets at the
- * lantern; the prose intent ("nearer to it than to any lantern") is kept, so
- * the ratio is `dLantern / (dMoon + dLantern)`. No moon → warm.
- */
-export function coolTowardMoon(
-  warm: Rgb01,
-  dMoon: number | null,
-  dNearestLantern: number,
-): Rgb01 {
-  if (dMoon === null || !Number.isFinite(dMoon)) return warm;
-
-  const total = dMoon + dNearestLantern;
-  const ratio = total > 0 ? dNearestLantern / total : 0;
-  const [lo, hi] = light.floret.coolSmoothstep;
-  const t = Math.max(0, Math.min(1, (ratio - lo) / (hi - lo)));
-  const s = t * t * (3 - 2 * t);
-  const cool = mix(warm, FROST, light.floret.coolMix);
-
-  return mix(warm, cool, s);
-}
+/** The §2.3 moon cooling rule; one source for the sim and the tests. */
+export { coolTowardMoon };
 
 // ---------------------------------------------------------------------------
 // Atlas painter
@@ -372,6 +358,7 @@ const _euler = new THREE.Euler();
 const _scale = new THREE.Vector3();
 const _color = new THREE.Color();
 const _world = { x: 0, y: 0, z: 0 };
+const _px = { x: 0, y: 0 };
 
 /** One InstancedMesh, one atlas, one draw call. */
 export const createFallObjects: FallObjectsFactory = (renderer) => {
@@ -483,13 +470,14 @@ export const createFallObjects: FallObjectsFactory = (renderer) => {
   const objects: FallObjects = {
     object: group,
     atlas,
+    geometry,
 
     build(count) {
       mesh.count = Math.min(count, MAX_FALL_INSTANCES);
       slots = [];
     },
 
-    update(instances, frame) {
+    update(instances, frame, alphaScale = 1) {
       const count = Math.min(instances.length, mesh.count);
 
       if (slots.length !== count) {
@@ -505,17 +493,15 @@ export const createFallObjects: FallObjectsFactory = (renderer) => {
           }, []);
       }
 
-      const emitters = frame.layout.florets.emitters;
-
       for (let i = 0; i < count; i += 1) {
         const instance = instances[i];
         const slot = slots[i];
         const band = DEPTH_BANDS[instance.band];
-        const emitter = emitters[instance.emitter];
-        const px = (emitter?.x ?? 0) + instance.x;
-        const py = (emitter?.y ?? 0) + instance.y;
 
-        pxToWorld({ x: px, y: py }, frame.viewport, band.z, _world);
+        // The sim publishes absolute CSS px.
+        _px.x = instance.x;
+        _px.y = instance.y;
+        pxToWorld(_px, frame.viewport, band.z, _world);
 
         const cell = FALL_CELLS[instance.atlasCell];
         const sizeWorld =
@@ -540,11 +526,14 @@ export const createFallObjects: FallObjectsFactory = (renderer) => {
         _color.setRGB(r, g, b, THREE.SRGBColorSpace);
         mesh.setColorAt(slot, _color);
 
-        const [ux, uy, uw, uh] = cellUvRect(instance.atlasCell);
+        const uv = CELL_UVS[instance.atlasCell];
 
-        uvRects.setXYZW(slot, ux, uy, uw, uh);
+        uvRects.setXYZW(slot, uv[0], uv[1], uv[2], uv[3]);
         backTints.setX(slot, instance.species === 'leaf' ? 1 : 0);
-        alphas.setX(slot, Math.max(0, Math.min(1, instance.alpha)));
+        alphas.setX(
+          slot,
+          Math.max(0, Math.min(1, instance.alpha * alphaScale)),
+        );
       }
 
       mesh.instanceMatrix.needsUpdate = true;

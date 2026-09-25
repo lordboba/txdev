@@ -530,8 +530,8 @@ test('§4.2 route change: candle out, raise, then a fresh lower-in on the next l
     'the candle is already going out when the lantern starts to rise',
   );
   assert.ok(
-    riseWhenLitOut !== null && riseWhenLitOut < 40,
-    `the candle is out before the rise ends (rise ${riseWhenLitOut})`,
+    riseWhenLitOut !== null && riseWhenLitOut < 8,
+    `the candle is out before the rise passes 8 px (rise ${riseWhenLitOut})`,
   );
   assert.equal(sim.state.lanterns[0].alpha, 0);
   assert.equal(sim.state.lanterns[0].rise, 40);
@@ -578,4 +578,174 @@ test('§4.2 route change: candle out, raise, then a fresh lower-in on the next l
       (l) => l.lit === 1 && l.alpha === 1 && l.cordLength === l.cordTarget,
     ),
   );
+});
+
+test('§5.2 exact species counts: 22 florets, 8 leaves, 6 ginkgo at 36', () => {
+  const layout = blog();
+  const sim = createSim({
+    seed: 7,
+    layout,
+    wind: stubWind(),
+    night: 1,
+    reducedMotion: false,
+  });
+  const counts = { floret: 0, leaf: 0, ginkgo: 0 };
+
+  for (const f of sim.state.fall) counts[f.species] += 1;
+  assert.deepEqual(counts, { floret: 22, leaf: 8, ginkgo: 6 });
+  for (const f of sim.state.fall) {
+    if (f.species === 'floret')
+      assert.ok(f.sizePx >= 16 && f.sizePx <= 26, 'fascicle tile 16–26 px');
+  }
+});
+
+test('§4.1 / §4.3 the pool row runs catch + 150 ms over 500 ms, and a snuff cancels a pending catch', () => {
+  const layout = blog();
+  const wind = stubWind();
+  const sim = createSim({
+    seed: 1,
+    layout,
+    wind,
+    night: 1,
+    reducedMotion: false,
+  });
+  const hero = layout.lanterns[0];
+
+  sim.lowerIn(hero.id, { delayS: 0, durationS: 0 });
+  sim.light(hero.id, { delayS: 0.1, durationS: 0.7, target: 1 });
+
+  let litStart = null;
+  let poolStart = null;
+  let poolDone = null;
+
+  run(sim, wind, 1.5, (state) => {
+    const l = state.lanterns[0];
+
+    if (litStart === null && l.lit > 0) litStart = state.ts;
+    if (poolStart === null && l.pool > 0) poolStart = state.ts;
+    if (poolDone === null && l.pool >= 1) poolDone = state.ts;
+  });
+  assert.ok(litStart !== null && poolStart !== null && poolDone !== null);
+  assert.ok(
+    Math.abs(poolStart - litStart - 0.15) < 0.04,
+    `pool starts 150 ms after the catch (${(poolStart - litStart).toFixed(3)})`,
+  );
+  assert.ok(
+    Math.abs(poolDone - poolStart - 0.5) < 0.04,
+    `pool full 500 ms later (${(poolDone - poolStart).toFixed(3)})`,
+  );
+
+  // A catch queued for later, then the theme flips to light before it fires.
+  const second = createSim({
+    seed: 1,
+    layout,
+    wind: stubWind(),
+    night: 1,
+    reducedMotion: false,
+  });
+  const w2 = second === null ? null : stubWind();
+
+  second.lowerIn(hero.id, { delayS: 0, durationS: 0 });
+  second.light(hero.id, { delayS: 0.5, durationS: 0.7, target: 1 });
+  run(second, w2, 0.2);
+  second.light(hero.id, {
+    delayS: 0,
+    durationS: 0.26,
+    target: 0,
+    easing: 'exit',
+    poolDurationS: 0.2,
+  });
+  run(second, w2, 2);
+  assert.equal(second.state.lanterns[0].lit, 0, 'the stale catch never fired');
+  assert.equal(second.state.lanterns[0].pool, 0);
+});
+
+test('§4.5 the tassel trails the first-gust peak by 80–150 ms with 15–25% relative amplitude', () => {
+  const layout = blog();
+  const wind = createWindInstance(7);
+  const sim = createSim({
+    seed: 7,
+    layout,
+    wind,
+    night: 1,
+    reducedMotion: false,
+  });
+
+  mountLanterns(sim, layout);
+
+  const series = layout.lanterns.map(() => []);
+
+  run(sim, wind, 9, (state) => {
+    state.lanterns.forEach((l, k) =>
+      series[k].push([state.ts, l.theta, l.tasselTheta]),
+    );
+  });
+
+  // First |θ| peak after the gust reaches the lantern (4.4 s + the front),
+  // then the first |tassel| peak from there.
+  const peakAfter = (rows, col, from, floor) => {
+    for (let i = 1; i < rows.length - 1; i += 1) {
+      const t = rows[i][0];
+      const v = Math.abs(rows[i][col]);
+
+      if (
+        t >= from &&
+        v > floor &&
+        v > Math.abs(rows[i - 1][col]) &&
+        v >= Math.abs(rows[i + 1][col])
+      )
+        return rows[i];
+    }
+
+    return null;
+  };
+
+  layout.lanterns.forEach((spec, k) => {
+    const body = peakAfter(series[k], 1, 4.6, 0.04);
+
+    assert.ok(body, `${spec.id} answers the gust`);
+
+    const tassel = peakAfter(series[k], 2, body[0] - 0.05, 0);
+
+    assert.ok(tassel, `${spec.id} tassel peaks`);
+
+    const lag = tassel[0] - body[0];
+    const ratio = Math.abs(tassel[2] / body[1]);
+
+    assert.ok(
+      lag >= 0.08 && lag <= 0.15,
+      `${spec.id} tassel lags ${(lag * 1000).toFixed(0)} ms`,
+    );
+    assert.ok(
+      ratio >= 0.15 && ratio <= 0.25,
+      `${spec.id} relative amplitude ${(ratio * 100).toFixed(0)}%`,
+    );
+  });
+});
+
+test('setEmitterRect moves one band in place: instances follow the tracked rect', () => {
+  const layout = routeLayout('/', { w: 390, h: 844 }, true, {});
+  const wind = stubWind();
+  const sim = createSim({
+    seed: 3,
+    layout,
+    wind,
+    night: 1,
+    reducedMotion: false,
+  });
+
+  sim.prewarm(6);
+  assert.ok(sim.state.fall.length > 0);
+  sim.setEmitterRect(0, { x: 0, y: 500, w: 390, h: 300 });
+  run(sim, wind, 0.5);
+  assert.deepEqual(layout.florets.emitters[0], {
+    x: 0,
+    y: 500,
+    w: 390,
+    h: 300,
+  });
+  for (const f of sim.state.fall) {
+    assert.ok(f.y >= 500 - 1 && f.y <= 800 + 13, `y ${f.y} inside the band`);
+    assert.ok(f.x >= -30 && f.x <= 420, `x ${f.x} inside the band`);
+  }
 });

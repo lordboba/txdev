@@ -6,11 +6,13 @@
  * - one damped pendulum per lantern, `θ'' = −(g'/L)(sin θ − 0.04·W·cos θ) − 2ζωθ'`
  *   with `g' = 4π²L/T²` (so ω = 2π/T whatever the drawn cord length), ζ 0.12
  *   idle and 0.9 while a lower-in or raise is scripted, idle clamp ±0.22 rad;
- * - the tassel spring (ω 2π/0.55, ζ 0.35) driven by the body's angular
+ * - the tassel spring (ω 2π/(0.40·T), ζ 0.35) driven by the body's angular
  *   acceleration, and the cord-stretch bob (ω 2π/0.45, ζ 0.5, |bob| ≤ 8 px)
  *   driven by the scroll wind;
- * - the candle flicker, the 走马灯 strip scroll and the candle-catch keyframes;
- * - the poem column as a virtual pendulum (L 3 u, ζ 0.2, 0.15× the field);
+ * - the candle flicker, the 走马灯 strip scroll, the candle-catch keyframes
+ *   and the pool/halo row on its own catch + 150 ms timeline;
+ * - the poem column as a virtual pendulum (L 3 u, ζ 0.2, 0.15× the field
+ *   plus the cursor term at the column);
  * - the floret loop: seeded species / band / emitter, `mod(ts/period + phase)`
  *   descent, flutter, spin, lateral drift `18·W + 5·curl2D` px/s, scroll lift,
  *   pop-free respawn, depth-band alpha, route re-clamp (damp λ 8);
@@ -54,6 +56,7 @@ import type {
 } from './types.ts';
 import { pendulumGravity, pxLengthToWorld, pxToWorld } from './layout.ts';
 import {
+  coolTowardMoon,
   floretSpeciesMix,
   hexToRgb01,
   light as lightRules,
@@ -112,9 +115,15 @@ const POEM_GRAVITY = 9.81;
 
 const SHADOW_STRIP_PX = 4096;
 const DEG = 180 / Math.PI;
+/** Pool/halo catch defaults (§4.1): catch + 150 ms over 500 ms. */
+const POOL_DELAY_S = CHOREOGRAPHY.mount.poolDelayMs / 1000;
+const POOL_MS_S = CHOREOGRAPHY.mount.poolMs / 1000;
 
-/** `light()` curves: the four shared easings plus the §4.2 candle-out `(0.3, 0, 1, 1)`. */
-export type LightEasing = Easing | 'snuff';
+/**
+ * `light()` curves: the four shared easings, the §4.2 candle-out
+ * `(0.3, 0, 1, 1)` and the pool/halo catch `(0, 0, 0, 1)`.
+ */
+export type LightEasing = Easing | 'snuff' | 'pool';
 
 const ease: Record<LightEasing, (t: number) => number> = {
   enter: cubicBezier(...EASINGS.enter),
@@ -123,6 +132,7 @@ const ease: Record<LightEasing, (t: number) => number> = {
   calm: cubicBezier(...EASINGS.calm),
   linear: (t) => clamp(t, 0, 1),
   snuff: cubicBezier(0.3, 0, 1, 1),
+  pool: cubicBezier(0, 0, 0, 1),
 };
 
 /** Candle-catch keyframes, piecewise linear on normalised time. */
@@ -178,6 +188,7 @@ type LanternInternal = {
   noiseSeed: number;
   cord: CordScript | null;
   lightScript: LightScript | null;
+  poolScript: LightScript | null;
   /** θ frozen (a raise in flight or finished). */
   frozen: boolean;
   /** Pending lower-in / raise / light commands not yet started. */
@@ -198,7 +209,6 @@ type FallInternal = {
 
 type Scheduled = { ts: number; fn: () => void; order: number };
 
-const FROST = hexToRgb01(palette.frost);
 const LEAF_TOP = hexToRgb01(palette.leafGreen.top);
 const GINKGO_FROM = hexToRgb01(palette.ginkgo.from);
 const GINKGO_TO = hexToRgb01(palette.ginkgo.to);
@@ -225,6 +235,10 @@ export function createSim(options: SimOptions): SimApi {
 
   let moonPx: Vec2 | null = null;
   let lanternsPx: Vec2[] = [];
+  let poemPx: Vec2 | null = null;
+  let hero: LanternInternal | null = null;
+  /** Species per index for the current count (exact 22/8/6 split at 36). */
+  let speciesTable: FallSpecies[] = [];
 
   const lanterns: LanternInternal[] = [];
   const fall: FallInternal[] = [];
@@ -233,6 +247,8 @@ export function createSim(options: SimOptions): SimApi {
 
   const scratch: NoiseSample = { value: 0, dx: 0, dy: 0 };
   const curlOut = { x: 0, y: 0 };
+  /** Scratch point for the per-object cursor force (no per-frame allocation). */
+  const point: Vec2 = { x: 0, y: 0 };
 
   const state: SimState = {
     ts: wind.time(),
@@ -285,6 +301,7 @@ export function createSim(options: SimOptions): SimApi {
         cordTarget: 0,
         lit: 0,
         litTarget: 0,
+        pool: 0,
         candle: 1,
         tasselTheta: 0,
         tasselThetaDot: 0,
@@ -304,6 +321,7 @@ export function createSim(options: SimOptions): SimApi {
       noiseSeed: seed + 1000 * (index + 1),
       cord: null,
       lightScript: null,
+      poolScript: null,
       frozen: true,
       pending: 0,
       bodyAccel: 0,
@@ -365,18 +383,35 @@ export function createSim(options: SimOptions): SimApi {
     }
   };
 
+  /** The pool/halo row: its own delay and curve, never the wick keyframes. */
+  const advancePool = (l: LanternInternal): void => {
+    const script = l.poolScript;
+
+    if (!script || state.ts < script.start) return;
+
+    const t = clamp((state.ts - script.start) / script.durationS, 0, 1);
+
+    l.state.pool = lerp(script.from, script.to, ease[script.easing](t));
+    if (t >= 1) {
+      l.state.pool = script.to;
+      l.poolScript = null;
+    }
+  };
+
   const stepLantern = (l: LanternInternal, dt: number): void => {
     const s = l.state;
 
     advanceCord(l);
     advanceLight(l);
+    advancePool(l);
 
     const w = windAtLantern(l);
     const lean = PENDULUM.leanPerW * w;
     const fy = wind.vertical();
     const n = Math.max(1, Math.ceil(dt / SUBSTEP_S));
     const h = dt / n;
-    const tasselOmega = (2 * Math.PI) / PENDULUM.tassel.periodS;
+    const tasselOmega =
+      (2 * Math.PI) / (PENDULUM.tassel.periodFactor * l.spec.period);
     const bobOmega = (2 * Math.PI) / PENDULUM.bob.periodS;
     // Static bob of maxPx at the strongest scroll wind (Fy = clamp·scale).
     const bobGain =
@@ -448,9 +483,9 @@ export function createSim(options: SimOptions): SimApi {
   const stepPoem = (dt: number): void => {
     const p: PoemState = state.poem;
     const { lengthU, zeta, drive, renderScale, clampDeg } = PENDULUM.poem;
-    const rect = layout.text.poem;
-    const x01 = rect ? (rect.x + rect.w / 2) / viewport.w : 0.85;
-    const w = wind.sample(x01, state.ts) * drive;
+    const x01 = poemPx ? poemPx.x / viewport.w : 0.85;
+    const cursor = poemPx ? wind.cursorForceAt(poemPx, viewport) : 0;
+    const w = (wind.sample(x01, state.ts) + cursor) * drive;
     const lean = PENDULUM.leanPerW * w;
     const omega2 = POEM_GRAVITY / lengthU;
     const omega = Math.sqrt(omega2);
@@ -471,16 +506,25 @@ export function createSim(options: SimOptions): SimApi {
 
   // ---- florets -------------------------------------------------------------
 
-  const pickSpecies = (index: number, count: number): FallSpecies => {
-    // Deterministic proportional split: florets first, then leaves, then ginkgo.
+  /**
+   * Exact species counts per page (22 / 8 / 6 at 36, §5.2): the indices are
+   * ranked by a seeded hash and the first `florets` ranks are florets, the
+   * next `leaves` are leaves, the rest ginkgo.
+   */
+  const buildSpeciesTable = (count: number): FallSpecies[] => {
     const florets = Math.round(count * FALL_SPECIES_MIX.floret);
     const leaves = Math.round(count * FALL_SPECIES_MIX.leaf);
-    const slot = Math.floor(hash01(index, 21, seed) * count);
+    const ranked = Array.from({ length: count }, (_, i) => i).sort(
+      (a, b) => hash01(a, 21, seed) - hash01(b, 21, seed),
+    );
+    const table: FallSpecies[] = new Array(count);
 
-    if (slot < florets) return 'floret';
-    if (slot < florets + leaves) return 'leaf';
+    ranked.forEach((index, rank) => {
+      table[index] =
+        rank < florets ? 'floret' : rank < florets + leaves ? 'leaf' : 'ginkgo';
+    });
 
-    return 'ginkgo';
+    return table;
   };
 
   const pickEmitter = (index: number): number => {
@@ -523,6 +567,8 @@ export function createSim(options: SimOptions): SimApi {
 
     if (!moonPx || layout.home) return warm;
 
+    // Distances from the spawn point: the moon's light reaches florets that
+    // are nearer to it than to any lantern (§2.3).
     const px = f.baseX;
     const py = f.live.y;
     const dMoon = Math.hypot(px - moonPx.x, py - moonPx.y);
@@ -532,10 +578,7 @@ export function createSim(options: SimOptions): SimApi {
       dLantern = Math.min(dLantern, Math.hypot(px - p.x, py - p.y));
     }
 
-    const [e0, e1] = lightRules.floret.coolSmoothstep;
-    const cool = mixRgb(warm, FROST, lightRules.floret.coolMix);
-
-    return mixRgb(warm, cool, smoothstep(e0, e1, dMoon / (dMoon + dLantern)));
+    return coolTowardMoon(warm, dMoon, dLantern);
   };
 
   const respawn = (f: FallInternal, atTop: boolean): void => {
@@ -559,8 +602,8 @@ export function createSim(options: SimOptions): SimApi {
     inst.color = speciesColour(f);
   };
 
-  const freshFall = (index: number, count: number): FallInternal => {
-    const species = pickSpecies(index, count);
+  const freshFall = (index: number): FallInternal => {
+    const species = speciesTable[index] ?? 'floret';
     const rule = FALL_SPECIES[species];
     const rng = mulberry32(seed * 7919 + index * 104729 + 17);
     const pick = (range: readonly [number, number]) =>
@@ -659,10 +702,13 @@ export function createSim(options: SimOptions): SimApi {
 
       const y = live.y + p * live.h;
       const x01 = clamp(f.baseX / viewport.w, 0, 1);
+
+      point.x = f.baseX + f.driftX;
+      point.y = y;
+
       const w =
         wind.sample(x01, state.ts) +
-        WIND.cursor.floretShare *
-          wind.cursorForceAt({ x: f.baseX + f.driftX, y }, viewport);
+        WIND.cursor.floretShare * wind.cursorForceAt(point, viewport);
       const curl = curl2(
         (f.baseX + f.driftX) / CURL_SCALE_PX,
         (y + CURL_DRIFT_PX_PER_S * state.ts) / CURL_SCALE_PX,
@@ -720,6 +766,7 @@ export function createSim(options: SimOptions): SimApi {
       return;
     }
 
+    if (speciesTable.length !== count) speciesTable = buildSpeciesTable(count);
     fall.length = Math.min(fall.length, count);
     for (let i = 0; i < fall.length; i += 1) {
       const f = fall[i];
@@ -737,7 +784,7 @@ export function createSim(options: SimOptions): SimApi {
         );
       }
     }
-    for (let i = fall.length; i < count; i += 1) fall.push(freshFall(i, count));
+    for (let i = fall.length; i < count; i += 1) fall.push(freshFall(i));
     state.fall = fall.map((f) => f.inst);
   };
 
@@ -745,7 +792,6 @@ export function createSim(options: SimOptions): SimApi {
 
   const stepSettle = (dt: number): void => {
     const elapsed = state.ts - sequenceStart;
-    const hero = lanterns.find((l) => l.spec.hero) ?? lanterns[0];
     let atLength = true;
     let lit = true;
 
@@ -838,12 +884,17 @@ export function createSim(options: SimOptions): SimApi {
     lanterns.length = 0;
     lanterns.push(...kept);
     state.lanterns = lanterns.map((l) => l.state);
+    hero = lanterns.find((l) => l.spec.hero) ?? lanterns[0] ?? null;
 
     moonPx = next.moon ? { ...next.moon.centre } : null;
     lanternsPx = next.lanterns.map((s) => ({
       x: s.bodyRect.x + s.bodyRect.w / 2,
       y: s.bodyRect.y + s.bodyRect.h / 2,
     }));
+
+    const poem = next.text.poem;
+
+    poemPx = poem ? { x: poem.x + poem.w / 2, y: poem.y + poem.h / 2 } : null;
 
     rebuildFall(reason);
     if (reason !== 'resize') resetSequence(reason);
@@ -943,15 +994,32 @@ export function createSim(options: SimOptions): SimApi {
       });
     },
 
-    light(id, { delayS, durationS, target, easing }: LightOptions) {
+    light(
+      id,
+      {
+        delayS,
+        durationS,
+        target,
+        easing,
+        poolDelayS,
+        poolDurationS,
+      }: LightOptions,
+    ) {
       const l = byId(id);
 
       if (!l) return;
       l.state.litTarget = target;
       enqueue(state.ts + delayS, () => {
+        // A later light() (a theme flip, a route exit) superseded this one.
+        if (l.state.litTarget !== target) return;
+
+        const catching = target > l.state.lit;
+
         if (durationS <= 0) {
           l.state.lit = target;
+          l.state.pool = target;
           l.lightScript = null;
+          l.poolScript = null;
 
           return;
         }
@@ -962,11 +1030,47 @@ export function createSim(options: SimOptions): SimApi {
           to: target,
           easing: easing ?? 'snuff',
         };
+        l.poolScript = {
+          start: state.ts + (poolDelayS ?? (catching ? POOL_DELAY_S : 0)),
+          durationS: Math.max(
+            poolDurationS ?? (catching ? POOL_MS_S : durationS),
+            1e-3,
+          ),
+          from: l.state.pool,
+          to: target,
+          easing: catching ? 'pool' : (easing ?? 'snuff'),
+        };
       });
     },
 
     schedule(ts, fn) {
       enqueue(ts, fn);
+    },
+
+    setSequenceStart(ts) {
+      sequenceStart = ts;
+    },
+
+    setEmitterRect(index, rect) {
+      const emitter = layout.florets.emitters[index];
+
+      if (!emitter) return;
+      emitter.x = rect.x;
+      emitter.y = rect.y;
+      emitter.w = rect.w;
+      emitter.h = rect.h;
+      for (const f of fall) {
+        if (f.inst.emitter !== index) continue;
+        f.target.x = f.live.x = rect.x;
+        f.target.y = f.live.y = rect.y;
+        f.target.w = f.live.w = rect.w;
+        f.target.h = f.live.h = rect.h;
+        f.baseX = clamp(
+          f.baseX,
+          rect.x + f.inst.sizePx / 2,
+          rect.x + rect.w - f.inst.sizePx / 2,
+        );
+      }
     },
 
     snapshotReduced() {
@@ -977,6 +1081,7 @@ export function createSim(options: SimOptions): SimApi {
 
         l.cord = null;
         l.lightScript = null;
+        l.poolScript = null;
         l.pending = 0;
         l.frozen = false;
         s.theta = 0.03;
@@ -984,6 +1089,7 @@ export function createSim(options: SimOptions): SimApi {
         s.cordLength = s.cordTarget;
         s.lit = lit;
         s.litTarget = lit;
+        s.pool = lit;
         s.candle = 1;
         s.tasselTheta = 0;
         s.tasselThetaDot = 0;
@@ -1004,11 +1110,6 @@ export function createSim(options: SimOptions): SimApi {
       return state;
     },
 
-    setLightSources(moon, lanternPoints) {
-      moonPx = moon ? { x: moon.x, y: moon.y } : null;
-      lanternsPx = lanternPoints.map((p) => ({ x: p.x, y: p.y }));
-    },
-
     dispose() {
       queue.length = 0;
       lanterns.length = 0;
@@ -1026,11 +1127,15 @@ export function createSim(options: SimOptions): SimApi {
 /**
  * `light()` options. A catch (target above the current `lit`) always runs the
  * §4.1 keyframes; a snuff takes `easing` (default `'snuff'`, the §4.2 route
- * curve; the §4.3 morning snuff passes `'exit'`).
+ * curve; the §4.3 morning snuff passes `'exit'`). The pool/halo row follows
+ * with `poolDelayS` / `poolDurationS` (defaults: catch + 0.15 s over 0.5 s;
+ * snuff at once over `durationS`).
  */
 export type LightOptions = {
   delayS: number;
   durationS: number;
   target: number;
-  easing?: LightEasing;
+  easing?: Easing | 'snuff';
+  poolDelayS?: number;
+  poolDurationS?: number;
 };
