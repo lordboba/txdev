@@ -4011,11 +4011,20 @@ async function a11yChecks({ page, live, id, route, theme }) {
         // Snapshot while the element still holds focus.
         const style = s.outlineStyle;
         const width = parseFloat(s.outlineWidth);
-        const colour =
-          s.outlineColor
+        const raw = s.outlineColor;
+        const m =
+          raw
             .match(/[\d.]+/g)
             ?.slice(0, 3)
             .map(Number) ?? null;
+        // A `color-mix()` ring computes to `color(srgb r g b)` with 0..1
+        // channels; read as 0..255 it looks near-black and every ring would
+        // pass on a false contrast. Same rule as the census parser above.
+        const colour = m
+          ? /^color\(srgb/.test(raw)
+            ? m.map((v) => Math.round(v * 255))
+            : m
+          : null;
         return style !== 'none' && width > 0 ? colour : null;
       }, which);
     };
