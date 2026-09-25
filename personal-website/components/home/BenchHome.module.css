@@ -405,8 +405,12 @@
     gap: 0.3rem;
   }
 
-  /* No hover to reward on a touch screen, and no room to spend on a word. */
-  .moonLabel {
+  /*
+   * The moon leaves entirely. Its whole reward is a hover/focus phase change
+   * a touch header cannot deliver, and its 44px hit area was the width the
+   * nav had to give up: below ~390px the disc landed on top of "History".
+   */
+  .moonLink {
     display: none;
   }
 }
