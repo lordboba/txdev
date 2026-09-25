@@ -165,8 +165,8 @@ export declare const light: {
   pool: {
     widthFactor: 3.2;
     aspect: 1.35;
-    centreDropBodyHeights: 0.4;
-    falloffPow: 2;
+    centreDropBodyHeights: 0.4; // below the BOTTOM collar (lantern.ts adds the 0.5)
+    falloffPow: 1.4;
     peakDark: 0.14;
     peakHome: 0.22;
     homeTint: '#ffa631';
@@ -204,7 +204,8 @@ export declare const light: {
     ribCount: 16;
     fibreStrength: 0.06;
     unlitRibDarken: 0.12;
-    shadowDarken: 0.5;
+    shadowDarken: 0.6;
+    shadowViewPow: 0.6; // shadow × through^0.6 (softer than the paper's own through)
     shadowCircumferenceFraction: 0.15;
   };
   candle: { amplitude: 0.06; floor: 0.94; hz1: 7; hz2: 13 };
@@ -284,6 +285,7 @@ export interface WindApi {
   pause(): void;
   resume(): void;
   paused(): boolean;
+  advance(seconds: number): void; // the evening that passed while no layer was mounted (§3.7)
   reseed(seed: number): void;
   seed(): number;
   random(): number;
@@ -305,9 +307,10 @@ export interface SimApi {
   setEmitterRect(index: number, rect: Rect): void;
   schedule(ts: number, fn: () => void): void;
   snapshotReduced(): SimState;
+  snapshotLift(lifted: boolean, px: number): SimState; // reduced motion: the mobile scroll-lift as a snap
   dispose(): void;
 }
-export interface FrameContext { ts: number; dt: number; viewport: Viewport; mobile: boolean; home: boolean; night: number; moonNight: number; tints: AccentTints; cameraZ: number; layout: RouteLayout }
+export interface FrameContext { ts: number; dt: number; viewport: Viewport; mobile: boolean; home: boolean; night: number; moonNight: number; tints: AccentTints; cameraZ: number; layout: RouteLayout; parallax: Vec2 /* pointer parallax px at 1.0: bands take DEPTH_BANDS[].parallax, the moon 0.85, lanterns none */ }
 export interface LanternObjects {
   readonly object: Object3D;
   build(specs: readonly LanternSpec[], frame: FrameContext): void;
@@ -333,10 +336,10 @@ export declare const FESTIVAL_EVENTS: { launch: 'bench:launch'; theme: 'theme-pr
 export declare const FESTIVAL_DATA_ATTRS: { festival: 'data-festival'; settled: 'data-festival-settled'; journeyOpen: 'data-journey-open'; theme: 'data-theme'; colorTheme: 'data-color-theme' };
 export declare const FESTIVAL_CSS_VARS: { moonX: '--moon-x'; moonY: '--moon-y'; moonD: '--moon-d'; night: '--festival-night'; slipX: '--slip-x'; slipY: '--slip-y'; slipTheta: '--slip-theta'; poemX: '--poem-x'; poemY: '--poem-y'; poemTheta: '--poem-theta'; colophonX: '--colophon-x'; colophonY: '--colophon-y'; translationX: '--translation-x'; translationY: '--translation-y' };
 export declare const FESTIVAL_SELECTORS: { nav: 'header.sticky'; toolsPill: '.orb-hero-tools'; orbShell: '.orb-shell'; benchCanvas: 'main canvas'; homeThemeDock: '.home-theme-dock'; calendly: 'iframe' };
-export interface FestivalDebugApi { wind(t?: number, x01?: number): number; rendererInfo(): unknown; theta(): number[]; tassel(): number[]; frames(): number; layout(): RouteLayout; time(): number; state(): SimState | null; view(): unknown; moon(): MoonState; gusts(): readonly GustSpec[]; strip(): Record<string, unknown> | null }
+export interface FestivalDebugApi { wind(t?: number, x01?: number): number; rendererInfo(): unknown; theta(): number[]; tassel(): number[]; frames(): number; layout(): RouteLayout; time(): number; state(): SimState | null; view(): unknown; moon(): MoonState & { night: number; parallax: Vec2 }; frameMs(): { avg: number; max: number }; gusts(): readonly GustSpec[]; strip(): Record<string, unknown> | null }
 // Tuning tables (values in the source, all from bible §4.1–4.5, §5.1–5.2):
 export declare const EASINGS: Record<Exclude<Easing, 'linear'>, readonly [number, number, number, number]>;
-export declare const PENDULUM: { leanPerW: 0.04; zetaIdle: 0.12; zetaScripted: 0.9; idleClampRad: 0.22; arrivalKick: 0.03; periods: { hero: 2.8; mid: 2.4; small: 2.1 }; tassel: { periodFactor: 0.45; zeta: 0.35 }; bob: { periodS: 0.45; zeta: 0.5; maxPx: 8 }; poem: { lengthU: 3; zeta: 0.2; drive: 0.15; renderScale: 0.5; clampDeg: 0.6 }; slipThetaScale: 0.8; settle: { thresholdDeg: 1; holdS: 1.4; floorS: 2.4; ceilingS: 3.6 }; dtClampS: 0.033 };
+export declare const PENDULUM: { leanPerW: 0.04; zetaIdle: 0.12; zetaScripted: 0.9; idleClampRad: 0.22; arrivalKick: 0.03; periods: { hero: 2.8; mid: 2.4; small: 2.1 }; tassel: { periodFactor: 0.45; zeta: 0.35; lengthBodyWidths: 0.32; clampRad: 0.35 } /* a pendulum from the collar, restoring toward plumb, driven (1 + R/l)·θ'' */; bob: { periodS: 0.45; zeta: 0.5; maxPx: 8 }; poem: { lengthU: 3; zeta: 0.2; drive: 0.15; renderScale: 0.5; clampDeg: 0.6 }; slipThetaScale: 0.8; settle: { thresholdDeg: 1; holdS: 1.4; floorS: 2.4; ceilingS: 3.6 }; dtClampS: 0.033 };
 export declare const WIND: { breeze: { octaves: 2; periodS: 9; amplitude: 0.5; spatialPhase: 0.7 }; gust: { firstAtS: 4.4; firstAmplitude: 1.8; intervalS: [12, 18]; amplitude: [1.2, 2.2]; leftToRightProbability: 0.8; speedVw: 0.55; riseMs: 350; holdMs: 200; decayS: 1.4 }; cursor: { velocityScale: 900; maxForce: 6; radiusVw: 0.35; decay: 3.5; floretShare: 0.25 }; touch: { amplitude: 0.6; durationS: 1.2; radiusVw: 0.35; minIntervalS: 3 }; scroll: { clamp: 3; scale: 0.25; decay: 4; floretLiftMaxPx: 12 }; floretDrift: { perW: 18; curl: 5 }; revolvingDrift: { pxPerS: 10; waver: 0.15; waverHz: 0.4 } };
 export declare const FALL_SPECIES: Record<FallSpecies, { sizePx: [number, number]; descentS: [number, number]; flutterPx: [number, number]; spin: [number, number]; tumble: number; atlasCell: AtlasCell }>;
 export declare const FALL_SPECIES_MIX: Record<FallSpecies, number>; // 22/36, 8/36, 6/36
