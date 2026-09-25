@@ -3263,6 +3263,10 @@ async function typographyChecks({ page, live, id, route, theme, foundation }) {
       latinNoto,
       poemGlyphs: poemGlyphs.map((r) => ({ top: r.top, h: r.height })),
       colophonGlyphs: colophonGlyphs.length,
+      colophonLabelOpacity: (() => {
+        const label = q('[class*="colophonLabel"]')[0] ?? null;
+        return label ? parseFloat(cs(label).opacity) : null;
+      })(),
       hasFigure: !!figure,
       hasFigcaption: !!figure?.querySelector('figcaption'),
       figureLabel: figure?.getAttribute('aria-label') ?? null,
@@ -3459,6 +3463,14 @@ async function typographyChecks({ page, live, id, route, theme, foundation }) {
       );
     }
   }
+  if (census.colophonLabelOpacity !== null)
+    check(
+      Math.abs(census.colophonLabelOpacity - 0.72) <= 0.02,
+      id('T6.colophonLabel'),
+      'THE FIFTEENTH NIGHT sits at 72% under the Han date (§6.A1)',
+      fmt(census.colophonLabelOpacity, 2),
+      '0.72',
+    );
   check(
     census.colophonGlyphs === 7,
     id('T3.colophon'),
@@ -3845,6 +3857,50 @@ async function a11yChecks({ page, live, id, route, theme }) {
       a.moon ? `${a.moon.name} after=${a.moon.after}` : 'absent',
       'aria-label "Full moon, …"',
     );
+    // Focus rings on the moon button and the poem figure: page-side ink,
+    // ≥ 3:1 against the page in both themes (WCAG 2.4.11). A keyboard event
+    // first so the scripted focus counts as :focus-visible.
+    await page.keyboard.press('Tab');
+    const rings = await page.evaluate(() => {
+      const root = document.querySelector('[data-festival-root]');
+      const moon = root?.querySelector('button[aria-label^="Full moon"]');
+      const figure = root?.querySelector('figure');
+      const column = figure?.querySelector('[class*="column"]');
+      const parse = (c) =>
+        c
+          .match(/[\d.]+/g)
+          ?.slice(0, 3)
+          .map(Number) ?? null;
+      const ring = (el, target) => {
+        if (!el || !target) return null;
+        el.focus();
+        const s = getComputedStyle(target);
+        const colour = parse(s.outlineColor);
+        const width = parseFloat(s.outlineWidth);
+        el.blur();
+        return s.outlineStyle !== 'none' && width > 0 ? colour : null;
+      };
+      return { moon: ring(moon, moon), figure: ring(figure, column) };
+    });
+    for (const [name, colour] of Object.entries(rings)) {
+      if (!colour) {
+        fail(
+          id(`A.focusRing.${name}`),
+          `${name} focus ring visible (${theme})`,
+          'no outline while focused',
+          '2 px ring ≥ 3:1',
+        );
+        continue;
+      }
+      const c = contrast(colour, a.bg);
+      check(
+        c >= 3,
+        id(`A.focusRing.${name}`),
+        `${name} focus ring ≥ 3:1 against the page (${theme})`,
+        `${fmt(c, 2)}:1 rgb(${colour}) on rgb(${a.bg})`,
+        '≥ 3:1',
+      );
+    }
     if (a.translationColor) {
       const c = contrast(a.translationColor, a.bg);
       check(
