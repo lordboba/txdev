@@ -37,13 +37,13 @@ export const NavBar = () => {
           href="/"
           prefetch={false}
           onClick={handleNavClick}
-          className="inline-flex items-center rounded-sm px-2 py-1 text-sm font-display font-semibold tracking-tight text-foreground transition-colors duration-200 hover:text-accent"
+          className="inline-flex items-center rounded-sm px-2 py-1 font-display text-[1.1rem] leading-none font-medium tracking-[-0.01em] text-foreground transition-colors duration-200 hover:text-accent"
         >
-          TYLER XIAO
+          Tyler Xiao
         </Link>
 
         <div className="hidden items-center gap-2 md:flex">
-          <div className="relative flex items-center gap-1 rounded-sm border border-divider/80 bg-surface/70 p-1">
+          <div className="relative flex items-center gap-5">
             {navLinks.map((link) => {
               const isActive = activeHref === link.href;
               const shouldDisablePrefetch =
@@ -55,10 +55,10 @@ export const NavBar = () => {
                   href={link.href}
                   prefetch={shouldDisablePrefetch ? false : undefined}
                   onClick={handleNavClick}
-                  className={`relative z-10 rounded-sm px-3 py-1.5 text-xs font-medium transition-colors duration-200 sm:text-sm ${
+                  className={`relative inline-flex min-h-11 items-center px-1 text-[0.82rem] leading-none font-medium tracking-[0.015em] transition-colors duration-200 after:absolute after:inset-x-1 after:bottom-2 after:h-px after:origin-left after:bg-current after:transition-transform after:duration-[360ms] after:ease-[cubic-bezier(0.2,0.8,0.2,1)] after:content-[''] hover:after:scale-x-100 ${
                     isActive
-                      ? 'bg-accent text-accent-ink'
-                      : 'text-muted hover:text-foreground'
+                      ? 'text-foreground after:scale-x-100'
+                      : 'text-muted after:scale-x-0 hover:text-foreground'
                   }`}
                   aria-current={isActive ? 'page' : undefined}
                 >
@@ -128,7 +128,7 @@ export const NavBar = () => {
                 href={link.href}
                 prefetch={shouldDisablePrefetch ? false : undefined}
                 onClick={handleNavClick}
-                className={`rounded-sm px-4 py-2.5 text-[12px] font-mono font-medium transition-colors duration-200 ${
+                className={`label-sm rounded-sm px-4 py-2.5 font-medium transition-colors duration-200 ${
                   isActive
                     ? 'bg-accent-muted text-accent'
                     : 'text-muted hover:bg-surface-raised hover:text-foreground'

@@ -67,12 +67,15 @@
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.3) inset;
 }
 
+/* The one wordmark: Cormorant 500, mixed case, shared with the NavBar. */
 .wordmark {
   width: max-content;
   color: var(--ink);
-  font-size: 0.86rem;
-  font-weight: 650;
+  font-family: var(--font-display), 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.1rem;
+  font-weight: 500;
   letter-spacing: -0.01em;
+  line-height: 1;
 }
 
 .wordmark:hover {
@@ -1689,7 +1692,7 @@
   }
 
   .wordmark {
-    font-size: 0.72rem;
+    font-size: 0.95rem;
   }
 
   .nav {
