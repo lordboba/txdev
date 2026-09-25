@@ -1029,6 +1029,15 @@ export const createLanternObjects: LanternObjectsFactory = (renderer) => {
 
   // State -------------------------------------------------------------------
   let specs: readonly LanternSpec[] = [];
+  /** The caller's array, by identity: the canvas passes `layout.lanterns` every frame. */
+  let specsRef: readonly LanternSpec[] | null = null;
+
+  /** Adopts a spec list; slices only when it exceeds the instance budget. */
+  const adopt = (next: readonly LanternSpec[]): void => {
+    specsRef = next;
+    specs = next.length > MAX_LANTERNS ? next.slice(0, MAX_LANTERNS) : next;
+    setCount(specs.length);
+  };
   const bodyMatrices = Array.from(
     { length: MAX_LANTERNS },
     () => new THREE.Matrix4(),
@@ -1124,7 +1133,7 @@ export const createLanternObjects: LanternObjectsFactory = (renderer) => {
     object: group,
 
     build(nextSpecs, frame) {
-      specs = nextSpecs.slice(0, MAX_LANTERNS);
+      adopt(nextSpecs);
 
       const tint = attr(paperGeometry, 'aTint');
       const shadow = attr(paperGeometry, 'aShadow');
@@ -1139,15 +1148,13 @@ export const createLanternObjects: LanternObjectsFactory = (renderer) => {
       });
       tint.needsUpdate = true;
       shadow.needsUpdate = true;
-      setCount(specs.length);
       objects.update([], specs, frame);
     },
 
     update(states, currentSpecs, frame) {
-      if (currentSpecs !== specs) {
-        specs = currentSpecs.slice(0, MAX_LANTERNS);
-        setCount(specs.length);
-      }
+      // Identity, not a copy: a slice here allocated an array and reset the
+      // instance counts on every frame of the hot loop.
+      if (currentSpecs !== specsRef) adopt(currentSpecs);
 
       refreshTints(frame);
 
