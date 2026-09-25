@@ -33,7 +33,7 @@ export default function PastExperiencePage() {
 
       <header className="space-y-4">
         <p className="eyebrow">Experience</p>
-        <h1 className="max-w-3xl font-display text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
+        <h1 className="display display-1 max-w-3xl">
           Experience across past, current, and upcoming roles.
         </h1>
         <p className="max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
@@ -86,9 +86,7 @@ export default function PastExperiencePage() {
                         {exp.company}
                       </span>
                     </div>
-                    <h2 className="mt-4 font-display text-2xl font-semibold tracking-tight">
-                      {exp.role}
-                    </h2>
+                    <h2 className="display display-3 mt-4">{exp.role}</h2>
                     <p className="mt-3 max-w-4xl text-sm leading-7 text-muted">
                       {exp.summary}
                     </p>
@@ -115,9 +113,7 @@ export default function PastExperiencePage() {
       <section className="space-y-4">
         <div>
           <p className="eyebrow">{'// projects'}</p>
-          <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight">
-            Projects
-          </h2>
+          <h2 className="display display-2 mt-2">Projects</h2>
           <p className="mt-2 text-sm text-muted">
             Each project includes its implementation stack and a link to the
             live product or source.
@@ -158,9 +154,7 @@ export default function PastExperiencePage() {
                   <span>{project.role}</span>
                   <span className="text-accent">{project.proofLabel}</span>
                 </div>
-                <h3 className="mt-3 font-display text-xl font-semibold">
-                  {project.title}
-                </h3>
+                <h3 className="display display-3 mt-3">{project.title}</h3>
                 <p className="mt-2 text-sm leading-7 text-muted">
                   {project.description}
                 </p>

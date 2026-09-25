@@ -16,9 +16,7 @@ export default async function BlogIndexPage() {
       <header className="space-y-4">
         <p className="eyebrow">Journal</p>
         <div>
-          <h1 className="font-display text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-            Blog
-          </h1>
+          <h1 className="display display-1 text-foreground">Blog</h1>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
             Technical notes on software, backend systems, and product
             engineering.
@@ -46,7 +44,7 @@ export default async function BlogIndexPage() {
                   {String(index + 1).padStart(2, '0')}
                 </span>
               </div>
-              <h2 className="font-display text-2xl font-semibold leading-tight text-foreground">
+              <h2 className="display display-3 text-foreground">
                 {post.title}
               </h2>
               <p className="text-sm leading-7 text-muted">{post.excerpt}</p>

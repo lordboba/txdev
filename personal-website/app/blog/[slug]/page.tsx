@@ -68,9 +68,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             <span className="size-1.5 rounded-full bg-divider" />
             <span className="text-accent">{post.readTime}</span>
           </div>
-          <h1 className="font-display text-3xl font-semibold leading-tight tracking-tight text-foreground sm:text-4xl">
-            {post.title}
-          </h1>
+          <h1 className="display display-2 text-foreground">{post.title}</h1>
           <p className="text-base leading-8 text-muted sm:text-lg">
             {post.excerpt}
           </p>

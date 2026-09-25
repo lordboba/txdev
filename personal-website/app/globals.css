@@ -32,6 +32,11 @@
   --label-md: 12px;
   --label-md-tracking: 0.06em;
 
+  /* Display scale (Cormorant). Cormorant's floor is 20px; 1 is the Bench H1. */
+  --display-1: clamp(2.6rem, 4.4vw, 4.35rem); /* page H1 */
+  --display-2: clamp(1.75rem, 2.6vw, 2.25rem); /* section H2, post title */
+  --display-3: 1.25rem; /* card H2/H3 */
+
   /* Terminal-specific */
   --terminal-bg: #0a0d14;
   --terminal-bar: #11141c;
@@ -202,6 +207,47 @@ a:hover {
     font-family: var(--font-mono), monospace;
     font-size: var(--label-md);
     letter-spacing: var(--label-md-tracking);
+  }
+
+  /*
+   * The display recipe. Cormorant needs more air as it gets smaller, so the
+   * tracking opens from -0.015em at display-1 to +0.005em at display-3, and
+   * the weight rises to 600 at the floor. Lining figures: the served face
+   * defaults to old-style numerals, which dip in "Book a 15-minute chat."
+   * Italic never takes negative tracking.
+   */
+  .display {
+    font-family:
+      var(--font-display), 'Cormorant Garamond', Georgia, 'Times New Roman',
+      serif;
+    font-weight: 500;
+    font-kerning: normal;
+    font-variant-numeric: lining-nums;
+    text-wrap: balance;
+  }
+
+  .display-1 {
+    font-size: var(--display-1);
+    letter-spacing: -0.015em;
+    line-height: 0.96;
+  }
+
+  .display-2 {
+    font-size: var(--display-2);
+    letter-spacing: 0;
+    line-height: 1.05;
+  }
+
+  .display-3 {
+    font-size: var(--display-3);
+    font-weight: 600;
+    letter-spacing: 0.005em;
+    line-height: 1.15;
+  }
+
+  .display em,
+  .display i {
+    letter-spacing: 0;
   }
 }
 
@@ -522,23 +568,40 @@ a:hover {
 .blog-prose h1,
 .blog-prose h2,
 .blog-prose h3 {
-  font-family: var(--font-display), sans-serif;
-  letter-spacing: -0.03em;
-  line-height: 1.15;
   margin-top: 2.5rem;
   margin-bottom: 0.85rem;
+  color: var(--foreground);
+  text-wrap: balance;
+}
+
+/* Display recipe (see `.display`): sections at display-2, sub-sections at 3. */
+.blog-prose h1,
+.blog-prose h2 {
+  font-family:
+    var(--font-display), 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  font-kerning: normal;
+  font-variant-numeric: lining-nums;
 }
 
 .blog-prose h1 {
-  font-size: clamp(2rem, 5vw, 3rem);
+  font-size: var(--display-2);
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.05;
 }
 
 .blog-prose h2 {
-  font-size: clamp(1.55rem, 3.8vw, 2.2rem);
+  font-size: var(--display-3);
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  line-height: 1.15;
 }
 
 .blog-prose h3 {
-  font-size: clamp(1.25rem, 3vw, 1.55rem);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.3;
 }
 
 .blog-prose p {
