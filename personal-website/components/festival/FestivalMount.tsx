@@ -24,7 +24,7 @@ const MidAutumnLayer = dynamic(() => import('./MidAutumnLayer'), {
   ssr: false,
 });
 
-type Gate = { active: boolean; seed: number };
+type Gate = { active: boolean; seed: number; persist: boolean | null };
 
 function storage(): Storage | null {
   try {
@@ -34,42 +34,59 @@ function storage(): Storage | null {
   }
 }
 
+/** Pure: the query, the stored override and the window decide; nothing is written. */
 function readGate(): Gate {
   const gate = resolveFestivalGate({
     search: window.location.search,
     storedOverride: readStoredOverride(storage()),
   });
 
-  if (gate.persist !== null) {
-    try {
-      storage()?.setItem(FESTIVAL_STORAGE_KEY, gate.persist ? '1' : '0');
-    } catch {
-      // Private mode: the override lives for this page only.
-    }
-  }
-
   return {
     active: gate.active,
     seed: gate.seed ?? Math.floor(Math.random() * 1_000_000_000),
+    persist: gate.persist,
   };
 }
 
 /**
  * The gate is read once per page load and never changes afterwards (the
- * query string and the stored override are fixed for the page's life), so it
- * is an external snapshot: null on the server and during hydration.
+ * query string and the stored override are fixed for the page's life), so
+ * it is an external snapshot: null on the server and during hydration. The
+ * one draw of the fallback seed happens inside this cache, never twice.
  */
 let gateCache: Gate | null = null;
 const noopSubscribe = () => () => {};
 const getGate = () => (gateCache ??= readGate());
 const getServerGate = () => null;
 
+/**
+ * `?festival=0|1` persists to `localStorage.festival` from a commit-phase ref
+ * callback, not from the render-phase snapshot (a storage write is a side
+ * effect React may repeat). The sentinel renders whenever there is an
+ * override to persist, even when the gate closes the layer.
+ */
+function persistOverride(element: HTMLElement | null) {
+  if (!element || gateCache?.persist == null) return;
+  try {
+    storage()?.setItem(FESTIVAL_STORAGE_KEY, gateCache.persist ? '1' : '0');
+  } catch {
+    // Private mode: the override lives for this page only.
+  }
+}
+
 export function FestivalMount({ posts }: { posts: BlogPostMeta[] }) {
   const pathname = usePathname();
   const webGL = useWebGLSupport();
   const gate = useSyncExternalStore(noopSubscribe, getGate, getServerGate);
+  const sentinel =
+    gate?.persist != null ? <span ref={persistOverride} hidden /> : null;
 
-  if (!gate?.active || !webGL || !isFestivalRoute(pathname)) return null;
+  if (!gate?.active || !webGL || !isFestivalRoute(pathname)) return sentinel;
 
-  return <MidAutumnLayer posts={posts} seed={gate.seed} pathname={pathname} />;
+  return (
+    <>
+      {sentinel}
+      <MidAutumnLayer posts={posts} seed={gate.seed} pathname={pathname} />
+    </>
+  );
 }
