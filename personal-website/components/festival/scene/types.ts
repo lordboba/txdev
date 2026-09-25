@@ -631,11 +631,19 @@ export const PENDULUM = {
    * Restoring toward the axis gave a 0.4 px tip motion (16% of θ on a 24 px
    * tassel): welded to the lantern. Toward plumb the strands hang near
    * vertical while the body leans and whip at the reversals (M5).
+   *
+   * The drive is capped at `maxDrive` (the 176 px cord over an 18 px tassel
+   * on lantern B gave 13.4, and a cursor push pinned the strands on the
+   * clamp for 80 ms, a hard stop), and a cubic restoring term from
+   * `softRad` outward makes the limit a weight, not a wall; `clampRad` stays
+   * as the safety.
    */
   tassel: {
     periodFactor: 0.45,
     zeta: 0.35,
     lengthBodyWidths: 0.32,
+    maxDrive: 6,
+    softRad: 0.5,
     clampRad: 0.35,
   },
   bob: { periodS: 0.45, zeta: 0.5, maxPx: 8 },

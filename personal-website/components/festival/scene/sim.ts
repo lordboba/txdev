@@ -308,7 +308,10 @@ export function createSim(options: SimOptions): SimApi {
     l.lengthWorld = lengthWorld;
     l.omega2 = omega2;
     l.omega = Math.sqrt(omega2);
-    l.tasselDrive = 1 + collarWorld / Math.max(tasselWorld, 1e-3);
+    l.tasselDrive = Math.min(
+      1 + collarWorld / Math.max(tasselWorld, 1e-3),
+      PENDULUM.tassel.maxDrive,
+    );
     l.centrePx = {
       x: spec.bodyRect.x + spec.bodyRect.w / 2,
       y: spec.bodyRect.y + spec.bodyRect.h / 2,
@@ -475,9 +478,13 @@ export function createSim(options: SimOptions): SimApi {
       }
 
       // The tassel restores toward plumb (absolute angle θ + ψ → 0) and is
-      // driven by the collar's tangential acceleration (1 + R/l)·θ''.
+      // driven by the collar's tangential acceleration (1 + R/l)·θ''; a cubic
+      // term from `softRad` outward is the strands' weight leaning against a
+      // large relative angle, so the clamp below is a safety, not the stop.
+      const soft = s.tasselTheta / PENDULUM.tassel.softRad;
       const tasselAccel =
         -tasselOmega * tasselOmega * (s.tasselTheta + s.theta) -
+        tasselOmega * tasselOmega * soft * soft * soft -
         2 * PENDULUM.tassel.zeta * tasselOmega * s.tasselThetaDot -
         l.tasselDrive * accel;
 
@@ -1086,8 +1093,14 @@ export function createSim(options: SimOptions): SimApi {
 
         l.pending -= 1;
         l.frozen = false;
+        // A lantern re-hung on a new page starts from a fresh hang: the pivot
+        // moved, so the old swing, tassel and bob have no meaning here.
         s.theta = 0;
         s.thetaDot = 0;
+        s.tasselTheta = 0;
+        s.tasselThetaDot = 0;
+        s.bob = 0;
+        s.bobDot = 0;
         s.rise = 0;
         s.alpha = 1;
         s.zeta = PENDULUM.zetaScripted;
