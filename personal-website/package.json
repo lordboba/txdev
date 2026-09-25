@@ -26,6 +26,7 @@
     "next": "^16.1.6",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
+    "redis": "^5.10.0",
     "three": "^0.182.0"
   },
   "devDependencies": {
@@ -42,7 +43,6 @@
     "prettier": "^3.6.2",
     "react-doctor": "^0.1.4",
     "react-grab": "^0.1.16",
-    "redis": "^5.10.0",
     "tailwindcss": "^4",
     "topojson-client": "3.1.0",
     "topojson-simplify": "3.0.3",
