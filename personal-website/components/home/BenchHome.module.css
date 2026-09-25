@@ -217,6 +217,7 @@
   width: clamp(1rem, 0.85rem + 0.5vw, 1.2rem);
   height: clamp(1rem, 0.85rem + 0.5vw, 1.2rem);
   overflow: visible;
+  transition: filter 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .moonDisc {
@@ -224,8 +225,7 @@
   opacity: 0.26;
   transition:
     opacity 420ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    fill 420ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    filter 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    fill 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 /*
@@ -250,6 +250,17 @@
 .dockLink:focus-visible .moonDisc {
   fill: color-mix(in srgb, var(--accent) 42%, #fbf4e4);
   opacity: 1;
+}
+
+/*
+ * The halo hangs on the <svg> box, not on the <circle>. A filter declared on
+ * SVG geometry is clipped to the default filter region — -10%/120% of the
+ * element's bounding box — so the glow squared off at the disc's edge and the
+ * 9px shadow was cut away entirely. On the element box it is an ordinary CSS
+ * filter, shaped by the disc's own alpha, with nothing to clip it.
+ */
+.dockLink:hover .moonGlyph,
+.dockLink:focus-visible .moonGlyph {
   filter: drop-shadow(
       0 0 3px color-mix(in srgb, var(--accent) 62%, transparent)
     )
@@ -419,6 +430,7 @@
   .dockLink,
   .rocket,
   .binaryRain,
+  .moonGlyph,
   .moonDisc,
   .moonShadow,
   .moonLabel {
