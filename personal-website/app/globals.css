@@ -161,6 +161,25 @@ body {
   h2 {
     text-wrap: balance;
   }
+
+  /*
+   * CJK slot. `--font-cjk` is unset until something (a festival layer, a
+   * future post) fills it, so any Chinese text falls to a Song face at the
+   * leading and tracking Han glyphs need, with no other code.
+   */
+  [lang^='zh'] {
+    font-family: var(
+      --font-cjk,
+      'Noto Serif SC',
+      'Noto Serif TC',
+      'Songti SC',
+      'Songti TC',
+      serif
+    );
+    line-height: 1.7;
+    letter-spacing: 0.04em;
+    font-feature-settings: 'locl', 'kern';
+  }
 }
 
 body::after {
