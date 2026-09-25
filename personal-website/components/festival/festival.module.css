@@ -141,16 +141,14 @@
 }
 
 /*
- * `03 / 12` at the top of the strip. Seven mono glyphs at 10 px are 42 px,
- * wider than the 36 px inside the strip, so the index sets at 9 px with the
- * spaces tightened; it stays tabular and on one line. Its ink is the
+ * `03/12` at the top of the strip: five tabular mono glyphs at the 10 px
+ * `--label-xs` tier are ≈ 32 px, inside the 36 px strip interior (with the
+ * spaces of `03 / 12` the line was 42 px and dropped to 9 px). Its ink is the
  * secondary 墨色, ≥ 7:1 on the slip paper.
  */
 .slipIndex {
   color: var(--festival-ink-secondary);
-  font-size: 9px;
   letter-spacing: 0.02em;
-  word-spacing: -0.25em;
   white-space: nowrap;
 }
 
@@ -228,8 +226,17 @@
   line-height: 1.3;
 }
 
-/* 谜底 line, 600 ms after the card: Cormorant 500, 17 px, lining figures. */
+/*
+ * 谜底 line, 600 ms after the card: Cormorant 500, 17 px, lining figures. A
+ * wrapping flex row: the label is one item and the link another, so on the
+ * 160 px /past-experience card a long title drops to its own line whole
+ * ('Med Negotiate ↗') instead of breaking inside the product name.
+ */
 .answer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.35em;
   margin: 8px 0 0;
   font-size: 17px;
   font-style: normal;
@@ -246,14 +253,18 @@
 }
 
 /*
- * 谜底 at 15 px, not the tier's 17: Noto's full-height Han beside Cormorant's
+ * 谜底 at 15 px, not the line's 17: Noto's full-height Han beside Cormorant's
  * small x-height reads level at 15 (a deliberate optical size, §6.A).
  */
 .answerLabel {
+  flex: none;
   font-size: 15px;
 }
 
 .answerLink {
+  max-width: 100%;
+  /* A title wider than the card breaks evenly, never as an orphaned word. */
+  text-wrap: balance;
   color: inherit;
   pointer-events: auto;
   text-decoration: underline;
@@ -268,10 +279,13 @@
   outline-offset: 2px;
 }
 
-/* ↗ has no glyph in Cormorant; the system fallback is sized to its x-height. */
+/* ↗ as an inline SVG (no served font has U+2197); the underline stops at the title. */
 .arrow {
-  font-size: 0.8em;
-  margin-left: 0.15em;
+  display: inline-block;
+  width: 0.6em;
+  height: 0.6em;
+  margin-left: 0.2em;
+  vertical-align: -0.05em;
 }
 
 /* ------------------------------------------------------------------------ */
@@ -468,10 +482,16 @@
   margin-inline-end: 0;
 }
 
-/* `THE FIFTEENTH NIGHT` on its own line under the Han date, 2 px of lead. */
+/*
+ * `THE FIFTEENTH NIGHT` on its own line under the Han date, 3 px of lead. At
+ * 400 and 72% it stays the caption of the Han date, not the line (§6.A1:
+ * the Han date is the colophon; at 500 the mono label out-weighed it).
+ */
 .colophonLabel {
   display: block;
   margin-top: 3px;
+  font-weight: 400;
+  opacity: 0.72;
 }
 
 /* On the grey Bench set: Bench `--ink` at 75% (6:1 on #c8c8c8), not `--muted` (§3.1). */
@@ -531,6 +551,19 @@
 .moon[data-align='left'] .moonName {
   top: auto;
   bottom: calc(100% + 8px);
+}
+
+/*
+ * Right-moon routes: the poem column hangs under the lower-left limb, so the
+ * name hangs from the disc's right edge, 12 px under it, inside the moon's
+ * own footprint and clear of the column (centred, 玉盘 sat level with 千).
+ */
+.moon[data-align='right'] .moonName {
+  top: calc(100% + 12px);
+  left: auto;
+  right: 0;
+  translate: 0 0;
+  text-align: right;
 }
 
 .moon:hover .moonName,

@@ -52,7 +52,9 @@ export function PoemColumn({
         <figure
           className={styles.figure}
           tabIndex={0}
-          aria-label={`${line} — ${TRANSLATION}`}
+          // The name is the verse alone; the figcaption carries the
+          // translation and pinyin, so a screen reader hears each once.
+          aria-label={line}
         >
           <div
             className={`${styles.column} ${styles.han}`}

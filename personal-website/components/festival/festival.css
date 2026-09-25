@@ -98,4 +98,6 @@ html[data-festival='mid-autumn'] .festival-sky {
     transparent calc(var(--moon-d, 0px) * var(--festival-sky-radius))
   );
   opacity: var(--festival-night, 1);
+  /* The opacity animates across a theme switch and the mount: keep it on the compositor. */
+  will-change: opacity;
 }

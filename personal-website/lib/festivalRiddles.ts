@@ -357,8 +357,9 @@ export function postHref(post: Pick<BlogPostMeta, 'slug'>): string {
 // Slate and rotation
 // ---------------------------------------------------------------------------
 
+/** `03/12`: five tabular mono glyphs fit the 36 px strip interior at 10 px. */
 export function indexLabel(index: number, total: number): string {
-  return `${String(index).padStart(2, '0')} / ${String(total).padStart(2, '0')}`;
+  return `${String(index).padStart(2, '0')}/${String(total).padStart(2, '0')}`;
 }
 
 export function riddleAriaLabel(clue: string, answer: string): string {

@@ -61,8 +61,8 @@ test('the slate is eleven project riddles then one per published post', () => {
     );
   });
 
-  assert.equal(slate[2].label, '03 / 12');
-  assert.equal(slate[11].label, '12 / 12');
+  assert.equal(slate[2].label, '03/12');
+  assert.equal(slate[11].label, '12/12');
 });
 
 test('every project 谜底 is an existing project title with its link as href', () => {

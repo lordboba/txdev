@@ -32,7 +32,6 @@ export function FestivalType({ runtime }: { runtime: FestivalRuntime }) {
     <div
       className={`${styles.root} ${festivalFont.variable}`}
       data-text={view.phase === 'exit' ? 'exit' : undefined}
-      data-reduced={view.reduced ? 'true' : undefined}
       style={timingVars(view.timing)}
     >
       <PoemColumn view={view} lang={lang} timing={view.timing} />

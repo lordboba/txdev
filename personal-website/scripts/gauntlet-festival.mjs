@@ -3526,6 +3526,91 @@ async function a11yChecks({ page, live, id, route, theme }) {
         `open=${open} closed=${closed}`,
         'true → false',
       );
+      // Escape from the 谜底 link returns focus to the strip button (the
+      // disclosure's trigger) without re-opening it.
+      const pull = page
+        .locator('[data-festival-root] button[aria-expanded]')
+        .first();
+      await pull.focus();
+      await page.waitForTimeout(300);
+      await page
+        .locator('[data-festival-root] [class*="answerLink"]')
+        .first()
+        .focus();
+      await page.waitForTimeout(100);
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(300);
+      const afterEscape = await page.evaluate(() => {
+        const b = document.querySelector(
+          '[data-festival-root] button[aria-expanded]',
+        );
+        return {
+          onPull: document.activeElement === b,
+          expanded: b?.getAttribute('aria-expanded'),
+          controls: !!b?.getAttribute('aria-controls'),
+        };
+      });
+      check(
+        afterEscape.onPull &&
+          afterEscape.expanded === 'false' &&
+          afterEscape.controls,
+        id('A.escapeFocus'),
+        'Escape from the 谜底 link returns focus to the strip, closed',
+        `active on strip=${afterEscape.onPull} expanded=${afterEscape.expanded} aria-controls=${afterEscape.controls}`,
+        'strip focused, aria-expanded false, aria-controls set',
+      );
+      await pull.blur();
+      await page.mouse.move(5, 500);
+      await page.waitForTimeout(400);
+      // Hover intent: a straight diagonal from the strip's centre to the
+      // 谜底 link leaves the strip over bare page before it enters the card;
+      // the card must stay open across it and the link must take the hover.
+      const stripRect = live.dom.slipButton;
+      if (stripRect) {
+        await page.mouse.move(
+          stripRect.x + stripRect.w / 2,
+          stripRect.y + stripRect.h / 2,
+        );
+        await page.waitForTimeout(900);
+        const linkCentre = await page.evaluate(() => {
+          const a = document.querySelector(
+            '[data-festival-root] [class*="answerLink"]',
+          );
+          const r = a?.getBoundingClientRect();
+          return r
+            ? { x: r.left + r.width / 2, y: r.top + r.height / 2 }
+            : null;
+        });
+        if (linkCentre) {
+          const x0 = stripRect.x + stripRect.w / 2;
+          const y0 = stripRect.y + stripRect.h / 2;
+          for (let i = 1; i <= 25; i += 1) {
+            await page.mouse.move(
+              x0 + ((linkCentre.x - x0) * i) / 25,
+              y0 + ((linkCentre.y - y0) * i) / 25,
+            );
+            await page.waitForTimeout(12);
+          }
+          await page.waitForTimeout(150);
+          const diagonal = await page.evaluate(() => ({
+            expanded: document
+              .querySelector('[data-festival-root] button[aria-expanded]')
+              ?.getAttribute('aria-expanded'),
+            linkHover: !!document.querySelector(
+              '[data-festival-root] [class*="answerLink"]:hover',
+            ),
+          }));
+          check(
+            diagonal.expanded === 'true' && diagonal.linkHover,
+            id('A.hoverIntent'),
+            'a diagonal from the strip to the 谜底 link keeps the card open and reaches the link',
+            `expanded=${diagonal.expanded} link:hover=${diagonal.linkHover}`,
+            'true / true',
+          );
+        }
+        await page.mouse.move(5, 500);
+        await page.waitForTimeout(500);
+      }
     }
     if (a.clueColor && a.cardBg) {
       const c = contrast(a.clueColor, a.cardBg);
