@@ -14,6 +14,7 @@
  */
 
 import { light as lightRules } from '../palette.ts';
+import { smoothstep } from './noise.ts';
 import { tween, tweenAt, tweenDone, type Tween } from './tween.ts';
 import {
   CHOREOGRAPHY,
@@ -26,6 +27,10 @@ import {
 const MOUNT = CHOREOGRAPHY.mount;
 const ROUTE = CHOREOGRAPHY.route;
 const THEME = CHOREOGRAPHY.theme;
+/** The disc keeps this far outside a nav band it would cross (§4.2). */
+const NAV_MARGIN_PX = 6;
+/** Horizontal overlap over which the push out of the nav band eases in. */
+const NAV_EASE_PX = 24;
 
 export interface MoonController {
   /** The glided anchor: centre and diameter in px, alpha, halo, visible. */
@@ -49,6 +54,13 @@ export interface MoonController {
   setNight(target: 0 | 1, ts: number): void;
   /** Scroll dim (§0.16): alpha × `target` over `ms` (0 snaps). */
   setDim(target: number, ts: number, ms: number): void;
+  /**
+   * The nav band the disc must stay out of (§4.2: the inset nav on
+   * `/past-experience` paints over the layer and bit a corner off the moon
+   * mid-glide). `enter()` takes it from the layout; the canvas may hand the
+   * next route's band earlier, on the commit. Null clears it.
+   */
+  avoid(rect: Rect | null): void;
   /** Reduced motion: one still frame at the layout's anchor. */
   snap(layout: RouteLayout, night: 0 | 1): void;
   /** Advances every tween to `ts`. */
@@ -85,8 +97,36 @@ export function createMoonController(): MoonController {
   let wanted = false;
   let night = 1;
   let nightTween: Tween | null = null;
+  let avoid: Rect | null = null;
 
   const up = () => state.visible && state.alpha > 0.01;
+
+  /**
+   * Pushes the disc down out of `avoid` by the amount it overlaps the band
+   * horizontally (eased over 24 px), so a glide that crosses the band ducks
+   * under it and rises again without a step, and an anchor clear of the
+   * band (every resolved anchor is) is left exactly where the tween put it.
+   */
+  const keepOutOfNav = (): void => {
+    if (!avoid) return;
+
+    // Horizontal overlap measured with the ease band added to the disc: the
+    // push is complete once the limb is within the 6 px margin of the band.
+    const r = state.diameter / 2;
+    const left = state.centre.x - r - NAV_EASE_PX;
+    const right = state.centre.x + r + NAV_EASE_PX;
+    const overlapX = Math.min(right - avoid.x, avoid.x + avoid.w - left);
+
+    if (overlapX <= 0) return;
+
+    const floor = avoid.y + avoid.h + NAV_MARGIN_PX + r;
+
+    if (state.centre.y >= floor) return;
+
+    const w = smoothstep(0, NAV_EASE_PX - NAV_MARGIN_PX, overlapX);
+
+    state.centre.y += (floor - state.centre.y) * w;
+  };
 
   return {
     state,
@@ -100,6 +140,7 @@ export function createMoonController(): MoonController {
     enter(layout, ts, glideMs = ROUTE.moonGlideMs, keepDim = false) {
       const anchor = layout.moon;
 
+      avoid = layout.navBand;
       wanted = anchor !== null;
       if (anchor) {
         if (up()) {
@@ -161,10 +202,15 @@ export function createMoonController(): MoonController {
       dim = tween(tweenAt(dim, ts, 1), target, ts, ms);
     },
 
+    avoid(rect) {
+      avoid = rect;
+    },
+
     snap(layout, nightTarget) {
       x = y = d = alpha = halo = dim = nightTween = null;
       dimTarget = 1;
       night = nightTarget;
+      avoid = layout.navBand;
       if (layout.moon) {
         state.centre.x = layout.moon.centre.x;
         state.centre.y = layout.moon.centre.y;
@@ -192,6 +238,7 @@ export function createMoonController(): MoonController {
           tweenAt(alpha, ts, state.alpha) * tweenAt(dim, ts, dimTarget);
         state.haloAlpha = tweenAt(halo, ts, state.haloAlpha);
         if (!wanted && state.alpha <= 0.001) state.visible = false;
+        keepOutOfNav();
       }
     },
 

@@ -519,6 +519,12 @@ export interface RouteLayout {
   textExclusions: Rect[];
   /** Live nav band bottom edge, px (0 when the route has no nav band). */
   navBottom: number;
+  /**
+   * The live nav band rect (null when the route has none): the moon keeps
+   * its disc out of it while it glides in (§4.2), since the inset nav on
+   * `/past-experience` paints over the layer and bit a corner off the disc.
+   */
+  navBand: Rect | null;
   /** Additive halo allowed (false on `/`). */
   halo: boolean;
   /** Pool peak alpha in the night state (`light.pool.peakDark` 0.14, or `peakHome` 0.22 on `/`). */

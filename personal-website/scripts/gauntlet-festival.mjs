@@ -2562,14 +2562,51 @@ async function routeChangeRun({ browser, lab, foundation, vpName, theme }) {
     // Mid-exit capture (§7.7: 140 ms after the navigation).
     await sinceClick(140);
     await page.screenshot({ path: join(OUT, `${tag}-mid-exit.png`) });
-    // Moon glide: three samples inside the 600 ms glide.
+    // Moon glide: three samples inside the 600 ms glide, each with the live
+    // nav band, which the disc must never enter (§4.2).
     const moonSamples = [];
     for (const ms of [250, 400, 550]) {
       await sinceClick(ms);
       moonSamples.push(
-        await page
-          .evaluate(readOverlay)
-          .then((o) => ({ x: o.vars.moonX, y: o.vars.moonY })),
+        await page.evaluate(() => {
+          const nav = document
+            .querySelector('header.sticky')
+            ?.getBoundingClientRect();
+          const root =
+            document.querySelector('[data-festival-root]') ??
+            document.documentElement;
+          const num = (name) => {
+            const v = getComputedStyle(root).getPropertyValue(name).trim();
+            return v ? parseFloat(v) : null;
+          };
+          return {
+            x: num('--moon-x'),
+            y: num('--moon-y'),
+            d: num('--moon-d'),
+            path: location.pathname,
+            nav: nav
+              ? { x: nav.left, y: nav.top, w: nav.width, h: nav.height }
+              : null,
+          };
+        }),
+      );
+    }
+    if (!vp.mobile) {
+      const bites = moonSamples
+        .filter((m) => m.x !== null && m.nav && m.path === '/past-experience')
+        .filter((m) => {
+          const r = m.d / 2;
+          return intersects({ x: m.x - r, y: m.y - r, w: m.d, h: m.d }, m.nav);
+        })
+        .map((m) => `disc (${fmt(m.x, 0)},${fmt(m.y, 0)}) d${fmt(m.d, 0)}`);
+      check(
+        bites.length === 0,
+        id('M6.moonNav'),
+        "the gliding disc never enters the new page's nav band",
+        bites.length
+          ? bites.join('; ')
+          : `${moonSamples.filter((m) => m.path === '/past-experience').length} samples on the new page clear`,
+        'no intersection',
       );
     }
     // The exit can only start when the new pathname commits (Next fetches

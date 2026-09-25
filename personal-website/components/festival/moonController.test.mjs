@@ -26,7 +26,7 @@ test('§4.1 mount: the disc fades in over 900 ms, the halo 150 ms later over 600
 
   moon.enter(blog(), 10);
   assert.equal(moon.state.visible, true);
-  assert.deepEqual(moon.state.centre, { x: 1275, y: 185 });
+  assert.deepEqual(moon.state.centre, { x: 1268, y: 185 });
   assert.equal(moon.state.diameter, 150);
   moon.update(10.45);
   assert.ok(moon.state.alpha > 0.4 && moon.state.alpha < 1);
@@ -34,6 +34,44 @@ test('§4.1 mount: the disc fades in over 900 ms, the halo 150 ms later over 600
   moon.update(11);
   assert.equal(moon.state.alpha, 1);
   assert.equal(moon.state.haloAlpha, light.moon.halo.peakDark);
+});
+
+test("§4.2 route: the disc keeps 6 px out of the new page's inset nav band while it glides", () => {
+  const moon = createMoonController();
+  const to = past();
+  const nav = to.navBand;
+
+  assert.deepEqual(nav, { x: 176, y: 56, w: 1088, h: 75 });
+  moon.enter(blog(), 0);
+  runFor(moon, 0, 1);
+  // The canvas hands the next route's band on the commit, before the re-read.
+  moon.avoid(nav);
+  moon.update(1);
+
+  const clear = () => {
+    const r = moon.state.diameter / 2;
+    const c = moon.state.centre;
+
+    return (
+      c.x - r >= nav.x + nav.w + 6 ||
+      c.x + r <= nav.x - 6 ||
+      c.y - r >= nav.y + nav.h + 6
+    );
+  };
+
+  assert.ok(
+    clear(),
+    `pushed out on the commit frame: ${JSON.stringify(moon.state.centre)}`,
+  );
+  moon.enter(to, 1);
+  for (let i = 1; i <= 40; i += 1) {
+    moon.update(1 + i / 60);
+    assert.ok(
+      clear(),
+      `clear at frame ${i}: ${JSON.stringify(moon.state.centre)}`,
+    );
+  }
+  assert.deepEqual(moon.state.centre, { x: 1355, y: 155 });
 });
 
 test('§4.2 route: the moon glides to the new anchor over 600 ms, monotonic; fades out over 280 without one', () => {

@@ -175,6 +175,7 @@ function emptyLayout(viewport: Viewport, mobile: boolean): RouteLayout {
     exclusions: [],
     textExclusions: [],
     navBottom: 0,
+    navBand: null,
     halo: false,
     poolPeak: 0,
     ignoresTheme: false,
@@ -708,6 +709,12 @@ export function createFestivalRuntime(
     const exitingBodies = layout.lanterns.map((l) => l.bodyRect);
     let pending: RouteLayout | null = null;
     let moonDone = false;
+
+    // The new page paints on this commit, 60 ms before its anchors are
+    // read: hand the moon the new route's nav band now (the table's
+    // fallback rect; the live one follows at the re-read) so the disc is
+    // already out from under an inset nav on the first painted frame.
+    moon.avoid(routeLayout(path, { ...viewport }, mobile, {})?.navBand ?? null);
 
     sim.schedule(
       rereadAt,

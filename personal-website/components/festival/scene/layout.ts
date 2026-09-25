@@ -1379,6 +1379,7 @@ export function routeLayout(
     exclusions,
     textExclusions,
     navBottom: navBand ? navBand.y + navBand.h : 0,
+    navBand,
     halo: !home,
     poolPeak: home ? light.pool.peakHome : light.pool.peakDark,
     ignoresTheme: home,
