@@ -30,6 +30,7 @@ import {
   type LanternObjects,
   type LanternObjectsFactory,
   type LanternSpec,
+  type LanternState,
   type ShadowStripBuilder,
   type WorldPoint,
 } from './types.ts';
@@ -85,6 +86,18 @@ export const HARDWARE = {
   knotRadius: 0.028,
   strands: 28,
   threadRadius: 0.006,
+  /**
+   * Segment counts, sized to §7.5's 8 000-triangle page budget: three
+   * lanterns must stay under it with the paper's 1 920 each. Hardware is
+   * ≈ 636 triangles per lantern (collars 2 × 120, ring 192, knot 80, cone
+   * 112, thread 12).
+   */
+  collarSegments: 24,
+  ringRadialSegments: 6,
+  ringTubularSegments: 16,
+  knotWidthSegments: 8,
+  knotHeightSegments: 6,
+  coneHeightSegments: 2,
 } as const;
 
 /** Derived y landmarks (local units). */
@@ -134,6 +147,7 @@ export const RIB_MIN_HALF_PX = 0.9;
 
 const rgb = (hex: string) => new THREE.Vector3(...hexToRgb01(hex));
 const PAPER_MID = hexToRgb01(palette.paperMid);
+const POOL_HOME = hexToRgb01(light.pool.homeTint);
 
 // ---------------------------------------------------------------------------
 // Geometry
@@ -264,18 +278,25 @@ const mix3 = (
   a[2] + (b[2] - a[2]) * t,
 ];
 
-/** One lacquer collar with its chestnut chamfer, top-down shade baked. */
+/**
+ * One lacquer collar with its chestnut chamfer, top-down shade baked. The
+ * body and the bevel are open cylinders (the paper hides their inner ends);
+ * only the outer end of the chamfer gets a cap, a single disc.
+ */
 function collarPieces(centreY: number, chamferAtTop: boolean) {
   const { collarRadius: r, collarHeight: h, chamfer } = HARDWARE;
+  const segments = HARDWARE.collarSegments;
   const cap = hexToRgb01(palette.cap);
   const chestnut = hexToRgb01(palette.capChamfer);
   const bottom = centreY - h / 2;
   const shade: VertexPaint = (_x, y) =>
     scale3(cap, 1 + 0.18 * Math.max(0, Math.min(1, (y - bottom) / h)));
-  const body = new THREE.CylinderGeometry(r, r, h - chamfer, 24, 1, false);
+  const body = new THREE.CylinderGeometry(r, r, h - chamfer, segments, 1, true);
   const bevel = chamferAtTop
-    ? new THREE.CylinderGeometry(r - chamfer, r, chamfer, 24, 1, false)
-    : new THREE.CylinderGeometry(r, r - chamfer, chamfer, 24, 1, false);
+    ? new THREE.CylinderGeometry(r - chamfer, r, chamfer, segments, 1, true)
+    : new THREE.CylinderGeometry(r, r - chamfer, chamfer, segments, 1, true);
+  const outerY = chamferAtTop ? centreY + h / 2 : centreY - h / 2;
+  const lid = new THREE.CircleGeometry(r - chamfer, segments);
 
   body.translate(0, centreY + (chamferAtTop ? -chamfer / 2 : chamfer / 2), 0);
   bevel.translate(
@@ -283,10 +304,14 @@ function collarPieces(centreY: number, chamferAtTop: boolean) {
     centreY + (chamferAtTop ? (h - chamfer) / 2 : -(h - chamfer) / 2),
     0,
   );
+  // CircleGeometry faces +z; turn it to face outward along y.
+  lid.rotateX(chamferAtTop ? -Math.PI / 2 : Math.PI / 2);
+  lid.translate(0, outerY, 0);
 
   return [
     paintPiece(body, 0, shade),
     paintPiece(bevel, 0, () => chestnut),
+    paintPiece(lid, 0, () => chestnut),
   ] as const;
 }
 
@@ -302,8 +327,8 @@ export function buildHardwareGeometry(): THREE.BufferGeometry {
   const ring = new THREE.TorusGeometry(
     HARDWARE.ringRadius,
     HARDWARE.ringTube,
-    8,
-    24,
+    HARDWARE.ringRadialSegments,
+    HARDWARE.ringTubularSegments,
   );
 
   ring.translate(0, RING_CENTRE_Y, 0);
@@ -319,7 +344,11 @@ export function buildHardwareGeometry(): THREE.BufferGeometry {
 
   threadGeometry.translate(0, KNOT_Y + HARDWARE.tasselGap / 2, 0);
 
-  const knotGeometry = new THREE.SphereGeometry(HARDWARE.knotRadius, 12, 8);
+  const knotGeometry = new THREE.SphereGeometry(
+    HARDWARE.knotRadius,
+    HARDWARE.knotWidthSegments,
+    HARDWARE.knotHeightSegments,
+  );
 
   knotGeometry.translate(0, KNOT_Y, 0);
 
@@ -329,7 +358,7 @@ export function buildHardwareGeometry(): THREE.BufferGeometry {
     HARDWARE.tasselBottom,
     HARDWARE.tasselHeight,
     HARDWARE.strands,
-    4,
+    HARDWARE.coneHeightSegments,
     true,
   );
 
@@ -452,9 +481,10 @@ export function buildFibreTexture(size = FIBRE_SIZE): THREE.CanvasTexture {
 export const SHADOW_STRIP_LEAD_PX = 96;
 
 /**
- * Builds the 4096×256 shadow strip: the titles in `fontFamily` 600 caps at
- * 96 px, tracking 0.08 em, black on transparent, blurred 2 px, copied into a
- * RedFormat DataTexture from the canvas alpha. Call after
+ * Builds the 4096×128 shadow strip: the titles in `fontFamily` 600 caps at
+ * 76 px (48 px caps, 37.5% of the strip), tracking 0.08 em, black on
+ * transparent, blurred 2 px, copied into a RedFormat DataTexture from the
+ * canvas alpha. The text reads forward on the drum. Call after
  * `document.fonts.ready`; `texture.userData` records the font string (T5),
  * the painted text width and whether the text had to be scaled to fit.
  */
@@ -998,9 +1028,11 @@ export const createLanternObjects: LanternObjectsFactory = (renderer) => {
   );
   const cordDark = hexToRgb01(palette.cord.dark);
   const cordLight = hexToRgb01(palette.cord.light);
-  let tintCache = '';
+  let haloHex = '';
+  let poolHex = '';
   const haloTint = new THREE.Vector3();
   const poolTint = new THREE.Vector3();
+  let shadowStrip: THREE.DataTexture | null = null;
 
   const attr = (geometry: THREE.BufferGeometry, name: string) =>
     geometry.getAttribute(name) as THREE.InstancedBufferAttribute;
@@ -1013,14 +1045,18 @@ export const createLanternObjects: LanternObjectsFactory = (renderer) => {
     cordGeometry.setDrawRange(0, count * CORD_SEGMENTS * 6);
   }
 
+  /** Halo/pool tints from the hue gate; on `/` the pool is the saturated paperHot. */
   function refreshTints(frame: FrameContext) {
-    const key = `${frame.tints.halo}|${frame.tints.pool}`;
+    const pool = frame.home ? light.pool.homeTint : frame.tints.pool;
 
-    if (key === tintCache) return;
-
-    tintCache = key;
-    haloTint.set(...hexToRgb01(frame.tints.halo));
-    poolTint.set(...hexToRgb01(frame.tints.pool));
+    if (frame.tints.halo !== haloHex) {
+      haloHex = frame.tints.halo;
+      haloTint.set(...hexToRgb01(haloHex));
+    }
+    if (pool !== poolHex) {
+      poolHex = pool;
+      poolTint.set(...(frame.home ? POOL_HOME : hexToRgb01(pool)));
+    }
   }
 
   function writeCord(
@@ -1142,7 +1178,10 @@ export const createLanternObjects: LanternObjectsFactory = (renderer) => {
         (frame.layout.poolPeak - light.pool.peakLight) * night;
 
       specs.forEach((spec, i) => {
-        const state = states.find((s) => s.id === spec.id);
+        let state: LanternState | undefined;
+
+        for (const s of states) if (s.id === spec.id) state = s;
+
         const k = worldPerPx(spec.z, frame.viewport.h);
         const width = pxLengthToWorld(spec.body, spec.z, frame.viewport);
         const height = width * PAPER_ASPECT;
@@ -1154,6 +1193,7 @@ export const createLanternObjects: LanternObjectsFactory = (renderer) => {
         const pivotY = state?.pivot.y ?? 0;
         const z = state?.pivot.z ?? spec.z;
         const lit = state?.lit ?? 1;
+        const pool = state?.pool ?? lit;
         const candle = state?.candle ?? 1;
         const alpha = state?.alpha ?? 1;
         const drop = hang + PAPER_TOP * width;
@@ -1192,7 +1232,8 @@ export const createLanternObjects: LanternObjectsFactory = (renderer) => {
         _matrix.compose(_position, _quaternion, _scale);
         halos.setMatrixAt(i, _matrix);
         haloColor.setXYZ(i, haloTint.x, haloTint.y, haloTint.z);
-        haloAlpha.setX(i, haloPeak * lit * candle * alpha);
+        // Pool and halo ride their own §4.1 row (`pool`), flickering with the candle.
+        haloAlpha.setX(i, haloPeak * pool * candle * alpha);
 
         // Pool: on the page under the lantern, 3.2× wide, 1.35× taller.
         _position.y -= light.pool.centreDropBodyHeights * height;
@@ -1205,7 +1246,7 @@ export const createLanternObjects: LanternObjectsFactory = (renderer) => {
         _matrix.compose(_position, _quaternion, _scale);
         pools.setMatrixAt(i, _matrix);
         poolColor.setXYZ(i, poolTint.x, poolTint.y, poolTint.z);
-        poolAlpha.setX(i, poolPeak * lit * candle * alpha);
+        poolAlpha.setX(i, poolPeak * pool * candle * alpha);
       });
 
       paper.instanceMatrix.needsUpdate = true;
@@ -1228,6 +1269,9 @@ export const createLanternObjects: LanternObjectsFactory = (renderer) => {
     },
 
     setShadowStrip(texture) {
+      // The strip is 512 KB on the CPU and the GPU: never leak the old one.
+      if (shadowStrip && shadowStrip !== texture) shadowStrip.dispose();
+      shadowStrip = texture;
       paperMaterial.uniforms.uShadow.value = texture ?? emptyShadow;
       paperMaterial.uniforms.uHasShadow.value = texture ? 1 : 0;
     },
@@ -1265,6 +1309,8 @@ export const createLanternObjects: LanternObjectsFactory = (renderer) => {
       (pools.material as THREE.Material).dispose();
       fibre.dispose();
       emptyShadow.dispose();
+      shadowStrip?.dispose();
+      shadowStrip = null;
       paper.dispose();
       hardware.dispose();
       halos.dispose();
