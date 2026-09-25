@@ -522,11 +522,13 @@ lib/festivalRiddles.test.mjs             every 谜底 exists; every 谜面 keywo
 lib/festival.test.mjs                    window/flag/query parsing; the colophon string equals 丙午年八月十五 (Intl chinese calendar, §6.A1)
 components/festival/FestivalMount.tsx    'use client'; owns `dynamic(() => import('./MidAutumnLayer'), { ssr: false })` and the client-side gate (window dates, ?festival=, localStorage). Next 16 refuses `ssr: false` inside a Server Component, and app/layout.tsx is one
 components/festival/MidAutumnLayer.tsx   the ONE client layer (three is imported only here, so it loads only when the gate passes); mounted through FestivalMount after {children}
-components/festival/FestivalCanvas.tsx   raw three r182 (no R3F): renderer, camera, 60 Hz clock, visibility/IO, theme sampling, pointer velocity; writes projected anchors to CSS vars
+components/festival/FestivalCanvas.tsx   raw three r182 (no R3F): renderer, camera, theme wiring, pointer velocity and parallax, the reduced-motion snapshot, the view store; writes projected anchors to CSS vars. The sequencing lives in scene/choreography.ts
 components/festival/FestivalType.tsx     HTML overlay root: PoemColumn (A1, A4, A5) + RiddleSlip (A3)
 components/festival/RiddleSlip.tsx
 components/festival/PoemColumn.tsx
 components/festival/scene/sim.ts         PURE: pendulums, tassel/poem springs, floret loop, pre-warm; seeded; no three imports
+components/festival/scene/choreography.ts  the §4.1 / §4.2 rows, the exit started at a link click, the mobile scroll-lift, the settle event; DOM-free, node-tested against a recording sim
+components/festival/scene/slipPin.ts     the riddle slip's damped pin (collar point + gap, 0.8× θ); DOM-free, node-tested
 components/festival/scene/loop.ts        rAF at ≤ 60 Hz, pause / poll / resume (visibilitychange, overlays), frame timing; timers injected, node-tested
 components/festival/scene/themeSampler.ts  data-theme + --accent read, OKLCH hue gate, damped uNight and pool/halo tints; DOM-free, node-tested
 components/festival/scene/moonController.ts  moon glide / fade between anchors, scroll dim, the moon's day/night blend behind one setNight(); node-tested
