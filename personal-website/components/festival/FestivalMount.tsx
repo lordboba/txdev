@@ -52,41 +52,41 @@ function readGate(): Gate {
  * The gate is read once per page load and never changes afterwards (the
  * query string and the stored override are fixed for the page's life), so
  * it is an external snapshot: null on the server and during hydration. The
- * one draw of the fallback seed happens inside this cache, never twice.
+ * one draw of the fallback seed happens inside this cache, never twice. It
+ * lives on `globalThis`, where the wind keeps its clock (§7.1): a Fast
+ * Refresh of this module must not draw a new seed and reseed the weather.
  */
-let gateCache: Gate | null = null;
-const noopSubscribe = () => () => {};
-const getGate = () => (gateCache ??= readGate());
+const gates = globalThis as { __festivalGate?: Gate };
+const getGate = () => (gates.__festivalGate ??= readGate());
 const getServerGate = () => null;
 
 /**
- * `?festival=0|1` persists to `localStorage.festival` from a commit-phase ref
- * callback, not from the render-phase snapshot (a storage write is a side
- * effect React may repeat). The sentinel renders whenever there is an
- * override to persist, even when the gate closes the layer.
+ * `?festival=0|1` persists to `localStorage.festival` from the store's
+ * subscribe callback, which React runs in the commit phase exactly like an
+ * effect, never from the render-phase snapshot (a storage write is a side
+ * effect React may repeat) and without a DOM node: `?festival=0` must leave
+ * zero festival nodes (§7.7).
  */
-function persistOverride(element: HTMLElement | null) {
-  if (!element || gateCache?.persist == null) return;
-  try {
-    storage()?.setItem(FESTIVAL_STORAGE_KEY, gateCache.persist ? '1' : '0');
-  } catch {
-    // Private mode: the override lives for this page only.
+function subscribeGate() {
+  const gate = getGate();
+
+  if (gate.persist != null) {
+    try {
+      storage()?.setItem(FESTIVAL_STORAGE_KEY, gate.persist ? '1' : '0');
+    } catch {
+      // Private mode: the override lives for this page only.
+    }
   }
+
+  return () => {};
 }
 
 export function FestivalMount({ posts }: { posts: BlogPostMeta[] }) {
   const pathname = usePathname();
   const webGL = useWebGLSupport();
-  const gate = useSyncExternalStore(noopSubscribe, getGate, getServerGate);
-  const sentinel =
-    gate?.persist != null ? <span ref={persistOverride} hidden /> : null;
+  const gate = useSyncExternalStore(subscribeGate, getGate, getServerGate);
 
-  if (!gate?.active || !webGL || !isFestivalRoute(pathname)) return sentinel;
+  if (!gate?.active || !webGL || !isFestivalRoute(pathname)) return null;
 
-  return (
-    <>
-      {sentinel}
-      <MidAutumnLayer posts={posts} seed={gate.seed} pathname={pathname} />
-    </>
-  );
+  return <MidAutumnLayer posts={posts} seed={gate.seed} pathname={pathname} />;
 }
