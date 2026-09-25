@@ -117,8 +117,9 @@ const ROUTE_EXIT_S = (ROUTE.riseDelayMs + ROUTE.riseMs) / 1000; /* 0.28 */
 const RESIZE_MOON_MS = 200;
 /**
  * An exit started at a link click is confirmed by the pathname change. If
- * none arrives within this long (a prevented navigation, a link Next handled
- * without a route change) the lanterns lower back in on the same page.
+ * none arrives within this long (a slow route, a link Next handled without
+ * a route change, a handler that cancelled the navigation after the exit
+ * had started) the lanterns lower back in on the same page.
  */
 const EXIT_CONFIRM_S = 4;
 /** Pointer parallax (§4.5): px at parallax 1.0 for a full-width pointer travel, and its damping λ. */
@@ -267,6 +268,10 @@ export function createFestivalRuntime(
   let sim: SimApi | null = null;
   let layout: RouteLayout = resolveLayout(pathname);
   let sequenceId = 0;
+  // Lifecycle flags, declared before the renderer is built: the moon
+  // texture loader closes over `torn` below.
+  let torn = false;
+  let contextLost = false;
 
   function resolveLayout(path: string): RouteLayout {
     // Outside the allow-list the mount is gone (FestivalMount); keep a shell.
@@ -359,9 +364,6 @@ export function createFestivalRuntime(
   let trackElement: Element | null = null;
   const trackRect: Rect = { x: 0, y: 0, w: 0, h: 0 };
   let shadowStrip: THREE.DataTexture | null = null;
-  let contextLost = false;
-
-  let torn = false;
   let overlayCheck = 0;
   let overlayOpen = false;
   let canvasVisible = true;
@@ -694,7 +696,13 @@ export function createFestivalRuntime(
     if (path !== null) startExit(path);
   }
 
-  document.addEventListener('click', onDocumentClick, true);
+  // Bubble phase, on `document`: React dispatches its handlers from the
+  // root container first, so `defaultPrevented` is meaningful here (in the
+  // capture phase it could never be true, and a handler that cancels the
+  // navigation would have snuffed and raised every lantern for 4 s). Next's
+  // Link calls router.push synchronously in its onClick, well before the
+  // commit, so the exit still starts at the click.
+  document.addEventListener('click', onDocumentClick);
 
   function routeChange(path: string) {
     if (!sim) return;
@@ -1319,7 +1327,7 @@ export function createFestivalRuntime(
     themeObserver.disconnect();
     intersection?.disconnect();
     attachReducedScroll(false);
-    document.removeEventListener('click', onDocumentClick, true);
+    document.removeEventListener('click', onDocumentClick);
     document.removeEventListener('pointerout', onPointerLeave);
     window.removeEventListener(FESTIVAL_EVENTS.theme, onThemeChange);
     window.removeEventListener(FESTIVAL_EVENTS.launch, onLaunch);
