@@ -71,13 +71,17 @@ export function slipPin(
 
 export type PinVarName = keyof typeof FESTIVAL_CSS_VARS;
 
-/** Value formatting per custom property: px unless it is an angle or a ratio. */
+/**
+ * Value formatting per custom property: px unless it is an angle or a ratio.
+ * Quantised (0.05 px / 0.05° / 0.005) so a settled object formats to the
+ * same string frame after frame and the writer below can skip it.
+ */
 function formatVar(name: PinVarName, value: number): string {
-  if (name === 'night') return value.toFixed(3);
+  if (name === 'night') return (Math.round(value * 200) / 200).toFixed(3);
   if (name === 'slipTheta' || name === 'poemTheta')
-    return `${value.toFixed(2)}deg`;
+    return `${(Math.round(value * 20) / 20).toFixed(2)}deg`;
 
-  return `${Math.round(value * 100) / 100}px`;
+  return `${Math.round(value * 20) / 20}px`;
 }
 
 /**
@@ -98,4 +102,42 @@ export function writePinVars(
       root.style.setProperty(property, formatVar(key, value));
     }
   }
+}
+
+export type PinValues = Record<PinVarName, number | null>;
+
+/**
+ * A per-frame writer that remembers the last string it wrote for every
+ * property and touches `root.style` only when a value changes, so a settled
+ * slip and a static moon cost the overlay no style invalidation. The caller
+ * mutates the returned `values` object in place and calls `write()`.
+ */
+export function createPinWriter(root: HTMLElement): {
+  values: PinValues;
+  write(): void;
+} {
+  const names = Object.keys(FESTIVAL_CSS_VARS) as PinVarName[];
+  const values = Object.fromEntries(
+    names.map((name) => [name, null]),
+  ) as PinValues;
+  // Starts as "nothing written": a name the caller never sets stays untouched
+  // (the text rects are written once per layout by `writePinVars`).
+  const written: Record<PinVarName, string | null> = Object.fromEntries(
+    names.map((name) => [name, null]),
+  ) as Record<PinVarName, string | null>;
+
+  return {
+    values,
+    write() {
+      for (const name of names) {
+        const value = values[name];
+        const next = value === null ? null : formatVar(name, value);
+
+        if (written[name] === next) continue;
+        written[name] = next;
+        if (next === null) root.style.removeProperty(FESTIVAL_CSS_VARS[name]);
+        else root.style.setProperty(FESTIVAL_CSS_VARS[name], next);
+      }
+    },
+  };
 }
