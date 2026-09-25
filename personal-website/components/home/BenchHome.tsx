@@ -70,6 +70,57 @@ export function BenchHome({ visitorCount }: { visitorCount: number | null }) {
           visitorCount={visitorCount}
           actions={
             <div className={styles.dock}>
+              {/*
+               * The Easter egg. Same destination as the rocket, none of its
+               * ceremony: a plain route change is what a secret door should
+               * do, so this Link deliberately skips handleRocketClick and the
+               * bench:launch dispatch. prefetch={false} keeps a door nobody
+               * has found yet off the network.
+               */}
+              <Link
+                href="/orbital"
+                prefetch={false}
+                className={`${styles.dockLink} ${styles.moonLink}`}
+                aria-label="Orbital view (moon)"
+              >
+                <span className={styles.moonLabel} aria-hidden="true">
+                  Orbital
+                </span>
+                {/*
+                 * Drawn, not an emoji — 🌙 would arrive in a colour and a
+                 * rendering family the dock does not own. An inline disc
+                 * inked with currentColor lives in the same grey system as
+                 * ">_", and the phase is the whole interaction: the occluder
+                 * inside the mask slides off on hover, so a barely-there
+                 * crescent waxes full. Geometry in a 24-unit box; the
+                 * occluder's r exceeds the disc's so the terminator stays a
+                 * clean arc at every offset.
+                 */}
+                <svg
+                  className={styles.moonGlyph}
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <mask id="benchDockMoonPhase">
+                    <rect x="0" y="0" width="24" height="24" fill="#fff" />
+                    <circle
+                      className={styles.moonShadow}
+                      cx="12"
+                      cy="12"
+                      r="8.6"
+                      fill="#000"
+                    />
+                  </mask>
+                  <circle
+                    className={styles.moonDisc}
+                    cx="12"
+                    cy="12"
+                    r="8"
+                    mask="url(#benchDockMoonPhase)"
+                  />
+                </svg>
+              </Link>
               <Link
                 href="/orbital"
                 className={styles.dockLink}

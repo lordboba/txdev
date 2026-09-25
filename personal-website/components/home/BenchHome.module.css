@@ -200,6 +200,93 @@
   }
 }
 
+/* ─── The moon (Easter egg) ───────────────────────────────────────────────
+ *
+ * Same rules as its neighbours: 44px hit area from .dockLink, name carried by
+ * the aria-label, greyscale at rest, light as the hover/focus reward. It
+ * breaks one rule on purpose — it is quieter than quiet at rest. A dock item
+ * a visitor is *meant* to find rests at --muted; this one rests at a fraction
+ * of it, a crescent you notice only once you are already looking.
+ */
+.moonLink {
+  position: relative;
+}
+
+.moonGlyph {
+  display: block;
+  width: clamp(1rem, 0.85rem + 0.5vw, 1.2rem);
+  height: clamp(1rem, 0.85rem + 0.5vw, 1.2rem);
+  overflow: visible;
+}
+
+.moonDisc {
+  fill: currentColor;
+  opacity: 0.26;
+  transition:
+    opacity 420ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    fill 420ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    filter 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/*
+ * The phase. transform-box/origin are set explicitly: the default differs
+ * between engines for SVG geometry, and the offset is in user units.
+ */
+.moonShadow {
+  transform: translateX(-6.2px);
+  transform-box: view-box;
+  transform-origin: center;
+  transition: transform 520ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Full moon, and the only warmth in the dock — the same --accent the rest of
+ * the site reserves for the lit thing. */
+.dockLink:hover .moonShadow,
+.dockLink:focus-visible .moonShadow {
+  transform: translateX(-21px);
+}
+
+.dockLink:hover .moonDisc,
+.dockLink:focus-visible .moonDisc {
+  fill: color-mix(in srgb, var(--accent) 42%, #fbf4e4);
+  opacity: 1;
+  filter: drop-shadow(
+      0 0 3px color-mix(in srgb, var(--accent) 62%, transparent)
+    )
+    drop-shadow(0 0 9px color-mix(in srgb, var(--accent) 38%, transparent));
+}
+
+/*
+ * The name, set left of the glyph rather than under it: a label hanging below
+ * would cross the header's hairline and land on the lantern cords. Absolute,
+ * so revealing it moves nothing in the dock.
+ */
+.moonLabel {
+  position: absolute;
+  top: 50%;
+  right: calc(100% - 0.35rem);
+  color: currentColor;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--label-xs, 10px);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: var(--label-xs-tracking, 0.1em);
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(0.35rem, -50%);
+  transition:
+    opacity 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  pointer-events: none;
+}
+
+.dockLink:hover .moonLabel,
+.dockLink:focus-visible .moonLabel {
+  opacity: 0.72;
+  transform: translate(0, -50%);
+}
+
 /*
  * Terminal button: a whisper of 1s and 0s drifting behind the emoji.
  * Ink-on-grey only (currentColor at low opacity) — no matrix green.
@@ -317,12 +404,20 @@
   .dock {
     gap: 0.3rem;
   }
+
+  /* No hover to reward on a touch screen, and no room to spend on a word. */
+  .moonLabel {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .dockLink,
   .rocket,
-  .binaryRain {
+  .binaryRain,
+  .moonDisc,
+  .moonShadow,
+  .moonLabel {
     transition-duration: 1ms;
   }
 
