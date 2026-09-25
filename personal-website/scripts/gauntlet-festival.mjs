@@ -9,8 +9,13 @@
  *
  * Options:
  *   --url       dev server (default http://localhost:3000; NEVER turbopack)
- *   --out       PNG directory (default <scratchpad>/shots/festival-gauntlet)
- *   --perf-out  perf JSON path (default <scratchpad>/shots/festival-perf.json)
+ *   --out       PNG directory (default <scratch>/shots/festival-gauntlet)
+ *   --perf-out  perf JSON path (default <scratch>/shots/festival-perf.json)
+ *
+ * Environment:
+ *   FESTIVAL_SCRATCH     <scratch> above (default <os.tmpdir()>/festival-gauntlet)
+ *   PLAYWRIGHT_CORE_DIR  a directory whose node_modules holds playwright-core
+ *                        (default <scratch>/pw)
  *   --off-url   a second server started with NEXT_PUBLIC_FESTIVAL=0, for the
  *               `enabled: false` half of the kill-switch check (optional)
  *   --only      comma list of route substrings to run (default: all)
@@ -43,7 +48,7 @@
  * a SKIP that says why), never a crash.
  */
 import { mkdirSync, readdirSync, writeFileSync, existsSync } from 'node:fs';
-import { homedir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -62,8 +67,13 @@ const args = Object.fromEntries(
     .filter(Boolean),
 );
 
+/**
+ * Where PNGs, the perf JSON and the playwright-core install live by default:
+ * `FESTIVAL_SCRATCH` (a session scratchpad) or the OS temp dir. `--out`,
+ * `--perf-out` and `PLAYWRIGHT_CORE_DIR` override the three uses separately.
+ */
 const SCRATCH =
-  '/private/tmp/claude-501/-Users-tylerxiao-Documents-txdev-personal-website/bc50ff0d-9a63-407c-be34-359f7849e09c/scratchpad';
+  process.env.FESTIVAL_SCRATCH ?? join(tmpdir(), 'festival-gauntlet');
 const BASE_URL = (args.url ?? 'http://localhost:3000').replace(/\/$/, '');
 const OFF_URL = args['off-url']?.replace(/\/$/, '') ?? null;
 const OUT = resolve(args.out ?? join(SCRATCH, 'shots', 'festival-gauntlet'));
@@ -183,7 +193,10 @@ const SWEEP_PX_PER_S = 1200; // M5
 const HALO_WIDTH_FACTOR = 2.8; // §2.2
 const POOL_WIDTH_FACTOR = 3.2;
 const POOL_ASPECT = 1.35;
-const POOL_DROP_BODY_HEIGHTS = 0.4;
+/** Pool centre: 0.4 body-heights below the BOTTOM collar (§2.2), i.e. 0.9 below the body centre. */
+const POOL_DROP_BODY_HEIGHTS = 0.5 + 0.4;
+/** Tassel: cone 0.32 + gap 0.08 body widths below the bottom collar (§5.1). */
+const TASSEL_DROP_FACTOR = 0.4;
 
 // ---------------------------------------------------------------------------
 // Result registry
@@ -1659,13 +1672,26 @@ async function pixelChecks({
   const moon = moonRect(layout.moon);
   if (moon) jobs.push({ id: 'moon', rect: moon });
   const pool = poolRect(hero.bodyRect);
+  // V2 samples the WALL, never the lantern: 12 px under the tassel's tip on
+  // the hero's axis (the ellipse's core), and 40 px beside the body at collar
+  // height on the side away from lantern B / toward the copy column. The
+  // old probe (the pool's geometric centre) landed inside the paper body and
+  // read the lit paper as "pool visible".
+  const body = hero.bodyRect;
   const poolCentre = {
-    x: pool.x + pool.w / 2 - 6,
-    y: pool.y + pool.h / 2 - 6,
+    x: body.x + body.w / 2 - 6,
+    y: body.y + body.h + body.w * TASSEL_DROP_FACTOR + 12 - 6,
+    w: 12,
+    h: 12,
+  };
+  const poolSide = {
+    x: (isHome ? body.x - 40 : body.x + body.w + 40) - 6,
+    y: body.y + body.h - 6,
     w: 12,
     h: 12,
   };
   jobs.push({ id: 'poolCentre', rect: poolCentre });
+  jobs.push({ id: 'poolSide', rect: poolSide });
   // Copy-column edge nearest the hero, from the layout's exclusion rects.
   const column = columnEdge(layout, hero, vp);
   if (column)
@@ -1729,16 +1755,25 @@ async function pixelChecks({
   if (lit && P) {
     const poolTint = hexRgb(P.paperMid);
     const centreAlpha = alphaEstimate(s.poolCentre.meanRgb, setBg, poolTint);
+    const sideAlpha = alphaEstimate(s.poolSide.meanRgb, setBg, poolTint);
     const edgeAlpha =
       column && s.columnEdge
         ? alphaEstimate(s.columnEdge.meanRgb, setBg, poolTint)
         : null;
     check(
-      centreAlpha !== null && centreAlpha >= 0.04,
+      centreAlpha !== null && centreAlpha >= 0.06,
       id('V2.poolVisible'),
-      'pool visible on the page',
-      `α≈${fmt(centreAlpha, 3)} at (${fmt(poolCentre.x, 0)},${fmt(poolCentre.y, 0)})`,
-      '≥ 0.04 (peak 0.14 / 0.10 on /)',
+      'pool visible on the wall 12 px under the tassel',
+      `α≈${fmt(centreAlpha, 3)} at (${fmt(poolCentre.x + 6, 0)},${fmt(poolCentre.y + 6, 0)})`,
+      '≥ 0.06 (peak 0.14 / 0.22 on /)',
+      'sampled on the page, outside the lantern',
+    );
+    check(
+      sideAlpha !== null && sideAlpha >= 0.03,
+      id('V2.poolSide'),
+      'pool reaches the wall 40 px beside the body at collar height',
+      `α≈${fmt(sideAlpha, 3)} at (${fmt(poolSide.x + 6, 0)},${fmt(poolSide.y + 6, 0)})`,
+      '≥ 0.03',
     );
     if (edgeAlpha !== null)
       check(
