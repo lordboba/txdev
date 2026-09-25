@@ -528,9 +528,10 @@ export const createFallObjects: FallObjectsFactory = (renderer) => {
         const slot = slots[i];
         const band = DEPTH_BANDS[instance.band];
 
-        // The sim publishes absolute CSS px.
-        _px.x = instance.x;
-        _px.y = instance.y;
+        // The sim publishes absolute CSS px; the pointer parallax (§4.5) is
+        // added here per depth band (1.0 / 0.6 / 0.3).
+        _px.x = instance.x + frame.parallax.x * band.parallax;
+        _px.y = instance.y + frame.parallax.y * band.parallax;
         pxToWorld(_px, frame.viewport, band.z, _world);
 
         const cell = FALL_CELLS[instance.atlasCell];

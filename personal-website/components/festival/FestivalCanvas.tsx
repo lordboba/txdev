@@ -8,14 +8,7 @@ import { featuredProjects } from '@/content/projectData';
 import type { BlogPostMeta } from '@/lib/blog';
 import { MOBILE_MEDIA_QUERY, festival } from '@/lib/festival';
 import { dayOfYear, riddleFor, type Riddle } from '@/lib/festivalRiddles';
-import {
-  accentTints,
-  hexToRgb01,
-  light as lightRules,
-  rgb01ToHex,
-  siteTokens,
-  type AccentTints,
-} from './palette';
+import { light as lightRules, siteTokens } from './palette';
 import { createFallObjects } from './scene/fall';
 import {
   buildShadowStrip,
@@ -23,21 +16,24 @@ import {
   createLanternObjects,
 } from './scene/lantern';
 import { cameraZ, readLiveRects, routeLayout } from './scene/layout';
+import { createLoop } from './scene/loop';
 import { createMoonObjects, loadMoonTexture } from './scene/moon';
-import { clamp, cubicBezier } from './scene/noise';
+import { createMoonController } from './scene/moonController';
+import { clamp } from './scene/noise';
 import { createPinWriter, slipPin, writePinVars } from './scene/projectPx';
 import { createSim } from './scene/sim';
+import { createThemeSampler } from './scene/themeSampler';
+import { tween, tweenAt, type Tween } from './scene/tween';
 import {
   CHOREOGRAPHY,
-  EASINGS,
   FESTIVAL_DATA_ATTRS,
   FESTIVAL_EVENTS,
   type FestivalDebugApi,
   type FrameContext,
-  type MoonState,
   type Rect,
   type RouteLayout,
   type SimApi,
+  type Vec2,
   type Viewport,
   type WindApi,
   type WorldPoint,
@@ -51,11 +47,14 @@ import {
 /**
  * The raw three renderer and the layer's conductor (bible §4, §7.3, §7.4).
  *
- * `createFestivalRuntime` owns everything imperative: the WebGL context, the
- * 60 Hz clock (`wind.tick` → `sim.step` → scene updates → CSS pins), the
- * mount / route / theme choreography issued to the pure sim on sim time, the
- * pauses (§4.7), theme sampling with the hue gate, pointer velocity, and the
- * small view store the HTML overlay (`FestivalType`) renders from. The
+ * `createFestivalRuntime` owns the WebGL context and the sequencing: the
+ * mount / route / theme choreography issued to the pure sim on sim time,
+ * the pointer velocity and parallax, the CSS pins, and the small view store
+ * the HTML overlay (`FestivalType`) renders from. The stateful pieces live in
+ * their own modules with their own tests: `scene/loop.ts` (rAF, 60 Hz cap,
+ * pause / resume, frame timing), `scene/themeSampler.ts` (theme + accent,
+ * hue gate, the damped `uNight` and tints) and `scene/moonController.ts`
+ * (glide / fade, scroll dim, the moon's day/night blend). The
  * `FestivalCanvas` component below is the thin React shell around it.
  */
 
@@ -95,7 +94,8 @@ export interface RuntimeOptions {
   /** The layer wrapper (`[data-festival-layer]`): receives the per-frame custom properties. */
   root: HTMLElement;
   seed: number;
-  posts: readonly BlogPostMeta[];
+  /** Read when a riddle is drawn, so a new `posts` array never rebuilds the runtime. */
+  posts: () => readonly BlogPostMeta[];
   pathname: string;
 }
 
@@ -104,9 +104,6 @@ const ROUTE = CHOREOGRAPHY.route;
 const THEME = CHOREOGRAPHY.theme;
 const LOOP = CHOREOGRAPHY.loop;
 
-const easeStd = cubicBezier(...EASINGS.std);
-const easeLinear = (t: number) => clamp(t, 0, 1);
-
 /** Elements whose presence pauses the loop (§4.7): modals and the Bench lightbox. */
 const OVERLAY_SELECTOR = '[aria-modal="true"], [class*="lightbox"]';
 /** Frames between overlay checks (a `querySelector` at 60 Hz is wasteful). */
@@ -114,37 +111,19 @@ const OVERLAY_CHECK_EVERY = 6;
 const PAUSE_POLL_MS = 200;
 /** Slip pin damping λ (§6.A3). */
 const SLIP_DAMP_LAMBDA = 12;
-/** When the route table has no moon the layout's setLayout waits for the exit. */
-const ROUTE_RELAYOUT_S = (ROUTE.riseDelayMs + ROUTE.riseMs) / 1000; /* 0.28 */
+/** The exit's 280 ms: candle 160, rise from +40 over 240 (§4.2). */
+const ROUTE_EXIT_S = (ROUTE.riseDelayMs + ROUTE.riseMs) / 1000; /* 0.28 */
 /** A same-set resize re-anchors the moon over this long (§7.3 "re-anchor from px"). */
 const RESIZE_MOON_MS = 200;
-
-type Tween = {
-  from: number;
-  to: number;
-  start: number;
-  dur: number;
-  ease: (t: number) => number;
-};
-
-function tweenAt(t: Tween | null, ts: number, fallback: number): number {
-  if (!t) return fallback;
-  if (t.dur <= 0) return t.to;
-
-  const k = clamp((ts - t.start) / t.dur, 0, 1);
-
-  return t.from + (t.to - t.from) * t.ease(k);
-}
-
-function tween(
-  from: number,
-  to: number,
-  start: number,
-  durMs: number,
-  ease = easeStd,
-): Tween {
-  return { from, to, start, dur: durMs / 1000, ease };
-}
+/**
+ * An exit started at a link click is confirmed by the pathname change. If
+ * none arrives within this long (a prevented navigation, a link Next handled
+ * without a route change) the lanterns lower back in on the same page.
+ */
+const EXIT_CONFIRM_S = 4;
+/** Pointer parallax (§4.5): px at parallax 1.0 for a full-width pointer travel, and its damping λ. */
+const PARALLAX_PX: Vec2 = { x: 8, y: 4 };
+const PARALLAX_LAMBDA = 6;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -164,28 +143,6 @@ function displayFamily(): string {
     .trim();
 
   return value || "'Cormorant Garamond', serif";
-}
-
-function mixTints(a: AccentTints, b: AccentTints, t: number): AccentTints {
-  if (t <= 0) return a;
-  if (t >= 1) return b;
-
-  const mix = (x: string, y: string) => {
-    const cx = hexToRgb01(x);
-    const cy = hexToRgb01(y);
-
-    return rgb01ToHex([
-      cx[0] + (cy[0] - cx[0]) * t,
-      cx[1] + (cy[1] - cx[1]) * t,
-      cx[2] + (cy[2] - cx[2]) * t,
-    ]);
-  };
-
-  return {
-    pool: mix(a.pool, b.pool),
-    halo: mix(a.halo, b.halo),
-    passed: b.passed,
-  };
 }
 
 /** The layout shell outside the allow-list: nothing placed, nothing falling. */
@@ -226,6 +183,40 @@ function emptyLayout(viewport: Viewport, mobile: boolean): RouteLayout {
     riddlePool: null,
     routeSeed: 0,
   };
+}
+
+/** The internal pathname an anchor click will navigate to, or null. */
+function internalLinkTarget(event: MouseEvent): string | null {
+  if (
+    event.defaultPrevented ||
+    event.button !== 0 ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.shiftKey ||
+    event.altKey
+  )
+    return null;
+
+  const target = event.target;
+  const anchor =
+    target instanceof Element
+      ? target.closest<HTMLAnchorElement>('a[href]')
+      : null;
+
+  if (!anchor || anchor.target === '_blank' || anchor.hasAttribute('download'))
+    return null;
+
+  let url: URL;
+
+  try {
+    url = new URL(anchor.href, location.href);
+  } catch {
+    return null;
+  }
+  if (url.origin !== location.origin || url.pathname === location.pathname)
+    return null;
+
+  return url.pathname;
 }
 
 // ---------------------------------------------------------------------------
@@ -319,9 +310,9 @@ export function createFestivalRuntime(
   const fall = createFallObjects(renderer);
   const moonTexture = loadMoonTexture(undefined, undefined, () => torn);
   // The moon borrows the fall system's unit plane: 6 geometries on the page (§7.5).
-  const moon = createMoonObjects(renderer, moonTexture, fall.geometry);
+  const moonObjects = createMoonObjects(renderer, moonTexture, fall.geometry);
 
-  scene.add(lanterns.object, fall.object, moon.object);
+  scene.add(lanterns.object, fall.object, moonObjects.object);
 
   function applySize() {
     viewport.w = window.innerWidth;
@@ -337,38 +328,26 @@ export function createFestivalRuntime(
 
   applySize();
 
-  // ---- per-frame state ------------------------------------------------------
-  let nightTarget: 0 | 1 = 1;
-  let night = 1;
-  /** The moon's own §4.3 blend (900 ms std to full, 500 ms back to 7%). */
-  let moonNightTween: Tween | null = null;
-  let moonNight = 1;
+  // ---- theme, moon, fades ---------------------------------------------------
+  const theme = createThemeSampler({
+    isDark: () => html.getAttribute(FESTIVAL_DATA_ATTRS.theme) !== 'light',
+    readAccent,
+    onTints: (tints) => {
+      root.style.setProperty('--festival-pool-tint', tints.pool);
+      root.style.setProperty('--festival-halo-tint', tints.halo);
+    },
+  });
+  const moon = createMoonController();
   let skyFade: Tween | null = null;
   let floretFade: Tween | null = null;
-  let tintsFrom: AccentTints = accentTints(siteTokens.accent.dark);
-  let tintsTo: AccentTints = tintsFrom;
-  let tintTween: Tween | null = null;
-  let tints: AccentTints = tintsFrom;
-  let lastAccent = '';
-  let lastDark: boolean | null = null;
 
-  const moonState: MoonState = {
-    centre: { x: 0, y: 0 },
-    diameter: 0,
-    alpha: 0,
-    haloAlpha: 0,
-    visible: false,
-  };
-  let moonX: Tween | null = null;
-  let moonY: Tween | null = null;
-  let moonD: Tween | null = null;
-  let moonAlpha: Tween | null = null;
-  let moonHalo: Tween | null = null;
-  let moonDim: Tween | null = null;
-  let moonDimTarget = 1;
-  /** The route being entered has a moon (known before `layout` swaps). */
-  let moonWanted = false;
+  // ---- pointer parallax (§4.5) ----------------------------------------------
+  /** Damped normalised pointer (−1..1), decaying to 0 when the pointer leaves. */
+  const pointerTarget: Vec2 = { x: 0, y: 0 };
+  const pointerDamped: Vec2 = { x: 0, y: 0 };
+  const parallax: Vec2 = { x: 0, y: 0 };
 
+  // ---- pins and slip --------------------------------------------------------
   const slipCollar: WorldPoint = { x: 0, y: 0, z: 0 };
   const slipPx = { x: 0, y: 0, thetaDeg: 0 };
   const slipLive = { x: NaN, y: NaN };
@@ -381,18 +360,17 @@ export function createFestivalRuntime(
   let shadowStrip: THREE.DataTexture | null = null;
   let contextLost = false;
 
-  let frames = 0;
   let torn = false;
-  let rafId = 0;
-  let pauseTimer = 0;
-  let lastFrameMs = 0;
   let overlayCheck = 0;
   let overlayOpen = false;
   let canvasVisible = true;
   let lifted = false;
-  let launched = false;
+  /** An exit already running for the next route (link click / rocket), awaiting the pathname. */
+  let pendingExit: { path: string | null; at: number } | null = null;
   let settledScheduled = false;
   let lastTrackScroll = -1;
+  /** Renders so far (the §7.5 / M8 frame counter: reduced motion renders once per state). */
+  let frames = 0;
 
   const frame: FrameContext = {
     ts: 0,
@@ -400,57 +378,29 @@ export function createFestivalRuntime(
     viewport,
     mobile,
     home: layout.home,
-    night,
-    moonNight,
-    tints,
+    night: theme.night,
+    moonNight: moon.night,
+    tints: theme.tints,
     cameraZ: camera.position.z,
     layout,
+    parallax,
   };
 
   // ---- theme ------------------------------------------------------------------
-  function sampleTheme(): { nightChanged: boolean } {
-    const dark = html.getAttribute(FESTIVAL_DATA_ATTRS.theme) !== 'light';
-    const accent = readAccent();
-    const nextNight: 0 | 1 = layout.ignoresTheme || dark ? 1 : 0;
-    const nightChanged = nextNight !== nightTarget;
-
-    nightTarget = nextNight;
-    lastDark = dark;
-
-    if (accent !== lastAccent) {
-      lastAccent = accent;
-      const next = accentTints(accent);
-
-      if (next.pool !== tintsTo.pool || next.halo !== tintsTo.halo) {
-        tintsFrom = tints;
-        tintsTo = next;
-        tintTween = sim
-          ? tween(0, 1, sim.state.ts, THEME.tintDampMs, easeLinear)
-          : null;
-        if (!tintTween) tints = next;
-      }
-      root.style.setProperty('--festival-pool-tint', next.pool);
-      root.style.setProperty('--festival-halo-tint', next.halo);
-    }
-
-    return { nightChanged };
-  }
-
   function onThemeChange() {
-    const dark = html.getAttribute(FESTIVAL_DATA_ATTRS.theme) !== 'light';
+    if (!theme.changed()) return;
 
-    if (dark === lastDark && readAccent() === lastAccent) return;
+    const ts = sim?.state.ts ?? null;
+    const { nightChanged } = theme.sample(layout.ignoresTheme, ts);
 
-    const { nightChanged } = sampleTheme();
-
-    if (!sim) {
+    if (!sim || ts === null) {
       // Before the loop starts (fonts wait) the state simply follows.
-      night = nightTarget;
-      moonNight = nightTarget;
+      theme.snap();
+      moon.setNight(theme.nightTarget, 0);
 
       return;
     }
-    sim.setNight(nightTarget);
+    sim.setNight(theme.nightTarget);
 
     if (reduced) {
       renderReduced();
@@ -461,7 +411,7 @@ export function createFestivalRuntime(
 
     // §4.3: dusk catches the candles in order; morning snuffs them at once.
     for (const spec of layout.lanterns) {
-      if (nightTarget === 1) {
+      if (theme.nightTarget === 1) {
         sim.light(spec.id, {
           delayS:
             (THEME.candleDelayMs + THEME.candleStaggerMs * spec.order) / 1000,
@@ -479,12 +429,7 @@ export function createFestivalRuntime(
       }
     }
     // The moon: 7% → full over 900 ms std at dusk, back over 500 ms at morning.
-    moonNightTween = tween(
-      moonNight,
-      nightTarget,
-      sim.state.ts,
-      nightTarget === 1 ? THEME.moonMs : THEME.moonOutMs,
-    );
+    moon.setNight(theme.nightTarget, ts);
   }
 
   const themeObserver = new MutationObserver(onThemeChange);
@@ -498,9 +443,9 @@ export function createFestivalRuntime(
   });
   window.addEventListener(FESTIVAL_EVENTS.theme, onThemeChange);
 
-  sampleTheme();
-  night = nightTarget;
-  moonNight = nightTarget;
+  theme.sample(layout.ignoresTheme, null);
+  theme.snap();
+  moon.setNight(theme.nightTarget, 0);
 
   // ---- layout ------------------------------------------------------------------
   function writeTextRects(next: RouteLayout) {
@@ -547,64 +492,8 @@ export function createFestivalRuntime(
   }
 
   /**
-   * Moves the moon to a layout's anchor: a glide when it is already up (§4.2
-   * route change, 600 ms; a same-set resize, 200 ms), the §4.1 fade-in when
-   * it is not, the 280 ms fade-out when the layout has none.
-   */
-  function moonEnter(
-    next: RouteLayout,
-    ts: number,
-    glideMs: number = ROUTE.moonGlideMs,
-    keepDim = false,
-  ) {
-    const anchor = next.moon;
-
-    moonWanted = anchor !== null;
-    if (anchor) {
-      if (moonState.visible && moonState.alpha > 0.01) {
-        // §4.2: the moon is shared; it glides to the new anchor.
-        moonX = tween(moonState.centre.x, anchor.centre.x, ts, glideMs);
-        moonY = tween(moonState.centre.y, anchor.centre.y, ts, glideMs);
-        moonD = tween(moonState.diameter, anchor.diameter, ts, glideMs);
-        moonAlpha = tween(
-          tweenAt(moonAlpha, ts, moonState.alpha),
-          1,
-          ts,
-          glideMs,
-        );
-        moonHalo = tween(
-          moonState.haloAlpha,
-          lightRules.moon.halo.peakDark,
-          ts,
-          glideMs,
-        );
-      } else {
-        moonX = moonY = moonD = null;
-        moonState.centre.x = anchor.centre.x;
-        moonState.centre.y = anchor.centre.y;
-        moonState.diameter = anchor.diameter;
-        moonAlpha = tween(0, 1, ts, MOUNT.moonFadeMs);
-        moonHalo = tween(
-          0,
-          lightRules.moon.halo.peakDark,
-          ts + MOUNT.moonHaloDelayMs / 1000,
-          MOUNT.moonHaloMs,
-        );
-      }
-      moonState.visible = true;
-    } else if (moonState.visible) {
-      moonAlpha = tween(moonState.alpha, 0, ts, ROUTE.moonFadeMs);
-      moonHalo = tween(moonState.haloAlpha, 0, ts, ROUTE.moonFadeMs);
-    }
-    if (!keepDim) {
-      moonDim = null;
-      moonDimTarget = 1;
-    }
-  }
-
-  /**
    * Swaps the composition. On a route change the moon rows already ran at
-   * the anchor re-read (`moonDone`), 220 ms before the lanterns are rebuilt.
+   * the anchor re-read (`moonDone`), before the lanterns are rebuilt.
    */
   function applyLayout(
     next: RouteLayout,
@@ -614,6 +503,7 @@ export function createFestivalRuntime(
     if (!sim) return;
 
     const homeChanged = next.home !== frame.home;
+    const ts = sim.state.ts;
 
     layout = next;
     frame.layout = next;
@@ -633,12 +523,16 @@ export function createFestivalRuntime(
     if (reason === 'resize') {
       // §7.3: re-anchor from px. The moon follows its new anchor (or leaves
       // when the narrower viewport dropped it); the scroll dim is kept.
-      moonEnter(next, sim.state.ts, RESIZE_MOON_MS, true);
+      moon.enter(next, ts, RESIZE_MOON_MS, true);
     } else {
-      if (!moonDone) moonEnter(next, sim.state.ts);
+      if (!moonDone) moon.enter(next, ts);
       lifted = false;
-      sampleTheme();
-      sim.setNight(nightTarget);
+      // The theme target follows the route (`/` ignores the theme): the
+      // candles and the moon's own blend both retarget here, so a light
+      // theme page entered from `/` never keeps a full night moon (§2.1).
+      theme.sample(next.ignoresTheme, ts);
+      sim.setNight(theme.nightTarget);
+      moon.setNight(theme.nightTarget, ts);
     }
   }
 
@@ -649,7 +543,7 @@ export function createFestivalRuntime(
       next.riddlePool,
       dayOfYear(new Date()),
       next.routeSeed,
-      posts,
+      posts(),
       festival.script,
     );
   }
@@ -689,7 +583,7 @@ export function createFestivalRuntime(
       sim.schedule(
         arrival + T.candleDelayMs / 1000,
         guard(id, () => {
-          if (nightTarget !== 1 || !sim) return;
+          if (theme.nightTarget !== 1 || !sim) return;
           sim.light(spec.id, {
             delayS: 0,
             durationS: T.candleMs / 1000,
@@ -748,6 +642,40 @@ export function createFestivalRuntime(
     }
   }
 
+  /**
+   * Starts the §4.2 exit at NAVIGATION START (a link click, the rocket),
+   * not at the commit: `usePathname` changes only after Next has fetched
+   * and committed the route (≈ 90 ms warm, seconds cold on dev), and the old
+   * lanterns would otherwise rise over the new page. The pathname change
+   * confirms it; if none arrives the lanterns lower back in.
+   */
+  function startExit(path: string | null) {
+    if (!sim || reduced || pendingExit) return;
+
+    sequenceId += 1;
+
+    const id = sequenceId;
+
+    exitSequence();
+    pendingExit = { path, at: sim.state.ts };
+    sim.schedule(
+      sim.state.ts + EXIT_CONFIRM_S,
+      guard(id, () => {
+        if (!pendingExit || !sim) return;
+        pendingExit = null;
+        enterSequence('route', sim.state.ts - ROUTE.lowerInDelayMs / 1000);
+      }),
+    );
+  }
+
+  function onDocumentClick(event: MouseEvent) {
+    const path = internalLinkTarget(event);
+
+    if (path !== null) startExit(path);
+  }
+
+  document.addEventListener('click', onDocumentClick, true);
+
   function routeChange(path: string) {
     if (!sim) return;
 
@@ -756,33 +684,56 @@ export function createFestivalRuntime(
     const id = sequenceId;
 
     if (reduced) {
+      pendingExit = null;
       applyLayout(resolveLayout(path), 'route');
       renderReduced();
 
       return;
     }
 
-    const base = sim.state.ts;
-    let pending: RouteLayout | null = null;
+    const now = sim.state.ts;
+    const exitAt =
+      pendingExit && (pendingExit.path === null || pendingExit.path === path)
+        ? pendingExit.at
+        : null;
 
-    if (launched) {
-      launched = false;
-    } else {
-      exitSequence();
-    }
+    pendingExit = null;
+    if (exitAt === null) exitSequence();
+
+    // The exit's 280 ms count from when it started; the new page is read no
+    // earlier than 60 ms after the commit (§4.2 "anchor re-read").
+    const rereadAt = now + ROUTE.anchorRereadDelayMs / 1000;
+    const relayoutAt = Math.max(rereadAt, (exitAt ?? now) + ROUTE_EXIT_S);
+    const base = relayoutAt - ROUTE_EXIT_S;
+    const exitingBodies = layout.lanterns.map((l) => l.bodyRect);
+    let pending: RouteLayout | null = null;
+    let moonDone = false;
 
     sim.schedule(
-      base + ROUTE.anchorRereadDelayMs / 1000,
+      rereadAt,
       guard(id, () => {
         pending = resolveLayout(path);
-        moonEnter(pending, sim!.state.ts);
+        // §8: bodies never cross the moon disc. When an exiting lantern is
+        // still rising across the glide path, the glide waits for the exit.
+        const crosses =
+          pending.moon !== null &&
+          relayoutAt > sim!.state.ts &&
+          moon.glideCrosses(
+            pending.moon.centre,
+            pending.moon.diameter,
+            exitingBodies,
+            ROUTE.risePx,
+          );
+
+        if (!crosses) {
+          moon.enter(pending, sim!.state.ts);
+          moonDone = true;
+        }
       }),
     );
     sim.schedule(
-      base + ROUTE_RELAYOUT_S,
+      relayoutAt,
       guard(id, () => {
-        const moonDone = pending !== null;
-
         applyLayout(pending ?? resolveLayout(path), 'route', moonDone);
         // §4.2: the enter's settle floor/ceiling count from the navigation.
         sim?.setSequenceStart(base);
@@ -792,10 +743,10 @@ export function createFestivalRuntime(
   }
 
   function onLaunch() {
-    if (!sim || reduced || launched) return;
-    sequenceId += 1;
-    exitSequence();
-    launched = true;
+    // The rocket's own <a href="/orbital"> click has usually started the
+    // exit already through the document listener; this covers a launch
+    // without one. Either way one exit runs.
+    startExit(null);
   }
 
   window.addEventListener(FESTIVAL_EVENTS.launch, onLaunch);
@@ -838,7 +789,7 @@ export function createFestivalRuntime(
               lowerDelay +
               (ROUTE.lowerInMs + ROUTE.candleDelayMs) / 1000,
             guard(id, () => {
-              if (nightTarget !== 1 || !sim) return;
+              if (theme.nightTarget !== 1 || !sim) return;
               sim.light(spec.id, {
                 delayS: 0,
                 durationS: ROUTE.candleMs / 1000,
@@ -855,17 +806,7 @@ export function createFestivalRuntime(
     const dim = layout.moonScrollDim;
 
     if (dim) {
-      const target = y > dim.afterScrollY ? dim.to : 1;
-
-      if (target !== moonDimTarget) {
-        moonDimTarget = target;
-        moonDim = tween(
-          tweenAt(moonDim, sim.state.ts, 1),
-          target,
-          sim.state.ts,
-          dim.ms,
-        );
-      }
+      moon.setDim(y > dim.afterScrollY ? dim.to : 1, sim.state.ts, dim.ms);
     }
 
     // Mobile `/`: the floret band follows the studio canvas as it scrolls.
@@ -889,6 +830,53 @@ export function createFestivalRuntime(
     }
   }
 
+  /**
+   * Reduced motion runs no loop, so the §3.3 scroll-lift and the §0.16 moon
+   * dim are applied as snaps from a passive scroll listener (§4.2: the same
+   * rows with 0 ms).
+   */
+  function onReducedScroll() {
+    if (!sim || !reduced) return;
+
+    const y = window.scrollY;
+    const lift = layout.scrollLift;
+    let changed = false;
+
+    if (lift && layout.lanterns.length) {
+      const next = lifted
+        ? y >= lift.returnBelowScrollY
+        : y > lift.liftAtScrollY;
+
+      if (next !== lifted) {
+        lifted = next;
+        sim.snapshotLift(lifted, lift.px);
+        changed = true;
+      }
+    }
+
+    const dim = layout.moonScrollDim;
+
+    if (dim) {
+      const target = y > dim.afterScrollY ? dim.to : 1;
+
+      if (target !== moon.dimTarget) {
+        moon.setDim(target, sim.state.ts, 0);
+        changed = true;
+      }
+    }
+    if (changed) render(0);
+  }
+
+  let reducedScrollAttached = false;
+
+  function attachReducedScroll(on: boolean) {
+    if (on === reducedScrollAttached) return;
+    reducedScrollAttached = on;
+    if (on)
+      window.addEventListener('scroll', onReducedScroll, { passive: true });
+    else window.removeEventListener('scroll', onReducedScroll);
+  }
+
   // ---- loop ------------------------------------------------------------------------
   function shouldPause(): boolean {
     if (document.hidden || !canvasVisible) return true;
@@ -901,52 +889,38 @@ export function createFestivalRuntime(
     return overlayOpen;
   }
 
-  function pauseLoop() {
-    if (rafId) cancelAnimationFrame(rafId);
-    rafId = 0;
-    lastFrameMs = 0;
-    wind.pause();
-    window.clearTimeout(pauseTimer);
-    pauseTimer = window.setTimeout(pollResume, PAUSE_POLL_MS);
-  }
+  const loop = createLoop({
+    hidden: () => document.hidden,
+    addVisibilityListener: (fn) =>
+      document.addEventListener('visibilitychange', fn),
+    removeVisibilityListener: (fn) =>
+      document.removeEventListener('visibilitychange', fn),
+    raf: (fn) => requestAnimationFrame(fn),
+    caf: (id) => cancelAnimationFrame(id),
+    setTimeout: (fn, ms) => window.setTimeout(fn, ms),
+    clearTimeout: (id) => window.clearTimeout(id),
+    now: () => performance.now(),
+    shouldPause,
+    onFrame(nowMs) {
+      if (disposed || !sim) return;
 
-  function pollResume() {
-    if (disposed || reduced) return;
-    overlayCheck = 0;
-    if (shouldPause()) {
-      pauseTimer = window.setTimeout(pollResume, PAUSE_POLL_MS);
+      const dt = wind.tick(nowMs);
 
-      return;
-    }
-    wind.resume();
-    rafId = requestAnimationFrame(tick);
-  }
-
-  function tick(nowMs: number) {
-    rafId = 0;
-    if (disposed || !sim) return;
-    if (shouldPause()) {
-      pauseLoop();
-
-      return;
-    }
-    if (nowMs - lastFrameMs < LOOP.minFrameGapMs) {
-      rafId = requestAnimationFrame(tick);
-
-      return;
-    }
-    lastFrameMs = nowMs;
-
-    const dt = wind.tick(nowMs);
-
-    if (dt > 0) {
-      sim.step(dt);
-      stepScroll();
-      advance(dt);
-      render(dt);
-    }
-    rafId = requestAnimationFrame(tick);
-  }
+      if (dt > 0) {
+        sim.step(dt);
+        stepScroll();
+        advance(dt);
+        render(dt);
+      }
+    },
+    onPause: () => {
+      overlayCheck = 0;
+      wind.pause();
+    },
+    onResume: () => wind.resume(),
+    minFrameGapMs: LOOP.minFrameGapMs,
+    pollMs: PAUSE_POLL_MS,
+  });
 
   /** Damps and tweens that live outside the sim. */
   function advance(dt: number) {
@@ -954,31 +928,15 @@ export function createFestivalRuntime(
 
     const ts = sim.state.ts;
 
-    night +=
-      (nightTarget - night) * (1 - Math.exp(-THEME.nightDampLambda * dt));
-    if (Math.abs(nightTarget - night) < 0.002) night = nightTarget;
-    moonNight = tweenAt(moonNightTween, ts, moonNight);
-    if (moonNightTween && ts >= moonNightTween.start + moonNightTween.dur) {
-      moonNightTween = null;
-    }
+    theme.advance(dt, ts);
+    moon.update(ts);
 
-    if (tintTween) {
-      const k = tweenAt(tintTween, ts, 1);
+    const k = 1 - Math.exp(-PARALLAX_LAMBDA * dt);
 
-      tints = mixTints(tintsFrom, tintsTo, k);
-      if (k >= 1) tintTween = null;
-    }
-
-    if (moonState.visible) {
-      moonState.centre.x = tweenAt(moonX, ts, moonState.centre.x);
-      moonState.centre.y = tweenAt(moonY, ts, moonState.centre.y);
-      moonState.diameter = tweenAt(moonD, ts, moonState.diameter);
-      moonState.alpha =
-        tweenAt(moonAlpha, ts, moonState.alpha) *
-        tweenAt(moonDim, ts, moonDimTarget);
-      moonState.haloAlpha = tweenAt(moonHalo, ts, moonState.haloAlpha);
-      if (!moonWanted && moonState.alpha <= 0.001) moonState.visible = false;
-    }
+    pointerDamped.x += (pointerTarget.x - pointerDamped.x) * k;
+    pointerDamped.y += (pointerTarget.y - pointerDamped.y) * k;
+    parallax.x = pointerDamped.x * PARALLAX_PX.x;
+    parallax.y = pointerDamped.y * PARALLAX_PX.y;
 
     // Translation lands at the settle event; `data-festival-settled` 500 ms later.
     if (view.phase === 'enter' && sim.state.settled) {
@@ -1004,9 +962,9 @@ export function createFestivalRuntime(
 
     frame.ts = state.ts;
     frame.dt = dt;
-    frame.night = night;
-    frame.moonNight = moonNight;
-    frame.tints = tints;
+    frame.night = theme.night;
+    frame.moonNight = moon.night;
+    frame.tints = theme.tints;
     frame.cameraZ = camera.position.z;
     frame.layout = layout;
     frame.mobile = mobile;
@@ -1014,9 +972,14 @@ export function createFestivalRuntime(
 
     lanterns.update(state.lanterns, layout.lanterns, frame);
     fall.update(state.fall, frame, tweenAt(floretFade, state.ts, 1));
-    moon.update(moonState, frame);
+    moonObjects.update(moon.state, frame);
     renderer.render(scene, camera);
     frames += 1;
+    if (frames === 1) {
+      // §4.1: the 200 ms canvas fade starts on the first painted frame, not
+      // before the first shader compile (which could swallow the whole fade).
+      canvas.style.opacity = '1';
+    }
 
     writePins(dt);
   }
@@ -1056,13 +1019,15 @@ export function createFestivalRuntime(
       slipTheta = slipPx.thetaDeg;
     }
 
-    const moonOn = moonState.visible && moonState.alpha > 0.001;
+    const m = moon.state;
+    const moonOn = m.visible && m.alpha > 0.001;
+    const moonParallax = lightRules.moon.parallax;
     const v = pins.values;
 
-    v.night = night * sky;
-    v.moonX = moonOn ? moonState.centre.x : null;
-    v.moonY = moonOn ? moonState.centre.y : null;
-    v.moonD = moonOn ? moonState.diameter : null;
+    v.night = theme.night * sky;
+    v.moonX = moonOn ? m.centre.x + parallax.x * moonParallax : null;
+    v.moonY = moonOn ? m.centre.y + parallax.y * moonParallax : null;
+    v.moonD = moonOn ? m.diameter : null;
     v.slipX = slipX;
     v.slipY = slipY;
     v.slipTheta = slipTheta;
@@ -1075,25 +1040,14 @@ export function createFestivalRuntime(
     if (!sim) return;
 
     sim.snapshotReduced();
-    night = nightTarget;
-    moonNight = nightTarget;
-    moonNightTween = null;
-    tints = tintsTo;
-    tintTween = null;
+    theme.snap();
+    moon.snap(layout, theme.nightTarget);
     skyFade = null;
     floretFade = null;
-    if (layout.moon) {
-      moonX = moonY = moonD = moonAlpha = moonHalo = moonDim = null;
-      moonState.centre.x = layout.moon.centre.x;
-      moonState.centre.y = layout.moon.centre.y;
-      moonState.diameter = layout.moon.diameter;
-      moonState.alpha = 1;
-      moonState.haloAlpha = lightRules.moon.halo.peakDark;
-      moonState.visible = true;
-    } else {
-      moonState.visible = false;
-      moonState.alpha = 0;
-    }
+    pointerTarget.x = pointerTarget.y = 0;
+    pointerDamped.x = pointerDamped.y = 0;
+    parallax.x = parallax.y = 0;
+    lifted = false;
     setView({
       layout,
       phase: 'enter',
@@ -1107,21 +1061,22 @@ export function createFestivalRuntime(
     html.setAttribute(FESTIVAL_DATA_ATTRS.settled, 'true');
     settledScheduled = true;
     render(0);
+    // The page may already be scrolled (a post opened mid-article).
+    attachReducedScroll(true);
+    onReducedScroll();
   }
 
   function onReducedChange() {
     reduced = reducedQuery.matches;
     if (!sim) return;
     if (reduced) {
-      if (rafId) cancelAnimationFrame(rafId);
-      rafId = 0;
-      window.clearTimeout(pauseTimer);
+      loop.stop();
+      pendingExit = null;
       renderReduced();
     } else {
+      attachReducedScroll(false);
       setView({ reduced: false });
-      wind.resume();
-      lastFrameMs = 0;
-      if (!rafId) rafId = requestAnimationFrame(tick);
+      loop.start();
     }
   }
 
@@ -1180,6 +1135,9 @@ export function createFestivalRuntime(
   function pointer(xNorm: number, yNorm: number) {
     if (reduced || disposed) return;
 
+    pointerTarget.x = clamp(xNorm, -1, 1);
+    pointerTarget.y = clamp(yNorm, -1, 1);
+
     const x = ((xNorm + 1) / 2) * viewport.w;
     const y = ((yNorm + 1) / 2) * viewport.h;
     const ms = performance.now();
@@ -1192,6 +1150,16 @@ export function createFestivalRuntime(
     pointerLast.y = y;
     pointerLast.ms = ms;
   }
+
+  /** The pointer left the window: the parallax decays to rest (§4.5). */
+  function onPointerLeave(event: PointerEvent) {
+    if (event.relatedTarget === null) {
+      pointerTarget.x = 0;
+      pointerTarget.y = 0;
+    }
+  }
+
+  document.addEventListener('pointerout', onPointerLeave);
 
   function onTouch(event: TouchEvent) {
     if (reduced) return;
@@ -1239,24 +1207,31 @@ export function createFestivalRuntime(
     if (disposed || started) return;
     started = true;
 
+    // The viewport may have changed during the fonts wait: re-resolve
+    // unconditionally so the canvas never starts at the construction size.
+    mobile = mobileQuery.matches;
+    applySize();
+    layout = resolveLayout(pathname);
+    frame.layout = layout;
+    frame.home = layout.home;
+    frame.mobile = mobile;
+
     const instance = createSim({
       seed,
       layout,
       wind,
-      night: nightTarget,
+      night: theme.nightTarget,
       reducedMotion: reduced,
     });
 
     sim = instance;
     applyLayout(layout, 'mount');
-    night = nightTarget;
-    moonNight = nightTarget;
-    moonNightTween = null;
+    theme.snap();
+    moon.setNight(theme.nightTarget, instance.state.ts);
     instance.prewarm(MOUNT.prewarmS);
 
     const ts = instance.state.ts;
 
-    canvas.style.opacity = '1';
     if (reduced) {
       renderReduced();
 
@@ -1265,9 +1240,7 @@ export function createFestivalRuntime(
     skyFade = tween(0, 1, ts, MOUNT.moonFadeMs);
     floretFade = tween(0, 1, ts, MOUNT.floretFadeMs);
     enterSequence('mount', ts);
-    lastFrameMs = 0;
-    wind.resume();
-    rafId = requestAnimationFrame(tick);
+    loop.start();
   }
 
   // ---- debug (§7.1) ------------------------------------------------------------------
@@ -1280,11 +1253,20 @@ export function createFestivalRuntime(
       theta: () => sim?.state.lanterns.map((l) => l.theta) ?? [],
       tassel: () => sim?.state.lanterns.map((l) => l.tasselTheta) ?? [],
       frames: () => frames,
+      frameMs: () => loop.frameMs(),
       layout: () => layout,
       time: () => wind.time(),
       state: () => sim?.state ?? null,
       view: () => view,
-      moon: () => ({ ...moonState, night: moonNight }),
+      moon: () => ({
+        ...moon.state,
+        centre: { ...moon.state.centre },
+        night: moon.night,
+        parallax: {
+          x: parallax.x * lightRules.moon.parallax,
+          y: parallax.y * lightRules.moon.parallax,
+        },
+      }),
       gusts: () => wind.gusts(),
       strip: () => shadowStrip?.userData ?? null,
     };
@@ -1296,12 +1278,13 @@ export function createFestivalRuntime(
   function teardown() {
     if (torn) return;
     torn = true;
-    if (rafId) cancelAnimationFrame(rafId);
-    rafId = 0;
-    window.clearTimeout(pauseTimer);
+    loop.dispose();
     if (resizeRaf) cancelAnimationFrame(resizeRaf);
     themeObserver.disconnect();
     intersection?.disconnect();
+    attachReducedScroll(false);
+    document.removeEventListener('click', onDocumentClick, true);
+    document.removeEventListener('pointerout', onPointerLeave);
     window.removeEventListener(FESTIVAL_EVENTS.theme, onThemeChange);
     window.removeEventListener(FESTIVAL_EVENTS.launch, onLaunch);
     window.removeEventListener('resize', onResize);
@@ -1315,7 +1298,7 @@ export function createFestivalRuntime(
     lanterns.dispose();
     shadowStrip = null;
     fall.dispose();
-    moon.dispose();
+    moonObjects.dispose();
     moonTexture.dispose();
     renderer.dispose();
     // Free the GL context (§7.5 budgets contexts) once the canvas has left
@@ -1389,6 +1372,12 @@ export function FestivalCanvas({
   onRuntime: (runtime: FestivalRuntime | null) => void;
 }) {
   const runtimeRef = useRef<FestivalRuntime | null>(null);
+  // The runtime's identity is tied to the page load, not to props: a new
+  // `posts` array (router.refresh, a revalidation, HMR of the root layout)
+  // must not tear the WebGL runtime down and replay the mount. The runtime
+  // reads `posts` through a ref that the data sentinel below refreshes on
+  // commit; route changes arrive through the route sentinel.
+  const postsRef = useRef(posts);
 
   /**
    * Mount work as a ref callback with a cleanup (this repo's form instead of
@@ -1406,8 +1395,8 @@ export function FestivalCanvas({
         canvas,
         root,
         seed,
-        posts,
-        pathname,
+        posts: () => postsRef.current,
+        pathname: canvas.ownerDocument.defaultView?.location.pathname ?? '/',
       });
 
       runtimeRef.current = runtime;
@@ -1419,9 +1408,7 @@ export function FestivalCanvas({
         onRuntime(null);
       };
     },
-    // `pathname` is read once at mount; route changes arrive through the sentinel.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [seed, posts, onRuntime],
+    [seed, onRuntime],
   );
 
   /** A sentinel whose ref callback re-runs on every pathname change (§4.2). */
@@ -1430,6 +1417,14 @@ export function FestivalCanvas({
       if (element) runtimeRef.current?.setRoute(pathname);
     },
     [pathname],
+  );
+
+  /** A sentinel whose ref callback re-runs whenever `posts` changes identity. */
+  const dataSentinel = useCallback(
+    (element: HTMLElement | null) => {
+      if (element) postsRef.current = posts;
+    },
+    [posts],
   );
 
   const onMove = useCallback((x: number, y: number) => {
@@ -1455,6 +1450,7 @@ export function FestivalCanvas({
         }}
       />
       <span ref={routeSentinel} hidden data-route={pathname} />
+      <span ref={dataSentinel} hidden />
     </>
   );
 }

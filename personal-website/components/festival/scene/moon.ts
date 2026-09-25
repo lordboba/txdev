@@ -143,6 +143,7 @@ const MOON_FRAGMENT = /* glsl */ `
 `;
 
 const _world = { x: 0, y: 0, z: MOON_Z };
+const _centre = { x: 0, y: 0 };
 
 /**
  * Disc + halo at z −3. `moonTexture` comes from `loadMoonTexture()`; `quad`
@@ -208,7 +209,10 @@ export const createMoonObjects: MoonObjectsFactory = (
           Math.sin((frame.ts / light.moon.haloBreathPeriodS) * Math.PI * 2);
       const haloScale = light.moon.halo.diameterFactor * breath;
 
-      pxToWorld(moon.centre, frame.viewport, MOON_Z, _world);
+      // Pointer parallax at 0.85 (§4.5); the canvas pins `--moon-x/y` the same way.
+      _centre.x = moon.centre.x + frame.parallax.x * light.moon.parallax;
+      _centre.y = moon.centre.y + frame.parallax.y * light.moon.parallax;
+      pxToWorld(_centre, frame.viewport, MOON_Z, _world);
       mesh.position.set(_world.x, _world.y, MOON_Z);
       mesh.scale.set(diameter * haloScale, diameter * haloScale, 1);
 

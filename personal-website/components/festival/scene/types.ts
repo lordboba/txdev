@@ -357,6 +357,13 @@ export interface FrameContext {
   /** Camera z from §7.3 for the live viewport height. */
   cameraZ: number;
   layout: RouteLayout;
+  /**
+   * Pointer parallax (§4.5), CSS px at parallax 1.0: the damped normalised
+   * pointer × (8, 4) px, 0 at rest and in reduced motion. Depth bands take
+   * `DEPTH_BANDS[].parallax` of it, the moon `light.moon.parallax` (0.85),
+   * lanterns none.
+   */
+  parallax: Vec2;
 }
 
 /** lantern.ts: paper (instanced), hardware (instanced), cords, halos, pools. */
@@ -582,8 +589,10 @@ export interface FestivalDebugApi {
   time(): number;
   state(): SimState | null;
   view(): unknown;
-  /** The moon state plus its own day/night blend (`night`, 0..1). */
-  moon(): MoonState & { night: number };
+  /** The moon anchor plus its own day/night blend (`night`, 0..1) and the parallax offset (px). */
+  moon(): MoonState & { night: number; parallax: Vec2 };
+  /** §7.5 render CPU budget: ms per frame, exponential average and the max over the last 120. */
+  frameMs(): { avg: number; max: number };
   gusts(): readonly GustSpec[];
   /** The 走马灯 strip's `userData` (font string, titles) once built, for T5. */
   strip(): Record<string, unknown> | null;

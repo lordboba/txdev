@@ -1307,8 +1307,10 @@ async function runCombo({
           sweepChecks({ page, layout, id, vp, live }),
         );
       }
-      if (route.key === 'blog')
+      if (route.key === 'blog') {
         await guarded(id('M8'), () => reducedMotionChecks({ page, ctx, id }));
+        await guarded(id('refresh'), () => refreshChecks({ page, id }));
+      }
       if (route.key === 'blog-slug')
         await guarded(id('M9'), () =>
           scrollChecks({ page, lab, layout, id, vp, tag }),
@@ -1323,6 +1325,12 @@ async function runCombo({
     // --- Same-set resize re-anchors the moon (§7.3) -------------------------
     if (!vp.mobile && theme === 'dark' && colour === 'mono' && layout?.moon) {
       await guarded(id('resize'), () => resizeChecks({ page, id, vp }));
+    }
+    // --- Mobile /blog/[slug], reduced motion: the scroll-lift snaps (§3.4, §4.2)
+    if (vp.mobile && route.key === 'blog-slug' && theme === 'dark') {
+      await guarded(id('M8.reducedLift'), () =>
+        reducedLiftChecks({ page, id }),
+      );
     }
     // --- Mobile: flag-off diffs (V10) --------------------------------------
     if (vp.mobile) {
@@ -2835,6 +2843,160 @@ async function reducedMotionChecks({ page, ctx, id }) {
   void ctx;
 }
 
+/**
+ * Reduced motion on the mobile post: no loop runs, so the §3.3 scroll-lift
+ * must arrive as a snap from the scroll listener (the lantern would otherwise
+ * stay painted over the article, V10).
+ */
+async function reducedLiftChecks({ page, id }) {
+  const lantern = () =>
+    page.evaluate(() => {
+      try {
+        const l = window.__festival?.state?.()?.lanterns?.[0];
+        return l
+          ? { lit: l.lit, rise: l.rise, alpha: l.alpha, y: window.scrollY }
+          : null;
+      } catch {
+        return null;
+      }
+    });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.waitForTimeout(400);
+  const before = await lantern();
+  if (!before) {
+    skip(id('M8.reducedLift'), 'reduced scroll-lift', 'state() not exposed');
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    return;
+  }
+  await page.evaluate(() => window.scrollTo(0, 600));
+  await page.waitForTimeout(300);
+  const lifted = await lantern();
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(300);
+  const back = await lantern();
+  check(
+    lifted.alpha === 0 && lifted.rise > 0 && lifted.lit === 0,
+    id('M8.reducedLift'),
+    'reduced motion: the mobile lantern lifts and fades past scrollY 120 (snap)',
+    `scrollY ${lifted.y}: lit ${fmt(lifted.lit, 2)} rise ${fmt(lifted.rise, 0)} alpha ${fmt(lifted.alpha, 2)}`,
+    'alpha 0, rise 24, lit 0',
+  );
+  check(
+    back.alpha === 1 && back.rise === 0,
+    id('M8.reducedReturn'),
+    'reduced motion: the lantern is back at rest below scrollY 40',
+    `scrollY ${back.y}: rise ${fmt(back.rise, 0)} alpha ${fmt(back.alpha, 2)}`,
+    'alpha 1, rise 0',
+  );
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.waitForTimeout(300);
+}
+
+/**
+ * A root-layout re-render with a fresh `posts` payload (router.refresh) must
+ * not rebuild the WebGL runtime: the frame counter keeps counting, the
+ * settled flag stays, and no second renderer initialises on the context.
+ */
+async function refreshChecks({ page, id }) {
+  const hasRouter = await page.evaluate(
+    () => typeof window.next?.router?.refresh === 'function',
+  );
+  if (!hasRouter) {
+    skip(
+      id('refresh.runtime'),
+      'router.refresh() keeps the runtime',
+      'window.next.router not exposed in this build',
+    );
+    return;
+  }
+  const warnings = [];
+  const onConsole = (m) => {
+    if (/texImage3D|WebGL: INVALID/i.test(m.text())) warnings.push(m.text());
+  };
+  page.on('console', onConsole);
+  const before = await page.evaluate(() => ({
+    frames: window.__festival?.frames?.() ?? null,
+    settled: document.documentElement.getAttribute('data-festival-settled'),
+  }));
+  await page.evaluate(() => window.next.router.refresh());
+  await page.waitForTimeout(1500);
+  const after = await page.evaluate(() => ({
+    frames: window.__festival?.frames?.() ?? null,
+    settled: document.documentElement.getAttribute('data-festival-settled'),
+  }));
+  page.off('console', onConsole);
+  check(
+    before.frames !== null &&
+      after.frames > before.frames &&
+      after.settled === 'true' &&
+      warnings.length === 0,
+    id('refresh.runtime'),
+    'router.refresh() keeps the runtime: frames continue, settled stays, no GL warnings',
+    `frames ${before.frames} → ${after.frames}, settled ${before.settled} → ${after.settled}, warnings ${warnings.length}`,
+    'frames increase, settled true, 0 warnings',
+  );
+}
+
+/**
+ * The moon's own day/night blend follows the route: `/` pins night = 1, so
+ * arriving on a moon route in the light theme must retarget it to 0 (a full
+ * night moon beside unlit lanterns otherwise, V4).
+ */
+async function moonNightRun({ browser }) {
+  const ctx = await newContext(browser, VIEWPORTS.desktop, 'light');
+  const page = await ctx.newPage();
+  page.setDefaultTimeout(30000);
+  try {
+    await page.goto(festivalUrl(BASE_URL, '/'), { waitUntil: 'load' });
+    if (!(await waitForLayer(page))) {
+      fail(
+        'V4.moonNightRoute',
+        'moon night after / → /orbital',
+        'layer missing on /',
+        '',
+        '',
+      );
+      return;
+    }
+    await waitSettled(page);
+    const link = page.locator('a[href="/orbital"]').first();
+    if ((await link.count()) === 0) {
+      skip(
+        'V4.moonNightRoute',
+        'moon night after / → /orbital',
+        'no <a href="/orbital"> on /',
+      );
+      return;
+    }
+    await link.evaluate((a) => a.click());
+    await page
+      .waitForFunction(() => location.pathname === '/orbital', null, {
+        timeout: 20000,
+      })
+      .catch(() => {});
+    await waitSettled(page);
+    const moon = await page.evaluate(() => {
+      try {
+        return window.__festival?.moon?.() ?? null;
+      } catch {
+        return null;
+      }
+    });
+    check(
+      moon !== null && moon.night < 0.1,
+      'V4.moonNightRoute',
+      'light theme, / → /orbital: the moon arrives as the 7% daytime disc (night < 0.1)',
+      moon
+        ? `night ${fmt(moon.night, 2)} alpha ${fmt(moon.alpha, 2)}`
+        : 'moon() absent',
+      'night < 0.1',
+    );
+    await shot(page, 'orbital-light-after-home.png');
+  } finally {
+    await ctx.close();
+  }
+}
+
 // ---------------------------------------------------------------------------
 // M9 scroll on /blog/[slug]
 // ---------------------------------------------------------------------------
@@ -3773,7 +3935,16 @@ async function perfChecks({ page, live, vp, route, responses, layout }) {
     }
   });
   if (frameMs !== null)
-    perfRow('renderCpuMs', r, fmt(frameMs, 2), '≤ 1 ms', frameMs <= 1);
+    // SwiftShader rasterises inside render() on the CPU, so this number is
+    // recorded here and judged on the GPU pass (§7.7 "timing on GPU only").
+    perfRow(
+      'renderCpuMs',
+      r,
+      `avg ${fmt(frameMs.avg, 2)}, max ${fmt(frameMs.max, 2)}`,
+      '≤ 1 ms avg',
+      null,
+      'SwiftShader: judged on the GPU pass',
+    );
   else if (!vp.mobile)
     perfRow(
       'renderCpuMs',
@@ -3994,6 +4165,22 @@ async function timingPass({ chromium, exe }) {
           );
         await page.waitForTimeout(6000); // let the first gust pass
         await page.mouse.move(720, 450);
+        const cpu = await page.evaluate(() => {
+          try {
+            return window.__festival?.frameMs?.() ?? null;
+          } catch {
+            return null;
+          }
+        });
+        if (cpu && route !== '/orbital')
+          perfRow(
+            'renderCpuMs',
+            route,
+            `avg ${fmt(cpu.avg, 2)}, max ${fmt(cpu.max, 2)}`,
+            '≤ 1 ms avg',
+            cpu.avg <= 1,
+            `GPU: ${renderer}`,
+          );
         const idle = await page.evaluate(sampleFrameGaps, 3);
         const budget = route === '/' ? 12 : 10;
         perfRow(
@@ -4323,6 +4510,10 @@ async function main() {
           routeChangeRun({ browser, lab, foundation, vpName, theme }),
         );
       }
+    }
+    if (!ONLY || ONLY.some((s) => 'orbital'.includes(s))) {
+      console.log('\n--- moon night: light / → /orbital ---');
+      await guarded('V4.moonNightRoute', () => moonNightRun({ browser }));
     }
     console.log('\n--- baselines (heap, LCP) ---');
     await guarded('baselines', () => baselineComparisons({ browser }));
