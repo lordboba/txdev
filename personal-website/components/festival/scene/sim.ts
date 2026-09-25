@@ -1194,6 +1194,20 @@ export function createSim(options: SimOptions): SimApi {
       });
     },
 
+    tap(point) {
+      const { kickRadPerS, radiusVw } = WIND.touch;
+      const direction = point.x < viewport.w / 2 ? 1 : -1;
+
+      for (const l of lanterns) {
+        if (l.frozen) continue;
+
+        const dist = Math.hypot(point.x - l.centrePx.x, point.y - l.centrePx.y);
+        const falloff = 1 - smoothstep(0, radiusVw * viewport.w, dist);
+
+        l.state.thetaDot += kickRadPerS * falloff * direction;
+      }
+    },
+
     schedule(ts, fn) {
       enqueue(ts, fn);
     },

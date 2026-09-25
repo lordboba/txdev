@@ -882,6 +882,58 @@ test('§4.4 a 600 px sweep at 1200 px/s never pins a tassel on its clamp: |ψ| �
   });
 });
 
+test('§4.4 a tap on mobile /blog is visible: Δθ ≥ 2° from the H1, ≤ 6° on the lantern, never past the idle clamp', () => {
+  const layout = routeLayout('/blog', { w: 390, h: 844 }, true, {});
+  const tapPeak = (point) => {
+    const wind = createWindInstance(11);
+    const sim = createSim({
+      seed: 11,
+      layout,
+      wind,
+      night: 1,
+      reducedMotion: false,
+    });
+
+    mountLanterns(sim, layout);
+    run(sim, wind, 3);
+
+    const before = sim.state.lanterns[0].theta;
+    let now = 3000;
+    let peak = 0;
+
+    wind.tick(now);
+    assert.equal(wind.touch(point, layout.viewport), true);
+    sim.tap(point);
+    for (let i = 0; i < 60 * 2.5; i += 1) {
+      now += FRAME_MS;
+      sim.step(wind.tick(now));
+      const l = sim.state.lanterns[0];
+
+      peak = Math.max(peak, Math.abs(l.theta - before));
+      assert.ok(Math.abs(l.theta) <= PENDULUM.idleClampRad + 1e-9);
+    }
+    // A second tap inside 3 s is ignored by both halves.
+    assert.equal(wind.touch(point, layout.viewport), false);
+
+    return peak * DEG;
+  };
+  const fromH1 = tapPeak({ x: 300, y: 150 });
+  const centre = layout.lanterns[0].bodyRect;
+  const onLantern = tapPeak({
+    x: centre.x + centre.w / 2,
+    y: centre.y + centre.h / 2,
+  });
+
+  assert.ok(
+    fromH1 >= 2,
+    `a tap on the H1 swings the lantern ${fromH1.toFixed(2)}°`,
+  );
+  assert.ok(
+    onLantern >= fromH1 && onLantern <= 6,
+    `a tap on the lantern is an answer, not a blow (${onLantern.toFixed(2)}°)`,
+  );
+});
+
 test('setEmitterRect moves one band in place: instances follow the tracked rect', () => {
   const layout = routeLayout('/', { w: 390, h: 844 }, true, {});
   const wind = stubWind();

@@ -278,7 +278,7 @@ export interface WindApi {
   vertical(): number;
   cursor(vxPxPerS: number, pointer: Vec2 | null, viewport: Viewport): void;
   cursorForceAt(point: Vec2, viewport: Viewport): number;
-  touch(point: Vec2, viewport: Viewport): void;
+  touch(point: Vec2, viewport: Viewport): boolean; // false when inside the 3 s interval (ignored)
   scroll(velocityVhPerS: number): void;
   scheduleGust(gust: Partial<GustSpec> & Pick<GustSpec, 'at'>): void;
   gusts(): readonly GustSpec[];
@@ -303,6 +303,7 @@ export interface SimApi {
   lowerIn(id: LanternId, opts: { delayS: number; durationS: number }): void;
   raise(id: LanternId, opts: { delayS: number; durationS: number; px: number }): void;
   light(id: LanternId, opts: { delayS: number; durationS: number; target: number; easing?: Easing | 'snuff'; poolDelayS?: number; poolDurationS?: number }): void;
+  tap(point: Vec2): void; // mobile tap: θ̇ += WIND.touch.kickRadPerS × falloff × direction on every hung lantern in the radius; called only when wind.touch() returned true
   setSequenceStart(ts: number): void;
   setEmitterRect(index: number, rect: Rect): void;
   schedule(ts: number, fn: () => void): void;
@@ -340,7 +341,7 @@ export interface FestivalDebugApi { wind(t?: number, x01?: number): number; rend
 // Tuning tables (values in the source, all from bible §4.1–4.5, §5.1–5.2):
 export declare const EASINGS: Record<Exclude<Easing, 'linear'>, readonly [number, number, number, number]>;
 export declare const PENDULUM: { leanPerW: 0.04; zetaIdle: 0.12; zetaScripted: 0.9; idleClampRad: 0.22; arrivalKick: 0.03; periods: { hero: 2.8; mid: 2.4; small: 2.1 }; tassel: { periodFactor: 0.45; zeta: 0.35; lengthBodyWidths: 0.32; maxDrive: 6; softRad: 0.5; clampRad: 0.35 } /* a pendulum from the collar, restoring toward plumb, driven min(1 + R/l, maxDrive)·θ'', cubic soft limit from softRad, clampRad a safety */; bob: { periodS: 0.45; zeta: 0.5; maxPx: 8 }; poem: { lengthU: 3; zeta: 0.2; drive: 0.15; renderScale: 0.5; clampDeg: 0.6 }; slipThetaScale: 0.8; settle: { thresholdDeg: 1; holdS: 1.4; floorS: 2.4; ceilingS: 3.6 }; dtClampS: 0.033 };
-export declare const WIND: { breeze: { octaves: 2; periodS: 9; amplitude: 0.5; spatialPhase: 0.7 }; gust: { firstAtS: 4.4; firstAmplitude: 1.8; intervalS: [12, 18]; amplitude: [1.2, 2.2]; leftToRightProbability: 0.8; speedVw: 0.55; riseMs: 350; holdMs: 200; decayS: 1.4 }; cursor: { velocityScale: 900; maxForce: 6; radiusVw: 0.35; decay: 3.5; floretShare: 0.25 }; touch: { amplitude: 0.6; durationS: 1.2; radiusVw: 0.35; minIntervalS: 3 }; scroll: { clamp: 3; scale: 0.25; decay: 4; floretLiftMaxPx: 12 }; floretDrift: { perW: 18; curl: 5 }; revolvingDrift: { pxPerS: 10; waver: 0.15; waverHz: 0.4 } };
+export declare const WIND: { breeze: { octaves: 2; periodS: 9; amplitude: 0.5; spatialPhase: 0.7 }; gust: { firstAtS: 4.4; firstAmplitude: 1.8; intervalS: [12, 18]; amplitude: [1.2, 2.2]; leftToRightProbability: 0.8; speedVw: 0.55; riseMs: 350; holdMs: 200; decayS: 1.4 }; cursor: { velocityScale: 900; maxForce: 6; radiusVw: 0.35; decay: 3.5; floretShare: 0.25 }; touch: { amplitude: 0.6; durationS: 1.2; radiusVw: 0.35; minIntervalS: 3; kickRadPerS: 0.2 }; scroll: { clamp: 3; scale: 0.25; decay: 4; floretLiftMaxPx: 12 }; floretDrift: { perW: 18; curl: 5 }; revolvingDrift: { pxPerS: 10; waver: 0.15; waverHz: 0.4 } };
 export declare const FALL_SPECIES: Record<FallSpecies, { sizePx: [number, number]; descentS: [number, number]; flutterPx: [number, number]; spin: [number, number]; tumble: number; atlasCell: AtlasCell }>;
 export declare const FALL_SPECIES_MIX: Record<FallSpecies, number>; // 22/36, 8/36, 6/36
 export declare const FALL_FLUTTER_HZ: readonly [number, number]; // [0.6, 1.1]

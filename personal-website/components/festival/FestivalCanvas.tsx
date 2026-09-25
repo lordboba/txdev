@@ -1166,7 +1166,12 @@ export function createFestivalRuntime(
 
     const touch = event.touches[0];
 
-    if (touch) wind.touch({ x: touch.clientX, y: touch.clientY }, viewport);
+    if (!touch) return;
+
+    const point = { x: touch.clientX, y: touch.clientY };
+
+    // The wind's gust and the sim's kick are one tap: both or neither (≤ 1 per 3 s).
+    if (wind.touch(point, viewport)) sim?.tap(point);
   }
 
   window.addEventListener('touchstart', onTouch, { passive: true });

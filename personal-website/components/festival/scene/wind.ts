@@ -238,13 +238,15 @@ export function createWindInstance(
     },
 
     touch(point, viewport) {
-      if (ts - lastTouchAt < WIND.touch.minIntervalS) return;
+      if (ts - lastTouchAt < WIND.touch.minIntervalS) return false;
       lastTouchAt = ts;
       touchGust = {
         at: ts,
         x01: point.x / viewport.w,
         radiusVw: WIND.touch.radiusVw,
       };
+
+      return true;
     },
 
     scroll(velocityVhPerS) {

@@ -222,8 +222,12 @@ export interface WindApi {
   cursor(vxPxPerS: number, pointer: Vec2 | null, viewport: Viewport): void;
   /** `Fc × (1 − smoothstep(0, 0.35 vw, dist))` for an object at `point`. */
   cursorForceAt(point: Vec2, viewport: Viewport): number;
-  /** Mobile tap: local gust A 0.6, `(1 − cos)` over 1.2 s, radius 0.35 vw, ≤ 1 per 3 s. */
-  touch(point: Vec2, viewport: Viewport): void;
+  /**
+   * Mobile tap: local gust A 0.6, `(1 − cos)` over 1.2 s, radius 0.35 vw, at
+   * most once per 3 s. Returns false when the tap was inside the interval
+   * and ignored, so the integrator can skip the sim's impulse too.
+   */
+  touch(point: Vec2, viewport: Viewport): boolean;
   /** Scroll velocity in viewport heights per second (signed). */
   scroll(velocityVhPerS: number): void;
   /** Adds a gust; missing fields take the §4.5 defaults. */
@@ -313,6 +317,13 @@ export interface SimApi {
       poolDurationS?: number;
     },
   ): void;
+  /**
+   * Mobile tap (§4.4): a one-off angular kick `WIND.touch.kickRadPerS ×
+   * falloff` to every hung lantern inside the 0.35 vw radius, in the gust's
+   * direction, on top of the wind's 1.2 s gust. The gust alone moved the 44
+   * px lantern half a pixel; the visitor who taps it must see it answer.
+   */
+  tap(point: Vec2): void;
   /** Schedules `fn` at sim time `ts` (pure: a sorted queue drained in `step`). */
   schedule(ts: number, fn: () => void): void;
   /**
@@ -680,7 +691,14 @@ export const WIND = {
     decay: 3.5,
     floretShare: 0.25,
   },
-  touch: { amplitude: 0.6, durationS: 1.2, radiusVw: 0.35, minIntervalS: 3 },
+  /** `kickRadPerS`: the sim's impulse per tap (peak ≈ 2.5° on the 2.1 s lantern). */
+  touch: {
+    amplitude: 0.6,
+    durationS: 1.2,
+    radiusVw: 0.35,
+    minIntervalS: 3,
+    kickRadPerS: 0.2,
+  },
   scroll: { clamp: 3, scale: 0.25, decay: 4, floretLiftMaxPx: 12 },
   /** Floret lateral drift: `18·W + 5·curl2D` px/s. */
   floretDrift: { perW: 18, curl: 5 },
