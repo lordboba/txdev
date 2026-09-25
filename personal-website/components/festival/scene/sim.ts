@@ -47,6 +47,7 @@ import type {
   LanternId,
   LanternSpec,
   LanternState,
+  LightOptions,
   PoemState,
   Rect,
   RouteLayout,
@@ -1314,19 +1315,3 @@ export function createSim(options: SimOptions): SimApi {
 
   return api;
 }
-
-/**
- * `light()` options. A catch (target above the current `lit`) always runs the
- * §4.1 keyframes; a snuff takes `easing` (default `'snuff'`, the §4.2 route
- * curve; the §4.3 morning snuff passes `'exit'`). The pool/halo row follows
- * with `poolDelayS` / `poolDurationS` (defaults: catch + 0.15 s over 0.5 s;
- * snuff at once over `durationS`).
- */
-export type LightOptions = {
-  delayS: number;
-  durationS: number;
-  target: number;
-  easing?: Easing | 'snuff';
-  poolDelayS?: number;
-  poolDurationS?: number;
-};

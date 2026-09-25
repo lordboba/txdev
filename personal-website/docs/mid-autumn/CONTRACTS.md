@@ -302,7 +302,7 @@ export interface SimApi {
   setNight(night: ThemeNight): void;
   lowerIn(id: LanternId, opts: { delayS: number; durationS: number }): void;
   raise(id: LanternId, opts: { delayS: number; durationS: number; px: number }): void;
-  light(id: LanternId, opts: { delayS: number; durationS: number; target: number; easing?: Easing | 'snuff'; poolDelayS?: number; poolDurationS?: number }): void;
+  light(id: LanternId, opts: LightOptions): void; // LightOptions lives in types.ts: { delayS; durationS; target; easing?: Easing | 'snuff'; poolDelayS?; poolDurationS? }
   tap(point: Vec2): void; // mobile tap: θ̇ += WIND.touch.kickRadPerS × falloff × direction on every hung lantern in the radius; called only when wind.touch() returned true
   setSequenceStart(ts: number): void;
   setEmitterRect(index: number, rect: Rect): void;

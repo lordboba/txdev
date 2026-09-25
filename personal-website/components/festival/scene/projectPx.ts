@@ -19,15 +19,6 @@ import {
 
 export const RAD_TO_DEG = 180 / Math.PI;
 
-/** World point → CSS px (top-left origin), using the §7.3 camera model. */
-export function projectPx(
-  point: WorldPoint,
-  viewport: Viewport,
-  out: Vec2 = { x: 0, y: 0 },
-): Vec2 {
-  return worldToPx(point, viewport, out);
-}
-
 /**
  * The same projection through a live three camera (NDC → px). `scratch` is
  * a caller-owned `Vector3` so nothing allocates per frame.

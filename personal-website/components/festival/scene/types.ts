@@ -279,6 +279,22 @@ export interface SimOptions {
 }
 
 /**
+ * `SimApi.light()` options. A catch (target above the current `lit`) always
+ * runs the §4.1 keyframes; a snuff takes `easing` (default `'snuff'`, the
+ * §4.2 route curve; the §4.3 morning snuff passes `'exit'`). The pool/halo
+ * row follows with `poolDelayS` / `poolDurationS` (defaults: catch + 0.15 s
+ * over 0.5 s; snuff at once over `durationS`).
+ */
+export interface LightOptions {
+  delayS: number;
+  durationS: number;
+  target: number;
+  easing?: Easing | 'snuff';
+  poolDelayS?: number;
+  poolDurationS?: number;
+}
+
+/**
  * The pure simulation. The integrator sequences the choreography (§4.1–4.3)
  * by issuing commands on sim time; the sim integrates them.
  */
@@ -306,17 +322,7 @@ export interface SimApi {
    * 0 s over `durationS`). A later `light()` on the same lantern supersedes a
    * pending one: the stale job is skipped when it fires.
    */
-  light(
-    id: LanternId,
-    opts: {
-      delayS: number;
-      durationS: number;
-      target: number;
-      easing?: Easing | 'snuff';
-      poolDelayS?: number;
-      poolDurationS?: number;
-    },
-  ): void;
+  light(id: LanternId, opts: LightOptions): void;
   /**
    * Mobile tap (§4.4): a one-off angular kick `WIND.touch.kickRadPerS ×
    * falloff` to every hung lantern inside the 0.35 vw radius, in the gust's
