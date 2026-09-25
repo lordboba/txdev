@@ -35,14 +35,14 @@ test('§3.8 counts and sizes at a glance (desktop, 1440×900)', () => {
       z: 2,
     },
     '/blog': {
-      lanterns: ['A:88', 'B:56', 'C:60'],
+      lanterns: ['A:88', 'B:56', 'C:56'],
       moon: 150,
       florets: 36,
       slip: true,
       z: 1,
     },
     '/blog/introduction': {
-      lanterns: ['A:88', 'B:56', 'C:60'],
+      lanterns: ['A:88', 'B:56', 'C:56'],
       moon: 150,
       florets: 36,
       slip: false,
@@ -56,7 +56,7 @@ test('§3.8 counts and sizes at a glance (desktop, 1440×900)', () => {
       z: 1,
     },
     '/schedule-a-call': {
-      lanterns: ['A:88', 'B:56', 'C:56'],
+      lanterns: ['A:88', 'B:56', 'C:52'],
       moon: 130,
       florets: 30,
       slip: true,
@@ -144,7 +144,7 @@ test('§3.2 `/orbital`: hero C from the tools pill, moon left, left-aligned lock
   assert.equal(lantern(live, 'C').cordAnchorY, 70);
 });
 
-test('§3.3 `/blog`: three lanterns, slip on B, moon anchor (1275, 185, 150)', () => {
+test('§3.3 `/blog`: three lanterns, slip on B, moon anchor (1268, 185, 150)', () => {
   const layout = desktop('/blog');
 
   assert.deepEqual(span(lantern(layout, 'A').bodyRect), [52, 140, 118, 194]);
@@ -152,8 +152,8 @@ test('§3.3 `/blog`: three lanterns, slip on B, moon anchor (1275, 185, 150)', (
   assert.deepEqual(span(lantern(layout, 'B').slipRect), [195, 233, 238, 390]);
   // The card hangs 8 px under the strip, inside the gutter (8 px clear of x304).
   assert.deepEqual(span(lantern(layout, 'B').cardRect), [60, 296, 398, 548]);
-  assert.deepEqual(span(lantern(layout, 'C').bodyRect), [1365, 1425, 196, 248]);
-  assert.deepEqual(layout.moon, { centre: { x: 1275, y: 185 }, diameter: 150 });
+  assert.deepEqual(span(lantern(layout, 'C').bodyRect), [1357, 1413, 196, 244]);
+  assert.deepEqual(layout.moon, { centre: { x: 1268, y: 185 }, diameter: 150 });
   assert.deepEqual(span(layout.text.poem), [1178, 1200, 276, 402]);
   assert.deepEqual(span(layout.text.colophon), [1160, 1172, 276, 372]);
   assert.deepEqual(span(layout.text.translation), [1158, 1420, 412, 429]);
@@ -167,7 +167,7 @@ test('§3.3 `/blog`: three lanterns, slip on B, moon anchor (1275, 185, 150)', (
   // H1, moon disc (+12), poem, colophon, translation (+6).
   assert.deepEqual(layout.florets.exclusions.map(span), [
     [304, 400, 158, 206],
-    [1188, 1362, 98, 272],
+    [1181, 1355, 98, 272],
     [1172, 1206, 270, 408],
     [1154, 1178, 270, 378],
     [1152, 1426, 406, 435],
@@ -217,14 +217,14 @@ test('§3.5 `/past-experience`: two lanterns, B 12 px clear of x176, no C', () =
   assert.equal(pinned.navBottom, 75);
 });
 
-test('§3.6 `/schedule-a-call`: C 30 px clear of the moon, feather 24, seed 5', () => {
+test('§3.6 `/schedule-a-call`: C 31 px clear of the moon, feather 24, seed 5', () => {
   const layout = desktop('/schedule-a-call');
 
   assert.deepEqual(span(lantern(layout, 'A').bodyRect), [48, 136, 112, 188]);
   assert.deepEqual(span(lantern(layout, 'B').bodyRect), [168, 224, 196, 244]);
   assert.deepEqual(span(lantern(layout, 'B').slipRect), [177, 215, 258, 410]);
-  assert.deepEqual(span(lantern(layout, 'C').bodyRect), [1382, 1438, 240, 288]);
-  assert.deepEqual(layout.moon, { centre: { x: 1315, y: 155 }, diameter: 130 });
+  assert.deepEqual(span(lantern(layout, 'C').bodyRect), [1370, 1422, 240, 285]);
+  assert.deepEqual(layout.moon, { centre: { x: 1300, y: 155 }, diameter: 130 });
   assert.deepEqual(span(layout.text.poem), [1228, 1250, 240, 366]);
   assert.deepEqual(span(layout.text.colophon), [1210, 1222, 240, 336]);
   assert.equal(layout.florets.featherPx, 24);
@@ -276,7 +276,7 @@ test('gutters anchor to the container edge; objects that do not fit are dropped'
   const wide = routeLayout('/blog', { w: 1920, h: 900 }, false, {});
   // Container 832 wide, centred: left edge 544; A keeps its 208 px offset.
   assert.equal(lantern(wide, 'A').bodyRect.x, 544 - 252);
-  assert.equal(wide.moon.centre.x, 1376 + 139);
+  assert.equal(wide.moon.centre.x, 1376 + 132);
 
   const narrow = routeLayout('/blog', { w: 1280, h: 900 }, false, {});
   assert.ok(

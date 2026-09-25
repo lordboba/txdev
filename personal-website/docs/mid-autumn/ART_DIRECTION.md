@@ -191,20 +191,20 @@ Desktop. Gutters x0–304 and x1136–1440 are the largest voids on the site; th
 ```
 y0   ┌──────────────────────── NavBar full-bleed 0-75 (z30, blur) ────────────────────────────┐
      │       ║                                                                  ☾ moon 150px  │
-     │     ▓███▓  A hero 88px x96 body y118-194 (走马灯)                          x1200-1350   │
+     │     ▓███▓  A hero 88px x96 body y118-194 (走马灯)                          x1193-1343   │
      │       ⌇                                JOURNAL                            y110-260     │
      │              ║                          Blog  (H1 x304-400 y158-206)     丙 千          │
      │             ▓█▓  B 56px x214 body y176-224                               午 里          │
      │              ⌇                          dek                              年 共  colophon x1160-1172 y276-372
      │             ▯ slip x195-233 y238-390    ┌ post card x304-1136 y276-488 ┐ 八 婵  poem x1178-1200 y276-402
      │                                         └────────────────────────────┘ 月 娟          ║
-     │                                                                        十     ▓█▓ C 60px x1395 body y196-248
+     │                                                                        十     ▓█▓ C 56px x1385 body y196-244
      │                                                                        五      ⌇
      │                                      translation right-aligned x1420 y412-429           │
 ```
 
-- Lanterns: **A hero** 88 px at x96 (x52–140, y118–194; T 2.8 s); **B** 56 px at x214 (x186–242, y176–224; T 2.4 s) with the slip; **C** 60 px at x1395 (x1365–1425, y196–248; T 2.1 s), cord x1395, 45 px clear of the moon disc. A's pool (282 px) reaches x237, 67 px short of the column.
-- Moon 150 px at x1200–1350, y110–260 (35 px below the nav band). Poem column under its lower-left limb; colophon column to the poem's left; translation right-aligned to x1420 (x≈1158–1420: the 17 px italic line measures 261 px, so its rect is 262 wide) at y412, clear of the post card (x ≤ 1136) and of C's tassel (ends y272).
+- Lanterns: **A hero** 88 px at x96 (x52–140, y118–194; T 2.8 s); **B** 56 px at x214 (x186–242, y176–224; T 2.4 s) with the slip; **C** 56 px at x1385 (x1357–1413, y196–244; T 2.1 s), cord x1385, 42 px clear of the moon disc and 27 px from the viewport edge, so its 2.8× halo (157 px) and 3.2× pool are whole (at x1395/60 the halo ran past x1440 and the right lantern read as cropped). A's pool (282 px) reaches x237, 67 px short of the column.
+- Moon 150 px at x1193–1343, y110–260 (35 px below the nav band; 57 px clear of the post card). Poem column under its lower-left limb; colophon column to the poem's left; translation right-aligned to x1420 (x≈1158–1420: the 17 px italic line measures 261 px, so its rect is 262 wide) at y412, clear of the post card (x ≤ 1136) and of C's tassel (ends y272).
 - Florets: 36, both gutters plus the top band y75–112 (above the JOURNAL eyebrow at y125–137; the H1 starts at y158). On `/blog/[slug]` the breadcrumb links own that row, so the post page has gutters only (the count stays 36).
 
 Mobile 390×844: **1 lantern** 44 px at x335 (x313–357, body y74–118; free block x200–374 y62–140), cord from y62 (nav bottom); **no moon, no slip, no text**; 12 florets; scroll-lift when `scrollY > 120` (lift 24 px + fade 260 ms), return below 40.
@@ -238,8 +238,8 @@ Desktop. Container x176–1264 (inset nav y56–131 at load, pinned 0–75); gut
 
 Desktop. Container x240–1200 (widest gutters on the site, 240 px) and a white Calendly iframe at x241–1199 y582–1342 that must never receive florets.
 
-- Lanterns: **A hero** 88 px at x92 (x48–136, y112–188); **B** 56 px at x196 (x168–224, y196–244) with the slip (x177–215, y258–410); **C** 56 px at x1410 (x1382–1438, y240–288), cord x1410, 30 px clear of the moon disc.
-- Moon 130 px at x1250–1380 y90–220; poem column x1228–1250 y240–366; colophon x1210–1222 y240–336; translation right-aligned to x1420 at y378 (C's tassel ends y312, 66 px above).
+- Lanterns: **A hero** 88 px at x92 (x48–136, y112–188); **B** 56 px at x196 (x168–224, y196–244) with the slip (x177–215, y258–410); **C** 52 px at x1396 (x1370–1422, y240–285), cord x1396, 31 px clear of the moon disc and 18 px from the viewport edge so the halo is whole (at x1410/56 it sat 2 px in and the halo was cut by the viewport).
+- Moon 130 px at x1235–1365 y90–220 (35 px right of the container edge at x1200); poem column x1228–1250 y240–366; colophon x1210–1222 y240–336; translation right-aligned to x1420 at y378 (C's tassel ends y306, 72 px above).
 - Florets: 30, gutters only (x < 232, x > 1208), 24 px alpha feather at the clip. Mobile: 0 lanterns, no moon, no text, florets off.
 
 ### 3.7 `/terminal`
@@ -252,15 +252,15 @@ Off (allow-list). It is a different world (blue-black, opaque `z-50`). The modul
 | ------------------ | ----------------------------------------- | ---- | ------- | ---- | -------------------------- | ------------------------------------- | ----------------------------- |
 | `/`                | 2 (72 hero, 44)                           | none | 24      | none | colophon only (horizontal) | the shadow titles                     | 0 / 10 florets in canvas rect |
 | `/orbital`         | 2 (56, 64 hero)                           | 120  | 30      | none | yes                        | moon + verse, left                    | 0 / 12                        |
-| `/blog`            | 3 (88 hero, 56, 60)                       | 150  | 36      | on B | yes                        | the fullest page                      | 1 (44) / 12, no moon          |
-| `/blog/[slug]`     | 3 (88 hero, 56, 60)                       | 150  | 36      | none | yes                        | quiet reading; moon recedes on scroll | 1 (44) / 12, scroll-lift      |
+| `/blog`            | 3 (88 hero, 56, 56)                       | 150  | 36      | on B | yes                        | the fullest page                      | 1 (44) / 6, no moon           |
+| `/blog/[slug]`     | 3 (88 hero, 56, 56)                       | 150  | 36      | none | yes                        | quiet reading; moon recedes on scroll | 1 (44) / 6, scroll-lift       |
 | `/past-experience` | 2 (72 hero, 52)                           | 130  | 30      | on B | yes                        |                                       | 0 / 0                         |
-| `/schedule-a-call` | 3 (88 hero, 56, 56)                       | 130  | 30      | on B | yes                        |                                       | 0 / 0                         |
+| `/schedule-a-call` | 3 (88 hero, 56, 52)                       | 130  | 30      | on B | yes                        |                                       | 0 / 0                         |
 | `/terminal`        | off                                       |      |         |      |                            |                                       | off                           |
 
 Budget: ≤ 3 lanterns desktop (allowed 6), ≤ 1 mobile (allowed 3).
 
-**Moon anchors for the glide (centre, diameter):** `/orbital` (160, 100, 120) · `/blog*` (1275, 185, 150) · `/past-experience` (1355, 155, 130) · `/schedule-a-call` (1315, 155, 130) · `/` none.
+**Moon anchors for the glide (centre, diameter):** `/orbital` (160, 100, 120) · `/blog*` (1268, 185, 150) · `/past-experience` (1355, 155, 130) · `/schedule-a-call` (1300, 155, 130) · `/` none. The right-gutter moon and lantern C are placed together: the cord keeps §8's 30 px clearance from the disc and the lantern keeps ≥ 18 px from the viewport edge so its halo is never clipped.
 
 ---
 
@@ -289,7 +289,7 @@ The layer publishes `document.documentElement.dataset.festivalSettled = 'true'` 
 | Riddle slip                                | 1900                                                                                                                                                                             | 600                         | `rotateX(-70deg)` → 0, `transform-origin: top`, enter      | Then inherits 0.8× its lantern's θ                                                                                                                                                                                                                                                                                            |
 | **Translation**                            | **at settle event** (hero \|θ\| < 1° continuously for one half-period, T/2 = 1.4 s, sampled each frame; floor 2.4 s = poem complete + 160 ms; expected 2.5–3.0 s; ceiling 3.6 s) | 500                         | opacity, std                                               | Verse is read in stillness. A full period was impossible: arrival 1.10 s + 2.8 s > the 3.6 s ceiling                                                                                                                                                                                                                          |
 | `data-festival-settled`                    | 3.0–3.6 s (translation landed + 500)                                                                                                                                             |                             |                                                            | Gauntlet gate 4.5 s                                                                                                                                                                                                                                                                                                           |
-| **First gust**                             | **4.4 s** (sim time)                                                                                                                                                             | front, ≈ 2.4 s at any point | §4.5                                                       | Launched from x = −0.1 vw, A = 1.8, L → R at 0.55 vw/s (792 px/s at 1440): arrival at a lantern at screen x is `4.4 + (x + 0.1·vw) / (0.55·vw/s)` s, so on `/blog` A (x96) 4.70 s, B (x214) 4.85 s, C (x1395) 6.34 s; on `/` the hero (x1300) 6.22 s. The signature is scheduled, and it comes **after** the verse has landed |
+| **First gust**                             | **4.4 s** (sim time)                                                                                                                                                             | front, ≈ 2.4 s at any point | §4.5                                                       | Launched from x = −0.1 vw, A = 1.8, L → R at 0.55 vw/s (792 px/s at 1440): arrival at a lantern at screen x is `4.4 + (x + 0.1·vw) / (0.55·vw/s)` s, so on `/blog` A (x96) 4.70 s, B (x214) 4.85 s, C (x1385) 6.33 s; on `/` the hero (x1300) 6.22 s. The signature is scheduled, and it comes **after** the verse has landed |
 
 Scripted motion never exceeds one third of visible objects: only lanterns are scripted; moon, florets and text are fades.
 

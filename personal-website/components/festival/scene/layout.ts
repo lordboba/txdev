@@ -62,7 +62,7 @@ export const PX_PER_WORLD_UNIT = 100;
 export const CAMERA_FOV_DEG = 30;
 /** Lantern bodies keep this many px below a nav band they sit under (§7.4). */
 export const NAV_CLEARANCE_PX = 24;
-/** Minimum distance from the viewport edge after clamping (§3.6 C sits 2 px in). */
+/** Minimum distance from the viewport edge after clamping. */
 export const EDGE_MARGIN_PX = 2;
 /** Bodies may sit flush against the copy column (§3.5 B at x176); never inside. */
 export const EXCLUSION_CLEARANCE_PX = 0;
@@ -438,8 +438,11 @@ const BLOG: RouteTable = {
     {
       id: 'C',
       hero: false,
-      body: 60,
-      x: 1395,
+      // 56 px at x1385 (body x1357–1413): 27 px from the viewport edge so
+      // the 2.8× halo and 3.2× pool are not cut by it (at x1395/60 the
+      // right lantern read as cropped); the cord clears the disc by 42.
+      body: 56,
+      x: 1385,
       bodyTop: 196,
       cord: VIEWPORT_TOP,
       period: PENDULUM.periods.small,
@@ -449,7 +452,8 @@ const BLOG: RouteTable = {
     },
   ],
   moon: {
-    centre: { x: 1275, y: 185 },
+    // Disc x1193–1343: 57 px clear of the post card, 30 + 12 px from C's cord.
+    centre: { x: 1268, y: 185 },
     diameter: 150,
     anchor: 'container-right',
   },
@@ -611,8 +615,11 @@ const SCHEDULE_A_CALL: RouteTable = {
     {
       id: 'C',
       hero: false,
-      body: 56,
-      x: 1410,
+      // 52 px at x1396 (body x1370–1422): 18 px from the viewport edge so
+      // the halo is whole (at x1410/56 it sat 2 px in and read as cropped);
+      // the cord clears the disc by 31.
+      body: 52,
+      x: 1396,
       bodyTop: 240,
       cord: VIEWPORT_TOP,
       period: PENDULUM.periods.small,
@@ -622,7 +629,8 @@ const SCHEDULE_A_CALL: RouteTable = {
     },
   ],
   moon: {
-    centre: { x: 1315, y: 155 },
+    // Disc x1235–1365: 35 px right of the container edge at x1200.
+    centre: { x: 1300, y: 155 },
     diameter: 130,
     anchor: 'container-right',
   },
