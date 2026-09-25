@@ -2106,7 +2106,10 @@ function gustChecks({ samples, covered, layout, id, vp, route }) {
     route.key,
   );
   // M5's tassel row, measured where the bible defines it: at the first-gust
-  // peak of the hero, from the relative tassel angle.
+  // peak of the hero, from the ABSOLUTE tassel angle (θ + tasselTheta). The
+  // strands hang from the collar and restore toward plumb: at the onset they
+  // trail the collar, then whip through plumb and peak past the body 50–150
+  // ms after the body's own peak (§2.2, §4.5).
   const heroIndex = Math.max(
     0,
     layout.lanterns.findIndex((l) => l.hero),
@@ -2117,26 +2120,30 @@ function gustChecks({ samples, covered, layout, id, vp, route }) {
   if (vp.mobile) {
     skip(
       id('M5.tassel'),
-      'tassel lags body 80–150 ms',
+      'tassel whip lags body 50–150 ms',
       'M5 is a desktop row (no pointer on phones)',
     );
   } else if (withTassel.length > 20) {
     // Peak times as centroids of the samples within 2% of the maximum: the
     // sim steps 33 ms at the clamp and both peaks are flat-topped, so a
     // single-sample argmax is ± a step either way.
+    const valueOf = (s, key) =>
+      key === 'abs'
+        ? s.theta[heroIndex] + s.tassel[heroIndex]
+        : s[key][heroIndex];
     const centroid = (key, from, to) => {
       let max = 0;
       for (const s of withTassel) {
         const t = time(s);
         if (t >= from && t <= to)
-          max = Math.max(max, Math.abs(s[key][heroIndex]));
+          max = Math.max(max, Math.abs(valueOf(s, key)));
       }
       if (max < 0.01) return null;
       let sum = 0;
       let n = 0;
       for (const s of withTassel) {
         const t = time(s);
-        if (t >= from && t <= to && Math.abs(s[key][heroIndex]) >= 0.98 * max) {
+        if (t >= from && t <= to && Math.abs(valueOf(s, key)) >= 0.98 * max) {
           sum += t;
           n++;
         }
@@ -2144,25 +2151,28 @@ function gustChecks({ samples, covered, layout, id, vp, route }) {
       return { t: sum / n, v: max };
     };
     // The gust peak: the largest |θ| after the front (the breeze ripples
-    // before it are local maxima too); the tassel's within half its period
-    // after that.
+    // before it are local maxima too); the tassel's whip within half its
+    // period after that.
     const body = centroid('theta', FIRST_GUST_S + 0.2, Infinity);
-    const tassel = body && centroid('tassel', body.t - 0.1, body.t + 0.5);
-    const lag = body && tassel ? (tassel.t - body.t) * 1000 : null;
+    const whip = body && centroid('abs', body.t, body.t + 0.5);
+    const lag = body && whip ? (whip.t - body.t) * 1000 : null;
     check(
-      lag !== null && lag >= 80 - 33 && lag <= 150 + 33,
+      lag !== null &&
+        lag >= 50 - 33 &&
+        lag <= 150 + 33 &&
+        whip.v >= 0.9 * body.v,
       id('M5.tassel'),
-      'tassel peak lags the hero body peak 80–150 ms at the first gust (relative angle)',
+      'tassel whips past the hero body 50–150 ms after the body peak at the first gust (absolute angle)',
       lag === null
         ? 'no peak pair'
-        : `${fmt(lag, 0)} ms, relative amplitude ${fmt((100 * tassel.v) / body.v, 0)}%`,
-      '80–150 ms ± one 33 ms sim step',
+        : `${fmt(lag, 0)} ms, whip ${fmt((100 * whip.v) / body.v, 0)}% of the body peak`,
+      '50–150 ms ± one 33 ms sim step; whip ≥ 90% of the body peak',
       'peak centroids; frame-quantised on SwiftShader',
     );
   } else
     skip(
       id('M5.tassel'),
-      'tassel lags body 80–150 ms',
+      'tassel whip lags body 50–150 ms',
       '__festival.tassel() not exposed',
     );
 }

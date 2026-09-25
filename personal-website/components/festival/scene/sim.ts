@@ -6,7 +6,8 @@
  * - one damped pendulum per lantern, `θ'' = −(g'/L)(sin θ − 0.04·W·cos θ) − 2ζωθ'`
  *   with `g' = 4π²L/T²` (so ω = 2π/T whatever the drawn cord length), ζ 0.12
  *   idle and 0.9 while a lower-in or raise is scripted, idle clamp ±0.22 rad;
- * - the tassel spring (ω 2π/(0.40·T), ζ 0.35) driven by the body's angular
+ * - the tassel as a second pendulum (`PENDULUM.tassel`: ω 2π/(0.45·T),
+ *   ζ 0.35) restoring toward plumb and driven by the collar's tangential
  *   acceleration, and the cord-stretch bob (ω 2π/0.45, ζ 0.5, |bob| ≤ 8 px)
  *   driven by the scroll wind;
  * - the candle flicker, the 走马灯 strip scroll, the candle-catch keyframes
@@ -15,7 +16,10 @@
  *   plus the cursor term at the column);
  * - the floret loop: seeded species / band / emitter, `mod(ts/period + phase)`
  *   descent, flutter, spin, lateral drift `18·W + 5·curl2D` px/s, scroll lift,
- *   pop-free respawn, depth-band alpha, route re-clamp (damp λ 8);
+ *   pop-free respawn, depth-band alpha, route continuity (§0.9 / §4.2: the
+ *   pool is kept across a route change, an instance whose emitter survives
+ *   slides into it with damp λ 8, one whose emitter is gone fades 300 ms and
+ *   respawns, a surplus instance fades and is dropped, a new one fades in);
  * - settle detection for the translation gate: hero |θ| < 1° for T/2, floor
  *   2.4 s, ceiling 3.6 s after the mount sequence started (1.7 / 2.4 s on a
  *   route enter).
@@ -54,7 +58,12 @@ import type {
   Viewport,
   WindApi,
 } from './types.ts';
-import { pendulumGravity, pxLengthToWorld, pxToWorld } from './layout.ts';
+import {
+  PAPER_ASPECT,
+  pendulumGravity,
+  pxLengthToWorld,
+  pxToWorld,
+} from './layout.ts';
 import {
   coolTowardMoon,
   floretSpeciesMix,
@@ -107,6 +116,15 @@ export const REDUCED_SHADOW_SCROLL = 0.12;
 const OUTSIDE_FADE_S = 0.3;
 /** Route re-clamp damping λ (§4.2 "damp λ 8"). */
 const RECLAMP_LAMBDA = 8;
+/**
+ * On a route change an instance slides into its emitter's new rect when the
+ * nearest inside x is within this reach; farther than that the emitter has
+ * effectively gone (a `/blog` top-band floret over the copy column) and it
+ * fades and respawns instead of crossing the page.
+ */
+const RECLAMP_REACH_PX = 160;
+/** Instances born on a route change (the count grew) fade in over this long. */
+const BIRTH_FADE_S = 0.4;
 /** Curl-noise field scale (px per noise unit) and its drift in time (px/s). */
 const CURL_SCALE_PX = 160;
 const CURL_DRIFT_PX_PER_S = 24;
@@ -183,6 +201,8 @@ type LanternInternal = {
   lengthWorld: number;
   omega: number;
   omega2: number;
+  /** `1 + R/l`: the collar's tangential acceleration per unit θ'', over the tassel length. */
+  tasselDrive: number;
   centrePx: Vec2;
   x01: number;
   noiseSeed: number;
@@ -205,6 +225,14 @@ type FallInternal = {
   outsideFor: number;
   live: Rect;
   target: Rect;
+  /** Route change: slide `baseX` into the emitter's new rect (damp λ 8). */
+  reclamp: boolean;
+  /** Route change: the emitter is gone; fade 300 ms, then respawn at the top. */
+  exiting: boolean;
+  /** Route change: beyond the new count; fade 300 ms, then drop. */
+  surplus: boolean;
+  /** Sim time of birth, for the route-change fade-in (−∞ at mount). */
+  bornTs: number;
 };
 
 type Scheduled = { ts: number; fn: () => void; order: number };
@@ -270,11 +298,16 @@ export function createSim(options: SimOptions): SimApi {
       0.01,
     );
     const omega2 = pendulumGravity(lengthWorld, spec.period) / lengthWorld;
+    // Pivot → bottom collar ≈ cord + paper height; tassel length in body widths.
+    const widthWorld = pxLengthToWorld(spec.body, spec.z, viewport);
+    const collarWorld = lengthWorld + PAPER_ASPECT * widthWorld;
+    const tasselWorld = PENDULUM.tassel.lengthBodyWidths * widthWorld;
 
     l.spec = spec;
     l.lengthWorld = lengthWorld;
     l.omega2 = omega2;
     l.omega = Math.sqrt(omega2);
+    l.tasselDrive = 1 + collarWorld / Math.max(tasselWorld, 1e-3);
     l.centrePx = {
       x: spec.bodyRect.x + spec.bodyRect.w / 2,
       y: spec.bodyRect.y + spec.bodyRect.h / 2,
@@ -316,6 +349,7 @@ export function createSim(options: SimOptions): SimApi {
       lengthWorld: 1,
       omega: 1,
       omega2: 1,
+      tasselDrive: 1,
       centrePx: { x: 0, y: 0 },
       x01: 0,
       noiseSeed: seed + 1000 * (index + 1),
@@ -439,13 +473,25 @@ export function createSim(options: SimOptions): SimApi {
         }
       }
 
+      // The tassel restores toward plumb (absolute angle θ + ψ → 0) and is
+      // driven by the collar's tangential acceleration (1 + R/l)·θ''.
       const tasselAccel =
-        -tasselOmega * tasselOmega * s.tasselTheta -
+        -tasselOmega * tasselOmega * (s.tasselTheta + s.theta) -
         2 * PENDULUM.tassel.zeta * tasselOmega * s.tasselThetaDot -
-        accel;
+        l.tasselDrive * accel;
 
       s.tasselThetaDot += tasselAccel * h;
       s.tasselTheta += s.tasselThetaDot * h;
+
+      const tasselLim = PENDULUM.tassel.clampRad;
+
+      if (s.tasselTheta > tasselLim) {
+        s.tasselTheta = tasselLim;
+        if (s.tasselThetaDot > 0) s.tasselThetaDot = 0;
+      } else if (s.tasselTheta < -tasselLim) {
+        s.tasselTheta = -tasselLim;
+        if (s.tasselThetaDot < 0) s.tasselThetaDot = 0;
+      }
 
       const bobAccel =
         -bobOmega * bobOmega * s.bob -
@@ -585,6 +631,15 @@ export function createSim(options: SimOptions): SimApi {
     const { inst, live } = f;
     const margin = inst.sizePx / 2;
 
+    if (f.exiting) {
+      // The old emitter is gone: the rebirth belongs to the new rect.
+      f.live.x = f.target.x;
+      f.live.y = f.target.y;
+      f.live.w = f.target.w;
+      f.live.h = f.target.h;
+    }
+    f.exiting = false;
+    f.reclamp = false;
     f.cycle += 1;
     f.baseX =
       live.x +
@@ -641,12 +696,20 @@ export function createSim(options: SimOptions): SimApi {
       outsideFor: 0,
       live: { ...rect },
       target: { ...rect },
+      reclamp: false,
+      exiting: false,
+      surplus: false,
+      bornTs: -Infinity,
     };
 
     respawn(f, false);
 
     return f;
   };
+
+  /** Nearest x inside `rect` (half a size in from each edge) for a base x. */
+  const insideX = (x: number, rect: Rect, sizePx: number): number =>
+    clamp(x, rect.x + sizePx / 2, rect.x + rect.w - sizePx / 2);
 
   /** Alpha multiplier from the emitter clip feather, the exclusions and `/`'s ramp. */
   const fieldAlpha = (x: number, y: number, live: Rect): number => {
@@ -697,7 +760,8 @@ export function createSim(options: SimOptions): SimApi {
       const period = Math.max(inst.descentS * (live.h / viewport.h), 0.1);
       const p = (((state.ts / period + inst.phase) % 1) + 1) % 1;
 
-      if (p < f.prevP - 0.5) respawn(f, false);
+      // A surplus instance is on its way out: no rebirth mid-fade.
+      if (p < f.prevP - 0.5 && !f.surplus) respawn(f, false);
       f.prevP = p;
 
       const y = live.y + p * live.h;
@@ -737,8 +801,13 @@ export function createSim(options: SimOptions): SimApi {
         fieldAlpha(x, y, live);
 
       const margin = inst.sizePx;
+      const outside = x < live.x - margin || x > live.x + live.w + margin;
 
-      if (x < live.x - margin || x > live.x + live.w + margin) {
+      if (f.surplus) {
+        // Beyond the new route's count: fade, then the tail is dropped below.
+        f.outsideFor += dt;
+        alpha *= 1 - clamp(f.outsideFor / OUTSIDE_FADE_S, 0, 1);
+      } else if (f.exiting || (outside && !f.reclamp)) {
         f.outsideFor += dt;
         alpha *= 1 - clamp(f.outsideFor / OUTSIDE_FADE_S, 0, 1);
         if (f.outsideFor >= OUTSIDE_FADE_S) {
@@ -747,12 +816,34 @@ export function createSim(options: SimOptions): SimApi {
         }
       } else {
         f.outsideFor = 0;
+        if (f.reclamp) {
+          // §4.2 bounds re-clamp: slide toward the nearest inside x, λ 8.
+          const here = f.baseX + f.driftX;
+          const nearest = insideX(here, target, inst.sizePx);
+
+          f.baseX += (nearest - here) * damp;
+          if (Math.abs(nearest - here) < 0.5) f.reclamp = false;
+        }
       }
+      alpha *= clamp((state.ts - f.bornTs) / BIRTH_FADE_S, 0, 1);
 
       inst.x = x;
       inst.y = y + liftPx;
       inst.alpha = alpha;
     }
+
+    // Surplus instances sit at the tail; drop them once their fade is done.
+    let dropped = false;
+
+    while (
+      fall.length &&
+      fall[fall.length - 1].surplus &&
+      fall[fall.length - 1].outsideFor >= OUTSIDE_FADE_S
+    ) {
+      fall.pop();
+      dropped = true;
+    }
+    if (dropped) state.fall = fall.map((f) => f.inst);
   };
 
   const rebuildFall = (reason: 'mount' | 'route' | 'resize'): void => {
@@ -767,24 +858,60 @@ export function createSim(options: SimOptions): SimApi {
     }
 
     if (speciesTable.length !== count) speciesTable = buildSpeciesTable(count);
-    fall.length = Math.min(fall.length, count);
+    if (reason !== 'route') fall.length = Math.min(fall.length, count);
     for (let i = 0; i < fall.length; i += 1) {
       const f = fall[i];
-      const emitter = pickEmitter(i);
-      const rect = emitters[emitter];
 
-      f.inst.emitter = emitter;
-      f.target = { ...rect };
       if (reason !== 'route') {
+        const emitter = pickEmitter(i);
+        const rect = emitters[emitter];
+
+        f.inst.emitter = emitter;
+        f.target = { ...rect };
         f.live = { ...rect };
-        f.baseX = clamp(
-          f.baseX,
-          rect.x + f.inst.sizePx / 2,
-          rect.x + rect.w - f.inst.sizePx / 2,
-        );
+        f.baseX = insideX(f.baseX, rect, f.inst.sizePx);
+        f.reclamp = false;
+        f.exiting = false;
+        f.surplus = false;
+        continue;
+      }
+
+      // §0.9 / §4.2: florets never exit on a route change. Beyond the new
+      // count an instance fades and is dropped; otherwise it keeps its
+      // emitter index when that emitter still exists and its new rect is
+      // within reach, sliding in (damp λ 8), and only an instance whose
+      // emitter is gone fades and respawns inside a freshly picked one.
+      f.surplus = i >= count;
+      if (f.surplus) continue;
+
+      const kept = f.inst.emitter < emitters.length ? f.inst.emitter : -1;
+      const keptRect = kept >= 0 ? emitters[kept] : null;
+      const here = f.baseX + f.driftX;
+      const reach =
+        keptRect === null
+          ? Infinity
+          : Math.abs(insideX(here, keptRect, f.inst.sizePx) - here);
+
+      if (keptRect && reach <= RECLAMP_REACH_PX) {
+        f.target = { ...keptRect };
+        f.reclamp = reach > 0;
+        f.exiting = false;
+      } else {
+        const emitter = pickEmitter(i);
+
+        f.inst.emitter = emitter;
+        f.target = { ...emitters[emitter] };
+        f.reclamp = false;
+        f.exiting = true;
+        f.outsideFor = 0;
       }
     }
-    for (let i = fall.length; i < count; i += 1) fall.push(freshFall(i));
+    for (let i = fall.length; i < count; i += 1) {
+      const f = freshFall(i);
+
+      if (reason === 'route') f.bornTs = state.ts;
+      fall.push(f);
+    }
     state.fall = fall.map((f) => f.inst);
   };
 
@@ -1071,6 +1198,29 @@ export function createSim(options: SimOptions): SimApi {
           rect.x + rect.w - f.inst.sizePx / 2,
         );
       }
+    },
+
+    snapshotLift(lifted, px) {
+      queue.length = 0;
+      for (const l of lanterns) {
+        const s = l.state;
+        const lit = lifted ? 0 : layout.ignoresTheme ? 1 : night;
+
+        l.cord = null;
+        l.lightScript = null;
+        l.poolScript = null;
+        l.pending = 0;
+        l.frozen = lifted;
+        s.thetaDot = 0;
+        s.cordLength = s.cordTarget;
+        s.lit = lit;
+        s.litTarget = lit;
+        s.pool = lit;
+        s.rise = lifted ? px : 0;
+        s.alpha = lifted ? 0 : 1;
+      }
+
+      return state;
     },
 
     snapshotReduced() {

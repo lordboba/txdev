@@ -46,6 +46,7 @@ function stubWind(sample = () => 0) {
     pause() {},
     resume() {},
     paused: () => false,
+    advance() {},
     reseed() {},
     seed: () => 0,
     random: () => 0.5,
@@ -489,6 +490,34 @@ test('§4.6 the reduced-motion snapshot is one still frame', () => {
   assert.ok(state.fall.every((f) => f.alpha >= 0 && Number.isFinite(f.x)));
 });
 
+test('§3.3 reduced motion: snapshotLift parks the mobile lantern raised and unlit, and restores it', () => {
+  const layout = routeLayout('/blog', { w: 390, h: 844 }, true, {});
+  const sim = createSim({
+    seed: 2,
+    layout,
+    wind: stubWind(),
+    night: 1,
+    reducedMotion: true,
+  });
+
+  sim.snapshotReduced();
+  assert.equal(sim.state.lanterns.length, 1);
+
+  const lifted = sim.snapshotLift(true, 24).lanterns[0];
+
+  assert.equal(lifted.rise, 24);
+  assert.equal(lifted.alpha, 0);
+  assert.equal(lifted.lit, 0);
+  assert.equal(lifted.pool, 0);
+
+  const back = sim.snapshotLift(false, 24).lanterns[0];
+
+  assert.equal(back.rise, 0);
+  assert.equal(back.alpha, 1);
+  assert.equal(back.lit, 1, 'dark theme: lit again');
+  assert.equal(back.cordLength, back.cordTarget);
+});
+
 test('§4.2 route change: candle out, raise, then a fresh lower-in on the next layout; florets never exit', () => {
   const from = blog();
   const to = routeLayout('/past-experience', DESKTOP_BASE, false, {});
@@ -536,13 +565,31 @@ test('§4.2 route change: candle out, raise, then a fresh lower-in on the next l
   assert.equal(sim.state.lanterns[0].alpha, 0);
   assert.equal(sim.state.lanterns[0].rise, 40);
 
+  const visibleBefore = sim.state.fall.filter((f) => f.alpha > 0.3).length;
+
   sim.setLayout(to, 'route');
 
   const enterTs = sim.state.ts;
 
   assert.equal(sim.state.lanterns.length, 2);
-  assert.equal(sim.state.fall.length, to.florets.count);
+  // §0.9: the pool is kept across the change; the six surplus instances fade
+  // over 300 ms and are dropped only then, and nobody vanishes in one frame.
+  assert.equal(sim.state.fall.length, from.florets.count);
   assert.equal(sim.state.settled, false);
+
+  let minVisible = Infinity;
+
+  run(sim, wind, 0.5, (state) => {
+    minVisible = Math.min(
+      minVisible,
+      state.fall.filter((f) => f.alpha > 0.3).length,
+    );
+  });
+  assert.equal(sim.state.fall.length, to.florets.count, 'surplus dropped');
+  assert.ok(
+    minVisible >= 0.6 * visibleBefore,
+    `visible florets never fall below 60% across the change (${minVisible} of ${visibleBefore})`,
+  );
   for (const spec of to.lanterns) {
     const delayS = 0.3 + (90 * spec.order) / 1000;
 
@@ -660,7 +707,7 @@ test('§4.1 / §4.3 the pool row runs catch + 150 ms over 500 ms, and a snuff ca
   assert.equal(second.state.lanterns[0].pool, 0);
 });
 
-test('§4.5 the tassel trails the first-gust peak by 80–150 ms with 15–25% relative amplitude', () => {
+test('§4.5 the tassel hangs from the collar: it trails the body at the gust onset and whips past it 50–150 ms after the body peak', () => {
   const layout = blog();
   const wind = createWindInstance(7);
   const sim = createSim({
@@ -677,12 +724,16 @@ test('§4.5 the tassel trails the first-gust peak by 80–150 ms with 15–25% r
 
   run(sim, wind, 9, (state) => {
     state.lanterns.forEach((l, k) =>
-      series[k].push([state.ts, l.theta, l.tasselTheta]),
+      series[k].push([
+        state.ts,
+        l.theta,
+        l.tasselTheta,
+        l.theta + l.tasselTheta,
+      ]),
     );
   });
 
-  // First |θ| peak after the gust reaches the lantern (4.4 s + the front),
-  // then the first |tassel| peak from there.
+  // First |θ| peak after the gust reaches the lantern (4.4 s + the front).
   const peakAfter = (rows, col, from, floor) => {
     for (let i = 1; i < rows.length - 1; i += 1) {
       const t = rows[i][0];
@@ -699,27 +750,41 @@ test('§4.5 the tassel trails the first-gust peak by 80–150 ms with 15–25% r
 
     return null;
   };
+  const argmax = (rows, col) =>
+    rows.reduce((a, b) => (Math.abs(b[col]) > Math.abs(a[col]) ? b : a));
 
   layout.lanterns.forEach((spec, k) => {
-    const body = peakAfter(series[k], 1, 4.6, 0.04);
+    const rows = series[k];
+    const body = peakAfter(rows, 1, 4.6, 0.04);
 
     assert.ok(body, `${spec.id} answers the gust`);
 
-    const tassel = peakAfter(series[k], 2, body[0] - 0.05, 0);
-
-    assert.ok(tassel, `${spec.id} tassel peaks`);
-
-    const lag = tassel[0] - body[0];
-    const ratio = Math.abs(tassel[2] / body[1]);
+    // Onset: while the body swings out, the strands trail the collar (the
+    // relative angle runs opposite to θ, at least half the coming peak).
+    const rise = rows.filter((r) => r[0] >= body[0] - 1.2 && r[0] <= body[0]);
+    const trail = argmax(rise, 2);
 
     assert.ok(
-      lag >= 0.08 && lag <= 0.15,
-      `${spec.id} tassel lags ${(lag * 1000).toFixed(0)} ms`,
+      Math.sign(trail[2]) === -Math.sign(body[1]) &&
+        Math.abs(trail[2]) >= 0.5 * Math.abs(body[1]),
+      `${spec.id} strands trail the collar at the onset (${(trail[2] * DEG).toFixed(1)}° vs body peak ${(body[1] * DEG).toFixed(1)}°)`,
+    );
+
+    // Reversal: the absolute tassel angle whips past the body 50–150 ms later.
+    const after = rows.filter((r) => r[0] >= body[0] && r[0] <= body[0] + 0.5);
+    const whip = argmax(after, 3);
+    const lag = whip[0] - body[0];
+
+    assert.ok(
+      lag >= 0.05 && lag <= 0.15,
+      `${spec.id} absolute tassel peak lags the body ${(lag * 1000).toFixed(0)} ms`,
     );
     assert.ok(
-      ratio >= 0.15 && ratio <= 0.25,
-      `${spec.id} relative amplitude ${(ratio * 100).toFixed(0)}%`,
+      Math.abs(whip[3]) >= 0.9 * Math.abs(body[1]),
+      `${spec.id} whips through plumb (${(whip[3] * DEG).toFixed(1)}° vs body ${(body[1] * DEG).toFixed(1)}°)`,
     );
+    for (const r of rows)
+      assert.ok(Math.abs(r[2]) <= PENDULUM.tassel.clampRad + 1e-9);
   });
 });
 

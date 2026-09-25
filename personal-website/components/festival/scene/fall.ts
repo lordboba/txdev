@@ -504,7 +504,11 @@ export const createFallObjects: FallObjectsFactory = (renderer) => {
     },
 
     update(instances, frame, alphaScale = 1) {
-      const count = Math.min(instances.length, mesh.count);
+      // The sim's pool, not the route count: across a route change surplus
+      // instances stay drawn while they fade (§0.9), then the sim drops them.
+      const count = Math.min(instances.length, MAX_FALL_INSTANCES);
+
+      mesh.count = count;
 
       if (slots.length !== count) {
         slots = instances

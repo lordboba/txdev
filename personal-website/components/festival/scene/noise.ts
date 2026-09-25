@@ -112,9 +112,37 @@ function grad2(
   return GRAD2[Math.floor(hash01(ix, iy, seed) * 8) & 7];
 }
 
+/** Corner accumulator for `simplex2`, module-level so no closure is built per call. */
+const _acc: NoiseSample = { value: 0, dx: 0, dy: 0 };
+
+function simplexCorner(
+  cx: number,
+  cy: number,
+  gi: number,
+  gj: number,
+  seed: number,
+  acc: NoiseSample,
+): void {
+  let tt = 0.5 - cx * cx - cy * cy;
+
+  if (tt < 0) return;
+
+  const g = grad2(gi, gj, seed);
+  const dot = g[0] * cx + g[1] * cy;
+  const t2 = tt * tt;
+  const t4 = t2 * t2;
+
+  acc.value += t4 * dot;
+  // d/dx of (t^4 · dot) = 4 t^3 · (−2 cx) · dot + t^4 · gx
+  tt = -8 * tt * t2 * dot;
+  acc.dx += tt * cx + t4 * g[0];
+  acc.dy += tt * cy + t4 * g[1];
+}
+
 /**
  * 2-D simplex noise in roughly [−1, 1] with its gradient. `out` is reused so
- * the per-frame floret loop allocates nothing.
+ * the per-frame floret loop allocates nothing (≤ 36 calls per frame, no
+ * closure per call).
  */
 export function simplex2(
   x: number,
@@ -135,30 +163,14 @@ export function simplex2(
   const x2 = x0 - 1 + 2 * G2;
   const y2 = y0 - 1 + 2 * G2;
 
-  let value = 0;
-  let dx = 0;
-  let dy = 0;
+  _acc.value = 0;
+  _acc.dx = 0;
+  _acc.dy = 0;
+  simplexCorner(x0, y0, i, j, seed, _acc);
+  simplexCorner(x1, y1, i + i1, j + j1, seed, _acc);
+  simplexCorner(x2, y2, i + 1, j + 1, seed, _acc);
 
-  const corner = (cx: number, cy: number, gi: number, gj: number): void => {
-    let tt = 0.5 - cx * cx - cy * cy;
-
-    if (tt < 0) return;
-
-    const g = grad2(gi, gj, seed);
-    const dot = g[0] * cx + g[1] * cy;
-    const t2 = tt * tt;
-    const t4 = t2 * t2;
-
-    value += t4 * dot;
-    // d/dx of (t^4 · dot) = 4 t^3 · (−2 cx) · dot + t^4 · gx
-    tt = -8 * tt * t2 * dot;
-    dx += tt * cx + t4 * g[0];
-    dy += tt * cy + t4 * g[1];
-  };
-
-  corner(x0, y0, i, j);
-  corner(x1, y1, i + i1, j + j1);
-  corner(x2, y2, i + 1, j + 1);
+  const { value, dx, dy } = _acc;
 
   out.value = 70 * value;
   out.dx = 70 * dx;

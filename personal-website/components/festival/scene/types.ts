@@ -108,7 +108,11 @@ export interface LanternState {
   pool: number;
   /** Flicker `aCandle`: `1 + 0.06·(noise(7t) + 0.5·noise(13t))`, floor 0.94. */
   candle: number;
-  /** Tassel spring (ω 2π/(0.40·T), ζ 0.35), relative to the body. */
+  /**
+   * Tassel angle relative to the body, radians (`PENDULUM.tassel`: ω
+   * 2π/(0.45·T), ζ 0.35, restoring toward plumb, driven by the collar's
+   * tangential acceleration; clamped ±0.35 rad).
+   */
   tasselTheta: number;
   tasselThetaDot: number;
   /** Cord-stretch bob from scroll wind (ω 2π/0.45 s, ζ 0.5), px, |bob| ≤ 8. */
@@ -229,6 +233,12 @@ export interface WindApi {
   pause(): void;
   resume(): void;
   paused(): boolean;
+  /**
+   * Jumps the clock forward by `seconds` of sim time without a step (the
+   * evening that passed while no layer was mounted, §3.7): the cursor and
+   * scroll terms are dropped and the gust schedule is maintained.
+   */
+  advance(seconds: number): void;
   /** Re-seeds the RNG and reschedules the gust train (first gust at 4.4 s). */
   reseed(seed: number): void;
   seed(): number;
@@ -317,6 +327,12 @@ export interface SimApi {
   setEmitterRect(index: number, rect: Rect): void;
   /** Reduced motion: lanterns at θ 0.03, lit per night, florets from prewarm. */
   snapshotReduced(): SimState;
+  /**
+   * Reduced motion on mobile `/blog*`: the §3.3 scroll-lift as a snap. `true`
+   * parks every lantern raised `px` with the candle out and alpha 0; `false`
+   * restores rest length, alpha 1 and the night's candle state.
+   */
+  snapshotLift(lifted: boolean, px: number): SimState;
   /** Detaches nothing; the sim holds no listeners. Frees typed arrays. */
   dispose(): void;
 }
@@ -597,13 +613,22 @@ export const PENDULUM = {
   arrivalKick: 0.03,
   periods: { hero: 2.8, mid: 2.4, small: 2.1 },
   /**
-   * Tassel spring period as a fraction of its body's T: √(24 px / 118 px) ≈
-   * 0.45, the physical ratio of the tassel to the cord, so 1.26 / 1.08 /
-   * 0.95 s. A fixed 0.55 s spring could not lag a 2.8 s body (relative
-   * amplitude ≈ 4%, lag 0 at the gust); at 0.45·T the strands trail the
-   * first-gust peak by 100–150 ms with ≈ 16% relative amplitude (M5).
+   * The tassel is a second pendulum hung from the bottom collar: it restores
+   * toward PLUMB (relative angle → −θ), not toward the body axis, and is
+   * driven by the collar's tangential acceleration `(1 + R/l)·θ''` with R the
+   * pivot-to-collar distance and l the tassel length (`lengthBodyWidths` of
+   * the body width). Period √(24 px / 118 px) ≈ 0.45 of its body's T
+   * (1.26 / 1.08 / 0.95 s), ζ 0.35, relative angle clamped to ±`clampRad`.
+   * Restoring toward the axis gave a 0.4 px tip motion (16% of θ on a 24 px
+   * tassel): welded to the lantern. Toward plumb the strands hang near
+   * vertical while the body leans and whip at the reversals (M5).
    */
-  tassel: { periodFactor: 0.45, zeta: 0.35 },
+  tassel: {
+    periodFactor: 0.45,
+    zeta: 0.35,
+    lengthBodyWidths: 0.32,
+    clampRad: 0.35,
+  },
   bob: { periodS: 0.45, zeta: 0.5, maxPx: 8 },
   poem: {
     lengthU: 3.0,

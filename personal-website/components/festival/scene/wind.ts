@@ -40,6 +40,12 @@ export const WIND_SINGLETON_VERSION = 1;
 
 /** How far ahead (s) the scheduler keeps gusts queued. */
 const GUST_HORIZON_S = 40;
+/**
+ * While no layer is mounted (`/terminal`) the clock is not ticked; on the
+ * next claim it catches up by the wall time elapsed, capped here, so a gust
+ * in flight has finished and the evening has moved on (§3.7, §4.7).
+ */
+const UNMOUNTED_CATCHUP_MAX_S = 60;
 /** Extra life after a front has crossed the viewport before it is dropped (s). */
 const GUST_TAIL_S = 12;
 
@@ -275,6 +281,14 @@ export function createWindInstance(
 
     paused: () => isPaused,
 
+    advance(seconds) {
+      if (!(seconds > 0)) return;
+      ts += seconds;
+      cursorForce = 0;
+      scrollForce = 0;
+      maintain();
+    },
+
     reseed(nextSeed) {
       currentSeed = nextSeed;
       rng = mulberry32(nextSeed);
@@ -302,6 +316,8 @@ type WindSingleton = {
   /** Token of whoever currently owns the DOM listeners, or null. */
   listenerOwner: symbol | null;
   detach: (() => void) | null;
+  /** Wall time (ms) the last layer released the listeners; null while one owns them. */
+  releasedAtMs: number | null;
 };
 
 type WindGlobal = typeof globalThis & { __festivalWind?: WindSingleton };
@@ -333,6 +349,7 @@ export function createWind(seed: number): WindApi {
     wind,
     listenerOwner: null,
     detach: null,
+    releasedAtMs: null,
   };
 
   (globalThis as WindGlobal).__festivalWind = s;
@@ -411,6 +428,14 @@ export function claimWindListeners(
   win.document.addEventListener('visibilitychange', onVisibility);
   win.addEventListener('scroll', onScroll);
   if (win.document.hidden) wind.pause();
+  // The evening continued while the layer was away: advance by the wall time
+  // since the last release (capped), so scheduled gusts stay consistent.
+  if (s.releasedAtMs !== null) {
+    wind.advance(
+      Math.min((now() - s.releasedAtMs) / 1000, UNMOUNTED_CATCHUP_MAX_S),
+    );
+    s.releasedAtMs = null;
+  }
 
   const token = Symbol('festival-wind-listeners');
 
@@ -420,6 +445,7 @@ export function claimWindListeners(
     win.removeEventListener('scroll', onScroll);
     s.listenerOwner = null;
     s.detach = null;
+    s.releasedAtMs = now();
   };
 
   return token;
