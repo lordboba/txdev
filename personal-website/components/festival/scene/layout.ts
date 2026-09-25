@@ -385,7 +385,9 @@ const ORBITAL: RouteTable = {
     // `.orb-shell`), so florets showed inside the letters; the mobile table
     // already keeps the band under the dek for the same reason (V10).
     exclusions: [
-      { kind: 'rect', rect: rect(384, 34, 1056, 108), anchor: 'center' },
+      // Down to the dek's top (y121): a fascicle in the 13 px gap between
+      // the H1's baseline and the dek still read as "around the letters".
+      { kind: 'rect', rect: rect(384, 34, 1056, 121), anchor: 'center' },
       {
         kind: 'element',
         selector: FESTIVAL_SELECTORS.orbitalDek,

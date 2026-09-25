@@ -143,7 +143,7 @@ test('§3.2 `/orbital`: hero C from the tools pill, moon left, left-aligned lock
   // Florets never cross the H1, the dek, the moon disc (+12), the verse
   // lockups (+6) or the lantern bodies (+6).
   assert.deepEqual(layout.florets.exclusions.map(span), [
-    [384, 1056, 34, 108],
+    [384, 1056, 34, 121],
     [455, 985, 125, 172],
     [88, 232, 28, 172],
     [122, 156, 170, 308],
