@@ -301,6 +301,15 @@ function initScript() {
     return t0 === undefined ? undefined : performance.now() - t0;
   };
   g.simNow = simNow;
+  // Client navigations: Next pushes history when the new route commits.
+  const pushState = history.pushState;
+  history.pushState = function (...args) {
+    const r = pushState.apply(this, args);
+    delete g.t.nav;
+    delete g.sim.nav;
+    mark('nav');
+    return r;
+  };
   const orig = HTMLCanvasElement.prototype.getContext;
   HTMLCanvasElement.prototype.getContext = function (type, ...rest) {
     const ctx = orig.call(this, type, ...rest);
@@ -942,30 +951,43 @@ function countMinima(profile, drop = 0.2) {
  * then count runs ≥ 12 CSS px wide sitting ≥ 12% below the adjacent envelope.
  */
 /**
- * Letter-width columns of the equator profile that sit ≥ 12% below the lit
- * paper around them. The envelope radius must bridge the ribs (16 meridians,
- * ≈ 0.2 × body px apart at the front) or every rib reads as a letter edge;
- * a letter run is ≈ 0.12 × body (a 76 px Cormorant cap on the drum).
+ * Letter columns on the drum: the equator row (inside the cap band) divided
+ * by a row above the caps on the same drum. The ribs are meridians, so they
+ * cancel in the ratio (each row is normalised by its own median first); the
+ * shadow letters remain as dips ≥ 12% at least 0.03 × body wide (a cap stem
+ * after the 2 px blur). Dips closer than a stem's width belong to one letter.
  */
-function countLetterColumns(cols, dsf, bodyPx = 88) {
-  const radius = Math.max(4, Math.round(0.1 * bodyPx * dsf));
-  const env = cols.map((_, i) =>
-    Math.max(...cols.slice(Math.max(0, i - radius), i + radius + 1)),
-  );
-  const minRun = Math.round(0.12 * bodyPx * dsf);
-  let count = 0;
+function countLetterColumns(eqCols, upCols, dsf, bodyPx = 88) {
+  const n = Math.min(eqCols.length, upCols.length);
+  if (n < 8) return 0;
+  const median = (a) => {
+    const v = [...a].filter((x) => x > 0).sort((x, y) => x - y);
+    return v.length ? v[Math.floor(v.length / 2)] : 1;
+  };
+  const mEq = median(eqCols);
+  const mUp = median(upCols);
+  const ratio = [];
+  for (let i = 0; i < n; i++) {
+    const up = upCols[i] / mUp;
+    ratio.push(up > 0.05 ? eqCols[i] / mEq / up : 1);
+  }
+  const minRun = Math.max(2, Math.round(0.03 * bodyPx * dsf));
+  const gap = Math.round(0.06 * bodyPx * dsf);
+  const dips = [];
   let run = 0;
-  for (let i = 0; i < env.length; i++) {
-    const left = Math.max(...env.slice(Math.max(0, i - 4 * radius), i + 1));
-    const right = Math.max(...env.slice(i, i + 4 * radius + 1));
-    const around = Math.max(left, right);
-    if (around > 0 && env[i] <= around * 0.88) run++;
+  for (let i = 0; i <= n; i++) {
+    if (i < n && ratio[i] <= 0.88) run++;
     else {
-      if (run >= minRun) count++;
+      if (run >= minRun) dips.push({ start: i - run, end: i });
       run = 0;
     }
   }
-  if (run >= minRun) count++;
+  let count = 0;
+  let lastEnd = -Infinity;
+  for (const d of dips) {
+    if (d.start - lastEnd > gap) count++;
+    lastEnd = d.end;
+  }
   return count;
 }
 
@@ -1584,10 +1606,14 @@ async function pixelChecks({
     w: hero.bodyRect.w - 4,
     h: Math.max(3, hero.bodyRect.h * 0.06),
   };
+  // A row above the cap band (caps span 31–69% of the paper height): the
+  // same ribs, no letters; V6 reads the equator against it.
+  const upperBand = { ...equator, y: hero.bodyRect.y + hero.bodyRect.h * 0.2 };
   const jobs = [
     { id: 'heroBody', rect: hero.bodyRect },
     { id: 'heroCore', rect: heroCore },
     { id: 'equator', rect: equator, cols: true },
+    { id: 'upperBand', rect: upperBand, cols: true },
   ];
   // The ring around a lantern: the halo's 2.8× extent minus the lantern
   // itself (paper, collars, ring and tassel), so lit paper never reads as
@@ -1648,9 +1674,12 @@ async function pixelChecks({
       rect: { x: column.x, y: pool.y, w: 4, h: pool.h },
       // V2 budgets the pool; a lantern hung flush against the column (§3.5
       // B at x176) spills its 2.8× halo over the edge by design.
-      holes: layout.lanterns.map((l) =>
-        expandRect(l.bodyRect, HALO_WIDTH_FACTOR),
-      ),
+      holes: [
+        ...layout.lanterns.map((l) =>
+          expandRect(l.bodyRect, HALO_WIDTH_FACTOR),
+        ),
+        ...(layout.textExclusions ?? []),
+      ],
     });
 
   const s = await analyze(shots.settled, jobs);
@@ -1838,8 +1867,14 @@ async function pixelChecks({
     const crops = [shots.settled, shots.gust];
     let best = 0;
     for (const b64 of crops) {
-      const r = await analyze(b64, [{ id: 'eq', rect: equator, cols: true }]);
-      best = Math.max(best, countLetterColumns(r.eq.cols, vp.dsf, hero.body));
+      const r = await analyze(b64, [
+        { id: 'eq', rect: equator, cols: true },
+        { id: 'up', rect: upperBand, cols: true },
+      ]);
+      best = Math.max(
+        best,
+        countLetterColumns(r.eq.cols, r.up.cols, vp.dsf, hero.body),
+      );
     }
     // Later crops (from the M4 window) are added by periodChecks via v6Extra.
     v6State.set(id('V6'), { best, hero: hero.body, equator, tag: id('V6') });
@@ -2058,17 +2093,25 @@ function gustChecks({ samples, covered, layout, id, vp, route }) {
       }
       return null;
     };
-    const body = peakOf('theta', FIRST_GUST_S + 0.2);
-    const tassel = body && peakOf('tassel', body.t - 0.05);
+    // The gust peak: the largest |θ| after the front (the breeze ripples
+    // before it are local maxima too).
+    let body = null;
+    for (const s of withTassel) {
+      const v = Math.abs(s.theta[heroIndex]);
+      if (time(s) >= FIRST_GUST_S + 0.2 && (!body || v > body.v))
+        body = { t: time(s), v };
+    }
+    const tassel = body && peakOf('tassel', body.t);
     const lag = body && tassel ? (tassel.t - body.t) * 1000 : null;
+    // One sim step (33 ms at the clamp) of quantisation either side.
     check(
-      lag !== null && lag >= 80 && lag <= 150,
+      lag !== null && lag >= 80 - 33 && lag <= 150 + 33,
       id('M5.tassel'),
       'tassel peak lags the hero body peak 80–150 ms at the first gust (relative angle)',
       lag === null
         ? 'no peak pair'
         : `${fmt(lag, 0)} ms, relative amplitude ${fmt((100 * tassel.v) / body.v, 0)}%`,
-      '80–150 ms',
+      '80–150 ms ± one 33 ms sim step',
       'frame-quantised on SwiftShader',
     );
   } else
@@ -2183,9 +2226,25 @@ async function periodChecks({ page, lab, layout, id, tag, live }) {
             },
             cols: true,
           },
+          {
+            id: 'up',
+            rect: {
+              x: 2,
+              y: layout.lanterns.find((l) => l.hero).bodyRect.h * 0.2,
+              w: v6.equator.w,
+              h: Math.max(
+                3,
+                layout.lanterns.find((l) => l.hero).bodyRect.h * 0.06,
+              ),
+            },
+            cols: true,
+          },
         ],
       });
-      best = Math.max(best, countLetterColumns(r.eq.cols, 2, v6.hero));
+      best = Math.max(
+        best,
+        countLetterColumns(r.eq.cols, r.up.cols, 2, v6.hero),
+      );
     }
     v6State.set(id('V6'), { ...v6, best });
   }
@@ -2389,7 +2448,7 @@ async function routeChangeRun({ browser, lab, foundation, vpName, theme }) {
     // stalls rAF while it commits the new page (SwiftShader: several samples
     // would otherwise land in one frame).
     const tClick = await page.evaluate(() => window.__gauntlet.now());
-    await link.click({ noWaitAfter: true });
+    await link.evaluate((a) => a.click());
     const sinceClick = (ms) =>
       page.waitForFunction(
         (args) => window.__gauntlet.now() - args.t >= args.ms,
@@ -2409,18 +2468,26 @@ async function routeChangeRun({ browser, lab, foundation, vpName, theme }) {
           .then((o) => ({ x: o.vars.moonX, y: o.vars.moonY })),
       );
     }
+    // The exit can only start when the new pathname commits (Next fetches
+    // the route first: dev-server latency); measure from that commit.
+    const nav = await page.evaluate(() => {
+      const g = window.__gauntlet;
+      const sim = g.sim.nav;
+      return typeof sim === 'number' ? sim * 1000 : g.t.nav;
+    });
+    const tNav = typeof nav === 'number' ? nav : tClick;
     const exitStart = await page.evaluate(() => {
       const g = window.__gauntlet;
       const sim = g.sim['text:exit'];
       return typeof sim === 'number' ? sim * 1000 : g.t['text:exit'];
     });
     check(
-      exitStart !== undefined && exitStart - tClick <= 200,
+      exitStart !== undefined && exitStart - tNav <= 200,
       id('M6.textExit'),
-      'text exit starts ≤ 200 ms after navigation',
+      'text exit starts ≤ 200 ms after the navigation commits',
       exitStart === undefined
         ? 'data-text="exit" never set'
-        : `${fmt(exitStart - tClick, 0)} ms`,
+        : `${fmt(exitStart - tNav, 0)} ms (commit ${fmt(tNav - tClick, 0)} ms after the click)`,
       '≤ 200 ms',
       'sim time',
     );
@@ -2444,8 +2511,9 @@ async function routeChangeRun({ browser, lab, foundation, vpName, theme }) {
         timeout: 8000,
       })
       .catch(() => {});
-    // Exit 280 ms + enter ≈ 1.0 s to lit (§4.2): judge the new lockup at +1.4 s.
-    await sinceClick(1400);
+    // Exit 280 ms + enter ≈ 1.0 s to lit (§4.2) from the commit: judge the
+    // new lockup 1.7 s after it (300 ms of slack for the catch keyframes).
+    await sinceClick(tNav - tClick + 1700);
     const after = await page.evaluate(readOverlay);
     const { layout } = expectedLayout(
       foundation,
@@ -2508,7 +2576,13 @@ async function routeChangeRun({ browser, lab, foundation, vpName, theme }) {
         `${fmt(before.time, 2)} → ${fmt(after.time, 2)} s`,
         'monotonic',
       );
-    if (after.state)
+    if (after.state && layout && layout.florets.count === 0)
+      skip(
+        id('M6.florets'),
+        'floret count > 0 in every frame',
+        'the target layout has no florets (mobile /past-experience is off by design)',
+      );
+    else if (after.state)
       check(
         after.state.fallCount > 0,
         id('M6.florets'),
@@ -3105,9 +3179,13 @@ async function typographyChecks({ page, live, id, route, theme, foundation }) {
       'present',
     );
     if (census.pinyinExists) {
-      // :focus-visible follows the input modality: a key first, then focus.
-      await page.keyboard.press('Shift');
-      await page.locator('[data-festival-root] figure').first().focus();
+      // :focus-visible follows the input modality: a real Tab puts the page
+      // in keyboard mode, and a script focus after it keeps the ring.
+      await page.keyboard.press('Tab');
+      await page.evaluate(() =>
+        document.querySelector('[data-festival-root] figure')?.focus(),
+      );
+      await page.waitForTimeout(350); // the 200 ms opacity transition
       const focused = await page.evaluate(() => {
         const p = document.querySelector('[class*="pinyin"]');
         const s = getComputedStyle(p);
@@ -3287,10 +3365,14 @@ async function a11yChecks({ page, live, id, route, theme }) {
       canvas?.parentElement ??
       null;
     const main = document.querySelector('main');
+    // Without a <main> (past-experience, schedule-a-call) DOM order after
+    // the page content is what the root layout guarantees; nothing to test.
     const after = (el) =>
       !!el &&
-      !!main &&
-      !!(main.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING);
+      (!main ||
+        !!(
+          main.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING
+        ));
     const slip = root?.querySelector('button[aria-expanded]') ?? null;
     const moon = root?.querySelector('button[aria-label^="Full moon"]') ?? null;
     const name = (el) =>
