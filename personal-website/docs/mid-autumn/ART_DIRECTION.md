@@ -631,7 +631,7 @@ Never call the bench's `invalidate`; never render on pointer events; only the be
 
 **Visual**
 
-- V1. The hero lantern reads as paper: ribs as dark meridians only where lit; brighter band at candle height; scalloped dark rim; no plastic highlight (no pixel inside the drum brighter than `paperCore`); fibre visible at 2×; ≥ 12 luminance minima along the equator row of the 2× drum crop (the ribs), each ≥ 20% below its neighbours.
+- V1. The hero lantern reads as paper: ribs as dark meridians only where lit; brighter band at candle height; scalloped dark rim; no plastic highlight (no pixel inside the drum brighter than `paperCore`); fibre visible at 2×; ≥ 6 luminance minima along the equator row of the 2× drum crop (the ribs: the camera sees 8 of the 16 meridians), each ≥ 20% below its neighbours.
 - V2. The pool is visible on the page beside the H1 and never touches the copy column (pool alpha < 0.02 at the column edge, sampled).
 - V3. Luminance order: max luminance in the moon rect > max in any lantern rect (paper or halo) in every dark capture.
 - V4. Light theme: unlit cream paper `#e9dcc4` ± 6, no glow, moon ≤ 8% alpha; the page reads as afternoon.
