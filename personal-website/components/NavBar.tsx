@@ -43,7 +43,7 @@ export const NavBar = () => {
         </Link>
 
         <div className="hidden items-center gap-2 md:flex">
-          <div className="relative flex items-center gap-5">
+          <div className="relative flex items-center gap-7">
             {navLinks.map((link) => {
               const isActive = activeHref === link.href;
               const shouldDisablePrefetch =
@@ -55,9 +55,9 @@ export const NavBar = () => {
                   href={link.href}
                   prefetch={shouldDisablePrefetch ? false : undefined}
                   onClick={handleNavClick}
-                  className={`relative inline-flex min-h-11 items-center px-1 text-[0.82rem] leading-none font-medium tracking-[0.015em] transition-colors duration-200 after:absolute after:inset-x-1 after:bottom-2 after:h-px after:origin-left after:bg-current after:transition-transform after:duration-[360ms] after:ease-[cubic-bezier(0.2,0.8,0.2,1)] after:content-[''] hover:after:scale-x-100 ${
+                  className={`relative inline-flex min-h-11 items-center text-[0.82rem] leading-none font-medium tracking-[0.015em] transition-colors duration-200 after:absolute after:inset-x-0 after:bottom-[5px] after:h-px after:bg-current after:transition-transform after:duration-[360ms] after:ease-[cubic-bezier(0.2,0.8,0.2,1)] after:content-[''] hover:after:scale-x-100 ${
                     isActive
-                      ? 'text-foreground after:scale-x-100'
+                      ? 'text-foreground font-semibold after:scale-x-100'
                       : 'text-muted after:scale-x-0 hover:text-foreground'
                   }`}
                   aria-current={isActive ? 'page' : undefined}
