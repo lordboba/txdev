@@ -262,10 +262,19 @@ export interface SimApi {
     id: LanternId,
     opts: { delayS: number; durationS: number; px: number },
   ): void;
-  /** Candle keyframes (§4.1 catch or §4.2/4.3 snuff) toward `target`. */
+  /**
+   * Candle keyframes (§4.1 catch or §4.2/4.3 snuff) toward `target`. A snuff
+   * takes `easing` (default `'snuff'`, the §4.2 `(0.3, 0, 1, 1)`; the §4.3
+   * morning passes `'exit'`).
+   */
   light(
     id: LanternId,
-    opts: { delayS: number; durationS: number; target: number },
+    opts: {
+      delayS: number;
+      durationS: number;
+      target: number;
+      easing?: Easing | 'snuff';
+    },
   ): void;
   /** Schedules `fn` at sim time `ts` (pure: a sorted queue drained in `step`). */
   schedule(ts: number, fn: () => void): void;
