@@ -63,8 +63,12 @@ export const LANTERN_PROFILE: readonly (readonly [number, number])[] = [
  */
 export const PROFILE_RADIUS_NORM =
   1 / (2 * Math.max(...LANTERN_PROFILE.map(([, r]) => r)));
-/** Sixteen rib scallops: `r × (1 − 0.015·(0.5 + 0.5·cos(16θ)))`. */
-export const SCALLOP_DEPTH = 0.015;
+/**
+ * Sixteen rib scallops: `r × (1 − 0.03·(0.5 + 0.5·cos(16θ)))`. The bible's
+ * 1.5% was 0.66 px on the 88 px hero (sub-pixel: the rim read smooth); 3% is
+ * ≈ 1.3 px, enough for the frame to show in the silhouette (V1).
+ */
+export const SCALLOP_DEPTH = 0.03;
 export const RIB_COUNT = light.paper.ribCount;
 
 /** Paper top/bottom in local (body-width) units. */
@@ -679,9 +683,12 @@ const PAPER_FRAGMENT = /* glsl */ `
     float grain = 1.0 + ${light.paper.fibreStrength.toFixed(3)} * (fibre * 2.0 - 1.0);
     col *= grain;
 
-    // 走马灯: the strip read through the paper, one circumference = 22% of it.
+    // 走马灯: the strip read through the paper; one circumference reads
+    // shadowCircumferenceFraction (15%) of it. The view-angle term is
+    // softened (through^0.6) so letters stay legible to ≈ 35 px from the drum
+    // centre: four or five caps across the lit front, not two (§5.1, V6).
     float shadow = texture2D(uShadow, vec2(fract(vScroll + ang / TAU * ${light.paper.shadowCircumferenceFraction.toFixed(3)}), y + 0.5)).r;
-    col *= 1.0 - ${light.paper.shadowDarken.toFixed(3)} * shadow * through * vLit * vShadow * uHasShadow;
+    col *= 1.0 - ${light.paper.shadowDarken.toFixed(3)} * shadow * pow(through, ${light.paper.shadowViewPow.toFixed(3)}) * vLit * vShadow * uHasShadow;
 
     // Unlit albedo: sky light from above shades only the underside (0.55 at
     // the belly, the albedo itself at the front so V4 can sample it); dimmer
@@ -1177,7 +1184,8 @@ export const createLanternObjects: LanternObjectsFactory = (renderer) => {
         light.pool.peakLight +
         (frame.layout.poolPeak - light.pool.peakLight) * night;
 
-      specs.forEach((spec, i) => {
+      for (let i = 0; i < specs.length; i += 1) {
+        const spec = specs[i];
         let state: LanternState | undefined;
 
         for (const s of states) if (s.id === spec.id) state = s;
@@ -1197,6 +1205,11 @@ export const createLanternObjects: LanternObjectsFactory = (renderer) => {
         const candle = state?.candle ?? 1;
         const alpha = state?.alpha ?? 1;
         const drop = hang + PAPER_TOP * width;
+        // The glow never leads the flame: while the wick is in its catch dip
+        // (0.05 @ 180 ms) the pool and halo stay dim (M7: no frame with a full
+        // halo around albedo paper). smoothstep(0, 0.6, lit).
+        const glowT = Math.max(0, Math.min(1, lit / 0.6));
+        const glow = glowT * glowT * (3 - 2 * glowT);
 
         _position.set(
           pivotX + Math.sin(theta) * drop,
@@ -1233,10 +1246,13 @@ export const createLanternObjects: LanternObjectsFactory = (renderer) => {
         halos.setMatrixAt(i, _matrix);
         haloColor.setXYZ(i, haloTint.x, haloTint.y, haloTint.z);
         // Pool and halo ride their own §4.1 row (`pool`), flickering with the candle.
-        haloAlpha.setX(i, haloPeak * pool * candle * alpha);
+        haloAlpha.setX(i, haloPeak * pool * candle * alpha * glow);
 
-        // Pool: on the page under the lantern, 3.2× wide, 1.35× taller.
-        _position.y -= light.pool.centreDropBodyHeights * height;
+        // Pool: on the page under the lantern, 3.2× wide, 1.35× taller, its
+        // centre `centreDropBodyHeights` below the BOTTOM collar (the halo
+        // sits at the body centre; measured from there the pool's core hid
+        // behind the paper and only its skirt reached the wall, V5/§2.2).
+        _position.y -= (0.5 + light.pool.centreDropBodyHeights) * height;
         _position.z = spec.z + light.pool.zOffset;
         _scale.set(
           width * light.pool.widthFactor,
@@ -1246,8 +1262,8 @@ export const createLanternObjects: LanternObjectsFactory = (renderer) => {
         _matrix.compose(_position, _quaternion, _scale);
         pools.setMatrixAt(i, _matrix);
         poolColor.setXYZ(i, poolTint.x, poolTint.y, poolTint.z);
-        poolAlpha.setX(i, poolPeak * pool * candle * alpha);
-      });
+        poolAlpha.setX(i, poolPeak * pool * candle * alpha * glow);
+      }
 
       paper.instanceMatrix.needsUpdate = true;
       hardware.instanceMatrix.needsUpdate = true;

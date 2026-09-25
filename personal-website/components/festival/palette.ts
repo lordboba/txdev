@@ -99,15 +99,18 @@ export const light = {
   /** Halo: additive billboard under the paper. */
   halo: { widthFactor: 2.8, falloffPow: 2.4, peakDark: 0.35, peakLight: 0 },
   /**
-   * Pool: NormalBlending ellipse on the page at lantern z − 0.2. On the grey
-   * Bench set (`/`) it is the only light cue, so it peaks at 0.22 in the
+   * Pool: NormalBlending ellipse on the page at lantern z − 0.2, centred
+   * `centreDropBodyHeights` below the lantern's bottom collar with a soft
+   * `pow(1 − r, 1.4)` falloff (a wash on the wall, not a hot spot). On the
+   * grey Bench set (`/`) it is the only light cue, so it peaks at 0.22 in the
    * saturated `paperHot` (a grey wall needs chroma, not just alpha).
    */
   pool: {
     widthFactor: 3.2,
     aspect: 1.35,
+    /** Below the bottom collar, in body heights (lantern.ts adds the 0.5). */
     centreDropBodyHeights: 0.4,
-    falloffPow: 2.0,
+    falloffPow: 1.4,
     peakDark: 0.14,
     peakHome: 0.22,
     homeTint: palette.paperHot,
@@ -150,7 +153,13 @@ export const light = {
     fibreStrength: 0.06,
     unlitRibDarken: 0.12,
     /** 走马灯: lit paper darkens by this much under a full shadow texel. */
-    shadowDarken: 0.5,
+    shadowDarken: 0.6,
+    /**
+     * The shadow's view-angle term is `through^shadowViewPow` (softer than
+     * the paper's own `through`), so letters read to ≈ 35 px from the drum
+     * centre: 4–5 caps on the 88 px hero instead of 2–3.
+     */
+    shadowViewPow: 0.6,
     /**
      * One drum circumference reads this fraction of the 4096 px strip: a
      * 49 px cap advance (76 px Cormorant) becomes 22 px on the 88 px hero.
