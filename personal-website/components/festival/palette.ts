@@ -100,17 +100,18 @@ export const light = {
   halo: { widthFactor: 2.8, falloffPow: 2.4, peakDark: 0.35, peakLight: 0 },
   /**
    * Pool: NormalBlending ellipse on the page at lantern z − 0.2, centred
-   * `centreDropBodyHeights` below the lantern's bottom collar with a soft
-   * `pow(1 − r, 1.4)` falloff (a wash on the wall, not a hot spot). On the
-   * grey Bench set (`/`) it is the only light cue, so it peaks at 0.22 in the
-   * saturated `paperHot` (a grey wall needs chroma, not just alpha).
+   * `centreDropBodyHeights` below the lantern's bottom collar, falloff
+   * `pow(1 − r, 2.0)` (§2.2: a softer 1.4 spilled lantern B's skirt 0.036–
+   * 0.041 onto the copy column on the 176 / 240 px gutters, over V2's 0.02).
+   * On the grey Bench set (`/`) it is the only light cue, so it peaks at
+   * 0.22 in the saturated `paperHot` (a grey wall needs chroma, not just alpha).
    */
   pool: {
     widthFactor: 3.2,
     aspect: 1.35,
     /** Below the bottom collar, in body heights (lantern.ts adds the 0.5). */
     centreDropBodyHeights: 0.4,
-    falloffPow: 1.4,
+    falloffPow: 2.0,
     peakDark: 0.14,
     peakHome: 0.22,
     homeTint: palette.paperHot,

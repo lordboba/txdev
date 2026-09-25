@@ -166,7 +166,7 @@ export declare const light: {
     widthFactor: 3.2;
     aspect: 1.35;
     centreDropBodyHeights: 0.4; // below the BOTTOM collar (lantern.ts adds the 0.5)
-    falloffPow: 1.4;
+    falloffPow: 2;
     peakDark: 0.14;
     peakHome: 0.22;
     homeTint: '#ffa631';

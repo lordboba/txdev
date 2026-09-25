@@ -16,9 +16,11 @@ import styles from './festival.module.css';
 /**
  * A hover-opened card survives the pointer leaving the strip for this long:
  * the 谜底 link sits at the card's far corner and the natural diagonal from
- * the strip to it crosses bare page before it enters the card.
+ * the strip to it crosses bare page before it enters the card (≈ 80 ms for a
+ * human hand on /schedule-a-call, the widest gap; 400 leaves room for a slow
+ * one and is still an unnoticeable close delay).
  */
-const CLOSE_GRACE_MS = 280;
+const CLOSE_GRACE_MS = 400;
 
 type OpenedBy = 'hover' | 'focus' | 'click';
 
@@ -27,7 +29,7 @@ type OpenedBy = 'hover' | 'focus' | 'click';
  * vertical strip showing the 谜目, index and seal; hover, focus or tap pulls
  * it and unfolds the card under the strip with the 谜面 and, 600 ms later,
  * the 谜底 link. Escape closes (wherever focus is) and returns focus to the
- * strip; a hover-opened card closes 280 ms after the pointer leaves, a
+ * strip; a hover-opened card closes 400 ms after the pointer leaves, a
  * focus- or click-opened one stays until blur or Escape. Pinned each frame
  * through `--slip-x/y/theta`.
  */

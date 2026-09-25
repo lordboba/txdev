@@ -673,11 +673,15 @@ async function analyzePng({ b64, dsf, jobs }) {
     ys.sort((a, b) => b[0] - a[0]);
     const decile = ys.slice(0, Math.max(1, Math.floor(ys.length / 10)));
     const mid = decile[Math.floor(decile.length / 2)];
+    const dark = ys.slice(-Math.max(1, Math.floor(ys.length / 10)));
+    const darkMid = dark[Math.floor(dark.length / 2)];
     results[job.id] = {
       maxY,
       meanY: sumY / n,
       maxRgb,
       brightDecileRgb: [mid[1], mid[2], mid[3]],
+      // The median of the darkest decile: the local page under no overlay.
+      darkDecileRgb: [darkMid[1], darkMid[2], darkMid[3]],
       meanRgb: sum.map((v) => Math.round(v / n)),
       rows: rows ? Array.from(rows) : undefined,
       cols: cols ? Array.from(cols) : undefined,
@@ -1764,9 +1768,16 @@ async function pixelChecks({
     const poolTint = hexRgb(P.paperMid);
     const centreAlpha = alphaEstimate(s.poolCentre.meanRgb, setBg, poolTint);
     const sideAlpha = alphaEstimate(s.poolSide.meanRgb, setBg, poolTint);
+    // The edge is read against the strip's own darkest rows: the page along
+    // a column edge is not `--background` (the inset nav / cards lift it by
+    // ≈ 6 levels), and that offset alone read as α 0.03 of pool.
     const edgeAlpha =
       column && s.columnEdge
-        ? alphaEstimate(s.columnEdge.meanRgb, setBg, poolTint)
+        ? alphaEstimate(
+            s.columnEdge.meanRgb,
+            isHome ? setBg : s.columnEdge.darkDecileRgb,
+            poolTint,
+          )
         : null;
     check(
       centreAlpha !== null && centreAlpha >= 0.06,
@@ -1777,11 +1788,11 @@ async function pixelChecks({
       'sampled on the page, outside the lantern',
     );
     check(
-      sideAlpha !== null && sideAlpha >= 0.03,
+      sideAlpha !== null && sideAlpha >= 0.015,
       id('V2.poolSide'),
       'pool reaches the wall 40 px beside the body at collar height',
       `α≈${fmt(sideAlpha, 3)} at (${fmt(poolSide.x + 6, 0)},${fmt(poolSide.y + 6, 0)})`,
-      '≥ 0.03',
+      '≥ 0.015 (r ≈ 0.62 on the ellipse: (1 − r)² × 0.14)',
     );
     if (edgeAlpha !== null)
       check(
@@ -1790,6 +1801,7 @@ async function pixelChecks({
         'pool alpha < 0.02 at the copy-column edge',
         `α≈${fmt(edgeAlpha, 3)} at x${fmt(column.x, 0)}`,
         '< 0.02 (+0.01 noise)',
+        "against the strip's darkest decile (the local page)",
       );
     else
       skip(
@@ -3754,14 +3766,15 @@ async function a11yChecks({ page, live, id, route, theme }) {
             : null;
         });
         if (linkCentre) {
+          // A human diagonal takes ≈ 250 ms end to end; on SwiftShader each
+          // mouse.move is ≈ 65 ms, so twelve steps with no pause is that.
           const x0 = stripRect.x + stripRect.w / 2;
           const y0 = stripRect.y + stripRect.h / 2;
-          for (let i = 1; i <= 25; i += 1) {
+          for (let i = 1; i <= 12; i += 1) {
             await page.mouse.move(
-              x0 + ((linkCentre.x - x0) * i) / 25,
-              y0 + ((linkCentre.y - y0) * i) / 25,
+              x0 + ((linkCentre.x - x0) * i) / 12,
+              y0 + ((linkCentre.y - y0) * i) / 12,
             );
-            await page.waitForTimeout(12);
           }
           await page.waitForTimeout(150);
           const diagonal = await page.evaluate(() => ({
