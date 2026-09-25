@@ -641,9 +641,16 @@ test('§5.2 exact species counts: 22 florets, 8 leaves, 6 ginkgo at 36', () => {
   for (const f of sim.state.fall) counts[f.species] += 1;
   assert.deepEqual(counts, { floret: 22, leaf: 8, ginkgo: 6 });
   for (const f of sim.state.fall) {
-    if (f.species === 'floret')
+    if (f.species === 'floret') {
       assert.ok(f.sizePx >= 16 && f.sizePx <= 26, 'fascicle tile 16–26 px');
+      // §4.5: no floret in the far band (a 0.45-scaled corolla is a dust speck).
+      assert.ok(f.band < 2, `floret ${f.index} in band ${f.band}`);
+    }
   }
+  assert.ok(
+    sim.state.fall.some((f) => f.band === 2),
+    'leaves and ginkgo still fill the far band',
+  );
 
   // A phone gets florets only (§3.3 mobile): six, no leaf or ginkgo.
   const phone = createSim({

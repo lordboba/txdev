@@ -143,9 +143,9 @@ export interface PoemState {
 // ---------------------------------------------------------------------------
 
 export type FallSpecies = 'floret' | 'leaf' | 'ginkgo';
-/** 0 near, 1 mid, 2 far (uses the pre-blurred atlas tile). */
+/** 0 near, 1 mid, 2 far (leaves and ginkgo only: a far floret is a dust speck). */
 export type DepthBand = 0 | 1 | 2;
-/** Atlas tile index: 0 floret, 1 leaf, 2 ginkgo, 3 far-band floret. */
+/** Atlas tile index: 0 floret, 1 leaf, 2 ginkgo, 3 the pre-blurred floret (painted, unused). */
 export type AtlasCell = 0 | 1 | 2 | 3;
 
 /** One instance; the `set once` fields are fixed at build, the rest per frame. */

@@ -668,7 +668,10 @@ export function createSim(options: SimOptions): SimApi {
     const rng = mulberry32(seed * 7919 + index * 104729 + 17);
     const pick = (range: readonly [number, number]) =>
       range[0] + (range[1] - range[0]) * rng();
-    const band = (index % 3) as DepthBand;
+    // Florets keep to the near and mid bands: a 6–10 px corolla at the far
+    // band's 0.45 scale is a 2–3 px soft dot, which is dust (§5.4), not a
+    // floret. Leaves and ginkgo survive the far band at 10–18 px.
+    const band = (species === 'floret' ? index % 2 : index % 3) as DepthBand;
     const emitter = pickEmitter(index);
     const rect = layout.florets.emitters[emitter] ?? { x: 0, y: 0, w: 1, h: 1 };
     const inst: FallInstance = {
@@ -676,7 +679,7 @@ export function createSim(options: SimOptions): SimApi {
       seed: hash01(index, 1, seed),
       species,
       band,
-      atlasCell: band === 2 && species === 'floret' ? 3 : rule.atlasCell,
+      atlasCell: rule.atlasCell,
       sizePx: pick(rule.sizePx),
       descentS: pick(rule.descentS),
       flutterHz: pick(FALL_FLUTTER_HZ),
