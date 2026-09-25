@@ -9,10 +9,13 @@
  *   and receives the per-frame positions as custom properties named in
  *   `FESTIVAL_CSS_VARS`, all in CSS px with units:
  *     --slip-x (strip centre x)  --slip-y (strip top)   --slip-theta (deg)
+ *     --card-left (card left, relative to the strip's left) / --card-w
  *     --poem-x (column left)     --poem-y (column top)  --poem-theta (deg)
  *     --colophon-x / --colophon-y (block left / top; plus --colophon-w on `/`)
  *     --translation-x / --translation-y (block left / top; plus --translation-w)
  *     --moon-x / --moon-y (disc centre) / --moon-d (diameter)
+ *   The slip is the only per-frame mover and is pinned with a transform, so
+ *   a frame never dirties layout.
  * - Glyph reveals read `--glyph-start`, `--glyph-stagger` and `--glyph-ms`
  *   from the element (defaults are the §4.1 mount numbers; the layer sets the
  *   §4.2 route numbers on re-entry) and each glyph span carries `--i`.
@@ -20,7 +23,8 @@
  *   for every text block; `[data-shown="true"]` reveals a block; the slip
  *   wrapper's `[data-open="true"]` unfolds the card; the moon button's name
  *   plays for 1.6 s on hover or focus by itself.
- * - Only `.pull`, `.answerLink`, `.figure` and `.moon` take pointer events.
+ * - Only `.pull`, `.answerLink`, `.column` (the verse is selectable) and
+ *   `.moon` take pointer events; `.figure` passes `elementFromPoint` through.
  */
 
 .root {
@@ -55,13 +59,19 @@
 /* A3. Riddle slip on lantern B                                              */
 /* ------------------------------------------------------------------------ */
 
-/* Positioned wrapper: rotates 0.8× the lantern's θ about the collar point. */
+/*
+ * Positioned wrapper: rotates 0.8× the lantern's θ about the collar point.
+ * Pinned with a transform (never left/top): the pin moves every frame and
+ * must not cost a layout.
+ */
 .slip {
   position: absolute;
-  left: var(--slip-x, -1000px);
-  top: var(--slip-y, -1000px);
-  transform: translateX(-50%) rotate(var(--slip-theta, 0deg));
+  left: 0;
+  top: 0;
+  transform: translate3d(var(--slip-x, -1000px), var(--slip-y, -1000px), 0)
+    translateX(-50%) rotate(var(--slip-theta, 0deg));
   transform-origin: 50% 0;
+  will-change: transform;
   perspective: 600px;
 }
 
@@ -80,7 +90,7 @@
 }
 
 .pull:focus-visible {
-  outline: 2px solid var(--festival-seal);
+  outline: 2px solid var(--festival-underline);
   outline-offset: 2px;
   border-radius: 2px;
 }
@@ -133,7 +143,8 @@
 /*
  * `03 / 12` at the top of the strip. Seven mono glyphs at 10 px are 42 px,
  * wider than the 36 px inside the strip, so the index sets at 9 px with the
- * spaces tightened; it stays tabular and on one line.
+ * spaces tightened; it stays tabular and on one line. Its ink is the
+ * secondary 墨色, ≥ 7:1 on the slip paper.
  */
 .slipIndex {
   color: var(--festival-ink-secondary);
@@ -155,28 +166,38 @@
   color: var(--festival-ink);
 }
 
-/* The 9 px seal at the foot: signs the slip, no glyph. */
+/* The 9 px 银朱 seal at the foot: signs the slip, no glyph; red ink, never the accent. */
 .slipSeal {
   width: 9px;
   height: 9px;
-  background: var(--festival-seal);
-  transition: background 300ms var(--festival-ease-std);
+  background: var(--festival-tassel);
 }
 
-/* The unfolded card beside the strip, toward the page centre. */
+/*
+ * The unfolded card hangs under the strip's foot, inside the gutter, so no
+ * festival text ever covers an H1 or a link. `--card-left` / `--card-w` come
+ * from the layout table (layout.ts `cardRect`). The card sets its own face
+ * so `28ch` measures the clue's Cormorant italic (236 px), not the body's
+ * Plex Sans.
+ */
 .card {
   position: absolute;
-  top: 0;
-  left: calc(100% + 10px);
+  top: calc(100% + 8px);
+  left: var(--card-left, 0px);
   box-sizing: border-box;
-  width: max-content;
+  width: var(--card-w, 28ch);
   max-width: 28ch;
   padding: 12px 14px 13px;
   border: 1px solid var(--festival-slip-edge);
   background: var(--festival-slip-paper);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.14);
   color: var(--festival-ink);
-  text-wrap: balance;
+  font-family: var(--font-display), 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: 19px;
+  line-height: 1.3;
+  text-wrap: pretty;
   hanging-punctuation: first;
   opacity: 0;
   visibility: hidden;
@@ -185,11 +206,6 @@
     opacity 220ms var(--festival-ease-enter),
     transform 220ms var(--festival-ease-enter),
     visibility 0s linear 220ms;
-}
-
-.card[data-side='left'] {
-  left: auto;
-  right: calc(100% + 10px);
 }
 
 .slip[data-open='true'] .card {
@@ -216,6 +232,7 @@
 .answer {
   margin: 8px 0 0;
   font-size: 17px;
+  font-style: normal;
   font-weight: 500;
   line-height: 1.3;
   font-variant-numeric: lining-nums;
@@ -228,6 +245,10 @@
   transition-delay: 600ms;
 }
 
+/*
+ * 谜底 at 15 px, not the tier's 17: Noto's full-height Han beside Cormorant's
+ * small x-height reads level at 15 (a deliberate optical size, §6.A).
+ */
 .answerLabel {
   font-size: 15px;
 }
@@ -236,15 +257,21 @@
   color: inherit;
   pointer-events: auto;
   text-decoration: underline;
-  text-decoration-color: var(--festival-seal);
+  text-decoration-color: var(--festival-underline);
   text-decoration-thickness: 1px;
   text-underline-offset: 0.14em;
   transition: text-decoration-color 300ms var(--festival-ease-std);
 }
 
 .answerLink:focus-visible {
-  outline: 2px solid var(--festival-seal);
+  outline: 2px solid var(--festival-underline);
   outline-offset: 2px;
+}
+
+/* ↗ has no glyph in Cormorant; the system fallback is sized to its x-height. */
+.arrow {
+  font-size: 0.8em;
+  margin-left: 0.15em;
 }
 
 /* ------------------------------------------------------------------------ */
@@ -414,7 +441,7 @@
   margin-inline-end: 0;
 }
 
-/* On `/` the line hangs from its right edge (x1420): Han + label outrun the table's 205 px. */
+/* On `/` the block hangs from its right edge (x1420), two right-aligned lines. */
 .colophon[data-orientation='horizontal'] {
   transform: none;
   left: auto;
@@ -422,6 +449,15 @@
   width: max-content;
   text-align: right;
   white-space: nowrap;
+}
+
+/* The colophon fades in place (§4.1: opacity, std); only the poem drops in. */
+.colophon .glyph {
+  transform: none;
+  transition: opacity var(--glyph-ms, 300ms) var(--festival-ease-std);
+  transition-delay: calc(
+    var(--glyph-start, 2000ms) + var(--i, 0) * var(--glyph-stagger, 60ms)
+  );
 }
 
 .colophon[data-orientation='horizontal'] .glyph {
@@ -432,16 +468,15 @@
   margin-inline-end: 0;
 }
 
-/* `丙午年八月十五 · THE FIFTEENTH NIGHT`: a quarter-em Han–Latin gap (CLReq). */
+/* `THE FIFTEENTH NIGHT` on its own line under the Han date, 2 px of lead. */
 .colophonLabel {
-  display: inline-block;
-  margin-left: 0.25em;
-  vertical-align: baseline;
+  display: block;
+  margin-top: 3px;
 }
 
-/* On the grey Bench set: Bench `--ink` at 60%, not `--muted` (§3.1). */
+/* On the grey Bench set: Bench `--ink` at 75% (6:1 on #c8c8c8), not `--muted` (§3.1). */
 .colophon[data-home='true'] {
-  color: rgba(20, 21, 23, 0.6);
+  color: rgba(20, 21, 23, 0.75);
 }
 
 /* ------------------------------------------------------------------------ */
@@ -490,6 +525,12 @@
 
 .moonName .han {
   font-style: normal;
+}
+
+/* Left-moon routes (`/orbital`): the verse hangs under the disc, so the name goes above. */
+.moon[data-align='left'] .moonName {
+  top: auto;
+  bottom: calc(100% + 8px);
 }
 
 .moon:hover .moonName,

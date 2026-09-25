@@ -69,7 +69,16 @@ test('festival.css mirrors every PALETTE_CSS_VARS entry with its palette value',
   assert.equal(tints.passed, true);
   assert.equal(tokens[PALETTE_CSS_VARS.poolTint], tints.pool);
   assert.equal(tokens[PALETTE_CSS_VARS.haloTint], tints.halo);
-  assert.equal(tokens[PALETTE_CSS_VARS.sealColor], 'var(--accent)');
+  assert.equal(tokens[PALETTE_CSS_VARS.underline], 'var(--accent)');
+  // The seal is 银朱 ink, never the accent (§5.4, §8).
+  assert.match(
+    moduleCss,
+    /\.slipSeal\s*\{[^}]*background: var\(--festival-tassel\)/,
+  );
+  assert.ok(
+    !/--festival-seal/.test(css + moduleCss),
+    'no --festival-seal left',
+  );
 
   // Every named var is declared, none is left out.
   for (const name of Object.values(PALETTE_CSS_VARS)) {
@@ -117,6 +126,14 @@ test('festival.module.css sets the §6.A sizes', () => {
   assert.match(rule('.slipTarget'), /letter-spacing: 0\.18em/);
   assert.match(rule('.slipSeal'), /width: 9px/);
   assert.match(rule('.card'), /max-width: 28ch/);
+  // 28ch measures the card's own Cormorant italic, and the card hangs under the strip.
+  assert.match(rule('.card'), /font-size: 19px/);
+  assert.match(rule('.card'), /font-style: italic/);
+  assert.match(rule('.card'), /top: calc\(100% \+ 8px\)/);
+  // The slip is pinned with a transform, never left/top (no layout per frame).
+  assert.match(rule('.slip'), /translate3d\(var\(--slip-x/);
+  assert.match(rule('.slip'), /left: 0;/);
+  assert.match(rule(".colophon[data-home='true']"), /0\.75\)/);
   assert.match(rule('.clue'), /font-size: 19px/);
   assert.match(rule('.answer'), /font-size: 17px/);
   assert.match(rule('.column'), /font-size: 22px/);

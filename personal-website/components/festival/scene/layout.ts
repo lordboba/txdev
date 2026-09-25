@@ -71,6 +71,16 @@ export const TASSEL_DROP_FACTOR = 0.4;
 /** The slip hangs 14 px under the bottom collar (§6.A3). */
 export const SLIP_GAP_PX = 14;
 export const SLIP_SIZE = { w: 38, h: 152 } as const;
+/**
+ * The unfolded card hangs 8 px under the strip's foot, inside the gutter:
+ * ≤ 28ch of Cormorant italic 19 px (236 px), never nearer than 8 px to the
+ * copy column or the viewport edge; height allows a four-line clue and the
+ * 谜底 line.
+ */
+export const CARD_GAP_PX = 8;
+export const CARD_MAX_PX = 236;
+export const CARD_HEIGHT_PX = 150;
+export const CARD_CLEARANCE_PX = 8;
 
 /** Tailwind container of each NavBar route: `max-w-*` minus `lg:px-8`. */
 const CONTAINERS: Partial<
@@ -125,6 +135,8 @@ export type TextEntry = Placed<{ rect: Rect }>;
 
 export interface RouteTable {
   zIndex: number;
+  /** HTML overlay z when it must differ from `zIndex` (`/orbital`: 4). */
+  overlayZIndex?: number;
   lanterns: LanternEntry[];
   moon: Placed<MoonAnchor> | null;
   florets: {
@@ -264,7 +276,9 @@ const HOME: RouteTable = {
   },
   text: {
     poem: null,
-    colophon: { rect: rect(1215, 252, 1420, 264), anchor: 'right' },
+    // Two right-aligned lines (Han, then the mono label) so the block ends
+    // at x1420 and never reaches the laptop screen (x ≤ 1205).
+    colophon: { rect: rect(1270, 252, 1420, 276), anchor: 'right' },
     colophonOrientation: 'horizontal',
     translation: null,
     translationAlign: 'right',
@@ -304,6 +318,9 @@ const HOME: RouteTable = {
 
 const ORBITAL: RouteTable = {
   zIndex: 2,
+  // The canvas stays under `.orb-shell` (z 3); the moon button and the verse
+  // must sit above it or the A5 hover never fires.
+  overlayZIndex: 4,
   lanterns: [
     {
       id: 'C',
@@ -1012,6 +1029,7 @@ function resolveLantern(
 
   const cordAnchorY = resolveCordAnchorY(entry.cord, live);
   let slipRect: Rect | null = null;
+  let cardRect: Rect | null = null;
 
   if (entry.slip) {
     slipRect = {
@@ -1027,6 +1045,11 @@ function resolveLantern(
       slipRect = null;
     }
   }
+  if (slipRect) {
+    cardRect = resolveCard(slipRect, frame, exclusions);
+    // A slip whose card has nowhere to unfold is not hung at all.
+    if (!cardRect) slipRect = null;
+  }
 
   return {
     id: entry.id,
@@ -1040,10 +1063,49 @@ function resolveLantern(
     period: entry.period,
     slip: entry.slip && slipRect !== null,
     slipRect,
+    cardRect,
     tint: entry.tint,
     order,
     z: entry.hero ? 0.2 : -0.1 * order,
   };
+}
+
+/**
+ * The riddle card under a slip: centred on the strip, then shifted into the
+ * gutter (between the viewport edge and the copy column, 8 px clear of both)
+ * and narrowed to the gutter when 28ch does not fit; dropped when it still
+ * meets an exclusion rect (H1, nav, Calendly).
+ */
+function resolveCard(
+  slip: Rect,
+  frame: Frame,
+  exclusions: readonly Rect[],
+): Rect | null {
+  const { viewport, container } = frame;
+  const centre = slip.x + slip.w / 2;
+  const onLeft = !container || centre < viewport.w / 2;
+  const lo = onLeft
+    ? CARD_CLEARANCE_PX
+    : (container?.right ?? 0) + CARD_CLEARANCE_PX;
+  const hi = onLeft
+    ? (container?.left ?? viewport.w) - CARD_CLEARANCE_PX
+    : viewport.w - CARD_CLEARANCE_PX;
+  const w = Math.min(CARD_MAX_PX, hi - lo);
+
+  if (w < 120) return null;
+
+  const x = Math.min(Math.max(centre - w / 2, lo), hi - w);
+  const card: Rect = {
+    x,
+    y: slip.y + slip.h + CARD_GAP_PX,
+    w,
+    h: CARD_HEIGHT_PX,
+  };
+
+  return insideViewport(card, viewport, 0) &&
+    clear(card, exclusions, EXCLUSION_CLEARANCE_PX)
+    ? card
+    : null;
 }
 
 function resolveText(
@@ -1199,6 +1261,7 @@ export function routeLayout(
     mobile,
     home,
     zIndex: table.zIndex,
+    overlayZIndex: table.overlayZIndex ?? table.zIndex,
     lanterns,
     moon,
     florets: florets.emitters.length ? florets : { ...florets, count: 0 },

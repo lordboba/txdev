@@ -5,7 +5,7 @@ import { useSyncExternalStore, type CSSProperties } from 'react';
 import { festival } from '@/lib/festival';
 import { festivalFont } from './fonts';
 import styles from './festival.module.css';
-import type { FestivalRuntime, FestivalView, Timing } from './FestivalCanvas';
+import type { FestivalRuntime, Timing } from './FestivalCanvas';
 import { PoemColumn } from './PoemColumn';
 import { RiddleSlip } from './RiddleSlip';
 import { CHOREOGRAPHY } from './scene/types';
@@ -37,12 +37,7 @@ export function FestivalType({ runtime }: { runtime: FestivalRuntime }) {
     >
       <PoemColumn view={view} lang={lang} timing={view.timing} />
       {view.riddle && layout.lanterns.some((l) => l.slip) ? (
-        <RiddleSlip
-          riddle={view.riddle}
-          lang={lang}
-          shown={view.slipShown}
-          side={slipSide(layout)}
-        />
+        <RiddleSlip riddle={view.riddle} lang={lang} shown={view.slipShown} />
       ) : null}
     </div>
   );
@@ -61,13 +56,4 @@ function timingVars(timing: Timing): CSSProperties {
     '--slip-ms': `${T.slipMs}ms`,
     '--translation-ms': `${T.translationMs}ms`,
   } as CSSProperties;
-}
-
-/** The card unfolds toward the page centre. */
-function slipSide(
-  layout: NonNullable<FestivalView['layout']>,
-): 'left' | 'right' {
-  const spec = layout.lanterns.find((l) => l.slip);
-
-  return spec && spec.x > layout.viewport.w / 2 ? 'left' : 'right';
 }

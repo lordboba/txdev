@@ -2,12 +2,7 @@
 
 import type { CSSProperties } from 'react';
 
-import {
-  COLOPHON_LABEL,
-  COLOPHON_TITLE,
-  colophonDate,
-  festival,
-} from '@/lib/festival';
+import { COLOPHON_LABEL, colophonDate, festival } from '@/lib/festival';
 import styles from './festival.module.css';
 import type { FestivalView, Timing } from './FestivalCanvas';
 import { CHOREOGRAPHY } from './scene/types';
@@ -19,6 +14,8 @@ const TRANSLATION = 'a thousand miles apart, we share one moon';
 /** The moon's name on hover (§6.A5). */
 const MOON_NAME = { Hans: '玉盘', Hant: '玉盤' } as const;
 const MOON_LABEL = 'Full moon, fifteenth night of the eighth month';
+/** One `Intl.DateTimeFormat` per module, not per render. */
+const COLOPHON_DATE = colophonDate();
 
 /**
  * A1 the colophon dateline, A4 the poem column with its translation and
@@ -89,25 +86,29 @@ export function PoemColumn({
           data-orientation={colophonOrientation}
           data-home={layout.home ? 'true' : undefined}
           data-shown={view.colophonShown ? 'true' : undefined}
-          title={COLOPHON_TITLE}
           style={glyphVars(T.colophonGlyphStaggerMs, T.colophonGlyphMs)}
         >
           <span className={styles.han} lang={lang}>
-            {glyphs(colophonDate())}
+            {glyphs(COLOPHON_DATE)}
           </span>
           {layout.home ? (
             <span
               className={`${styles.colophonLabel} ${styles.mono} ${styles.glyph}`}
               style={{ '--i': 7 } as CSSProperties}
             >
-              · {COLOPHON_LABEL}
+              {COLOPHON_LABEL}
             </span>
           ) : null}
         </p>
       ) : null}
 
       {layout.moon ? (
-        <button type="button" className={styles.moon} aria-label={MOON_LABEL}>
+        <button
+          type="button"
+          className={styles.moon}
+          aria-label={MOON_LABEL}
+          data-align={translationAlign}
+        >
           <span
             className={`${styles.moonName} ${styles.latin}`}
             aria-hidden="true"
