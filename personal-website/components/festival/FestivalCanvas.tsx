@@ -443,7 +443,13 @@ export function createFestivalRuntime(
 
     const { nightChanged } = sampleTheme();
 
-    if (!sim) return;
+    if (!sim) {
+      // Before the loop starts (fonts wait) the state simply follows.
+      night = nightTarget;
+      moonNight = nightTarget;
+
+      return;
+    }
     sim.setNight(nightTarget);
 
     if (reduced) {
@@ -1243,6 +1249,9 @@ export function createFestivalRuntime(
 
     sim = instance;
     applyLayout(layout, 'mount');
+    night = nightTarget;
+    moonNight = nightTarget;
+    moonNightTween = null;
     instance.prewarm(MOUNT.prewarmS);
 
     const ts = instance.state.ts;
