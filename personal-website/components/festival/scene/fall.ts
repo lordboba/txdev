@@ -37,8 +37,18 @@ export const FALL_RENDER_ORDER = 5;
 export const MAX_FALL_INSTANCES = 36;
 /** Highlight strength of the atlas G channel (the 30% white streak). */
 export const HIGHLIGHT_STRENGTH = 0.3;
-/** Far-band tile blur at atlas scale, px. */
-export const FAR_BLUR_PX = 18;
+/**
+ * Far-band tile blur at atlas scale, px. Half the first cut (18): at 0.45
+ * scale the fatter, softer fascicle rendered as a grey smudge; the far florets
+ * must stay florets, only smaller.
+ */
+export const FAR_BLUR_PX = 9;
+/**
+ * A spinning plane must never go edge-on: below this fraction of its full
+ * width a DoubleSide leaf is a 1 px pale dash (the exact "scratches" read §1
+ * refuses). The spin's cosine is floored here; the face flips at the floor.
+ */
+export const MIN_FACE_COS = 0.4;
 
 /** Art box of each cell in atlas px (y down) and its width/height aspect. */
 export interface AtlasCellRect {
@@ -151,16 +161,18 @@ function floretAt(
   ctx.rotate(rotation);
   ctx.fillStyle = SHADE(1);
 
-  // Four lobes, divided almost to the base.
+  // Four short, rounded lobes, nearly touching (real 桂花): a compact
+  // 4-petal disc with a dark centre. Long separated lobes read as an 'x' at
+  // 6–10 px and as propellers at 3×, the "sparkle" the brief refuses.
   for (let k = 0; k < 4; k += 1) {
     ctx.save();
     ctx.rotate((k * Math.PI) / 2);
     ctx.beginPath();
     ctx.ellipse(
       0,
-      -radius * 0.56,
-      radius * 0.31,
-      radius * 0.44,
+      -radius * 0.48,
+      radius * 0.4,
+      radius * 0.4,
       0,
       0,
       Math.PI * 2,
@@ -169,10 +181,10 @@ function floretAt(
     ctx.restore();
   }
 
-  // The tube: a touch darker, joins the lobes.
-  ctx.fillStyle = SHADE(0.78);
+  // The tube: darker, joins the lobes at the centre.
+  ctx.fillStyle = SHADE(0.72);
   ctx.beginPath();
-  ctx.arc(0, 0, radius * 0.2, 0, Math.PI * 2);
+  ctx.arc(0, 0, radius * 0.26, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 }
@@ -322,12 +334,12 @@ export function paintFallAtlas(): HTMLCanvasElement {
   paintLeaf(ctx, FALL_CELLS[1]);
   paintGinkgo(ctx, FALL_CELLS[2]);
 
-  // Far-band floret: the same fascicle, fatter and pre-blurred.
+  // Far-band floret: the same fascicle at the same size, lightly pre-blurred.
   const far = FALL_CELLS[3];
 
   ctx.save();
   ctx.filter = `blur(${FAR_BLUR_PX}px)`;
-  paintFascicle(ctx, far.x + far.w / 2, far.y + far.h / 2, 1.2);
+  paintFascicle(ctx, far.x + far.w / 2, far.y + far.h / 2, 1);
   ctx.restore();
 
   return canvas;
@@ -359,6 +371,19 @@ const _scale = new THREE.Vector3();
 const _color = new THREE.Color();
 const _world = { x: 0, y: 0, z: 0 };
 const _px = { x: 0, y: 0 };
+
+/**
+ * The y rotation for a spin angle with its cosine floored at MIN_FACE_COS:
+ * the projected width never drops below 40% of the full face. The face
+ * flips (front ↔ back) at the floor, as a real leaf does at edge-on.
+ */
+export function facingSpin(spin: number): number {
+  const c = Math.cos(spin);
+  const s = Math.sin(spin);
+  const cc = (c < 0 ? -1 : 1) * Math.max(Math.abs(c), MIN_FACE_COS);
+
+  return Math.atan2((s < 0 ? -1 : 1) * Math.sqrt(1 - cc * cc), cc);
+}
 
 /** One InstancedMesh, one atlas, one draw call. */
 export const createFallObjects: FallObjectsFactory = (renderer) => {
@@ -508,8 +533,10 @@ export const createFallObjects: FallObjectsFactory = (renderer) => {
           instance.sizePx * band.scale * worldPerPx(band.z, frame.viewport.h);
 
         _position.set(_world.x, _world.y, _world.z);
-        // Spin about the long axis (y), lean in the plane (z).
-        _euler.set(0, instance.spin, instance.tilt, 'ZYX');
+        // Spin about the long axis (y), lean in the plane (z). The spin is
+        // floored at MIN_FACE_COS of the full width so the plane never passes
+        // through edge-on (a 1 px dash every half turn).
+        _euler.set(0, facingSpin(instance.spin), instance.tilt, 'ZYX');
         _quaternion.setFromEuler(_euler);
 
         if (cell.aspect >= 1) {
@@ -521,9 +548,12 @@ export const createFallObjects: FallObjectsFactory = (renderer) => {
         _matrix.compose(_position, _quaternion, _scale);
         mesh.setMatrixAt(slot, _matrix);
 
-        const [r, g, b] = instance.color;
-
-        _color.setRGB(r, g, b, THREE.SRGBColorSpace);
+        _color.setRGB(
+          instance.color[0],
+          instance.color[1],
+          instance.color[2],
+          THREE.SRGBColorSpace,
+        );
         mesh.setColorAt(slot, _color);
 
         const uv = CELL_UVS[instance.atlasCell];
