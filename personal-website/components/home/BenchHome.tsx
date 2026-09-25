@@ -36,6 +36,7 @@ export function BenchHome({ visitorCount }: { visitorCount: number | null }) {
 
     if (!launching) {
       setLaunching(true);
+      window.dispatchEvent(new CustomEvent('bench:launch'));
     }
   };
 

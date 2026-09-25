@@ -62,44 +62,34 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       </div>
 
       <article className="rounded-sm border border-divider bg-surface p-5 sm:p-8">
-        <header className="space-y-5 border-b border-divider pb-8">
-          <div className="flex flex-wrap items-center gap-2 text-xs font-[var(--font-mono)] text-muted">
-            <span>{post.formattedDate}</span>
-            <span className="size-1.5 rounded-full bg-divider" />
-            <span className="text-accent">{post.readTime}</span>
-          </div>
-          <h1 className="font-[var(--font-display)] text-3xl font-semibold leading-tight tracking-tight text-foreground sm:text-4xl">
-            {post.title}
-          </h1>
-          <p className="text-base leading-8 text-muted sm:text-lg">
-            {post.excerpt}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {post.tags.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-sm border border-divider px-2.5 py-1 text-[11px] font-[var(--font-mono)] text-accent transition-colors duration-200"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        </header>
+        <div className="blog-column">
+          <header className="space-y-5 border-b border-divider pb-8">
+            <div className="label-sm flex flex-wrap items-center gap-2 text-muted">
+              <span>{post.formattedDate}</span>
+              <span className="size-1.5 rounded-full bg-divider" />
+              <span className="text-accent">{post.readTime}</span>
+            </div>
+            <h1 className="display display-2 text-foreground">{post.title}</h1>
+            <p className="text-base leading-8 text-muted sm:text-lg">
+              {post.excerpt}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {post.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="label-sm rounded-sm border border-divider px-2.5 py-1 text-accent transition-colors duration-200"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </header>
 
-        <div
-          className="blog-prose mt-10
-          [&_h1]:font-[var(--font-display)]
-          [&_h2]:font-[var(--font-display)]
-          [&_h3]:font-[var(--font-display)]
-          [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground
-          [&_h1]:font-semibold [&_h2]:font-semibold [&_h3]:font-semibold
-          [&_p]:text-[1rem] [&_p]:leading-8 [&_p]:text-muted
-          [&_a]:font-medium [&_a]:text-accent hover:[&_a]:underline [&_a]:underline-offset-4
-          [&_blockquote]:rounded-sm [&_blockquote]:bg-accent-muted [&_blockquote]:px-4 [&_blockquote]:py-3 [&_blockquote]:text-muted
-          [&_code]:rounded-sm [&_code]:border [&_code]:border-divider [&_code]:bg-surface-raised [&_code]:px-1.5 [&_code]:py-0.5
-          [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:border [&_pre]:border-divider [&_pre]:bg-surface-raised [&_pre]:p-4"
-          dangerouslySetInnerHTML={{ __html: articleHtml }}
-        />
+          <div
+            className="blog-prose mt-10"
+            dangerouslySetInnerHTML={{ __html: articleHtml }}
+          />
+        </div>
       </article>
     </div>
   );

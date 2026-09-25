@@ -67,12 +67,15 @@
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.3) inset;
 }
 
+/* The one wordmark: Cormorant 500, mixed case, shared with the NavBar. */
 .wordmark {
   width: max-content;
   color: var(--ink);
-  font-size: 0.86rem;
-  font-weight: 650;
+  font-family: var(--font-display-stack);
+  font-size: 1.1rem;
+  font-weight: 500;
   letter-spacing: -0.01em;
+  line-height: 1;
 }
 
 .wordmark:hover {
@@ -94,7 +97,7 @@
   color: rgba(20, 21, 23, 0.76);
   font: inherit;
   font-size: 0.82rem;
-  font-weight: 550;
+  font-weight: 500;
   letter-spacing: 0.015em;
 }
 
@@ -116,7 +119,7 @@
 }
 
 .nav button[data-active='true'] {
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .nav button[data-active='true']::after {
@@ -221,7 +224,7 @@
 .intro h1 {
   margin: 0.5rem 0 0.8rem;
   color: var(--ink);
-  font-family: var(--font-display), 'Cormorant Garamond', Georgia, serif;
+  font-family: var(--font-display-stack);
   font-size: clamp(2.6rem, 4.4vw, 4.35rem);
   font-weight: 600;
   letter-spacing: -0.02em;
@@ -237,6 +240,7 @@
   font-size: 0.85rem;
   font-weight: 500;
   line-height: 1.6;
+  text-wrap: pretty;
 }
 
 /*
@@ -548,11 +552,12 @@
 .signalDetails h2,
 .historyDetails h2 {
   margin: 0.6rem 0 0.5rem;
-  font-family: var(--font-display), 'Cormorant Garamond', Georgia, serif;
+  font-family: var(--font-display-stack);
   font-size: 1.12rem;
   font-weight: 600;
   letter-spacing: -0.008em;
   line-height: 1.15;
+  text-wrap: balance;
 }
 
 .projectPlate p,
@@ -1689,7 +1694,7 @@
   }
 
   .wordmark {
-    font-size: 0.72rem;
+    font-size: 0.95rem;
   }
 
   .nav {

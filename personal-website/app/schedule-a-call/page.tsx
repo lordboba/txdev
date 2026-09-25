@@ -25,13 +25,11 @@ export default function ScheduleCallPage() {
       </Link>
 
       <header className="rounded-sm border border-divider bg-surface p-6 sm:p-8">
-        <p className="font-[var(--font-mono)] text-xs font-medium uppercase tracking-[0.22em] text-muted">
-          {'// schedule a call'}
-        </p>
-        <h1 className="mt-4 max-w-3xl font-[var(--font-display)] text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
+        <p className="eyebrow">{'// schedule a call'}</p>
+        <h1 className="display display-1 mt-4 max-w-3xl">
           Book a 15-minute chat.
         </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-muted sm:text-base">
+        <p className="mt-3 max-w-2xl text-sm leading-7 text-pretty text-muted sm:text-base">
           Share what you want to discuss when you book. We can talk through a
           project, compare notes, or simply meet.
         </p>
@@ -65,9 +63,7 @@ export default function ScheduleCallPage() {
 
       <section>
         <div className="rounded-sm border border-divider bg-surface p-6">
-          <h2 className="font-[var(--font-display)] text-2xl font-semibold tracking-tight">
-            What to expect
-          </h2>
+          <h2 className="display display-2">What to expect</h2>
           <ul className="mt-4 space-y-3 text-sm text-muted">
             {callHighlights.map((highlight) => (
               <li

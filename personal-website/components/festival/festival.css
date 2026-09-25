@@ -1,0 +1,121 @@
+/*
+ * Mid-Autumn festival tokens and the sky tint (bible §2.1, §2.2, §7.2).
+ *
+ * Everything here lives under `html[data-festival="mid-autumn"]`, which the
+ * layer sets in its mount effect and removes in cleanup, so the whole sheet
+ * dies with the flag. The hex values mirror `components/festival/palette.ts`
+ * (`PALETTE_CSS_VARS` names them; `lib/festivalCss.test.mjs` asserts they
+ * match) so the HTML slips, poem and colophon use the same constants as the
+ * WebGL objects.
+ *
+ * Physical colours (paper, tassel, the 银朱 seal, moon) never change with the
+ * theme. The two page-side light tints (`--festival-pool-tint`,
+ * `--festival-halo-tint`) are resolved at runtime from the live `--accent`
+ * through the OKLCH hue gate (`accentTints()`) and written onto the layer
+ * root by the layer; the values below are the defaults for the site's own
+ * amber `#c89b52`. `--festival-underline` (the 谜底 underline and the focus
+ * rings) is page-side ink and simply follows `--accent`.
+ *
+ * `--festival-night` is 1 on the night of the fifteenth (dark theme) and 0 in
+ * the afternoon before (light theme). The layer damps it across a theme
+ * switch (λ 8, §4.3) and ramps it 0 → 1 over 900 ms at mount (§4.1); the sky
+ * tint's opacity follows it, so one variable carries the whole dusk.
+ */
+
+html[data-festival='mid-autumn'] {
+  /* §2.1 constants, in palette.ts order. */
+  --festival-paper-unlit: #e9dcc4;
+  --festival-paper-mid: #ffb61e;
+  --festival-paper-core: #ffd58a;
+  --festival-moon-rim: #d6ecf0;
+  --festival-frost: #e9f1f6;
+  --festival-night-near-moon: #425066;
+  --festival-tassel: #bf242a;
+  --festival-knot: #9d2933;
+  --festival-ink: #2b241c;
+  --festival-ink-secondary: #3d4a54;
+  --festival-slip-paper: #efe4cf;
+  --festival-slip-edge: #d9cbb0;
+
+  /* Hue-gated at runtime; defaults = accentTints('#c89b52'). */
+  --festival-pool-tint: #f4b128;
+  --festival-halo-tint: #f7cc82;
+  --festival-underline: var(--accent);
+
+  /* Theme state: 1 = night (dark), 0 = afternoon (light). */
+  --festival-night: 1;
+
+  /* Text inks (§6.A4, §6.A1). */
+  --festival-verse-ink: color-mix(
+    in srgb,
+    var(--festival-moon-rim) 55%,
+    transparent
+  );
+  --festival-translation-ink: color-mix(
+    in srgb,
+    var(--festival-moon-rim) 70%,
+    transparent
+  );
+  --festival-colophon-ink: var(--muted);
+
+  /* Sky tint (§2.2): 12% 黛蓝 within 1.1 moon diameters of the centre. */
+  --festival-sky-alpha: 12%;
+  --festival-sky-radius: 1.1;
+
+  /* Easings (§4). */
+  --festival-ease-enter: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --festival-ease-exit: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --festival-ease-std: cubic-bezier(0.2, 0, 0, 1);
+  --festival-ease-calm: cubic-bezier(0.37, 0, 0.63, 1);
+}
+
+/* The afternoon before: no night, page-ink verse. */
+html[data-festival='mid-autumn'][data-theme='light'] {
+  --festival-night: 0;
+  --festival-verse-ink: var(--muted);
+  --festival-translation-ink: var(--muted);
+  /*
+   * The bare light accent draws a 3.40:1 ring on the page, and only 2.9:1
+   * where the pool tint is warmest — under the 3:1 a focus indicator owes
+   * (WCAG 2.4.11), with nothing left for the tint. Three parts accent to
+   * one part page ink keeps the accent's hue (and follows every colour
+   * theme, which only moves --accent) while taking the ring to 5.3:1 on
+   * the page and 4.5:1 through the strongest pool.
+   */
+  --festival-underline: color-mix(
+    in srgb,
+    var(--accent) 70%,
+    var(--foreground)
+  );
+}
+
+/*
+ * Sky tint: not geometry. Applied by the layer to the overlay wrapper (a
+ * `position: fixed; inset: 0` element). `--moon-x`, `--moon-y` and `--moon-d`
+ * are written in CSS px (with units) while the moon glides, so the tint
+ * glides too; without a moon the gradient centre sits off-screen and nothing
+ * paints. The pointer parallax arrives as `--moon-dx/-dy` and moves the
+ * whole layer with a transform (the gradient is transparent beyond 1.1·d,
+ * so a ±7 px translate of the inset:0 layer never exposes an edge): a
+ * `circle at` that moved every frame re-rastered the full viewport.
+ * Opacity follows `--festival-night`.
+ */
+html[data-festival='mid-autumn'] .festival-sky {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at var(--moon-x, -100vw) var(--moon-y, -100vh),
+    color-mix(
+        in srgb,
+        var(--festival-night-near-moon) var(--festival-sky-alpha),
+        transparent
+      )
+      0,
+    transparent calc(var(--moon-d, 0px) * var(--festival-sky-radius))
+  );
+  opacity: var(--festival-night, 1);
+  transform: translate3d(var(--moon-dx, 0px), var(--moon-dy, 0px), 0);
+  /* Opacity (dusk, mount) and the parallax translate both stay on the compositor. */
+  will-change: transform, opacity;
+}

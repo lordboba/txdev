@@ -52,6 +52,7 @@ function mountOverlay(element: HTMLDivElement | null) {
       : null;
   const benchRoot = document.querySelector('[data-bench-root]');
   benchRoot?.setAttribute('inert', '');
+  document.documentElement.setAttribute('data-journey-open', '');
 
   const ownsScrollLock =
     !scrollLocked && document.body.style.overflow !== 'hidden';
@@ -113,6 +114,7 @@ function mountOverlay(element: HTMLDivElement | null) {
     }
 
     benchRoot?.removeAttribute('inert');
+    document.documentElement.removeAttribute('data-journey-open');
     trigger?.focus();
   };
 }

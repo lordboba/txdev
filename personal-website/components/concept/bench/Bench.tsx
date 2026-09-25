@@ -22,7 +22,11 @@ import {
 import { featuredProjects, sideProjects } from '../../../content/projectData';
 import { companyTags } from '../../../content/experienceData';
 import { setConceptView, useConceptView } from '../conceptViewStore';
-import { useMounted, usePrefersReducedMotion } from '../shared/runtime';
+import {
+  useMounted,
+  usePrefersReducedMotion,
+  useWebGLSupport,
+} from '../shared/runtime';
 import { BenchScene, preloadHistoryShots } from './BenchScene';
 import {
   clearBenchHistorySelection,
@@ -61,7 +65,6 @@ import styles from './Bench.module.css';
 const MOBILE_QUERY = '(max-width: 700px)';
 
 const noMobileSubscribe = () => () => {};
-let webGLSupport: boolean | undefined;
 
 function subscribeToMobile(onStoreChange: () => void) {
   const query = window.matchMedia(MOBILE_QUERY);
@@ -75,27 +78,6 @@ function useMobileLayout() {
     () => window.matchMedia(MOBILE_QUERY).matches,
     () => false,
   );
-}
-
-function getWebGLSupport() {
-  if (webGLSupport !== undefined) {
-    return webGLSupport;
-  }
-
-  try {
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('webgl2') ?? canvas.getContext('webgl');
-    webGLSupport = context !== null;
-    context?.getExtension('WEBGL_lose_context')?.loseContext();
-  } catch {
-    webGLSupport = false;
-  }
-
-  return webGLSupport;
-}
-
-function useWebGLSupport() {
-  return useSyncExternalStore(noMobileSubscribe, getWebGLSupport, () => false);
 }
 
 function FieldLabel({

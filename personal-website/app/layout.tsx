@@ -6,6 +6,9 @@ import {
   IBM_Plex_Mono,
 } from 'next/font/google';
 import './globals.css';
+import { FestivalMount } from '@/components/festival/FestivalMount';
+import { getAllPostMeta } from '@/lib/blog';
+import { isFestivalEnabledOnServer } from '@/lib/festival';
 
 const display = Cormorant_Garamond({
   subsets: ['latin'],
@@ -87,11 +90,14 @@ const themeInitScript = `
 })();
 `;
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const festivalOn = isFestivalEnabledOnServer();
+  const festivalPosts = festivalOn ? await getAllPostMeta() : [];
+
   return (
     <html
       lang="en"
@@ -122,6 +128,7 @@ export default function RootLayout({
         )}
         <div className="grain-overlay" aria-hidden="true" />
         {children}
+        {festivalOn && <FestivalMount posts={festivalPosts} />}
       </body>
     </html>
   );

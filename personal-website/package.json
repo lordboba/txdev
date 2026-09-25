@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev --webpack",
-    "test": "node --test content/*.test.mts components/concept/conceptData.test.mts components/concept/bench/*.test.mjs components/concept/evalrun/*.test.mjs components/journey/*.test.* lib/*.test.mjs",
+    "test": "node --test content/*.test.mts components/concept/conceptData.test.mts components/concept/bench/*.test.mjs components/concept/evalrun/*.test.mjs components/journey/*.test.* components/festival/*.test.mjs lib/*.test.mjs",
     "bench:measure": "node scripts/bench-ablate-measure.mjs",
     "map:build": "node scripts/build-us-map.mjs",
     "prebuild": "node scripts/update-history.mjs",
