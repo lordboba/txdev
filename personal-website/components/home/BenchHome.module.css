@@ -202,11 +202,12 @@
 
 /* ─── The moon (Easter egg) ───────────────────────────────────────────────
  *
- * Same rules as its neighbours: 44px hit area from .dockLink, name carried by
- * the aria-label, greyscale at rest, light as the hover/focus reward. It
- * breaks one rule on purpose — it is quieter than quiet at rest. A dock item
- * a visitor is *meant* to find rests at --muted; this one rests at a fraction
- * of it, a crescent you notice only once you are already looking.
+ * Most of the dock's rules hold: 44px hit area from .dockLink, greyscale at
+ * rest, light as the hover reward. Two it breaks on purpose. It is quieter
+ * than quiet at rest — a dock item a visitor is *meant* to find rests at
+ * --muted, this one rests at a fraction of it. And it carries no name: the
+ * link is aria-hidden and out of the tab order (see BenchHome.tsx), so every
+ * state below is a hover state, with no :focus-visible twin to keep in step.
  */
 .moonLink {
   position: relative;
@@ -241,13 +242,11 @@
 
 /* Full moon, and the only warmth in the dock — the same --accent the rest of
  * the site reserves for the lit thing. */
-.dockLink:hover .moonShadow,
-.dockLink:focus-visible .moonShadow {
+.moonLink:hover .moonShadow {
   transform: translateX(-21px);
 }
 
-.dockLink:hover .moonDisc,
-.dockLink:focus-visible .moonDisc {
+.moonLink:hover .moonDisc {
   fill: color-mix(in srgb, var(--accent) 42%, #fbf4e4);
   opacity: 1;
 }
@@ -259,8 +258,7 @@
  * 9px shadow was cut away entirely. On the element box it is an ordinary CSS
  * filter, shaped by the disc's own alpha, with nothing to clip it.
  */
-.dockLink:hover .moonGlyph,
-.dockLink:focus-visible .moonGlyph {
+.moonLink:hover .moonGlyph {
   filter: drop-shadow(
       0 0 3px color-mix(in srgb, var(--accent) 62%, transparent)
     )
@@ -292,8 +290,7 @@
   pointer-events: none;
 }
 
-.dockLink:hover .moonLabel,
-.dockLink:focus-visible .moonLabel {
+.moonLink:hover .moonLabel {
   opacity: 0.72;
   transform: translate(0, -50%);
 }

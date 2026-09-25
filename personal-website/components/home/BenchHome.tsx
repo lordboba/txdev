@@ -76,12 +76,22 @@ export function BenchHome({ visitorCount }: { visitorCount: number | null }) {
                * do, so this Link deliberately skips handleRocketClick and the
                * bench:launch dispatch. prefetch={false} keeps a door nobody
                * has found yet off the network.
+               *
+               * It is the one dock item that does NOT carry its name: pointer
+               * only, out of the tab order and out of the accessibility tree.
+               * Named, it put a second "Orbital view" link immediately before
+               * the rocket's — two adjacent links to one destination, the
+               * secret announced first and its own label spelling it out. The
+               * reward here is a hover phase change no keyboard or screen
+               * reader can collect anyway, and the rocket beside it carries
+               * /orbital for everyone.
                */}
               <Link
                 href="/orbital"
                 prefetch={false}
                 className={`${styles.dockLink} ${styles.moonLink}`}
-                aria-label="Orbital view (moon)"
+                aria-hidden="true"
+                tabIndex={-1}
               >
                 <span className={styles.moonLabel} aria-hidden="true">
                   Orbital
