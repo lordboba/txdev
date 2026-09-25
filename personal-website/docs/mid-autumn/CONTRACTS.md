@@ -142,7 +142,7 @@ export declare const palette: {
   floretOrange: '#ff8936';
   leafGreen: { top: '#789262'; underside: '#8fa37a' };
   ginkgo: { from: '#d3b17d'; to: '#9aa66f' };
-  ink: { primary: '#2b241c'; secondary: '#50616d' };
+  ink: { primary: '#2b241c'; secondary: '#3d4a54' };
   slipPaper: '#efe4cf';
   slipEdge: '#d9cbb0';
 };
@@ -168,7 +168,8 @@ export declare const light: {
     centreDropBodyHeights: 0.4;
     falloffPow: 2;
     peakDark: 0.14;
-    peakHome: 0.1;
+    peakHome: 0.22;
+    homeTint: '#ffa631';
     peakLight: 0;
     zOffset: -0.2;
     maxAlphaAtColumnEdge: 0.02;
@@ -203,8 +204,8 @@ export declare const light: {
     ribCount: 16;
     fibreStrength: 0.06;
     unlitRibDarken: 0.12;
-    shadowDarken: 0.35;
-    shadowCircumferenceFraction: 0.22;
+    shadowDarken: 0.5;
+    shadowCircumferenceFraction: 0.15;
   };
   candle: { amplitude: 0.06; floor: 0.94; hz1: 7; hz2: 13 };
   floret: { coolMix: 0.45; coolSmoothstep: readonly [0.35, 0.9] };
@@ -228,7 +229,7 @@ export declare const PALETTE_CSS_VARS: {
   slipEdge: '--festival-slip-edge';
   poolTint: '--festival-pool-tint';
   haloTint: '--festival-halo-tint';
-  sealColor: '--festival-seal';
+  underline: '--festival-underline';
 };
 export declare function hexToRgb255(
   hex: string,
@@ -241,7 +242,12 @@ export declare function contrastRatio(a: string, b: string): number;
 export type Oklch = { l: number; c: number; h: number };
 export declare function hexToOklch(hex: string): Oklch;
 export declare function accentPassesHueGate(accentHex: string): boolean;
-export type AccentTints = { pool: Hex; halo: Hex; seal: Hex; passed: boolean };
+export type AccentTints = { pool: Hex; halo: Hex; passed: boolean };
+export declare function coolTowardMoon(
+  warm: Rgb01,
+  dMoon: number | null,
+  dNearestLantern: number,
+): Rgb01;
 export declare function accentTints(accentHex: string): AccentTints;
 ```
 
@@ -256,8 +262,8 @@ export type RectLike = { left: number; top: number; right: number; bottom: numbe
 export type WorldPoint = { x: number; y: number; z: number };
 export type LanternId = 'A' | 'B' | 'C';
 export type CordAnchor = { kind: 'viewport-top' } | { kind: 'fixed-y'; y: number } | { kind: 'nav-bottom'; fallbackY: number } | { kind: 'element-bottom'; selector: string; fallbackY: number };
-export interface LanternSpec { id: LanternId; hero: boolean; body: number; x: number; bodyRect: Rect; cord: CordAnchor; cordAnchorY: number; cordLengthPx: number; period: number; slip: boolean; slipRect: Rect | null; tint: 0 | 1 | 2; order: number; z: number }
-export interface LanternState { id: LanternId; theta: number; thetaDot: number; cordLength: number; cordTarget: number; lit: number; litTarget: number; candle: number; tasselTheta: number; tasselThetaDot: number; bob: number; bobDot: number; rise: number; alpha: number; shadowScroll: number; zeta: number; pivot: WorldPoint }
+export interface LanternSpec { id: LanternId; hero: boolean; body: number; x: number; bodyRect: Rect; cord: CordAnchor; cordAnchorY: number; cordLengthPx: number; period: number; slip: boolean; slipRect: Rect | null; cardRect: Rect | null; tint: 0 | 1 | 2; order: number; z: number }
+export interface LanternState { id: LanternId; theta: number; thetaDot: number; cordLength: number; cordTarget: number; lit: number; litTarget: number; pool: number; candle: number; tasselTheta: number; tasselThetaDot: number; bob: number; bobDot: number; rise: number; alpha: number; shadowScroll: number; zeta: number; pivot: WorldPoint }
 export interface PoemState { theta: number; thetaDot: number; leanDeg: number }
 export type FallSpecies = 'floret' | 'leaf' | 'ginkgo';
 export type DepthBand = 0 | 1 | 2;
@@ -294,13 +300,14 @@ export interface SimApi {
   setNight(night: ThemeNight): void;
   lowerIn(id: LanternId, opts: { delayS: number; durationS: number }): void;
   raise(id: LanternId, opts: { delayS: number; durationS: number; px: number }): void;
-  light(id: LanternId, opts: { delayS: number; durationS: number; target: number }): void;
+  light(id: LanternId, opts: { delayS: number; durationS: number; target: number; easing?: Easing | 'snuff'; poolDelayS?: number; poolDurationS?: number }): void;
+  setSequenceStart(ts: number): void;
+  setEmitterRect(index: number, rect: Rect): void;
   schedule(ts: number, fn: () => void): void;
   snapshotReduced(): SimState;
-  setLightSources(moonPx: Vec2 | null, lanternsPx: Vec2[]): void;
   dispose(): void;
 }
-export interface FrameContext { ts: number; dt: number; viewport: Viewport; mobile: boolean; home: boolean; night: number; tints: AccentTints; cameraZ: number; layout: RouteLayout }
+export interface FrameContext { ts: number; dt: number; viewport: Viewport; mobile: boolean; home: boolean; night: number; moonNight: number; tints: AccentTints; cameraZ: number; layout: RouteLayout }
 export interface LanternObjects {
   readonly object: Object3D;
   build(specs: readonly LanternSpec[], frame: FrameContext): void;
@@ -310,34 +317,33 @@ export interface LanternObjects {
   dispose(): void;
 }
 export type ShadowStripBuilder = (titles: readonly string[], fontFamily: string) => DataTexture;
-export interface FallObjects { readonly object: Object3D; readonly atlas: Texture; build(count: number, frame: FrameContext): void; update(instances: readonly FallInstance[], frame: FrameContext): void; dispose(): void }
+export interface FallObjects { readonly object: Object3D; readonly atlas: Texture; readonly geometry: BufferGeometry; build(count: number, frame: FrameContext): void; update(instances: readonly FallInstance[], frame: FrameContext, alphaScale?: number): void; dispose(): void }
 export interface MoonState { centre: Vec2; diameter: number; alpha: number; haloAlpha: number; visible: boolean }
-export interface MoonObjects { readonly object: Object3D; build(frame: FrameContext): void; update(moon: MoonState, frame: FrameContext): void; dispose(): void }
-export type SceneObjects = { lanterns: LanternObjects; fall: FallObjects; moon: MoonObjects };
+export interface MoonObjects { readonly object: Object3D; update(moon: MoonState, frame: FrameContext): void; dispose(): void }
 export type LanternObjectsFactory = (renderer: WebGLRenderer) => LanternObjects;
 export type FallObjectsFactory = (renderer: WebGLRenderer) => FallObjects;
-export type MoonObjectsFactory = (renderer: WebGLRenderer, moonTexture: Texture) => MoonObjects;
+export type MoonObjectsFactory = (renderer: WebGLRenderer, moonTexture: Texture, quad?: BufferGeometry) => MoonObjects;
 export interface MoonAnchor { centre: Vec2; diameter: number }
 export interface FloretLayout { count: number; emitters: Rect[]; exclusions: Rect[]; featherPx: number; alphaMax: number; alphaRampY: [number, number] | null; trackSelector: string | null }
 export interface TextLockup { poem: Rect | null; colophon: Rect | null; colophonOrientation: 'vertical' | 'horizontal'; translation: Rect | null; translationAlign: 'left' | 'right' }
 export interface ScrollLiftRule { liftAtScrollY: number; returnBelowScrollY: number; px: number; ms: number }
 export interface MoonScrollDimRule { afterScrollY: number; to: number; ms: number }
-export interface RouteLayout { route: FestivalRoute; viewport: Viewport; mobile: boolean; home: boolean; zIndex: number; lanterns: LanternSpec[]; moon: MoonAnchor | null; florets: FloretLayout; text: TextLockup; exclusions: Rect[]; textExclusions: Rect[]; navBottom: number; halo: boolean; poolPeak: number; ignoresTheme: boolean; scrollLift: ScrollLiftRule | null; moonScrollDim: MoonScrollDimRule | null; riddlePool: 'project' | 'post' | null; routeSeed: number }
+export interface RouteLayout { route: FestivalRoute; viewport: Viewport; mobile: boolean; home: boolean; zIndex: number; overlayZIndex: number; lanterns: LanternSpec[]; moon: MoonAnchor | null; florets: FloretLayout; text: TextLockup; exclusions: Rect[]; textExclusions: Rect[]; navBottom: number; halo: boolean; poolPeak: number; ignoresTheme: boolean; scrollLift: ScrollLiftRule | null; moonScrollDim: MoonScrollDimRule | null; riddlePool: 'project' | 'post' | null; routeSeed: number }
 export declare const FESTIVAL_EVENTS: { launch: 'bench:launch'; theme: 'theme-preference-change' };
 export declare const FESTIVAL_DATA_ATTRS: { festival: 'data-festival'; settled: 'data-festival-settled'; journeyOpen: 'data-journey-open'; theme: 'data-theme'; colorTheme: 'data-color-theme' };
 export declare const FESTIVAL_CSS_VARS: { moonX: '--moon-x'; moonY: '--moon-y'; moonD: '--moon-d'; night: '--festival-night'; slipX: '--slip-x'; slipY: '--slip-y'; slipTheta: '--slip-theta'; poemX: '--poem-x'; poemY: '--poem-y'; poemTheta: '--poem-theta'; colophonX: '--colophon-x'; colophonY: '--colophon-y'; translationX: '--translation-x'; translationY: '--translation-y' };
 export declare const FESTIVAL_SELECTORS: { nav: 'header.sticky'; toolsPill: '.orb-hero-tools'; orbShell: '.orb-shell'; benchCanvas: 'main canvas'; homeThemeDock: '.home-theme-dock'; calendly: 'iframe' };
-export interface FestivalDebugApi { wind(t?: number): number; rendererInfo(): unknown; theta(): number[]; frames(): number; layout(): RouteLayout }
+export interface FestivalDebugApi { wind(t?: number, x01?: number): number; rendererInfo(): unknown; theta(): number[]; tassel(): number[]; frames(): number; layout(): RouteLayout; time(): number; state(): SimState | null; view(): unknown; moon(): MoonState; gusts(): readonly GustSpec[]; strip(): Record<string, unknown> | null }
 // Tuning tables (values in the source, all from bible §4.1–4.5, §5.1–5.2):
 export declare const EASINGS: Record<Exclude<Easing, 'linear'>, readonly [number, number, number, number]>;
-export declare const PENDULUM: { leanPerW: 0.04; zetaIdle: 0.12; zetaScripted: 0.9; idleClampRad: 0.22; arrivalKick: 0.03; periods: { hero: 2.8; mid: 2.4; small: 2.1 }; tassel: { periodS: 0.55; zeta: 0.35 }; bob: { periodS: 0.45; zeta: 0.5; maxPx: 8 }; poem: { lengthU: 3; zeta: 0.2; drive: 0.15; renderScale: 0.5; clampDeg: 0.6 }; slipThetaScale: 0.8; settle: { thresholdDeg: 1; holdS: 1.4; floorS: 2.4; ceilingS: 3.6 }; dtClampS: 0.033 };
+export declare const PENDULUM: { leanPerW: 0.04; zetaIdle: 0.12; zetaScripted: 0.9; idleClampRad: 0.22; arrivalKick: 0.03; periods: { hero: 2.8; mid: 2.4; small: 2.1 }; tassel: { periodFactor: 0.45; zeta: 0.35 }; bob: { periodS: 0.45; zeta: 0.5; maxPx: 8 }; poem: { lengthU: 3; zeta: 0.2; drive: 0.15; renderScale: 0.5; clampDeg: 0.6 }; slipThetaScale: 0.8; settle: { thresholdDeg: 1; holdS: 1.4; floorS: 2.4; ceilingS: 3.6 }; dtClampS: 0.033 };
 export declare const WIND: { breeze: { octaves: 2; periodS: 9; amplitude: 0.5; spatialPhase: 0.7 }; gust: { firstAtS: 4.4; firstAmplitude: 1.8; intervalS: [12, 18]; amplitude: [1.2, 2.2]; leftToRightProbability: 0.8; speedVw: 0.55; riseMs: 350; holdMs: 200; decayS: 1.4 }; cursor: { velocityScale: 900; maxForce: 6; radiusVw: 0.35; decay: 3.5; floretShare: 0.25 }; touch: { amplitude: 0.6; durationS: 1.2; radiusVw: 0.35; minIntervalS: 3 }; scroll: { clamp: 3; scale: 0.25; decay: 4; floretLiftMaxPx: 12 }; floretDrift: { perW: 18; curl: 5 }; revolvingDrift: { pxPerS: 10; waver: 0.15; waverHz: 0.4 } };
 export declare const FALL_SPECIES: Record<FallSpecies, { sizePx: [number, number]; descentS: [number, number]; flutterPx: [number, number]; spin: [number, number]; tumble: number; atlasCell: AtlasCell }>;
 export declare const FALL_SPECIES_MIX: Record<FallSpecies, number>; // 22/36, 8/36, 6/36
 export declare const FALL_FLUTTER_HZ: readonly [number, number]; // [0.6, 1.1]
 export declare const DEPTH_BANDS: readonly { band: DepthBand; scale: number; alpha: number; parallax: number; z: number }[]; // 1.0/0.7/0.45, z 1.5/0/−1.5
 export declare const FALL_ATLAS: { width: 1024; height: 512; tiles: 4 };
-export declare const SHADOW_STRIP: { width: 4096; height: 256; fontPx: 96; fontWeight: 600; trackingEm: 0.08; blurPx: 2; baselineY: 176; separator: ' · ' };
+export declare const SHADOW_STRIP: { width: 4096; height: 128; fontPx: 76; fontWeight: 600; trackingEm: 0.08; blurPx: 2; baselineY: 88; separator: ' · ' };
 export declare const CHOREOGRAPHY: { mount: {…}; route: {…}; theme: {…}; candleCatch: readonly (readonly [number, number])[]; mobileScrollLift: { liftAtScrollY: 120; returnBelowScrollY: 40; px: 24; ms: 260 }; loop: { maxHz: 60; minFrameGapMs: 15 } };
 ```
 

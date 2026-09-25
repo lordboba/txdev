@@ -8,11 +8,13 @@
  * match) so the HTML slips, poem and colophon use the same constants as the
  * WebGL objects.
  *
- * Physical colours (paper, tassel, moon) never change with the theme. The
- * three page-side tints (`--festival-pool-tint`, `--festival-halo-tint`,
- * `--festival-seal`) are resolved at runtime from the live `--accent` through
- * the OKLCH hue gate (`accentTints()`) and written onto `<html>` by the layer;
- * the values below are the defaults for the site's own amber `#c89b52`.
+ * Physical colours (paper, tassel, the 银朱 seal, moon) never change with the
+ * theme. The two page-side light tints (`--festival-pool-tint`,
+ * `--festival-halo-tint`) are resolved at runtime from the live `--accent`
+ * through the OKLCH hue gate (`accentTints()`) and written onto the layer
+ * root by the layer; the values below are the defaults for the site's own
+ * amber `#c89b52`. `--festival-underline` (the 谜底 underline and the focus
+ * rings) is page-side ink and simply follows `--accent`.
  *
  * `--festival-night` is 1 on the night of the fifteenth (dark theme) and 0 in
  * the afternoon before (light theme). The layer damps it across a theme
@@ -31,14 +33,14 @@ html[data-festival='mid-autumn'] {
   --festival-tassel: #bf242a;
   --festival-knot: #9d2933;
   --festival-ink: #2b241c;
-  --festival-ink-secondary: #50616d;
+  --festival-ink-secondary: #3d4a54;
   --festival-slip-paper: #efe4cf;
   --festival-slip-edge: #d9cbb0;
 
   /* Hue-gated at runtime; defaults = accentTints('#c89b52'). */
   --festival-pool-tint: #f4b128;
   --festival-halo-tint: #f7cc82;
-  --festival-seal: var(--accent);
+  --festival-underline: var(--accent);
 
   /* Theme state: 1 = night (dark), 0 = afternoon (light). */
   --festival-night: 1;

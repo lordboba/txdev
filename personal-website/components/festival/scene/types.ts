@@ -8,7 +8,13 @@
  * Numbers come from the art-direction bible; the section is cited inline.
  */
 
-import type { DataTexture, Object3D, Texture, WebGLRenderer } from 'three';
+import type {
+  BufferGeometry,
+  DataTexture,
+  Object3D,
+  Texture,
+  WebGLRenderer,
+} from 'three';
 
 import type { FestivalRoute } from '../../../lib/festival.ts';
 import type { AccentTints, Rgb01 } from '../palette.ts';
@@ -68,6 +74,12 @@ export interface LanternSpec {
   slip: boolean;
   /** Slip strip rect at rest, px, for placement and exclusion checks. */
   slipRect: Rect | null;
+  /**
+   * The unfolded riddle card at rest, px: hangs 8 px under the strip's foot,
+   * inside the gutter (never over the copy column, an H1 or the Calendly
+   * iframe). `null` whenever `slipRect` is null.
+   */
+  cardRect: Rect | null;
   /** Index into `paperTints`; no two lanterns on a page share one. */
   tint: 0 | 1 | 2;
   /** Lower-in order (0 = hero, then by x). Stagger 120·i on mount, 90·i on route. */
@@ -88,9 +100,15 @@ export interface LanternState {
   /** `uLit` 0..1 (candle out → lit). `litTarget` follows the choreography. */
   lit: number;
   litTarget: number;
+  /**
+   * Pool and halo strength 0..1 on their own §4.1/§4.3 timeline: catch + 150
+   * ms over 500 (400 on a route enter) with the (0, 0, 0, 1) curve; → 0 with
+   * the snuff (160 route, 200 theme). Multiplies the pool and halo alpha.
+   */
+  pool: number;
   /** Flicker `aCandle`: `1 + 0.06·(noise(7t) + 0.5·noise(13t))`, floor 0.94. */
   candle: number;
-  /** Tassel spring (ω 2π/0.55 s, ζ 0.35), relative to the body. */
+  /** Tassel spring (ω 2π/(0.40·T), ζ 0.35), relative to the body. */
   tasselTheta: number;
   tasselThetaDot: number;
   /** Cord-stretch bob from scroll wind (ω 2π/0.45 s, ζ 0.5), px, |bob| ≤ 8. */
@@ -133,7 +151,11 @@ export interface FallInstance {
   species: FallSpecies;
   band: DepthBand;
   atlasCell: AtlasCell;
-  /** Screen size at band scale 1.0, px (long axis). */
+  /**
+   * Screen size of the atlas tile at band scale 1.0, px (long axis). For
+   * florets the tile is a three-floret fascicle, so one corolla is ≈ 0.36 of
+   * this (6–10 px from the 16–26 px tile, §5.2).
+   */
   sizePx: number;
   /** Descent time per viewport height, seconds. */
   descentS: number;
@@ -147,7 +169,7 @@ export interface FallInstance {
   phase: number;
   /** Warm/cool mix computed on the CPU at respawn (§2.3). */
   color: Rgb01;
-  /** Live, px in the emitter's frame. */
+  /** Live centre, absolute CSS px (viewport, top-left origin). */
   x: number;
   y: number;
   /** Live rotations, radians. */
@@ -265,7 +287,10 @@ export interface SimApi {
   /**
    * Candle keyframes (§4.1 catch or §4.2/4.3 snuff) toward `target`. A snuff
    * takes `easing` (default `'snuff'`, the §4.2 `(0.3, 0, 1, 1)`; the §4.3
-   * morning passes `'exit'`).
+   * morning passes `'exit'`). The pool/halo row follows on its own timeline
+   * (`poolDelayS` / `poolDurationS`; defaults: catch +0.15 s over 0.5 s, snuff
+   * 0 s over `durationS`). A later `light()` on the same lantern supersedes a
+   * pending one: the stale job is skipped when it fires.
    */
   light(
     id: LanternId,
@@ -274,14 +299,24 @@ export interface SimApi {
       durationS: number;
       target: number;
       easing?: Easing | 'snuff';
+      poolDelayS?: number;
+      poolDurationS?: number;
     },
   ): void;
   /** Schedules `fn` at sim time `ts` (pure: a sorted queue drained in `step`). */
   schedule(ts: number, fn: () => void): void;
+  /**
+   * Re-bases the settle gate: the route enter's floor/ceiling count from the
+   * navigation, not from the layout swap 280 ms later (§4.2).
+   */
+  setSequenceStart(ts: number): void;
+  /**
+   * Moves one emitter rect in place (mobile `/`: the band tracks the studio
+   * canvas per scrolled frame) without rebuilding the instances.
+   */
+  setEmitterRect(index: number, rect: Rect): void;
   /** Reduced motion: lanterns at θ 0.03, lit per night, florets from prewarm. */
   snapshotReduced(): SimState;
-  /** The floret respawn colour rule needs the moon and lantern positions. */
-  setLightSources(moonPx: Vec2 | null, lanternsPx: Vec2[]): void;
   /** Detaches nothing; the sim holds no listeners. Frees typed arrays. */
   dispose(): void;
 }
@@ -299,6 +334,8 @@ export interface FrameContext {
   home: boolean;
   /** `uNight` 0..1 (damped λ 8 across a theme switch). */
   night: number;
+  /** The moon's own day/night blend: 0 → 1 over 900 ms std, 1 → 0 over 500 (§4.3). */
+  moonNight: number;
   /** Pool / halo / seal colours from the hue gate, damped over 300 ms. */
   tints: AccentTints;
   /** Camera z from §7.3 for the live viewport height. */
@@ -335,10 +372,19 @@ export type ShadowStripBuilder = (
 export interface FallObjects {
   readonly object: Object3D;
   readonly atlas: Texture;
+  /** The unit plane; the moon quad borrows it so the page stays ≤ 6 geometries (§7.5). */
+  readonly geometry: BufferGeometry;
   /** Allocates `count` instances (≤ 36 desktop, ≤ 12 mobile). */
   build(count: number, frame: FrameContext): void;
-  /** Composes matrices and `instanceColor` from the sim's instances. */
-  update(instances: readonly FallInstance[], frame: FrameContext): void;
+  /**
+   * Composes matrices and `instanceColor` from the sim's instances;
+   * `alphaScale` is the §4.1 mount fade (the sim's alpha stays untouched).
+   */
+  update(
+    instances: readonly FallInstance[],
+    frame: FrameContext,
+    alphaScale?: number,
+  ): void;
   dispose(): void;
 }
 
@@ -353,26 +399,21 @@ export interface MoonState {
   visible: boolean;
 }
 
-/** moon.ts: disc quad + halo quad at z −3. */
+/** moon.ts: disc + halo in one quad at z −3. */
 export interface MoonObjects {
   readonly object: Object3D;
-  build(frame: FrameContext): void;
   update(moon: MoonState, frame: FrameContext): void;
   dispose(): void;
 }
 
-export type SceneObjects = {
-  lanterns: LanternObjects;
-  fall: FallObjects;
-  moon: MoonObjects;
-};
-
 /** How the integrator asks builders for their objects. */
 export type LanternObjectsFactory = (renderer: WebGLRenderer) => LanternObjects;
 export type FallObjectsFactory = (renderer: WebGLRenderer) => FallObjects;
+/** `quad` is a borrowed unit plane (the fall system's); without it the moon makes its own. */
 export type MoonObjectsFactory = (
   renderer: WebGLRenderer,
   moonTexture: Texture,
+  quad?: BufferGeometry,
 ) => MoonObjects;
 
 // ---------------------------------------------------------------------------
@@ -426,8 +467,14 @@ export interface RouteLayout {
   viewport: Viewport;
   mobile: boolean;
   home: boolean;
-  /** Overlay root z-index: `/` 2 (mobile 1), `/orbital` 2, NavBar routes 1. */
+  /** Canvas root z-index: `/` 2 (mobile 1), `/orbital` 2, NavBar routes 1. */
   zIndex: number;
+  /**
+   * HTML overlay root z-index: as `zIndex`, except `/orbital` (4) where the
+   * canvas stays under `.orb-shell` (z 3) but the moon button and verse must
+   * be hoverable above it.
+   */
+  overlayZIndex: number;
   lanterns: LanternSpec[];
   moon: MoonAnchor | null;
   florets: FloretLayout;
@@ -508,11 +555,21 @@ export const FESTIVAL_SELECTORS = {
 
 /** `window.__festival` under `?bench-debug=1` (§7.1). */
 export interface FestivalDebugApi {
-  wind(t?: number): number;
+  wind(t?: number, x01?: number): number;
   rendererInfo(): unknown;
   theta(): number[];
+  /** Tassel angle relative to each body, radians (M5's lag row). */
+  tassel(): number[];
   frames(): number;
   layout(): RouteLayout;
+  /** Sim seconds (the wind clock): the bible's timings are in this unit. */
+  time(): number;
+  state(): SimState | null;
+  view(): unknown;
+  moon(): MoonState;
+  gusts(): readonly GustSpec[];
+  /** The 走马灯 strip's `userData` (font string, titles) once built, for T5. */
+  strip(): Record<string, unknown> | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -538,7 +595,14 @@ export const PENDULUM = {
   /** Arrival kick: `θ̇ = 0.03·W` rad/s. */
   arrivalKick: 0.03,
   periods: { hero: 2.8, mid: 2.4, small: 2.1 },
-  tassel: { periodS: 0.55, zeta: 0.35 },
+  /**
+   * Tassel spring period as a fraction of its body's T: √(24 px / 118 px) ≈
+   * 0.45, the physical ratio of the tassel to the cord, so 1.26 / 1.08 /
+   * 0.95 s. A fixed 0.55 s spring could not lag a 2.8 s body (relative
+   * amplitude ≈ 4%, lag 0 at the gust); at 0.45·T the strands trail the
+   * first-gust peak by 100–150 ms with ≈ 16% relative amplitude (M5).
+   */
+  tassel: { periodFactor: 0.45, zeta: 0.35 },
   bob: { periodS: 0.45, zeta: 0.5, maxPx: 8 },
   poem: {
     lengthU: 3.0,
@@ -592,7 +656,8 @@ export const FALL_SPECIES: Record<
   }
 > = {
   floret: {
-    sizePx: [6, 10],
+    // The three-floret fascicle tile; one corolla ≈ 0.36 × this = 6–10 px.
+    sizePx: [16, 26],
     descentS: [11, 16],
     flutterPx: [12, 20],
     spin: [1, 2],
@@ -641,15 +706,20 @@ export const DEPTH_BANDS: readonly {
 /** Atlas: 1024×512, four tiles in a row (§5.2). */
 export const FALL_ATLAS = { width: 1024, height: 512, tiles: 4 } as const;
 
-/** 走马灯 strip (§5.1). */
+/**
+ * 走马灯 strip (§5.1): 4096×128 (512 KB, inside the 1 MB budget). Cormorant
+ * Garamond's cap height is 0.63 em, so 76 px caps are 48 px = 37.5% of the
+ * strip, which the shader maps onto the paper height: 28 px caps on the 88 px
+ * hero, 23 px on 72. Baseline 88 centres the cap band (y 40–88).
+ */
 export const SHADOW_STRIP = {
   width: 4096,
-  height: 256,
-  fontPx: 96,
+  height: 128,
+  fontPx: 76,
   fontWeight: 600,
   trackingEm: 0.08,
   blurPx: 2,
-  baselineY: 176,
+  baselineY: 88,
   separator: ' · ',
 } as const;
 
