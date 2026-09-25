@@ -113,6 +113,15 @@ test('§3.1 `/`: bodies, cords from the lintel, colophon, no halo, pool 0.22', (
   assert.equal(layout.text.colophonOrientation, 'horizontal');
   assert.equal(layout.text.poem, null);
   assert.deepEqual(span(layout.florets.emitters[0]), [480, 1440, 64, 330]);
+  // Nothing falls over the H1, the dock, the placard rail, the colophon or the lanterns.
+  assert.deepEqual(layout.florets.exclusions.map(span), [
+    [40, 456, 88, 370],
+    [1303, 1400, 0, 64],
+    [504, 1171, 114, 191],
+    [1264, 1426, 246, 282],
+    [1258, 1342, 114, 188],
+    [1372, 1428, 98, 148],
+  ]);
   assert.deepEqual(layout.florets.alphaRampY, [280, 330]);
   assert.equal(layout.florets.alphaMax, 0.6);
   assert.equal(layout.halo, false);
@@ -131,10 +140,18 @@ test('§3.2 `/orbital`: hero C from the tools pill, moon left, left-aligned lock
   assert.deepEqual(span(layout.text.colophon), [106, 118, 176, 272]);
   assert.deepEqual(span(layout.text.translation), [128, 390, 314, 330]);
   assert.equal(layout.text.translationAlign, 'left');
-  // Florets never cross the moon disc (+12) or the verse lockups (+6).
-  assert.deepEqual(span(layout.florets.exclusions[0]), [88, 232, 28, 172]);
-  assert.deepEqual(span(layout.florets.exclusions[1]), [122, 156, 170, 308]);
-  assert.equal(layout.florets.exclusions.length, 4);
+  // Florets never cross the H1, the dek, the moon disc (+12), the verse
+  // lockups (+6) or the lantern bodies (+6).
+  assert.deepEqual(layout.florets.exclusions.map(span), [
+    [384, 1056, 34, 108],
+    [455, 985, 125, 172],
+    [88, 232, 28, 172],
+    [122, 156, 170, 308],
+    [100, 124, 170, 278],
+    [122, 396, 308, 336],
+    [1292, 1368, 114, 181],
+    [266, 334, 60, 120],
+  ]);
 
   const live = desktop('/orbital', {
     elements: {
@@ -164,13 +181,18 @@ test('§3.3 `/blog`: three lanterns, slip on B, moon anchor (1268, 185, 150)', (
     [1136, 1440, 75, 900],
     [304, 1136, 75, 112],
   ]);
-  // H1, moon disc (+12), poem, colophon, translation (+6).
+  // H1, moon disc (+12), poem, colophon, translation (+6), then every
+  // lantern body (+6) and the slip strip (+6): the fall passes beside them.
   assert.deepEqual(layout.florets.exclusions.map(span), [
     [304, 400, 158, 206],
     [1181, 1355, 98, 272],
     [1172, 1206, 270, 408],
     [1154, 1178, 270, 378],
     [1152, 1426, 406, 435],
+    [46, 146, 112, 200],
+    [180, 248, 170, 230],
+    [189, 239, 232, 396],
+    [1351, 1419, 190, 250],
   ]);
 });
 
@@ -254,7 +276,9 @@ test('mobile 390×844: florets only, one lantern on /blog*, nothing on the inset
   assert.equal(blog.lanterns[0].hero, false);
   assert.deepEqual(span(blog.lanterns[0].bodyRect), [313, 357, 74, 112]);
   assert.equal(blog.lanterns[0].cordAnchorY, 62);
-  assert.equal(blog.florets.count, 12);
+  // Six, florets only (sim.ts), kept 8 px off the one lantern.
+  assert.equal(blog.florets.count, 6);
+  assert.deepEqual(blog.florets.exclusions.map(span), [[305, 365, 66, 120]]);
   assert.equal(blog.moon, null);
   assert.equal(blog.text.poem, null);
   assert.deepEqual(blog.scrollLift, {

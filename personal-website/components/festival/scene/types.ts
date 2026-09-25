@@ -570,9 +570,9 @@ export const FESTIVAL_CSS_VARS = {
 export const FESTIVAL_SELECTORS = {
   nav: 'header.sticky',
   toolsPill: '.orb-hero-tools',
-  orbShell: '.orb-shell',
+  /** The `/orbital` dek under the H1: transparent text the fall must not cross. */
+  orbitalDek: '.orb-title-copy',
   benchCanvas: 'main canvas',
-  homeThemeDock: '.home-theme-dock',
   calendly: 'iframe',
 } as const;
 

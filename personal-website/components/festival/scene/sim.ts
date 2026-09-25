@@ -267,6 +267,7 @@ export function createSim(options: SimOptions): SimApi {
   let hero: LanternInternal | null = null;
   /** Species per index for the current count (exact 22/8/6 split at 36). */
   let speciesTable: FallSpecies[] = [];
+  let speciesMobile = false;
 
   const lanterns: LanternInternal[] = [];
   const fall: FallInternal[] = [];
@@ -555,9 +556,13 @@ export function createSim(options: SimOptions): SimApi {
   /**
    * Exact species counts per page (22 / 8 / 6 at 36, §5.2): the indices are
    * ranked by a seeded hash and the first `florets` ranks are florets, the
-   * next `leaves` are leaves, the rest ginkgo.
+   * next `leaves` are leaves, the rest ginkgo. A phone gets florets only:
+   * a 34 px leaf or a 40 px ginkgo fan beside the one 44 px lantern is the
+   * size of the object (§3.3 mobile).
    */
-  const buildSpeciesTable = (count: number): FallSpecies[] => {
+  const buildSpeciesTable = (count: number, mobile: boolean): FallSpecies[] => {
+    if (mobile) return new Array<FallSpecies>(count).fill('floret');
+
     const florets = Math.round(count * FALL_SPECIES_MIX.floret);
     const leaves = Math.round(count * FALL_SPECIES_MIX.leaf);
     const ranked = Array.from({ length: count }, (_, i) => i).sort(
@@ -857,7 +862,10 @@ export function createSim(options: SimOptions): SimApi {
       return;
     }
 
-    if (speciesTable.length !== count) speciesTable = buildSpeciesTable(count);
+    if (speciesTable.length !== count || speciesMobile !== layout.mobile) {
+      speciesTable = buildSpeciesTable(count, layout.mobile);
+      speciesMobile = layout.mobile;
+    }
     if (reason !== 'route') fall.length = Math.min(fall.length, count);
     for (let i = 0; i < fall.length; i += 1) {
       const f = fall[i];

@@ -482,7 +482,7 @@ export declare function pendulumGravity(
 | `/blog/[slug]`     | as `/blog`, no slip; moon dims to 0.6 past scrollY 400                                                                          | (1268,185) 150   | as `/blog`                                                            | 36                                    |
 | `/past-experience` | A\* 72 @64 x28–100 y112–174 2.8 · B 52 @150 x124–176 y210–255 2.4 + slip x131–169 y269–421                                      | (1355,155) 130   | x1272–1294 y240–366 / x1254–1266 y240–336 / x1190–1420 y378–395       | 30: gutters x<176, x>1264             |
 | `/schedule-a-call` | A\* 88 @92 x48–136 y112–188 2.8 · B 56 @196 x168–224 y196–244 2.4 + slip x177–215 y258–410 · C 52 @1396 x1370–1422 y240–285 2.1 | (1300,155) 130   | x1228–1250 y240–366 / x1210–1222 y240–336 / x1190–1420 y378–395       | 30: gutters x<232, x>1208, feather 24 |
-| mobile `/blog*`    | A 44 @335 x313–357 y74–112 2.1, cord from the nav bottom (62); scroll-lift 120 / 40, 24 px, 260 ms                              | none             | none                                                                  | 12 in x200–374 y62–140                |
+| mobile `/blog*`    | A 44 @335 x313–357 y74–112 2.1, cord from the nav bottom (62); scroll-lift 120 / 40, 24 px, 260 ms                              | none             | none                                                                  | 6 in x200–374 y62–140, florets only   |
 | mobile `/`         | none                                                                                                                            | none             | none                                                                  | 10 tracking `main canvas`             |
 | mobile others      | none (`/orbital`: 12 florets full viewport; `/past-experience`, `/schedule-a-call`: nothing)                                    |                  |                                                                       |                                       |
 
@@ -492,7 +492,8 @@ export declare function pendulumGravity(
 
 1. Periods not stated per lantern are assigned by role: hero 2.8, second 2.4, third 2.1 (`/orbital` A = 2.4; `/past-experience` B = 2.4; `/schedule-a-call` B = 2.4, C = 2.1). M4 needs no two within 8%.
 2. Paper height is rounded to whole px (`paperHeight()`), as the bible's tables are; `/past-experience` B's slip therefore starts at y269, not 268.
-3. Mobile `/blog` florets are confined to the free block x200–374 y62–140 (the bible gives only the count); V10 forbids painting under copy on a phone.
-4. `mixHex` is a per-channel mix of the sRGB-encoded values. If builder C mixes in linear space inside a shader, the pool/halo tint must still be computed by `accentTints()` on the CPU and passed as a uniform so the V7 pixel assertion has one source of truth.
-5. `LanternSpec.cordLengthPx` measures to the top of the paper body; the hook ring and top collar sit inside that length (builder C draws the cord to the ring).
-6. `WindApi.tick()` owns the 33 ms clamp and returns 0 while paused; `SimApi.step(dt)` trusts it. The integrator calls `tick` once per rAF and never on pointer events.
+3. Mobile `/blog` florets are confined to the free block x200–374 y62–140 (the bible gives only the count); V10 forbids painting under copy on a phone. They are six and florets only (`buildSpeciesTable(count, mobile)`), kept 8 px off the lantern.
+4. `routeLayout` appends every lantern body (+6 px, +8 on mobile) and slip strip (+6) to `florets.exclusions` after the moon and text rects, so `fieldAlpha()` fades the fall off the paper; `/orbital` adds the H1 and the dek (`.orb-title-copy`), `/` the placard rail.
+5. `mixHex` is a per-channel mix of the sRGB-encoded values. If builder C mixes in linear space inside a shader, the pool/halo tint must still be computed by `accentTints()` on the CPU and passed as a uniform so the V7 pixel assertion has one source of truth.
+6. `LanternSpec.cordLengthPx` measures to the top of the paper body; the hook ring and top collar sit inside that length (builder C draws the cord to the ring).
+7. `WindApi.tick()` owns the 33 ms clamp and returns 0 while paused; `SimApi.step(dt)` trusts it. The integrator calls `tick` once per rAF and never on pointer events.

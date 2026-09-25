@@ -644,6 +644,18 @@ test('§5.2 exact species counts: 22 florets, 8 leaves, 6 ginkgo at 36', () => {
     if (f.species === 'floret')
       assert.ok(f.sizePx >= 16 && f.sizePx <= 26, 'fascicle tile 16–26 px');
   }
+
+  // A phone gets florets only (§3.3 mobile): six, no leaf or ginkgo.
+  const phone = createSim({
+    seed: 7,
+    layout: routeLayout('/blog', { w: 390, h: 844 }, true, {}),
+    wind: stubWind(),
+    night: 1,
+    reducedMotion: false,
+  });
+
+  assert.equal(phone.state.fall.length, 6);
+  assert.ok(phone.state.fall.every((f) => f.species === 'floret'));
 });
 
 test('§4.1 / §4.3 the pool row runs catch + 150 ms over 500 ms, and a snuff cancels a pending catch', () => {

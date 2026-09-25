@@ -234,6 +234,14 @@ const TRANSLATION_RIGHT = (y: number): TextEntry => ({
 /** Florets keep this far from the moon disc and from the verse lockups. */
 const MOON_FLORET_PAD_PX = 12;
 const TEXT_FLORET_PAD_PX = 6;
+/**
+ * Florets keep this far from every lantern body and slip strip: band-0
+ * instances sit at z 1.5, in front of the paper, and a 30 px ginkgo landing
+ * on the hero drum read as a sticker over the title shadows. On a phone the
+ * one lantern shares a 174 px block with the fall, so the pad is wider.
+ */
+const LANTERN_FLORET_PAD_PX = 6;
+const LANTERN_FLORET_PAD_MOBILE_PX = 8;
 
 // ---------------------------------------------------------------------------
 // Desktop tables (§3.1–3.6)
@@ -276,6 +284,9 @@ const HOME: RouteTable = {
     exclusions: [
       { kind: 'rect', rect: rect(40, 88, 456, 370), anchor: 'left' },
       { kind: 'rect', rect: rect(1303, 0, 1400, 64), anchor: 'right' },
+      // The signed placard rail (x510–1165 y120–185, + 6 px): a speck on
+      // the Decagon wordmark reads as dirt on a sign, not 桂子 rain.
+      { kind: 'rect', rect: rect(504, 114, 1171, 191), anchor: 'left' },
     ],
     featherPx: 0,
     alphaMax: light.homeFloretAlphaMax,
@@ -363,7 +374,18 @@ const ORBITAL: RouteTable = {
   florets: {
     count: 30,
     emitters: [{ kind: 'viewport' }],
-    exclusions: [],
+    // The H1 and the dek are transparent text over the layer (z 2 under
+    // `.orb-shell`), so florets showed inside the letters; the mobile table
+    // already keeps the band under the dek for the same reason (V10).
+    exclusions: [
+      { kind: 'rect', rect: rect(384, 34, 1056, 108), anchor: 'center' },
+      {
+        kind: 'element',
+        selector: FESTIVAL_SELECTORS.orbitalDek,
+        fallback: rect(455, 125, 985, 172),
+        anchor: 'center',
+      },
+    ],
     featherPx: 0,
     alphaMax: 1,
     alphaRampY: null,
@@ -755,9 +777,13 @@ const BLOG_MOBILE: RouteTable = {
       anchor: 'right',
     },
   ],
+  // Six florets, florets only (sim.ts `buildSpeciesTable`): twelve with
+  // leaves and ginkgo in a 174×78 px block beside a 44 px lantern read as a
+  // sticker clump, and the fall keeps 8 px off the lantern (see
+  // `LANTERN_FLORET_PAD_MOBILE_PX`).
   florets: {
     ...NO_FLORETS,
-    count: 12,
+    count: 6,
     emitters: [
       { kind: 'rect', rect: rect(200, 62, 374, 140), anchor: 'right' },
     ],
@@ -828,6 +854,7 @@ export function readLiveRects(root: Document = document): LiveRects {
 
   for (const selector of [
     FESTIVAL_SELECTORS.toolsPill,
+    FESTIVAL_SELECTORS.orbitalDek,
     FESTIVAL_SELECTORS.benchCanvas,
     FESTIVAL_SELECTORS.calendly,
   ]) {
@@ -1297,8 +1324,13 @@ export function routeLayout(
   };
 
   // Florets never cross the moon disc (a floret on the 0.8-Y disc reads as
-  // dirt, not 桂子 rain) or the verse, colophon and translation (they showed
-  // through the 55–70% ink); `fieldAlpha()` fades them out over these rects.
+  // dirt, not 桂子 rain), the verse, colophon and translation (they showed
+  // through the 55–70% ink), or a lantern body and its slip (a leaf on the
+  // drum is a sticker, not a leaf passing); `fieldAlpha()` fades them out
+  // over these rects, so the fall passes beside the objects.
+  const lanternPad = mobile
+    ? LANTERN_FLORET_PAD_MOBILE_PX
+    : LANTERN_FLORET_PAD_PX;
   const floretExclusions = [
     ...table.florets.exclusions
       .map((entry) => resolveRectEntry(entry, frame, live))
@@ -1307,6 +1339,10 @@ export function routeLayout(
     ...[text.poem, text.colophon, text.translation]
       .filter((r): r is Rect => r !== null)
       .map((r) => padRect(r, TEXT_FLORET_PAD_PX)),
+    ...lanterns.flatMap((l) => [
+      padRect(l.bodyRect, lanternPad),
+      ...(l.slipRect ? [padRect(l.slipRect, LANTERN_FLORET_PAD_PX)] : []),
+    ]),
   ];
   const florets: FloretLayout = {
     count: table.florets.count,

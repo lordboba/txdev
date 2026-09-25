@@ -1531,6 +1531,35 @@ async function rectChecks({ page, live, layout, source, id, vp }) {
       'no cord within 30 px',
     );
   }
+  // §5.2: the fall passes beside the lanterns, never across the paper. No
+  // instance with alpha > 0.1 sits inside a lantern body rect on this frame.
+  const fallOnPaper = await page.evaluate(() => {
+    const s = window.__festival?.state?.();
+    const l = window.__festival?.layout?.();
+    if (!s || !l) return null;
+    const hits = [];
+    for (const f of s.fall) {
+      if (f.alpha <= 0.1) continue;
+      for (const spec of l.lanterns) {
+        const r = spec.bodyRect;
+        if (f.x >= r.x && f.x <= r.x + r.w && f.y >= r.y && f.y <= r.y + r.h)
+          hits.push(
+            `${spec.id}:${f.species}@${Math.round(f.x)},${Math.round(f.y)} α${f.alpha.toFixed(2)}`,
+          );
+      }
+    }
+    return { hits, count: s.fall.length };
+  });
+  if (fallOnPaper && layout.lanterns.length)
+    check(
+      fallOnPaper.hits.length === 0,
+      id('V8.fall'),
+      'no fall instance (alpha > 0.1) inside a lantern body',
+      fallOnPaper.hits.length
+        ? fallOnPaper.hits.join('; ')
+        : `${fallOnPaper.count} instances clear of ${layout.lanterns.length} bodies`,
+      'none on the paper',
+    );
   if (!vp.mobile) {
     // Only bodies horizontally under the nav band: the inset nav on
     // /past-experience and /schedule-a-call never covers the gutters (§3.5).
