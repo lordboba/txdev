@@ -1,0 +1,540 @@
+/*
+ * Mid-Autumn HTML overlay: riddle slip and its card, poem column, colophon,
+ * translation, pinyin and the moon's name (bible §6.A). HTML so the text is
+ * crisp at any dpr, selectable and screen-readable.
+ *
+ * Contract with the React layer (the integrator):
+ * - `.root` is the overlay root (sibling of the canvas inside the fixed
+ *   wrapper). It carries `festivalFont.variable` (which defines `--font-cjk`)
+ *   and receives the per-frame positions as custom properties named in
+ *   `FESTIVAL_CSS_VARS`, all in CSS px with units:
+ *     --slip-x (strip centre x)  --slip-y (strip top)   --slip-theta (deg)
+ *     --poem-x (column left)     --poem-y (column top)  --poem-theta (deg)
+ *     --colophon-x / --colophon-y (block left / top; plus --colophon-w on `/`)
+ *     --translation-x / --translation-y (block left / top; plus --translation-w)
+ *     --moon-x / --moon-y (disc centre) / --moon-d (diameter)
+ * - Glyph reveals read `--glyph-start`, `--glyph-stagger` and `--glyph-ms`
+ *   from the element (defaults are the §4.1 mount numbers; the layer sets the
+ *   §4.2 route numbers on re-entry) and each glyph span carries `--i`.
+ * - States are data attributes: `.root[data-text="exit"]` runs the §4.2 exit
+ *   for every text block; `[data-shown="true"]` reveals a block; the slip
+ *   wrapper's `[data-open="true"]` unfolds the card; the moon button's name
+ *   plays for 1.6 s on hover or focus by itself.
+ * - Only `.pull`, `.answerLink`, `.figure` and `.moon` take pointer events.
+ */
+
+.root {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Family helpers: Han spans never contain Latin, Latin spans never fall into Noto. */
+.han {
+  font-family: var(--font-cjk), var(--font-display), serif;
+  font-feature-settings: 'locl', 'kern';
+}
+
+.latin {
+  font-family: var(--font-display), 'Cormorant Garamond', Georgia, serif;
+}
+
+.mono {
+  font-family: var(--font-mono), monospace;
+  font-size: var(--label-xs);
+  font-weight: 500;
+  letter-spacing: var(--label-xs-tracking);
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* ------------------------------------------------------------------------ */
+/* A3. Riddle slip on lantern B                                              */
+/* ------------------------------------------------------------------------ */
+
+/* Positioned wrapper: rotates 0.8× the lantern's θ about the collar point. */
+.slip {
+  position: absolute;
+  left: var(--slip-x, -1000px);
+  top: var(--slip-y, -1000px);
+  transform: translateX(-50%) rotate(var(--slip-theta, 0deg));
+  transform-origin: 50% 0;
+  perspective: 600px;
+}
+
+/* The button: 44 px hit area around the 38 px strip. */
+.pull {
+  display: block;
+  margin: -3px -3px -8px;
+  padding: 3px 3px 8px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pull:focus-visible {
+  outline: 2px solid var(--festival-seal);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* The paper strip, lit at its top edge by the lantern above. */
+.strip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  width: 38px;
+  height: 152px;
+  padding: 7px 0 8px;
+  border: 1px solid var(--festival-slip-edge);
+  background:
+    linear-gradient(180deg, rgba(255, 182, 30, 0.22), transparent 38%),
+    var(--festival-slip-paper);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.16);
+  transform-origin: 50% 0;
+  transform: rotateX(-70deg);
+  opacity: 0;
+  translate: 0 0;
+  transition:
+    transform var(--slip-ms, 600ms) var(--festival-ease-enter),
+    opacity var(--slip-ms, 600ms) var(--festival-ease-enter),
+    translate 180ms var(--festival-ease-enter);
+}
+
+.slip[data-shown='true'] .strip {
+  transform: none;
+  opacity: 1;
+}
+
+/* The pull: hover, keyboard focus or open state lowers the strip 6 px. */
+.pull:hover .strip,
+.pull:focus-visible .strip,
+.slip[data-open='true'] .strip {
+  translate: 0 6px;
+}
+
+.root[data-text='exit'] .strip {
+  transform: rotateX(-70deg);
+  opacity: 0;
+  transition:
+    transform 160ms var(--festival-ease-exit),
+    opacity 160ms var(--festival-ease-exit);
+}
+
+/*
+ * `03 / 12` at the top of the strip. Seven mono glyphs at 10 px are 42 px,
+ * wider than the 36 px inside the strip, so the index sets at 9 px with the
+ * spaces tightened; it stays tabular and on one line.
+ */
+.slipIndex {
+  color: var(--festival-ink-secondary);
+  font-size: 9px;
+  letter-spacing: 0.02em;
+  word-spacing: -0.25em;
+  white-space: nowrap;
+}
+
+/* 谜目, vertical upright, 15 px, tracking 0.18 em. */
+.slipTarget {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.18em;
+  margin-inline-end: -0.18em;
+  color: var(--festival-ink);
+}
+
+/* The 9 px seal at the foot: signs the slip, no glyph. */
+.slipSeal {
+  width: 9px;
+  height: 9px;
+  background: var(--festival-seal);
+  transition: background 300ms var(--festival-ease-std);
+}
+
+/* The unfolded card beside the strip, toward the page centre. */
+.card {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 10px);
+  box-sizing: border-box;
+  width: max-content;
+  max-width: 28ch;
+  padding: 12px 14px 13px;
+  border: 1px solid var(--festival-slip-edge);
+  background: var(--festival-slip-paper);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.14);
+  color: var(--festival-ink);
+  text-wrap: balance;
+  hanging-punctuation: first;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition:
+    opacity 220ms var(--festival-ease-enter),
+    transform 220ms var(--festival-ease-enter),
+    visibility 0s linear 220ms;
+}
+
+.card[data-side='left'] {
+  left: auto;
+  right: calc(100% + 10px);
+}
+
+.slip[data-open='true'] .card {
+  pointer-events: auto;
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition:
+    opacity 220ms var(--festival-ease-enter),
+    transform 220ms var(--festival-ease-enter),
+    visibility 0s;
+}
+
+/* 谜面: Cormorant italic 500, 19 px, line-height 1.3. */
+.clue {
+  margin: 0;
+  font-size: 19px;
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+/* 谜底 line, 600 ms after the card: Cormorant 500, 17 px, lining figures. */
+.answer {
+  margin: 8px 0 0;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.3;
+  font-variant-numeric: lining-nums;
+  opacity: 0;
+  transition: opacity 260ms var(--festival-ease-std);
+}
+
+.slip[data-open='true'] .answer {
+  opacity: 1;
+  transition-delay: 600ms;
+}
+
+.answerLabel {
+  font-size: 15px;
+}
+
+.answerLink {
+  color: inherit;
+  pointer-events: auto;
+  text-decoration: underline;
+  text-decoration-color: var(--festival-seal);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.14em;
+  transition: text-decoration-color 300ms var(--festival-ease-std);
+}
+
+.answerLink:focus-visible {
+  outline: 2px solid var(--festival-seal);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------------ */
+/* A4. Poem column, translation, pinyin                                     */
+/* ------------------------------------------------------------------------ */
+
+/*
+ * The figure spans the overlay so its column and caption can each take an
+ * absolute position, and it is the keyboard focus target (tabindex 0). It
+ * never takes pointer events itself; `elementFromPoint` passes through it.
+ */
+.figure {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  pointer-events: none;
+  outline: none;
+}
+
+/* The vertical column, a pendulum pinned at its top. */
+.column {
+  position: absolute;
+  left: var(--poem-x, -1000px);
+  top: var(--poem-y, -1000px);
+  transform: rotate(var(--poem-theta, 0deg));
+  transform-origin: 50% 0;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--festival-verse-ink);
+  pointer-events: auto;
+  cursor: default;
+  transition: color 400ms var(--festival-ease-std);
+}
+
+.figure:focus-visible .column {
+  outline: 2px solid var(--festival-moon-rim);
+  outline-offset: 6px;
+  border-radius: 2px;
+}
+
+/*
+ * One glyph per span so the reveal is brush-order. In vertical-rl the inline
+ * axis runs down the column, so the spans are inline-block (block boxes would
+ * stack right-to-left) and the 0.18 em gap is an inline-end margin, identical
+ * between every pair (T3: variance < 5%) with no trailing gap.
+ */
+.glyph {
+  display: inline-block;
+  margin-inline-end: 0.18em;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition:
+    opacity var(--glyph-ms, 420ms) var(--festival-ease-enter),
+    transform var(--glyph-ms, 420ms) var(--festival-ease-enter);
+  transition-delay: calc(
+    var(--glyph-start, 1400ms) + var(--i, 0) * var(--glyph-stagger, 90ms)
+  );
+}
+
+.glyph:last-child {
+  margin-inline-end: 0;
+}
+
+[data-shown='true'] .glyph {
+  opacity: 1;
+  transform: none;
+}
+
+.root[data-text='exit'] .glyph {
+  opacity: 0;
+  transform: none;
+  transition: opacity 180ms var(--festival-ease-exit);
+  transition-delay: 0s;
+}
+
+/* Translation: Cormorant italic 500, 17 px, moon-white 70%, at the settle event. */
+.caption {
+  position: absolute;
+  left: var(--translation-x, -1000px);
+  top: var(--translation-y, -1000px);
+  width: var(--translation-w, auto);
+  margin: 0;
+  text-align: right;
+  white-space: nowrap;
+  color: var(--festival-translation-ink);
+  transition: color 400ms var(--festival-ease-std);
+}
+
+/*
+ * Right-aligned captions hang from their right edge: the line is longer than
+ * the table's 230 px estimate and must end at x1420, not overflow past it.
+ */
+.caption[data-align='right'] {
+  left: auto;
+  right: calc(100% - var(--translation-x, 0px) - var(--translation-w, 0px));
+  width: max-content;
+}
+
+.caption[data-align='left'] {
+  text-align: left;
+}
+
+.translation {
+  display: block;
+  font-size: 17px;
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity var(--translation-ms, 500ms) var(--festival-ease-std);
+}
+
+.caption[data-shown='true'] .translation {
+  opacity: 1;
+}
+
+.root[data-text='exit'] .translation {
+  opacity: 0;
+  transition: opacity 180ms var(--festival-ease-exit);
+}
+
+/* Pinyin: Plex Mono label, under the translation, keyboard focus only. */
+.pinyin {
+  display: block;
+  margin-top: 6px;
+  text-transform: none;
+  opacity: 0;
+  transition: opacity 200ms var(--festival-ease-std);
+}
+
+.figure:focus-visible .pinyin {
+  opacity: 1;
+}
+
+/* ------------------------------------------------------------------------ */
+/* A1. Colophon dateline                                                    */
+/* ------------------------------------------------------------------------ */
+
+/* Vertical on moon pages (left of the poem, sharing its θ); horizontal on `/`. */
+.colophon {
+  position: absolute;
+  left: var(--colophon-x, -1000px);
+  top: var(--colophon-y, -1000px);
+  transform: rotate(var(--poem-theta, 0deg));
+  transform-origin: 50% 0;
+  color: var(--festival-colophon-ink);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  transition: color 400ms var(--festival-ease-std);
+}
+
+.colophon[data-orientation='vertical'] .han {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  letter-spacing: 0;
+}
+
+.colophon[data-orientation='vertical'] .glyph {
+  margin-inline-end: 0.12em;
+}
+
+.colophon[data-orientation='vertical'] .glyph:last-child {
+  margin-inline-end: 0;
+}
+
+/* On `/` the line hangs from its right edge (x1420): Han + label outrun the table's 205 px. */
+.colophon[data-orientation='horizontal'] {
+  transform: none;
+  left: auto;
+  right: calc(100% - var(--colophon-x, 0px) - var(--colophon-w, 0px));
+  width: max-content;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.colophon[data-orientation='horizontal'] .glyph {
+  margin-inline-end: 0.12em;
+}
+
+.colophon[data-orientation='horizontal'] .glyph:last-child {
+  margin-inline-end: 0;
+}
+
+/* `丙午年八月十五 · THE FIFTEENTH NIGHT`: a quarter-em Han–Latin gap (CLReq). */
+.colophonLabel {
+  display: inline-block;
+  margin-left: 0.25em;
+  vertical-align: baseline;
+}
+
+/* On the grey Bench set: Bench `--ink` at 60%, not `--muted` (§3.1). */
+.colophon[data-home='true'] {
+  color: rgba(20, 21, 23, 0.6);
+}
+
+/* ------------------------------------------------------------------------ */
+/* A5. The moon's name                                                       */
+/* ------------------------------------------------------------------------ */
+
+/* A borderless button the size of the disc. */
+.moon {
+  position: absolute;
+  left: calc(var(--moon-x, -1000px) - var(--moon-d, 0px) / 2);
+  top: calc(var(--moon-y, -1000px) - var(--moon-d, 0px) / 2);
+  width: var(--moon-d, 0px);
+  height: var(--moon-d, 0px);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: default;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.moon:focus-visible {
+  outline: 2px solid var(--festival-moon-rim);
+  outline-offset: 4px;
+}
+
+/* `玉盘 · jade plate`, 8 px under the disc, in the translation's style. */
+.moonName {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  translate: -50% 0;
+  white-space: nowrap;
+  font-size: 17px;
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--festival-translation-ink);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.moonName .han {
+  font-style: normal;
+}
+
+.moon:hover .moonName,
+.moon:focus-visible .moonName {
+  animation: moon-name 1600ms var(--festival-ease-std) forwards;
+}
+
+@keyframes moon-name {
+  0% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ------------------------------------------------------------------------ */
+/* Reduced motion (§4.6): every transition is 0 ms; states snap.            */
+/* ------------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  .strip,
+  .card,
+  .answer,
+  .glyph,
+  .translation,
+  .pinyin,
+  .column,
+  .colophon,
+  .caption,
+  .slipSeal,
+  .answerLink {
+    transition-duration: 0s;
+    transition-delay: 0s;
+  }
+
+  .moon:hover .moonName,
+  .moon:focus-visible .moonName {
+    animation: none;
+    opacity: 1;
+  }
+}
