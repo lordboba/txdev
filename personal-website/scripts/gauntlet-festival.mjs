@@ -486,6 +486,7 @@ function readOverlay() {
     theta: safe(() => api?.theta?.()) ?? null,
     frames: safe(() => api?.frames?.()) ?? null,
     time: safe(() => api?.time?.()) ?? null,
+    moonNight: safe(() => api?.moon?.()?.night) ?? null,
     rendererInfo: safe(() => JSON.parse(JSON.stringify(api?.rendererInfo?.()))),
     state: safe(() => {
       const s = api?.state?.();
@@ -597,15 +598,16 @@ async function analyzePng({ b64, dsf, jobs }) {
       continue;
     }
     const d = ctx.getImageData(x, y, w, h).data;
-    // `hole`: a CSS-px rect whose pixels are left out (a ring around a body).
-    const hole = job.hole
-      ? {
-          x0: Math.round(job.hole.x * dsf) - x,
-          y0: Math.round(job.hole.y * dsf) - y,
-          x1: Math.round((job.hole.x + job.hole.w) * dsf) - x,
-          y1: Math.round((job.hole.y + job.hole.h) * dsf) - y,
-        }
-      : null;
+    // `hole` / `holes`: CSS-px rects whose pixels are left out (a ring
+    // around a body; the lanterns' halos across a column-edge strip).
+    const holes = [...(job.holes ?? []), ...(job.hole ? [job.hole] : [])].map(
+      (r) => ({
+        x0: Math.round(r.x * dsf) - x,
+        y0: Math.round(r.y * dsf) - y,
+        x1: Math.round((r.x + r.w) * dsf) - x,
+        y1: Math.round((r.y + r.h) * dsf) - y,
+      }),
+    );
     let maxY = 0;
     let sumY = 0;
     let maxRgb = [0, 0, 0];
@@ -616,7 +618,12 @@ async function analyzePng({ b64, dsf, jobs }) {
     const cols = job.cols ? new Float64Array(w) : null;
     for (let j = 0; j < h; j++) {
       for (let i = 0; i < w; i++) {
-        if (hole && i >= hole.x0 && i < hole.x1 && j >= hole.y0 && j < hole.y1)
+        if (
+          holes.some(
+            (hole) =>
+              i >= hole.x0 && i < hole.x1 && j >= hole.y0 && j < hole.y1,
+          )
+        )
           continue;
         n++;
         const k = (j * w + i) * 4;
@@ -1199,6 +1206,8 @@ async function runCombo({
       `  captures: ${MOUNT_STATES_MS.map((ms) => fmt(stateShots[`${ms}:at`], 0)).join('/')} ms, gust ${fmt(gustAt, 0)} ms after mount`,
     );
     const gustShot = await shot(page, `${tag}-gust-5.0s.png`);
+    // The θ sampler must finish before any mouse moves: a hover is cursor wind.
+    const gust = await gustSampling;
 
     // --- Interaction states (desktop only: mobile has no text) -------------
     if (!vp.mobile) {
@@ -1241,7 +1250,6 @@ async function runCombo({
     );
 
     // --- Motion: first gust (M3) from the sampler started before 4.4 s ------
-    const gust = await gustSampling;
     await guarded(id('M3'), () =>
       gustChecks({
         samples: gust?.samples ?? null,
@@ -1477,15 +1485,24 @@ async function rectChecks({ page, live, layout, source, id, vp }) {
     );
   }
   if (!vp.mobile) {
+    // Only bodies horizontally under the nav band: the inset nav on
+    // /past-experience and /schedule-a-call never covers the gutters (§3.5).
+    const nav = obstacles.find((o) => o.label === 'nav')?.rect ?? null;
+    const underNav = (l) =>
+      !nav ||
+      (l.bodyRect.x < nav.x + nav.w && l.bodyRect.x + l.bodyRect.w > nav.x);
     const bodyOk = layout.lanterns.every(
-      (l) => l.bodyRect.y >= (layout.navBottom ?? 0) + 24 - 0.5,
+      (l) => !underNav(l) || l.bodyRect.y >= (layout.navBottom ?? 0) + 24 - 0.5,
     );
     check(
       bodyOk,
       id('V8.nav'),
-      'lantern bodies ≥ 24 px below the nav band',
+      'lantern bodies under the nav band sit ≥ 24 px below it',
       layout.lanterns
-        .map((l) => `${l.id}:${fmt(l.bodyRect.y - (layout.navBottom ?? 0), 0)}`)
+        .map(
+          (l) =>
+            `${l.id}:${fmt(l.bodyRect.y - (layout.navBottom ?? 0), 0)}${underNav(l) ? '' : ' (gutter)'}`,
+        )
         .join(' '),
       '≥ 24 px',
     );
@@ -1582,17 +1599,25 @@ async function pixelChecks({
     w: body.w + 8,
     h: body.h + body.w * 0.16 + body.w * 0.45,
   });
-  const ringRect = (body) => {
+  const ringRect = (body, cordAnchorY = 0) => {
     const r = expandRect(body, HALO_WIDTH_FACTOR);
-    if (!isHome) return r;
-    const free = { x: 1215 + (vp.width - 1440), y: 64, w: 225, h: 216 };
+    // Nothing above the nav band or the cord anchor (the white nav surface,
+    // /orbital's tools pill): those are page, not glow.
+    const free = isHome
+      ? { x: 1215 + (vp.width - 1440), y: 64, w: 225, h: 216 }
+      : {
+          x: 0,
+          y: Math.max(layout.navBottom ?? 0, cordAnchorY),
+          w: vp.width,
+          h: vp.height,
+        };
     const x0 = Math.max(r.x, free.x);
     const y0 = Math.max(r.y, free.y);
     const x1 = Math.min(r.x + r.w, free.x + free.w);
     const y1 = Math.min(r.y + r.h, free.y + free.h);
     return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
   };
-  const haloRing = ringRect(hero.bodyRect);
+  const haloRing = ringRect(hero.bodyRect, hero.cordAnchorY);
   jobs.push({
     id: 'haloRing',
     rect: haloRing,
@@ -1601,7 +1626,7 @@ async function pixelChecks({
   for (const l of layout.lanterns) {
     jobs.push({
       id: `lantern:${l.id}`,
-      rect: ringRect(l.bodyRect),
+      rect: ringRect(l.bodyRect, l.cordAnchorY),
       hole: lanternHole(l.bodyRect),
     });
   }
@@ -1621,6 +1646,11 @@ async function pixelChecks({
     jobs.push({
       id: 'columnEdge',
       rect: { x: column.x, y: pool.y, w: 4, h: pool.h },
+      // V2 budgets the pool; a lantern hung flush against the column (§3.5
+      // B at x176) spills its 2.8× halo over the edge by design.
+      holes: layout.lanterns.map((l) =>
+        expandRect(l.bodyRect, HALO_WIDTH_FACTOR),
+      ),
     });
 
   const s = await analyze(shots.settled, jobs);
@@ -1736,14 +1766,19 @@ async function pixelChecks({
       `Δ ${fmt(ringGlow, 3)}`,
     );
     if (moon) {
+      // The layer's own day/night blend when exposed (the pixel estimate
+      // reads any page pixel brighter than --background, e.g. a gradient).
+      const apiNight = live.moonNight;
       const moonAlpha =
-        (s.moon.maxY - luminance(bg)) /
-        Math.max(1e-6, luminance(hexRgb(P.moonBody)) - luminance(bg));
+        typeof apiNight === 'number'
+          ? 0.07 + 0.93 * apiNight
+          : (s.moon.maxY - luminance(bg)) /
+            Math.max(1e-6, luminance(hexRgb(P.moonBody)) - luminance(bg));
       check(
         moonAlpha <= 0.1,
         id('V4.moon'),
         'daytime moon ≤ 8% alpha',
-        `α≈${fmt(moonAlpha, 3)}`,
+        `α≈${fmt(moonAlpha, 3)}${typeof apiNight === 'number' ? ' (moon().night)' : ' (pixels)'}`,
         '≤ 0.08 (+0.02)',
       );
     }
@@ -1817,15 +1852,22 @@ async function pixelChecks({
     P &&
     foundation.palette?.accentTints
   ) {
-    const core = hexRgb(P.paperCore);
-    const got = s.heroBody.maxRgb;
-    const delta = Math.max(...got.map((v, i) => Math.abs(v - core[i])));
+    // The lamp is physical: the brightest paper pixel (mix(paperMid,
+    // paperCore, 0.55·candle) by the §2.2 shader) is the same under every
+    // colour theme, and warm (R > G > B, above paperMid's green).
+    const got = s.heroCore.maxRgb;
+    const mid = hexRgb(P.paperMid);
+    const reference = v7Lamp.get(route.key);
+    if (colour === 'mono') v7Lamp.set(route.key, got);
+    const delta = reference
+      ? Math.max(...got.map((v, i) => Math.abs(v - reference[i])))
+      : 0;
     check(
-      delta <= 4,
+      delta <= 4 && got[0] >= got[1] && got[1] >= got[2] && got[1] >= mid[1],
       id('V7.lamp'),
       `lamp stays warm under ${colour}`,
-      `brightest rgb(${got}) Δ${delta}`,
-      `#ffd58a ± 4`,
+      `brightest rgb(${got})${reference ? ` Δ${delta} vs mono rgb(${reference})` : ''}`,
+      'same as mono ± 4, R ≥ G ≥ B',
     );
     const tints = foundation.palette.accentTints(live.accent);
     check(
@@ -1860,6 +1902,8 @@ function columnEdge(layout, hero, vp) {
 }
 
 const v6State = new Map();
+/** Brightest hero-core pixel per route under mono, for V7. */
+const v7Lamp = new Map();
 
 // ---------------------------------------------------------------------------
 // M3 first gust: arrival per lantern, peak order and spacing
@@ -2321,24 +2365,36 @@ async function routeChangeRun({ browser, lab, foundation, vpName, theme }) {
         return null;
       }
     });
-    const link = page.locator('a[href="/past-experience"]').first();
+    let link = page.locator('a[href="/past-experience"]:visible').first();
+    if ((await link.count()) === 0) {
+      // Mobile: the link lives in the hamburger menu.
+      const menu = page.locator('button[aria-label="Open menu"]').first();
+      if ((await menu.count()) > 0) {
+        await menu.click();
+        await page.waitForTimeout(300);
+        link = page.locator('a[href="/past-experience"]:visible').first();
+      }
+    }
     if ((await link.count()) === 0) {
       fail(
         id('M6'),
         'route change',
-        'no <a href="/past-experience"> on /blog',
+        'no visible <a href="/past-experience"> on /blog',
         '',
         '',
       );
       return;
     }
-    const tClick = await page.evaluate(() => performance.now());
+    // Sim time: the exit/enter rows run on the sim clock and the browser
+    // stalls rAF while it commits the new page (SwiftShader: several samples
+    // would otherwise land in one frame).
+    const tClick = await page.evaluate(() => window.__gauntlet.now());
     await link.click({ noWaitAfter: true });
     const sinceClick = (ms) =>
       page.waitForFunction(
-        (args) => performance.now() - args.t >= args.ms,
+        (args) => window.__gauntlet.now() - args.t >= args.ms,
         { t: tClick, ms },
-        { polling: 8 },
+        { polling: 8, timeout: 60000 },
       );
     // Mid-exit capture (§7.7: 140 ms after the navigation).
     await sinceClick(140);
@@ -2353,9 +2409,11 @@ async function routeChangeRun({ browser, lab, foundation, vpName, theme }) {
           .then((o) => ({ x: o.vars.moonX, y: o.vars.moonY })),
       );
     }
-    const exitStart = await page.evaluate(
-      () => window.__gauntlet.t['text:exit'],
-    );
+    const exitStart = await page.evaluate(() => {
+      const g = window.__gauntlet;
+      const sim = g.sim['text:exit'];
+      return typeof sim === 'number' ? sim * 1000 : g.t['text:exit'];
+    });
     check(
       exitStart !== undefined && exitStart - tClick <= 200,
       id('M6.textExit'),
@@ -2364,6 +2422,7 @@ async function routeChangeRun({ browser, lab, foundation, vpName, theme }) {
         ? 'data-text="exit" never set'
         : `${fmt(exitStart - tClick, 0)} ms`,
       '≤ 200 ms',
+      'sim time',
     );
     const xs = moonSamples.map((m) => m.x).filter((v) => v !== null);
     const monotonic =
@@ -2723,7 +2782,7 @@ async function scrollChecks({ page, lab, layout, id, vp, tag }) {
     );
   await page.mouse.wheel(0, -520);
   await page.waitForTimeout(900);
-  const back = await moonY(`${tag}-scroll-back.png`);
+  const back = await moonG(`${tag}-scroll-back.png`);
   check(
     Math.abs(back - rest) / Math.max(1e-6, rest) <= 0.08,
     id('M9.moonReturn'),
@@ -2831,13 +2890,17 @@ async function typographyChecks({ page, live, id, route, theme, foundation }) {
         if (n.textContent.trim())
           textBlocks.push({
             text: n.textContent.trim().slice(0, 24),
-            owner:
-              n.parentElement
-                .closest(
-                  'figure, [class*="colophon"], [class*="slip"], [class*="moon"], [class*="caption"]',
-                )
-                ?.className?.toString()
-                .slice(0, 40) ?? 'loose',
+            owner: (() => {
+              const el = n.parentElement.closest(
+                'figure, [class*="colophon"], [class*="slip"], [class*="moon"], [class*="caption"]',
+              );
+              if (!el) return 'loose';
+              const cls = String(el.className);
+              for (const k of ['caption', 'colophon', 'slip', 'moon']) {
+                if (cls.includes(k)) return k;
+              }
+              return el.tagName.toLowerCase();
+            })(),
           });
       }
     }
@@ -3042,6 +3105,8 @@ async function typographyChecks({ page, live, id, route, theme, foundation }) {
       'present',
     );
     if (census.pinyinExists) {
+      // :focus-visible follows the input modality: a key first, then focus.
+      await page.keyboard.press('Shift');
       await page.locator('[data-festival-root] figure').first().focus();
       const focused = await page.evaluate(() => {
         const p = document.querySelector('[class*="pinyin"]');
