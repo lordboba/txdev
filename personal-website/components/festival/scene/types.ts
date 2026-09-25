@@ -330,7 +330,7 @@ export interface FrameContext {
   dt: number;
   viewport: Viewport;
   mobile: boolean;
-  /** `/`: no halo, pool 0.10, theme ignored. */
+  /** `/`: no halo, pool `light.pool.peakHome` (0.22 in paperHot), theme ignored. */
   home: boolean;
   /** `uNight` 0..1 (damped λ 8 across a theme switch). */
   night: number;
@@ -362,7 +362,7 @@ export interface LanternObjects {
   dispose(): void;
 }
 
-/** lantern.ts: the 走马灯 strip, 4096×256, built after `document.fonts.ready`. */
+/** lantern.ts: the 走马灯 strip (`SHADOW_STRIP`, 4096×128), built after `document.fonts.ready`. */
 export type ShadowStripBuilder = (
   titles: readonly string[],
   fontFamily: string,
@@ -487,7 +487,7 @@ export interface RouteLayout {
   navBottom: number;
   /** Additive halo allowed (false on `/`). */
   halo: boolean;
-  /** Pool peak alpha in the night state (0.14, or 0.10 on `/`). */
+  /** Pool peak alpha in the night state (`light.pool.peakDark` 0.14, or `peakHome` 0.22 on `/`). */
   poolPeak: number;
   /** `/` pins `uNight = 1`, `uLit = 1` and ignores `THEME_EVENT`. */
   ignoresTheme: boolean;

@@ -8,7 +8,7 @@
  *
  * The texture is `public/festival/moon-nearside-512.png` (built by
  * `scripts/build-moon-texture.mjs`, which bakes the `pow(1 − r², 0.35)` limb
- * darkening and the levels: highlands ≈ 0.9, maria ≈ 0.5 of `moonBody`);
+ * darkening and the levels: highlands ≈ 0.9, maria ≈ 0.55 of `moonBody`);
  * `loadMoonTexture()` returns a 1×1 ivory placeholder that swaps to the PNG
  * when it arrives. The shader applies no second limb term.
  *

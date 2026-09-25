@@ -104,7 +104,7 @@ export const LIMB_POW = 0.35;
 export const RIM_TINT = 0.12;
 export const WHITE_PERCENTILE = 0.995;
 /** Levels lift on the normalised, limb-darkened luma: `LIFT + (1 − LIFT)·b`. */
-export const LIFT = 0.5;
+export const LIFT = 0.28;
 export const BLUR_RADIUS = 2;
 export const PALETTE_LEVELS = 40;
 export const PALETTE_BANDS = 4;
