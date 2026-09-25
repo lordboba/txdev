@@ -1126,32 +1126,6 @@ button {
   }
 }
 
-.theme-toggle-button .theme-icon {
-  transition:
-    opacity var(--motion-base) var(--ease-standard),
-    transform var(--motion-base) var(--ease-spring);
-}
-
-.theme-toggle-button .theme-icon-sun {
-  opacity: 0;
-  transform: rotate(-65deg) scale(0.5);
-}
-
-.theme-toggle-button .theme-icon-moon {
-  opacity: 1;
-  transform: rotate(0deg) scale(1);
-}
-
-[data-theme='light'] .theme-toggle-button .theme-icon-sun {
-  opacity: 1;
-  transform: rotate(0deg) scale(1);
-}
-
-[data-theme='light'] .theme-toggle-button .theme-icon-moon {
-  opacity: 0;
-  transform: rotate(65deg) scale(0.5);
-}
-
 /* ═══ 3D & Depth System ═══ */
 
 /* Grain overlay */
@@ -1539,7 +1513,6 @@ button {
   .terminal-typed-line,
   .terminal-input-row,
   .terminal-prompt-arrow,
-  .theme-toggle-button .theme-icon,
   .writing-link-sweep::after,
   .contact-ping-dot::after,
   .hero-text-highlight,
