@@ -96,6 +96,35 @@ function subscribeToReducedMotion(onStoreChange: () => void) {
   return () => query.removeEventListener('change', onStoreChange);
 }
 
+let webGLSupport: boolean | undefined;
+
+/**
+ * Probes once for a WebGL context and caches the answer for the page's life:
+ * the probe context is released straight away so it never counts against the
+ * browser's context budget. Shared by the Bench and the festival layer.
+ */
+function getWebGLSupport() {
+  if (webGLSupport !== undefined) {
+    return webGLSupport;
+  }
+
+  try {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('webgl2') ?? canvas.getContext('webgl');
+    webGLSupport = context !== null;
+    context?.getExtension('WEBGL_lose_context')?.loseContext();
+  } catch {
+    webGLSupport = false;
+  }
+
+  return webGLSupport;
+}
+
+/** False on the server and wherever WebGL is unavailable. */
+export function useWebGLSupport() {
+  return useSyncExternalStore(noopSubscribe, getWebGLSupport, alwaysFalse);
+}
+
 export function usePrefersReducedMotion() {
   return useSyncExternalStore(
     subscribeToReducedMotion,
