@@ -3737,13 +3737,29 @@ async function a11yChecks({ page, live, id, route, theme }) {
           .querySelector('[data-festival-root] button[aria-expanded]')
           ?.getAttribute('aria-expanded'),
       );
+      // The disclosure toggles: a second Enter folds the card, a third opens it.
+      const expanded = () =>
+        page.evaluate(() =>
+          document
+            .querySelector('[data-festival-root] button[aria-expanded]')
+            ?.getAttribute('aria-expanded'),
+        );
+      await page.keyboard.press('Enter');
+      await page.waitForTimeout(250);
+      const toggledOff = await expanded();
+      await page.keyboard.press('Enter');
+      await page.waitForTimeout(250);
+      const toggledOn = await expanded();
+      check(
+        open === 'true' && toggledOff === 'false' && toggledOn === 'true',
+        id('A.toggle'),
+        'Enter on the open slip folds it; Enter again unfolds it',
+        `${open} → ${toggledOff} → ${toggledOn}`,
+        'true → false → true',
+      );
       await page.keyboard.press('Escape');
       await page.waitForTimeout(250);
-      const closed = await page.evaluate(() =>
-        document
-          .querySelector('[data-festival-root] button[aria-expanded]')
-          ?.getAttribute('aria-expanded'),
-      );
+      const closed = await expanded();
       check(
         open === 'true' && closed === 'false',
         id('A.escape'),
@@ -3807,14 +3823,15 @@ async function a11yChecks({ page, live, id, route, theme }) {
             : null;
         });
         if (linkCentre) {
-          // A human diagonal takes ≈ 250 ms end to end; on SwiftShader each
-          // mouse.move is ≈ 65 ms, so twelve steps with no pause is that.
+          // A slow hand: twenty steps (≈ 65 ms each on SwiftShader, 1.3 s
+          // end to end, well past the 400 ms grace) so the walk is carried
+          // by the hover bridge, not by the timer.
           const x0 = stripRect.x + stripRect.w / 2;
           const y0 = stripRect.y + stripRect.h / 2;
-          for (let i = 1; i <= 12; i += 1) {
+          for (let i = 1; i <= 20; i += 1) {
             await page.mouse.move(
-              x0 + ((linkCentre.x - x0) * i) / 12,
-              y0 + ((linkCentre.y - y0) * i) / 12,
+              x0 + ((linkCentre.x - x0) * i) / 20,
+              y0 + ((linkCentre.y - y0) * i) / 20,
             );
           }
           await page.waitForTimeout(150);

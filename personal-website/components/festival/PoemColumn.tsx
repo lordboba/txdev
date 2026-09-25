@@ -116,9 +116,9 @@ export function PoemColumn({
             aria-hidden="true"
           >
             <span className={styles.han} lang={lang}>
-              {MOON_NAME[festival.script]}
+              {`${MOON_NAME[festival.script]} ·`}
             </span>
-            {' · jade plate'}
+            {' jade plate'}
           </span>
         </button>
       ) : null}

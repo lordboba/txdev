@@ -71,6 +71,16 @@ export function RiddleSlip({
     setOpen(false);
   };
 
+  /**
+   * The disclosure toggles (`aria-expanded` promises it): a second Enter,
+   * Space or click folds the card. A click on a hover-opened card promotes
+   * it to click-opened instead and keeps it open (§6.A3).
+   */
+  const toggle = () => {
+    if (open && openedBy.current !== 'hover') close();
+    else openAs('click');
+  };
+
   /** Escape: focus returns to the strip (the disclosure's trigger), then the card closes. */
   const escape = () => {
     const pull = pullRef.current;
@@ -138,6 +148,9 @@ export function RiddleSlip({
       className={styles.slip}
       data-shown={shown ? 'true' : undefined}
       data-open={open ? 'true' : undefined}
+      // A hover-opened card also keeps a hover bridge (CSS ::after) over the
+      // bare page between the strip and the card, so the diagonal to the
+      // 谜底 link never leaves the wrapper; the 400 ms grace is a backstop.
       onMouseEnter={() => openAs('hover')}
       onMouseLeave={onMouseLeave}
       onBlur={onBlur}
@@ -150,7 +163,7 @@ export function RiddleSlip({
         aria-expanded={open}
         aria-controls={cardId}
         aria-label={riddle.ariaLabel}
-        onClick={() => openAs('click')}
+        onClick={toggle}
         onFocus={() => {
           if (!suppressOpen.current) openAs('focus');
         }}
@@ -169,10 +182,10 @@ export function RiddleSlip({
         <p className={`${styles.clue} ${styles.latin}`}>{riddle.clue}</p>
         <p className={`${styles.answer} ${styles.latin}`}>
           <span className={styles.answerLabel}>
+            {/* The middle dot rides in the Han span: U+00B7 is in the subset (fonts.ts), not Cormorant's speck. */}
             <span className={styles.han} lang={lang}>
-              {riddle.answerLabel}
+              {`${riddle.answerLabel} ·`}
             </span>
-            {' ·'}
           </span>
           {riddle.external ? (
             <a

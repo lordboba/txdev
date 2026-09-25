@@ -125,6 +125,23 @@
   opacity: 1;
 }
 
+/*
+ * Hover bridge while the card is open: the bare page between the strip's
+ * lower half and the card's top edge, over the card's width, stays inside
+ * the wrapper, so a slow diagonal from the strip to the 谜底 link never
+ * fires mouseleave (on /schedule-a-call it crossed ≈ 50 px of page). It
+ * exists only while open and paints nothing.
+ */
+.slip[data-open='true']::after {
+  content: '';
+  position: absolute;
+  left: var(--card-left, 0px);
+  width: var(--card-w, 28ch);
+  top: 50%;
+  bottom: -8px;
+  pointer-events: auto;
+}
+
 /* The pull: hover, keyboard focus or open state lowers the strip 6 px. */
 .pull:hover .strip,
 .pull:focus-visible .strip,
@@ -215,6 +232,14 @@
     opacity 220ms var(--festival-ease-enter),
     transform 220ms var(--festival-ease-enter),
     visibility 0s;
+}
+
+/* The open card's hit box reaches 8 px up and out, across its gap to the strip. */
+.slip[data-open='true'] .card::before {
+  content: '';
+  position: absolute;
+  inset: -8px -8px auto -8px;
+  height: 24px;
 }
 
 /* 谜面: Cormorant italic 500, 19 px, line-height 1.3. */
