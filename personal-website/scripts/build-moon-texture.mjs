@@ -48,11 +48,15 @@
  *   2. desaturates 60% toward luma (the indexed encoding then keeps luma only:
  *      the ivory base carries the warmth, the residual 40% chroma of the map
  *      is below one palette step);
- *   3. limb darkening `pow(1 − r², 0.35)`;
+ *   3. limb darkening `pow(1 − r², 0.35)` (baked here once; the moon shader
+ *      applies no second limb term);
  *   4. normalises brightness so the 99.5th-percentile pixel of the darkened
- *      disc is the ivory `moonBody` (#fffbf0): the brightest highlands equal
- *      the palette constant, which §7.7 V3 (moon > any lantern pixel) relies
- *      on; the maria stay ≈ 45% darker (the rabbit is findable);
+ *      disc is the ivory `moonBody` (#fffbf0), then lifts the levels
+ *      `b' = LIFT + (1 − LIFT)·b` so the highlands sit at ≈ 0.9 and the maria
+ *      at ≈ 0.5–0.6 of moonBody: the disc reads as the brightest thing on
+ *      the page (§1, §2.1; mean disc Y ≥ 0.45, p90 ≥ 0.75), the brightest
+ *      highlands still equal the palette constant (§7.7 V3) and the rabbit
+ *      is still findable;
  *   5. tints the rim 12% toward `moonRim` (#d6ecf0), weighted r³ so the
  *      centre is untouched;
  *   6. alpha 255 inside the disc, 0 outside, coverage-averaged at the limb.
@@ -99,6 +103,8 @@ export const DESATURATE = 0.6;
 export const LIMB_POW = 0.35;
 export const RIM_TINT = 0.12;
 export const WHITE_PERCENTILE = 0.995;
+/** Levels lift on the normalised, limb-darkened luma: `LIFT + (1 − LIFT)·b`. */
+export const LIFT = 0.5;
 export const BLUR_RADIUS = 2;
 export const PALETTE_LEVELS = 40;
 export const PALETTE_BANDS = 4;
@@ -383,9 +389,9 @@ function shadeColour(bodyRgb, rimRgb, brightness, rimWeight) {
 }
 
 /**
- * Per-pixel brightness (limb-darkened luma / white, clamped to 1), rim weight
- * r³ and alpha. `white` is the 99.5th percentile of the limb-darkened luma over
- * the opaque disc, after the blur.
+ * Per-pixel brightness (limb-darkened luma / white, clamped to 1, then lifted
+ * by `LIFT`), rim weight r³ and alpha. `white` is the 99.5th percentile of the
+ * limb-darkened luma over the opaque disc, after the blur.
  */
 function analyse(albedo, size) {
   const count = size * size;
@@ -418,7 +424,8 @@ function analyse(albedo, size) {
     shadedLumas[Math.floor((shadedLumas.length - 1) * WHITE_PERCENTILE)];
 
   for (let p = 0; p < count; p += 1) {
-    brightness[p] = Math.min(brightness[p] / white, 1);
+    if (!alpha[p]) continue;
+    brightness[p] = LIFT + (1 - LIFT) * Math.min(brightness[p] / white, 1);
   }
 
   return { white, brightness, rimWeight, alpha };

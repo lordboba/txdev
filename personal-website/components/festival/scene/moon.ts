@@ -1,14 +1,19 @@
 /**
- * The moon (bible §5.3, §2.2): a disc with limb darkening and a rim tint
- * toward `moonRim`, and an additive halo in `frost`, drawn by one quad at
- * z −3 (premultiplied output: the halo adds, the disc composites over it). Dark: full disc, halo to 2.2× breathing ±3% over 11 s. Light: a 7%
- * daytime disc with the maria at 3%, no halo.
+ * The moon (bible §5.3, §2.2): a disc with a rim tint toward `moonRim` and an
+ * additive halo in `frost`, drawn by one quad at z −3 (premultiplied output:
+ * the halo adds, the disc composites over it). Dark: full disc, halo to 2.2×
+ * breathing ±3% over 11 s. Light: a 7% daytime disc with the maria at 3%, no
+ * halo. The day/night blend is `frame.moonNight` (900 ms std to full, 500 ms
+ * to 7%, §4.3), not the paper's λ 8 damp.
  *
  * The texture is `public/festival/moon-nearside-512.png` (built by
- * `scripts/build-moon-texture.mjs`); `loadMoonTexture()` returns a 1×1
- * ivory placeholder that swaps to the PNG when it arrives.
+ * `scripts/build-moon-texture.mjs`, which bakes the `pow(1 − r², 0.35)` limb
+ * darkening and the levels: highlands ≈ 0.9, maria ≈ 0.5 of `moonBody`);
+ * `loadMoonTexture()` returns a 1×1 ivory placeholder that swaps to the PNG
+ * when it arrives. The shader applies no second limb term.
  *
- * One quad, one draw call, render order 6 (after the fall system).
+ * One quad (borrowed from the fall system when the integrator passes it, so
+ * the page stays at 6 geometries), one draw call, render order 6.
  */
 
 import * as THREE from 'three';
@@ -26,10 +31,12 @@ const rgb = (hex: string) => new THREE.Vector3(...hexToRgb01(hex));
 /**
  * A texture that starts as a 1×1 `moonBody` pixel and becomes the PNG once it
  * loads. Pass it to `createMoonObjects`; the disc redraws on its own.
+ * `cancelled()` is checked when the PNG arrives: a torn-down layer drops it.
  */
 export function loadMoonTexture(
   url = MOON_TEXTURE_URL,
   onLoad?: (texture: THREE.Texture) => void,
+  cancelled: () => boolean = () => false,
 ): THREE.Texture {
   const canvas = document.createElement('canvas');
 
@@ -45,13 +52,22 @@ export function loadMoonTexture(
 
   const texture: THREE.Texture = new THREE.Texture(canvas);
 
-  texture.colorSpace = THREE.SRGBColorSpace;
+  // Sampled raw: the shader mixes the texel with sRGB-encoded palette
+  // constants and writes straight to the sRGB canvas, like the paper shader.
+  // An SRGBColorSpace texture would be decoded to linear on sampling and the
+  // disc drawn ≈ 35% too dark.
+  texture.colorSpace = THREE.NoColorSpace;
   texture.minFilter = THREE.LinearMipmapLinearFilter;
   texture.magFilter = THREE.LinearFilter;
   texture.generateMipmaps = true;
   texture.needsUpdate = true;
 
   new THREE.TextureLoader().load(url, (loaded) => {
+    if (cancelled()) {
+      loaded.dispose();
+
+      return;
+    }
     // WebGL2 storage is immutable at the placeholder's 1×1, so release it
     // before the 512² image is uploaded in its place.
     texture.dispose();
@@ -91,7 +107,6 @@ const MOON_FRAGMENT = /* glsl */ `
 
   varying vec2 vUv;
 
-  const float LIMB_POW = ${light.moon.limbPow.toFixed(3)};
   const float LIGHT_DISC = ${light.moon.lightDiscAlpha.toFixed(3)};
   const float LIGHT_MARIA = ${light.moon.lightMariaAlpha.toFixed(3)};
   const float HALO_POW = ${light.moon.halo.falloffPow.toFixed(3)};
@@ -105,10 +120,10 @@ const MOON_FRAGMENT = /* glsl */ `
     float edge = 1.0 - smoothstep(1.0 - fw, 1.0 + fw, r);
     vec4 texel = texture2D(uMap, clamp(c, -1.0, 1.0) * 0.5 + 0.5);
 
-    // Night: limb darkening and a moon-white tint where the disc turns away.
-    float limb = pow(max(1.0 - r2, 0.0), LIMB_POW);
+    // Night: the PNG already carries the limb darkening; only the moon-white
+    // tint where the disc turns away is applied here.
     float rimT = smoothstep(0.55, 1.0, r) * 0.4;
-    vec3 night = mix(texel.rgb, uMoonRim, rimT) * limb;
+    vec3 night = mix(texel.rgb, uMoonRim, rimT);
 
     // Day: a faint ivory disc, the maria at 3% over a 7% disc.
     vec3 day = mix(uMoonBody, texel.rgb, LIGHT_MARIA / LIGHT_DISC);
@@ -126,10 +141,14 @@ const MOON_FRAGMENT = /* glsl */ `
 
 const _world = { x: 0, y: 0, z: MOON_Z };
 
-/** Disc + halo at z −3. `moonTexture` comes from `loadMoonTexture()`. */
+/**
+ * Disc + halo at z −3. `moonTexture` comes from `loadMoonTexture()`; `quad`
+ * is a borrowed unit plane (not disposed here) or omitted for an own one.
+ */
 export const createMoonObjects: MoonObjectsFactory = (
   renderer,
   moonTexture,
+  quad,
 ) => {
   moonTexture.anisotropy = Math.min(
     4,
@@ -159,29 +178,25 @@ export const createMoonObjects: MoonObjectsFactory = (
     depthWrite: false,
     depthTest: true,
   });
-  const quad = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material);
+  const ownsGeometry = quad === undefined;
+  const geometry = quad ?? new THREE.PlaneGeometry(1, 1);
+  const mesh = new THREE.Mesh(geometry, material);
 
-  quad.renderOrder = MOON_RENDER_ORDER;
-  quad.frustumCulled = false;
-  quad.name = 'moon';
-  group.add(quad);
+  mesh.renderOrder = MOON_RENDER_ORDER;
+  mesh.frustumCulled = false;
+  mesh.name = 'moon';
+  group.add(mesh);
   group.visible = false;
 
   const objects: MoonObjects = {
     object: group,
-
-    build() {
-      group.visible = false;
-      material.uniforms.uAlpha.value = 0;
-      material.uniforms.uHaloAlpha.value = 0;
-    },
 
     update(moon, frame) {
       group.visible = moon.visible && moon.alpha > 0;
 
       if (!group.visible) return;
 
-      const night = Math.max(0, Math.min(1, frame.night));
+      const night = Math.max(0, Math.min(1, frame.moonNight));
       const diameter = pxLengthToWorld(moon.diameter, MOON_Z, frame.viewport);
       // Halo: 2.2× the disc, breathing ±3% over 11 s; alpha 0.18 dark, 0 light.
       const breath =
@@ -191,8 +206,8 @@ export const createMoonObjects: MoonObjectsFactory = (
       const haloScale = light.moon.halo.diameterFactor * breath;
 
       pxToWorld(moon.centre, frame.viewport, MOON_Z, _world);
-      quad.position.set(_world.x, _world.y, MOON_Z);
-      quad.scale.set(diameter * haloScale, diameter * haloScale, 1);
+      mesh.position.set(_world.x, _world.y, MOON_Z);
+      mesh.scale.set(diameter * haloScale, diameter * haloScale, 1);
 
       material.uniforms.uAlpha.value = moon.alpha;
       material.uniforms.uNight.value = night;
@@ -205,7 +220,7 @@ export const createMoonObjects: MoonObjectsFactory = (
 
     dispose() {
       group.removeFromParent();
-      quad.geometry.dispose();
+      if (ownsGeometry) geometry.dispose();
       material.dispose();
     },
   };
