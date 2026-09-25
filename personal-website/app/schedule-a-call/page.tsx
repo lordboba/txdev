@@ -29,7 +29,7 @@ export default function ScheduleCallPage() {
         <h1 className="display display-1 mt-4 max-w-3xl">
           Book a 15-minute chat.
         </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-muted sm:text-base">
+        <p className="mt-3 max-w-2xl text-sm leading-7 text-pretty text-muted sm:text-base">
           Share what you want to discuss when you book. We can talk through a
           project, compare notes, or simply meet.
         </p>

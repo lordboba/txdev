@@ -32,6 +32,10 @@
   --label-md: 12px;
   --label-md-tracking: 0.06em;
 
+  /* The one Cormorant fallback stack; every display rule reads it. */
+  --font-display-stack:
+    var(--font-display), 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+
   /* Display scale (Cormorant). Cormorant's floor is 20px; 1 is the Bench H1. */
   --display-1: clamp(2.6rem, 4.4vw, 4.35rem); /* page H1 */
   --display-2: clamp(1.75rem, 2.6vw, 2.25rem); /* section H2, post title */
@@ -134,14 +138,29 @@ body {
     var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+  /* Never fake a weight or style the loaded faces do not have. */
+  font-synthesis: none;
   min-height: 100dvh;
   overflow-x: hidden;
+  /* Thin light-on-dark strokes; the default rasteriser on cream. */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.7;
   transition:
     background 0.45s var(--ease-standard),
     color 0.3s ease;
+}
+
+[data-theme='light'] body {
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
+}
+
+@layer base {
+  h1,
+  h2 {
+    text-wrap: balance;
+  }
 }
 
 body::after {
@@ -217,9 +236,7 @@ a:hover {
    * Italic never takes negative tracking.
    */
   .display {
-    font-family:
-      var(--font-display), 'Cormorant Garamond', Georgia, 'Times New Roman',
-      serif;
+    font-family: var(--font-display-stack);
     font-weight: 500;
     font-kerning: normal;
     font-variant-numeric: lining-nums;
@@ -257,8 +274,7 @@ a:hover {
  * leading: the display scale owns those.
  */
 .font-display {
-  font-family:
-    var(--font-display), 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display-stack);
 }
 
 .pane {
@@ -329,231 +345,6 @@ a:hover {
   border-color: rgba(22, 143, 134, 0.15);
 }
 
-/* ═══ Blog Shell ═══ */
-.blog-shell {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background:
-    radial-gradient(
-      circle at 14% 16%,
-      color-mix(in srgb, var(--motion-ink) 5%, transparent),
-      transparent 34%
-    ),
-    radial-gradient(
-      circle at 86% 84%,
-      color-mix(in srgb, var(--motion-ink) 4%, transparent),
-      transparent 38%
-    ),
-    var(--background);
-  color: var(--foreground);
-}
-
-.blog-topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 28px;
-  border-bottom: 1px solid var(--c-accent-border);
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  background: color-mix(in srgb, var(--background) 90%, transparent);
-  backdrop-filter: blur(12px);
-}
-
-.blog-back-btn {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--muted);
-  text-decoration: none;
-  padding: 6px 14px;
-  border-radius: 2px;
-  border: 1px solid var(--c-accent-border);
-  transition: all 0.2s;
-}
-
-.blog-back-btn:hover {
-  color: var(--c-accent);
-  border-color: var(--c-accent);
-  text-decoration: none;
-}
-
-.blog-topbar-title {
-  font-family: var(--font-display);
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 2px;
-  color: var(--c-accent);
-}
-
-.blog-home-btn {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--muted);
-  text-decoration: none;
-  padding: 6px 14px;
-  border-radius: 2px;
-  border: 1px solid var(--c-accent-border);
-  transition: all 0.2s;
-}
-
-.blog-home-btn:hover {
-  color: var(--c-accent);
-  border-color: var(--c-accent);
-  text-decoration: none;
-}
-
-.blog-main {
-  max-width: 720px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 40px 24px 80px;
-  flex: 1;
-}
-
-.blog-hero {
-  margin-bottom: 40px;
-}
-
-.blog-hero-title {
-  font-family: var(--font-display);
-  font-size: 40px;
-  font-weight: 600;
-  letter-spacing: -0.03em;
-  color: var(--c-accent);
-  margin-bottom: 8px;
-}
-
-.blog-hero-desc {
-  font-size: 15px;
-  color: var(--muted);
-  line-height: 1.6;
-}
-
-.blog-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.blog-empty {
-  padding: 40px;
-  border: 1px dashed var(--c-accent-border);
-  border-radius: 2px;
-  text-align: center;
-  color: var(--muted);
-  font-family: var(--font-mono);
-  font-size: 14px;
-}
-
-.blog-card {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 20px;
-  border: 1px solid var(--c-accent-border);
-  border-radius: 2px;
-  text-decoration: none;
-  transition: all 0.25s;
-}
-
-.blog-card:hover {
-  border-color: var(--c-accent);
-  background: var(--c-accent-soft);
-  text-decoration: none;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 32px var(--c-glow);
-}
-
-.blog-card-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--font-mono);
-  font-size: 12px;
-}
-
-.blog-card-date {
-  color: var(--muted);
-}
-
-.blog-card-dot {
-  width: 3px;
-  height: 3px;
-  border-radius: 50%;
-  background: var(--c-accent-border);
-}
-
-.blog-card-read {
-  color: var(--c-accent);
-}
-
-.blog-card-index {
-  margin-left: auto;
-  color: var(--muted);
-  opacity: 0.5;
-}
-
-.blog-card-title {
-  font-family: var(--font-display);
-  font-size: 22px;
-  font-weight: 600;
-  color: var(--foreground);
-  letter-spacing: -0.02em;
-}
-
-.blog-card-excerpt {
-  font-size: 14px;
-  color: var(--muted);
-  line-height: 1.6;
-}
-
-.blog-card-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.blog-card-tag {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  padding: 3px 10px;
-  border-radius: 2px;
-  border: 1px solid var(--c-accent-border);
-  color: var(--c-accent);
-  transition: all 0.2s;
-}
-
-.blog-article {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-}
-
-.blog-article-header {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid var(--c-accent-border);
-}
-
-.blog-article-title {
-  font-family: var(--font-display);
-  font-size: 36px;
-  font-weight: 600;
-  letter-spacing: -0.03em;
-  color: var(--foreground);
-  line-height: 1.15;
-}
-
-.blog-article-excerpt {
-  font-size: 15px;
-  color: var(--muted);
-  line-height: 1.6;
-}
-
 /* ═══ Blog Prose ═══ */
 /* The reading column: a 66ch measure centred in the card. */
 .blog-prose {
@@ -576,6 +367,11 @@ a:hover {
   margin-top: 1.1rem;
 }
 
+.blog-prose p,
+.blog-prose li {
+  text-wrap: pretty;
+}
+
 /*
  * Markdown headings are demoted one level by the renderer (`#` → h2), so the
  * post title is the only h1. Sections take display-3; sub-sections are Plex.
@@ -590,8 +386,7 @@ a:hover {
 }
 
 .blog-prose h2 {
-  font-family:
-    var(--font-display), 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  font-family: var(--font-display-stack);
   font-size: var(--display-3);
   font-weight: 600;
   font-kerning: normal;
@@ -1393,7 +1188,7 @@ button {
   padding: 0.4rem 0.9rem;
   font-family: var(--font-mono), monospace;
   font-size: 0.74rem;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.02em;
   transition:
     background var(--motion-fast) var(--ease-standard),
@@ -2043,7 +1838,7 @@ button {
 }
 
 .app-logo-copy {
-  font-family: var(--font-display), Georgia, serif;
+  font-family: var(--font-display-stack);
   font-size: clamp(1rem, 1.8vw, 1.32rem);
   font-weight: 500;
   letter-spacing: -0.025em;
@@ -2192,7 +1987,7 @@ button {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-family: var(--font-display);
+  font-family: var(--font-display-stack);
   font-size: 16px;
   font-weight: 200;
   letter-spacing: 8px;
@@ -2346,7 +2141,7 @@ button {
 .carousel-card-label {
   font-family: var(--font-mono);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.5px;
   color: var(--c-accent);
   text-align: center;
@@ -2397,7 +2192,7 @@ button {
 /* ═══ Content Panel ═══ */
 /* Panel content styles (rendered inside .modal-body) */
 .panel-title {
-  font-family: var(--font-display), Georgia, serif;
+  font-family: var(--font-display-stack);
   font-size: 18px;
   font-weight: 500;
   color: var(--accent);
@@ -2995,7 +2790,7 @@ button {
 }
 
 .modal-title {
-  font-family: var(--font-display);
+  font-family: var(--font-display-stack);
   font-size: 20px;
   font-weight: 600;
   color: var(--c-accent);
@@ -3036,7 +2831,7 @@ button {
 .modal-section-title {
   font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 1.5px;
   text-transform: uppercase;
   color: var(--muted);
@@ -3084,7 +2879,7 @@ button {
 }
 
 .modal-exp-role {
-  font-family: var(--font-display);
+  font-family: var(--font-display-stack);
   font-size: 17px;
   font-weight: 600;
   color: var(--foreground);
@@ -3209,7 +3004,7 @@ button {
   color: var(--background);
   font-family: var(--font-mono);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   text-decoration: none;
   transition: all 0.2s;
 }
@@ -3229,7 +3024,7 @@ button {
   color: var(--muted);
   font-family: var(--font-mono);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   text-decoration: none;
   transition: all 0.2s;
 }
@@ -3378,7 +3173,7 @@ button {
   --orb-particle-chart-shadow: rgba(255, 245, 234, 0.92);
   --orb-index-surface: rgba(247, 220, 192, 0.04);
 
-  --orb-display: var(--font-display), 'EB Garamond', Georgia, serif;
+  --orb-display: var(--font-display-stack);
   --orb-sans: var(--font-sans), system-ui, sans-serif;
   --orb-mono: var(--font-mono), ui-monospace, Menlo, monospace;
 
@@ -4421,7 +4216,7 @@ button {
   color: var(--orb-text-soft);
 }
 .orb-index-item .name {
-  font-family: var(--orb-display), 'Cormorant Garamond', serif;
+  font-family: var(--orb-display);
   font-size: 22px;
   font-weight: 400;
   letter-spacing: 0;
@@ -4593,6 +4388,8 @@ button {
   }
 
   .orb-hero-tools {
+    /* In flow under the title: fixed, it sat over the H1 at this width. */
+    position: static;
     flex-wrap: wrap;
     justify-content: flex-end;
     align-items: center;

@@ -36,7 +36,7 @@ export default function PastExperiencePage() {
         <h1 className="display display-1 max-w-3xl">
           Experience across past, current, and upcoming roles.
         </h1>
-        <p className="max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
+        <p className="max-w-2xl text-sm leading-relaxed text-pretty text-muted sm:text-base">
           Role history grouped by time, covering the work, responsibilities, and
           systems behind each role.
         </p>
