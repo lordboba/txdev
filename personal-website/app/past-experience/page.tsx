@@ -32,13 +32,11 @@ export default function PastExperiencePage() {
       </Link>
 
       <header className="space-y-4">
-        <p className="font-[var(--font-mono)] text-xs font-medium uppercase tracking-[0.22em] text-muted">
-          Experience
-        </p>
-        <h1 className="max-w-3xl font-[var(--font-display)] text-4xl leading-tight font-semibold tracking-tight sm:text-5xl">
+        <p className="eyebrow">Experience</p>
+        <h1 className="display display-1 max-w-3xl">
           Experience across past, current, and upcoming roles.
         </h1>
-        <p className="max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
+        <p className="max-w-2xl text-sm leading-relaxed text-pretty text-muted sm:text-base">
           Role history grouped by time, covering the work, responsibilities, and
           systems behind each role.
         </p>
@@ -47,15 +45,13 @@ export default function PastExperiencePage() {
 
       <section className="overflow-hidden rounded-sm border border-divider bg-surface">
         <div className="border-b border-divider px-5 py-3">
-          <span className="font-[var(--font-mono)] text-xs font-medium uppercase tracking-[0.2em] text-muted">
-            Focus Areas
-          </span>
+          <span className="eyebrow">Focus Areas</span>
         </div>
         <div className="flex flex-wrap gap-2 px-5 py-4">
           {focusAreas.map((area) => (
             <span
               key={area}
-              className="rounded-sm border border-divider bg-accent-muted px-2.5 py-1 text-[11px] font-[var(--font-mono)] text-accent"
+              className="label-sm rounded-sm border border-divider bg-accent-muted px-2.5 py-1 text-accent"
             >
               {area}
             </span>
@@ -70,12 +66,10 @@ export default function PastExperiencePage() {
             <div key={group.status} className="space-y-4">
               <div className="flex flex-wrap items-end justify-between gap-3 border-b border-divider pb-3">
                 <div>
-                  <p className="font-[var(--font-mono)] text-xs font-medium uppercase tracking-[0.22em] text-muted">
-                    {group.label}
-                  </p>
+                  <p className="eyebrow">{group.label}</p>
                   <p className="mt-1 text-sm text-muted">{group.description}</p>
                 </div>
-                <span className="font-[var(--font-mono)] text-xs text-accent">
+                <span className="label-sm text-accent">
                   {String(group.items.length).padStart(2, '0')} entries
                 </span>
               </div>
@@ -86,15 +80,13 @@ export default function PastExperiencePage() {
                     key={`${exp.company}-${exp.role}`}
                     className="rounded-sm border border-divider bg-surface p-5 transition-all duration-300 hover:border-accent hover:bg-accent-muted sm:p-6"
                   >
-                    <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-[var(--font-mono)] text-muted">
+                    <div className="label-sm flex flex-wrap items-center justify-between gap-3 text-muted">
                       <span>{exp.period}</span>
                       <span className="font-medium text-secondary">
                         {exp.company}
                       </span>
                     </div>
-                    <h2 className="mt-4 font-[var(--font-display)] text-2xl font-semibold tracking-tight">
-                      {exp.role}
-                    </h2>
+                    <h2 className="display display-3 mt-4">{exp.role}</h2>
                     <p className="mt-3 max-w-4xl text-sm leading-7 text-muted">
                       {exp.summary}
                     </p>
@@ -105,7 +97,7 @@ export default function PastExperiencePage() {
                       {exp.focus.map((label) => (
                         <span
                           key={label}
-                          className="rounded-sm border border-divider bg-surface-raised px-2.5 py-1 text-[11px] font-[var(--font-mono)] text-muted"
+                          className="label-sm rounded-sm border border-divider bg-surface-raised px-2.5 py-1 text-muted"
                         >
                           {label}
                         </span>
@@ -120,12 +112,8 @@ export default function PastExperiencePage() {
 
       <section className="space-y-4">
         <div>
-          <p className="font-[var(--font-mono)] text-xs font-medium uppercase tracking-[0.22em] text-muted">
-            {'// projects'}
-          </p>
-          <h2 className="mt-2 font-[var(--font-display)] text-3xl font-semibold tracking-tight">
-            Projects
-          </h2>
+          <p className="eyebrow">{'// projects'}</p>
+          <h2 className="display display-2 mt-2">Projects</h2>
           <p className="mt-2 text-sm text-muted">
             Each project includes its implementation stack and a link to the
             live product or source.
@@ -151,8 +139,8 @@ export default function PastExperiencePage() {
                     className="object-cover"
                   />
                 ) : (
-                  <div className="flex h-full w-full flex-col items-center justify-center gap-2 px-6 text-center font-[var(--font-mono)]">
-                    <span className="text-[10px] uppercase tracking-[0.24em] text-accent">
+                  <div className="flex h-full w-full flex-col items-center justify-center gap-2 px-6 text-center font-mono">
+                    <span className="eyebrow text-accent">
                       {project.proofLabel}
                     </span>
                     <strong className="text-xs font-medium text-foreground">
@@ -162,13 +150,11 @@ export default function PastExperiencePage() {
                 )}
               </div>
               <div className="p-5">
-                <div className="flex items-center justify-between gap-3 text-xs font-[var(--font-mono)] text-muted">
+                <div className="label-sm flex items-center justify-between gap-3 text-muted">
                   <span>{project.role}</span>
                   <span className="text-accent">{project.proofLabel}</span>
                 </div>
-                <h3 className="mt-3 font-[var(--font-display)] text-xl font-semibold">
-                  {project.title}
-                </h3>
+                <h3 className="display display-3 mt-3">{project.title}</h3>
                 <p className="mt-2 text-sm leading-7 text-muted">
                   {project.description}
                 </p>
@@ -179,7 +165,7 @@ export default function PastExperiencePage() {
                   {project.tech.map((tech) => (
                     <span
                       key={tech}
-                      className="rounded-sm border border-divider bg-accent-muted px-2 py-1 text-[11px] font-[var(--font-mono)] text-accent"
+                      className="label-sm rounded-sm border border-divider bg-accent-muted px-2 py-1 text-accent"
                     >
                       {tech}
                     </span>

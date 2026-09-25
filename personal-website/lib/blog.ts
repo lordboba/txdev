@@ -128,6 +128,30 @@ function parseImageWidth(raw?: string): number | null {
   return Math.min(1200, Math.max(120, parsed));
 }
 
+/**
+ * Typographic punctuation for prose: curly quotes, en/em dashes, ellipsis.
+ * Runs on escaped text, so quotes arrive as entities and the literal `"` in a
+ * generated tag's attributes is never touched.
+ */
+function smartPunctuation(escaped: string): string {
+  return escaped
+    .replace(/(^|[\s([{])&#39;(?=\S)/g, '$1\u2018')
+    .replaceAll('&#39;', '\u2019')
+    .replace(/(^|[\s([{])&quot;(?=\S)/g, '$1\u201c')
+    .replaceAll('&quot;', '\u201d')
+    .replaceAll('...', '\u2026')
+    .replaceAll('--', '\u2014')
+    .replace(/ - /g, ' \u2013 ');
+}
+
+/** Applies `smartPunctuation` outside code spans and generated tags. */
+function smartenText(html: string): string {
+  return html
+    .split(/(<[^>]*>|`[^`]+`)/)
+    .map((part, index) => (index % 2 === 1 ? part : smartPunctuation(part)))
+    .join('');
+}
+
 function renderInlineMarkdown(raw: string): string {
   let html = escapeHtml(raw);
 
@@ -171,6 +195,7 @@ function renderInlineMarkdown(raw: string): string {
   );
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  html = smartenText(html);
   html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
 
   return html;
@@ -245,7 +270,8 @@ export function renderMarkdownToHtml(markdown: string): string {
     if (headingMatch) {
       closeParagraph();
       closeList();
-      const headingLevel = headingMatch[1].length;
+      // The post title is the page's only h1, so `#` becomes h2.
+      const headingLevel = headingMatch[1].length + 1;
       html.push(
         `<h${headingLevel}>${renderInlineMarkdown(headingMatch[2])}</h${headingLevel}>`,
       );

@@ -14,13 +14,9 @@ export default async function BlogIndexPage() {
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 py-12 sm:px-6 lg:px-8">
       <header className="space-y-4">
-        <p className="font-[var(--font-mono)] text-[11px] font-medium uppercase tracking-[0.24em] text-muted">
-          Journal
-        </p>
+        <p className="eyebrow">Journal</p>
         <div>
-          <h1 className="font-[var(--font-display)] text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-            Blog
-          </h1>
+          <h1 className="display display-1 text-foreground">Blog</h1>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
             Technical notes on software, backend systems, and product
             engineering.
@@ -40,15 +36,15 @@ export default async function BlogIndexPage() {
               href={`/blog/${post.slug}`}
               className="group flex flex-col gap-4 rounded-sm border border-divider bg-surface p-5 transition-all duration-300 hover:-translate-y-1 hover:border-accent hover:bg-accent-muted hover:shadow-[0_16px_34px_rgba(0,0,0,0.16)] sm:p-6"
             >
-              <div className="flex flex-wrap items-center gap-2 text-[11px] font-[var(--font-mono)] text-muted">
+              <div className="label-sm flex flex-wrap items-center gap-2 text-muted">
                 <span>{post.formattedDate}</span>
                 <span className="size-1.5 rounded-full bg-divider" />
                 <span className="text-accent">{post.readTime}</span>
-                <span className="ml-auto rounded-sm border border-divider px-2 py-1 text-[10px] text-muted">
+                <span className="ml-auto rounded-sm border border-divider px-2 py-1 text-[length:var(--label-xs)] text-muted">
                   {String(index + 1).padStart(2, '0')}
                 </span>
               </div>
-              <h2 className="font-[var(--font-display)] text-2xl font-semibold leading-tight text-foreground">
+              <h2 className="display display-3 text-foreground">
                 {post.title}
               </h2>
               <p className="text-sm leading-7 text-muted">{post.excerpt}</p>
@@ -56,7 +52,7 @@ export default async function BlogIndexPage() {
                 {post.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="rounded-sm border border-divider bg-accent-muted px-2 py-1 text-[11px] font-[var(--font-mono)] text-accent transition-colors duration-200 group-hover:border-accent"
+                    className="label-sm rounded-sm border border-divider bg-accent-muted px-2 py-1 text-accent transition-colors duration-200 group-hover:border-accent"
                   >
                     {tag}
                   </span>
