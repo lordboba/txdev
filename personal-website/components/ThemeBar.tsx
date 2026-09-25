@@ -55,7 +55,7 @@ export function ThemeBar({ compact = false }: { compact?: boolean }) {
             aria-pressed={active === t.id}
           >
             <span
-              className={`pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 rounded-sm border border-divider/80 bg-surface px-1.5 py-0.5 text-[9px] font-[var(--font-mono)] text-muted opacity-0 transition-opacity duration-200 group-hover:opacity-100 ${
+              className={`pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 rounded-sm border border-divider/80 bg-surface px-1.5 py-0.5 text-[9px] font-mono text-muted opacity-0 transition-opacity duration-200 group-hover:opacity-100 ${
                 active === t.id ? 'text-accent' : ''
               }`}
             >
@@ -134,7 +134,7 @@ export function ThemeBar({ compact = false }: { compact?: boolean }) {
   return (
     <footer className="mt-auto border-t border-divider bg-surface/95 backdrop-blur">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-        <div className="flex items-center gap-2 text-[10px] font-[var(--font-mono)] uppercase tracking-[0.18em] text-muted">
+        <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.18em] text-muted">
           <span>Theme controls</span>
           <span className="size-1 rounded-full bg-muted/60" />
         </div>

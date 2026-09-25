@@ -184,10 +184,14 @@ a:hover {
   color: var(--muted);
 }
 
+/*
+ * Family only. Tailwind generates the same utility from `@theme inline`, but
+ * this unlayered rule wins the cascade, so it must not smuggle in tracking or
+ * leading: the display scale owns those.
+ */
 .font-display {
-  font-family: var(--font-display), Georgia, serif;
-  letter-spacing: -0.035em;
-  line-height: 0.96;
+  font-family:
+    var(--font-display), 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
 }
 
 .pane {

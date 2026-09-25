@@ -25,10 +25,10 @@ export default function ScheduleCallPage() {
       </Link>
 
       <header className="rounded-sm border border-divider bg-surface p-6 sm:p-8">
-        <p className="font-[var(--font-mono)] text-xs font-medium uppercase tracking-[0.22em] text-muted">
+        <p className="font-mono text-xs font-medium uppercase tracking-[0.22em] text-muted">
           {'// schedule a call'}
         </p>
-        <h1 className="mt-4 max-w-3xl font-[var(--font-display)] text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
+        <h1 className="mt-4 max-w-3xl font-display text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
           Book a 15-minute chat.
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-7 text-muted sm:text-base">
@@ -65,7 +65,7 @@ export default function ScheduleCallPage() {
 
       <section>
         <div className="rounded-sm border border-divider bg-surface p-6">
-          <h2 className="font-[var(--font-display)] text-2xl font-semibold tracking-tight">
+          <h2 className="font-display text-2xl font-semibold tracking-tight">
             What to expect
           </h2>
           <ul className="mt-4 space-y-3 text-sm text-muted">

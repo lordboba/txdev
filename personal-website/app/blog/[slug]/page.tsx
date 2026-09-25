@@ -63,12 +63,12 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
       <article className="rounded-sm border border-divider bg-surface p-5 sm:p-8">
         <header className="space-y-5 border-b border-divider pb-8">
-          <div className="flex flex-wrap items-center gap-2 text-xs font-[var(--font-mono)] text-muted">
+          <div className="flex flex-wrap items-center gap-2 text-xs font-mono text-muted">
             <span>{post.formattedDate}</span>
             <span className="size-1.5 rounded-full bg-divider" />
             <span className="text-accent">{post.readTime}</span>
           </div>
-          <h1 className="font-[var(--font-display)] text-3xl font-semibold leading-tight tracking-tight text-foreground sm:text-4xl">
+          <h1 className="font-display text-3xl font-semibold leading-tight tracking-tight text-foreground sm:text-4xl">
             {post.title}
           </h1>
           <p className="text-base leading-8 text-muted sm:text-lg">
@@ -78,7 +78,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             {post.tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-sm border border-divider px-2.5 py-1 text-[11px] font-[var(--font-mono)] text-accent transition-colors duration-200"
+                className="rounded-sm border border-divider px-2.5 py-1 text-[11px] font-mono text-accent transition-colors duration-200"
               >
                 {tag}
               </span>
@@ -88,9 +88,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
         <div
           className="blog-prose mt-10
-          [&_h1]:font-[var(--font-display)]
-          [&_h2]:font-[var(--font-display)]
-          [&_h3]:font-[var(--font-display)]
+          [&_h1]:font-display
+          [&_h2]:font-display
+          [&_h3]:font-display
           [&_h1]:text-foreground [&_h2]:text-foreground [&_h3]:text-foreground
           [&_h1]:font-semibold [&_h2]:font-semibold [&_h3]:font-semibold
           [&_p]:text-[1rem] [&_p]:leading-8 [&_p]:text-muted
