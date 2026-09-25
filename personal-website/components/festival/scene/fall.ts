@@ -11,7 +11,8 @@
  *   A = coverage, cut at alphaTest 0.5
  * so `instanceColor` carries the hue and the tile carries the drawing.
  *
- * Render order 5 (after the lantern draw calls, before the moon).
+ * Render order 6 (after the lantern draw calls and the moon: a floret faded
+ * out over the disc composites over it instead of punching a depth hole).
  */
 
 import * as THREE from 'three';
@@ -33,7 +34,7 @@ import {
   type FallSpecies,
 } from './types.ts';
 
-export const FALL_RENDER_ORDER = 5;
+export const FALL_RENDER_ORDER = 6;
 export const MAX_FALL_INSTANCES = 36;
 /** Highlight strength of the atlas G channel (the 30% white streak). */
 export const HIGHLIGHT_STRENGTH = 0.3;

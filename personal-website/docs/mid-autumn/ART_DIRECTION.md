@@ -587,7 +587,7 @@ const camera = new THREE.PerspectiveCamera(30, w / h, 0.1, 40);
 camera.position.z = h / 100 / 2 / Math.tan(Math.PI / 12); // 1 world unit = 100 CSS px at z = 0 (16.79 at 900 px tall)
 ```
 
-Lanterns at z ∈ [−0.4, 0.2], pools at lantern z − 0.2, florets in three bands z ∈ [−1.5, 1.5], moon at z −3. Resize: recompute camera z and aspect, `setSize(w, h, false)`, re-anchor from px. Render order: halos → pools → paper → hardware → cords → fall → moon.
+Lanterns at z ∈ [−0.4, 0.2], pools at lantern z − 0.2, florets in three bands z ∈ [−1.5, 1.5], moon at z −3. Resize: recompute camera z and aspect, `setSize(w, h, false)`, re-anchor from px. Render order: halos → pools → paper → hardware → cords → moon → fall (the moon before the fall: florets are nearer than z −3 regardless, and a floret faded out over the disc by an exclusion would otherwise write depth and punch a dark hole in a moon drawn after it).
 
 ### 7.4 Layering
 

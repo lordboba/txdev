@@ -13,7 +13,10 @@
  * when it arrives. The shader applies no second limb term.
  *
  * One quad (borrowed from the fall system when the integrator passes it, so
- * the page stays at 6 geometries), one draw call, render order 6.
+ * the page stays at 6 geometries), one draw call, render order 5: drawn
+ * BEFORE the fall. Florets are nearer than z −3 anyway, and a floret faded
+ * by an exclusion still writes depth, so a moon drawn after it would leave a
+ * dark hole where the faded floret is.
  */
 
 import * as THREE from 'three';
@@ -23,7 +26,7 @@ import { pxLengthToWorld, pxToWorld } from './layout.ts';
 import type { MoonObjects, MoonObjectsFactory } from './types.ts';
 
 export const MOON_TEXTURE_URL = '/festival/moon-nearside-512.png';
-export const MOON_RENDER_ORDER = 6;
+export const MOON_RENDER_ORDER = 5;
 export const MOON_Z = light.moon.z;
 
 const rgb = (hex: string) => new THREE.Vector3(...hexToRgb01(hex));

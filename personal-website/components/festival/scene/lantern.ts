@@ -14,7 +14,7 @@
  * geometry so instance scale is uniform and normals rotate cleanly.
  *
  * Render order inside the group (bible §7.3): halos 0 → pools 1 → paper 2 →
- * hardware 3 → cords 4; fall.ts takes 5 and moon.ts 6–7.
+ * hardware 3 → cords 4; moon.ts takes 5 and fall.ts 6.
  */
 
 import * as THREE from 'three';
