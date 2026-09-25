@@ -942,12 +942,15 @@ export function createSim(options: SimOptions): SimApi {
 
     for (const l of lanterns) {
       const s = l.state;
+      // A lantern parked by the mobile scroll-lift (raised, hidden, no
+      // script pending) is at rest too: the page settles with it up.
+      const parked = s.rise !== 0 && s.alpha === 0;
 
       if (
         l.cord ||
         l.pending > 0 ||
         s.cordLength !== s.cordTarget ||
-        s.rise !== 0
+        (s.rise !== 0 && !parked)
       ) {
         atLength = false;
       }

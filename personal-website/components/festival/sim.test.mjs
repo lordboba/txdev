@@ -518,6 +518,45 @@ test('§3.3 reduced motion: snapshotLift parks the mobile lantern raised and unl
   assert.equal(back.cordLength, back.cordTarget);
 });
 
+test('§4.2 a page entered already scrolled parks the lantern from frame 1 and still settles; the return lowers it in unlit and catches', () => {
+  const layout = routeLayout('/blog', { w: 390, h: 844 }, true, {});
+  const wind = createWindInstance(5);
+  const sim = createSim({
+    seed: 5,
+    layout,
+    wind,
+    night: 1,
+    reducedMotion: false,
+  });
+
+  // The canvas calls this instead of the lower-in rows when scrollY > 120.
+  sim.snapshotLift(true, 24);
+
+  let seenAlpha = 0;
+
+  run(sim, wind, 4, (state) => {
+    seenAlpha = Math.max(seenAlpha, state.lanterns[0].alpha);
+  });
+  assert.equal(seenAlpha, 0, 'no frame shows the parked lantern');
+  assert.equal(sim.state.lanterns[0].lit, 0);
+  assert.equal(sim.state.settled, true, 'the page settles with the lantern up');
+
+  // Return below 40: the §4.2 rows, lower-in first, then the catch.
+  sim.lowerIn('A', { delayS: 0.3, durationS: 0.52 });
+  sim.light('A', { delayS: 0.3 + 0.52 + 0.1, durationS: 0.42, target: 1 });
+
+  let litWhenVisible = null;
+
+  run(sim, wind, 2, (state) => {
+    const l = state.lanterns[0];
+
+    if (litWhenVisible === null && l.alpha === 1) litWhenVisible = l.lit;
+  });
+  assert.equal(litWhenVisible, 0, 'lowers in unlit; the catch comes after');
+  assert.equal(sim.state.lanterns[0].lit, 1);
+  assert.equal(sim.state.lanterns[0].rise, 0);
+});
+
 test('§4.2 route change: candle out, raise, then a fresh lower-in on the next layout; florets never exit', () => {
   const from = blog();
   const to = routeLayout('/past-experience', DESKTOP_BASE, false, {});

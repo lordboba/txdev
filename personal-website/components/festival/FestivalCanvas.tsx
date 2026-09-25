@@ -411,8 +411,11 @@ export function createFestivalRuntime(
     if (!nightChanged) return;
 
     // §4.3: dusk catches the candles in order; morning snuffs them at once.
+    // A lantern parked by the scroll-lift is unlit either way: its catch
+    // comes with the return (`stepScroll`).
     for (const spec of layout.lanterns) {
       if (theme.nightTarget === 1) {
+        if (lifted) continue;
         sim.light(spec.id, {
           delayS:
             (THEME.candleDelayMs + THEME.candleStaggerMs * spec.order) / 1000,
@@ -569,8 +572,23 @@ export function createFestivalRuntime(
     const now = sim.state.ts;
     const id = sequenceId;
     const lowerDelay = timing === 'mount' ? 0 : ROUTE.lowerInDelayMs;
+    // Mobile /blog* entered already scrolled (a hash, Back, a route change
+    // mid-article): the lantern is parked raised and unlit from the first
+    // frame (§4.2 scroll-lift) instead of lowering in over the article and
+    // lifting again; the return below `returnBelowScrollY` plays the
+    // lower-in and catch rows. `snapshotLift` clears the queue: first.
+    const lift = layout.scrollLift;
+    const parked =
+      !!lift &&
+      layout.lanterns.length > 0 &&
+      window.scrollY > lift.liftAtScrollY;
 
-    for (const spec of layout.lanterns) {
+    if (parked) {
+      lifted = true;
+      sim.snapshotLift(true, lift.px);
+    }
+
+    for (const spec of parked ? [] : layout.lanterns) {
       const lowerAt =
         base + (lowerDelay + T.lanternStaggerMs * spec.order) / 1000;
       const arrival = lowerAt + T.lowerInMs / 1000;
@@ -580,11 +598,12 @@ export function createFestivalRuntime(
         durationS: T.lowerInMs / 1000,
       });
       // The catch is decided when it is due: a theme flip during the
-      // lower-in (dark → light) must leave the candle out (§2.1).
+      // lower-in (dark → light) must leave the candle out (§2.1), and a
+      // scroll-lift that landed during it must not light a hidden lantern.
       sim.schedule(
         arrival + T.candleDelayMs / 1000,
         guard(id, () => {
-          if (theme.nightTarget !== 1 || !sim) return;
+          if (theme.nightTarget !== 1 || !sim || lifted) return;
           sim.light(spec.id, {
             delayS: 0,
             durationS: T.candleMs / 1000,
@@ -796,7 +815,8 @@ export function createFestivalRuntime(
               lowerDelay +
               (ROUTE.lowerInMs + ROUTE.candleDelayMs) / 1000,
             guard(id, () => {
-              if (theme.nightTarget !== 1 || !sim) return;
+              // Lifted again before the catch: the lantern stays out.
+              if (theme.nightTarget !== 1 || !sim || lifted) return;
               sim.light(spec.id, {
                 delayS: 0,
                 durationS: ROUTE.candleMs / 1000,
