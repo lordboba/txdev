@@ -6,6 +6,7 @@ import { useState, type AnimationEvent, type MouseEvent } from 'react';
 import { Bench } from '@/components/concept/bench/Bench';
 import { usePrefersReducedMotion } from '@/components/concept/shared/runtime';
 import styles from './BenchHome.module.css';
+import { PetCompanion } from './PetCompanion';
 
 export function BenchHome({ visitorCount }: { visitorCount: number | null }) {
   const router = useRouter();
@@ -113,6 +114,7 @@ export function BenchHome({ visitorCount }: { visitorCount: number | null }) {
                   <span className={styles.terminalMark}>{'>_'}</span>
                 </span>
               </Link>
+              <PetCompanion />
             </div>
           }
         />
