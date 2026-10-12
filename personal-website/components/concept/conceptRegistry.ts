@@ -65,13 +65,3 @@ export const conceptEntries: ConceptEntry[] = [
     palette: ['#eceae4', '#1a1917', '#8a8578'],
   },
 ];
-
-export function getConceptEntry(id: ConceptId): ConceptEntry {
-  const entry = conceptEntries.find((candidate) => candidate.id === id);
-
-  if (!entry) {
-    throw new Error(`Unknown concept: ${id}`);
-  }
-
-  return entry;
-}

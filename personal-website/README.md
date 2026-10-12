@@ -17,6 +17,7 @@ Personal portfolio built with Next.js 16, React 19, React Three Fiber, and Tailw
 - `/concept` — internal comparison board with four design directions
 - `/blog`
 - `/blog/[slug]`
+- `/journey` — the scrollable map of where Tyler has been
 - `/past-experience` — extended timeline and project archive
 - `/schedule-a-call` — Calendly booking page
 - `/terminal` — terminal-era homepage
@@ -33,6 +34,7 @@ Most shared visual decisions flow through [`app/globals.css`](./app/globals.css)
 - [`components/concept/conceptData.ts`](./components/concept/conceptData.ts)
 - [`lib/siteData.ts`](./lib/siteData.ts) — shared profile, contact, and scheduling content
 - [`content/journeyData.ts`](./content/journeyData.ts) — canonical `/journey` beats, artifacts, and route graph
+- The Mid-Autumn layer is art-directed in [`docs/mid-autumn/ART_DIRECTION.md`](./docs/mid-autumn/ART_DIRECTION.md); its kill switch (`?festival=0`, `NEXT_PUBLIC_FESTIVAL=0`) lives in [`lib/festival.ts`](./lib/festival.ts).
 
 ### Journey assets
 
@@ -62,6 +64,10 @@ npm run bench:measure -- --url=http://localhost:3000
 npm run build
 npm run start
 npm run lint
+npm run format
+npm test
+npm run map:build
+npm run history
 ```
 
 ### Bench A/B measurements

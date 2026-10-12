@@ -393,8 +393,3 @@ export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
   const posts = await getAllPosts();
   return posts.find((post) => post.slug === slug) ?? null;
 }
-
-export async function getRecentPostMeta(limit = 3): Promise<BlogPostMeta[]> {
-  const posts = await getAllPostMeta();
-  return posts.slice(0, limit);
-}

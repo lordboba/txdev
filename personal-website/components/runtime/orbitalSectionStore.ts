@@ -21,11 +21,6 @@ const SECTION_TO_HASH: Record<OrbitalSectionId, string> = {
   contact: '#contact',
 };
 
-export function getOrbitalSectionHref(sectionId: OrbitalSectionId) {
-  const hash = SECTION_TO_HASH[sectionId];
-  return hash ? `/${hash}` : '/';
-}
-
 function getOrbitalSectionSnapshot(): OrbitalSectionId {
   if (typeof window === 'undefined') {
     return 'home';

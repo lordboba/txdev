@@ -70,22 +70,29 @@ export const metadata: Metadata = {
   },
 };
 
-/* Inline script to set theme before first paint — prevents flash */
+/*
+ * Inline script to set the theme before first paint — prevents flash.
+ *
+ * data-color-theme is always written, never only when localStorage has a
+ * value. The palette lives in [data-theme][data-color-theme] pairs, so a
+ * missing attribute fell through to the bare :root block, which holds the
+ * DARK tokens: a visitor in light mode who had never opened the colour
+ * picker got --c-accent #ffffff, i.e. a white modal title on white and
+ * invisible card frames. 'mono' matches DEFAULT_COLOR_THEME in
+ * components/runtime/themePreferences.ts; the list is repeated here because
+ * this string has to run before any module loads.
+ */
 const themeInitScript = `
 (function() {
   try {
     var t = localStorage.getItem('theme');
-    if (t === 'light' || t === 'dark') {
-      document.documentElement.setAttribute('data-theme', t);
-    } else {
-      document.documentElement.setAttribute('data-theme', 'dark');
-    }
+    document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
     var ct = localStorage.getItem('color-theme');
-    if (ct) {
-      document.documentElement.setAttribute('data-color-theme', ct);
-    }
+    var known = ct === 'mono' || ct === 'ember' || ct === 'ice' || ct === 'terminal';
+    document.documentElement.setAttribute('data-color-theme', known ? ct : 'mono');
   } catch(e) {
     document.documentElement.setAttribute('data-theme', 'dark');
+    document.documentElement.setAttribute('data-color-theme', 'mono');
   }
 })();
 `;
